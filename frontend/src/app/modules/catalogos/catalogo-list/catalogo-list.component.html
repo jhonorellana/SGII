@@ -1,0 +1,85 @@
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Catálogos</h2>
+    <button class="btn btn-primary" routerLink="/catalogos/new">
+      <i class="bi bi-plus-circle"></i> Nuevo Catálogo
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando catálogos...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Catálogos List -->
+  <div *ngIf="!loading && !error">
+    <div *ngIf="catalogos.length === 0" class="alert alert-info">
+      <i class="bi bi-info-circle"></i> No hay catálogos registrados
+    </div>
+
+    <div *ngIf="catalogos.length > 0" class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Estado</th>
+            <th>Valores</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let catalogo of catalogos; trackBy: trackByCatalogoId">
+            <td>{{ catalogo.id_catalogo }}</td>
+            <td>
+              <strong>{{ catalogo.nombre }}</strong>
+            </td>
+            <td>
+              <code>{{ catalogo.codigo }}</code>
+            </td>
+            <td>{{ catalogo.descripcion || '-' }}</td>
+            <td>
+              <span class="badge" [class]="catalogo.activo ? 'bg-success' : 'bg-danger'">
+                {{ catalogo.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge bg-info">
+                {{ catalogo.valores?.length || 0 }} valores
+              </span>
+            </td>
+            <td>
+              <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-primary" 
+                        routerLink="/catalogos/{{ catalogo.id_catalogo }}/edit"
+                        title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-info" 
+                        routerLink="/catalogos/{{ catalogo.id_catalogo }}/valores"
+                        title="Ver Valores">
+                  <i class="bi bi-list-ul"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" 
+                        (click)="deleteCatalogo(catalogo.id_catalogo)"
+                        title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

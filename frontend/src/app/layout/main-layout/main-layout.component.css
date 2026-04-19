@@ -1,0 +1,45 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: 280px;
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content.expanded {
+  margin-left: 70px;
+}
+
+.page-content {
+  flex: 1;
+  padding: 75px 20px 20px 20px;
+  background-color: #f5f5f5;
+  min-height: calc(100vh - 70px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+  }
+
+  .page-content {
+    padding: 75px 15px 15px 15px;
+  }
+}
+
+/* Ensure proper z-index layering */
+.app-layout {
+  position: relative;
+}
+
+.main-content {
+  position: relative;
+  z-index: 1;
+}

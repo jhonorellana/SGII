@@ -1,0 +1,15 @@
+<div class="app-layout">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+  
+  <!-- Main Content Area -->
+  <div class="main-content" [class.expanded]="sidebarCollapsed">
+    <!-- Header -->
+    <app-header></app-header>
+    
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+<header class="app-header">
+  <div class="header-left">
+    <div class="user-greeting">
+      <span class="greeting">{{ getGreeting() }}</span>
+      <span class="user-name" *ngIf="currentUser">{{ currentUser.nombre }}</span>
+    </div>
+  </div>
+
+  <div class="header-center">
+    <div class="datetime">
+      <div class="time">{{ formatTime(currentTime) }}</div>
+      <div class="date">{{ formatDate(currentTime) }}</div>
+    </div>
+  </div>
+
+  <div class="header-right">
+    <div class="user-menu" *ngIf="currentUser">
+      <div class="user-avatar" (click)="goToProfile()" title="Mi Perfil">
+        {{ getInitials(currentUser.nombre) }}
+      </div>
+      <div class="user-dropdown">
+        <button class="dropdown-toggle" type="button" (click)="toggleDropdown()">
+          <i class="bi bi-person-circle"></i>
+          <span class="user-name">{{ currentUser.nombre }}</span>
+          <i class="bi bi-chevron-down"></i>
+        </button>
+        <ul class="dropdown-menu" [class.show]="isDropdownOpen">
+          <li>
+            <a class="dropdown-item" href="#" (click)="goToProfile()">
+              <i class="bi bi-person"></i> Mi Perfil
+            </a>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <a class="dropdown-item text-danger" href="#" (click)="logout()">
+              <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</header>

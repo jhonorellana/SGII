@@ -1,0 +1,104 @@
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="logo">
+        <h1>SIPRO</h1>
+        <span>Sistema de Inversiones</span>
+      </div>
+
+      <div class="user-info">
+        <div class="user-details">
+          <span class="user-name">{{ userName }}</span>
+          <span class="user-role">{{ userRole }}</span>
+        </div>
+        <button (click)="logout()" class="btn btn-logout">
+          Cerrar Sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <div *ngIf="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Cargando...</p>
+    </div>
+
+    <div *ngIf="!loading" class="dashboard-content">
+      <div class="welcome-section">
+        <h2>Bienvenido, {{ userName }}</h2>
+        <p>Rol: {{ userRole }}</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            💰
+          </div>
+          <div class="stat-content">
+            <h3>Total Inversiones</h3>
+            <p class="stat-number">333</p>
+          </div>
+        </div>
+
+        <div class="stat-card clickable" routerLink="/catalogos">
+          <div class="stat-icon">
+            333
+          </div>
+          <div class="stat-content">
+            <h3>Catálogos</h3>
+            <p class="stat-number">Administrar</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            📊
+          </div>
+          <div class="stat-content">
+            <h3>Capital Invertido</h3>
+            <p class="stat-number">$2.5M</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            📈
+          </div>
+          <div class="stat-content">
+            <h3>Rendimiento Promedio</h3>
+            <p class="stat-number">7.2%</p>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon">
+            👥
+          </div>
+          <div class="stat-content">
+            <h3>Integrantes</h3>
+            <p class="stat-number">5</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <h3>Acciones Rápidas</h3>
+        <div class="action-buttons">
+          <button class="btn btn-primary">
+            📝 Nueva Inversión
+          </button>
+          <button class="btn btn-secondary">
+            📊 Ver Reportes
+          </button>
+          <button class="btn btn-secondary">
+            👥 Gestionar Usuarios
+          </button>
+          <button class="btn btn-secondary">
+            ⚙️ Configuración
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

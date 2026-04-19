@@ -1,0 +1,67 @@
+<nav class="sidebar" [class.collapsed]="isCollapsed">
+  <!-- Header -->
+  <div class="sidebar-header">
+    <div class="logo">
+      <i class="bi bi-graph-up-arrow"></i>
+      <span class="logo-text" *ngIf="!isCollapsed">SGII</span>
+    </div>
+    <button class="toggle-btn" (click)="toggleSidebar()">
+      <i class="bi" [class.bi-chevron-left]="!isCollapsed" [class.bi-chevron-right]="isCollapsed"></i>
+    </button>
+  </div>
+
+  <!-- User Info -->
+  <div class="user-info" *ngIf="currentUser && !isCollapsed">
+    <div class="user-avatar">
+      {{ getInitials(currentUser.nombre) }}
+    </div>
+    <div class="user-details">
+      <div class="user-name">{{ currentUser.nombre }}</div>
+      <div class="user-role">{{ currentUser.role || 'Usuario' }}</div>
+    </div>
+  </div>
+
+  <!-- Menu -->
+  <ul class="sidebar-menu">
+    <li class="menu-item" *ngFor="let item of menuItems">
+      <!-- Single Item -->
+      <a *ngIf="!item.children" 
+         class="menu-link" 
+         [routerLink]="item.path"
+         [class.active]="isActive(item.path)">
+        <i class="bi {{ item.icon }}"></i>
+        <span class="menu-text">{{ item.title }}</span>
+      </a>
+
+      <!-- Parent Item with Children -->
+      <div *ngIf="item.children" class="menu-parent">
+        <a class="menu-link" 
+           [class.active]="isExpanded(item)"
+           (click)="toggleMenuItem(item)">
+          <i class="bi {{ item.icon }}"></i>
+          <span class="menu-text">{{ item.title }}</span>
+          <i class="bi bi-chevron-down menu-arrow" 
+             [class.rotated]="isExpanded(item)"></i>
+        </a>
+        <ul class="submenu" [class.expanded]="isExpanded(item)">
+          <li class="submenu-item" *ngFor="let child of item.children">
+            <a class="submenu-link" 
+               [routerLink]="child.path"
+               [class.active]="isActive(child.path)">
+              <i class="bi {{ child.icon }}"></i>
+              <span class="menu-text">{{ child.title }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </li>
+  </ul>
+
+  <!-- Footer -->
+  <div class="sidebar-footer" *ngIf="!isCollapsed">
+    <button class="logout-btn" (click)="logout()">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="menu-text">Cerrar Sesión</span>
+    </button>
+  </div>
+</nav>

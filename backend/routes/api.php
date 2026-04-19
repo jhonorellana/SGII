@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\CatalogoController;
+use App\Http\Controllers\API\CatalogoValorController;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// Rutas de autenticación
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout']);
+Route::get('/me', [AuthController::class, 'me']);
+
+// Rutas de Catálogos (temporalmente sin autenticación para pruebas)
+Route::apiResource('catalogos', CatalogoController::class);
+Route::get('catalogos/{codigo}/valores', [CatalogoController::class, 'getValoresByCodigo']);
+
+// Rutas de Valores de Catálogo (temporalmente sin autenticación para pruebas)
+Route::apiResource('catalogo-valores', CatalogoValorController::class);
+Route::get('catalogo-valores/catalogo/{idCatalogo}', [CatalogoValorController::class, 'getByCatalogo']);
+Route::patch('catalogo-valores/{id}/toggle-active', [CatalogoValorController::class, 'toggleActive']);
+
+// Rutas protegidas (aquí irán las demás rutas)
+Route::middleware('auth:sanctum')->group(function () {
+    // Ejemplo: Route::get('/inversiones', 'InversionController@index');
+});

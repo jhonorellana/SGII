@@ -1,0 +1,194 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <button class="btn btn-outline-secondary me-2" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Volver
+      </button>
+      <h2 class="d-inline-block mb-0">
+        <span *ngIf="isEditMode">Editar Valor</span>
+        <span *ngIf="!isEditMode">Nuevo Valor</span>
+        <span *ngIf="catalogo"> - {{ catalogo.nombre }}</span>
+      </h2>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">{{ isEditMode ? 'Cargando valor...' : 'Preparando formulario...' }}</p>
+  </div>
+
+  <!-- Success Message -->
+  <div *ngIf="success" class="alert alert-success">
+    <i class="bi bi-check-circle"></i> {{ success }}
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Form -->
+  <div *ngIf="!loading" class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="bi bi-tag"></i>
+            Información del Valor
+          </h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="valorForm" (ngSubmit)="onSubmit()">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="codigo" class="form-label">
+                    Código <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    id="codigo"
+                    type="text"
+                    formControlName="codigo"
+                    class="form-control"
+                    [class.is-invalid]="f['codigo'].invalid && f['codigo'].touched"
+                    placeholder="Ej: ACT, INA, PEN"
+                    maxlength="20"
+                  />
+                  <div
+                    *ngIf="f['codigo'].invalid && f['codigo'].touched"
+                    class="invalid-feedback"
+                  >
+                    <span *ngIf="f['codigo'].errors?.['required']">
+                      El código es requerido
+                    </span>
+                    <span *ngIf="f['codigo'].errors?.['maxlength']">
+                      Máximo 20 caracteres
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="form-group mb-3">
+                  <label for="orden_visual" class="form-label">
+                    Orden Visual <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    id="orden_visual"
+                    type="number"
+                    formControlName="orden_visual"
+                    class="form-control"
+                    [class.is-invalid]="f['orden_visual'].invalid && f['orden_visual'].touched"
+                    placeholder="1"
+                    min="1"
+                  />
+                  <div
+                    *ngIf="f['orden_visual'].invalid && f['orden_visual'].touched"
+                    class="invalid-feedback"
+                  >
+                    <span *ngIf="f['orden_visual'].errors?.['required']">
+                      El orden es requerido
+                    </span>
+                    <span *ngIf="f['orden_visual'].errors?.['min']">
+                      El orden debe ser mayor a 0
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="nombre" class="form-label">
+                Nombre <span class="text-danger">*</span>
+              </label>
+              <input
+                id="nombre"
+                type="text"
+                formControlName="nombre"
+                class="form-control"
+                [class.is-invalid]="f['nombre'].invalid && f['nombre'].touched"
+                placeholder="Ej: Activo, Inactivo, Pendiente"
+                maxlength="100"
+              />
+              <div
+                *ngIf="f['nombre'].invalid && f['nombre'].touched"
+                class="invalid-feedback"
+              >
+                <span *ngIf="f['nombre'].errors?.['required']">
+                  El nombre es requerido
+                </span>
+                <span *ngIf="f['nombre'].errors?.['maxlength']">
+                  Máximo 100 caracteres
+                </span>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="descripcion" class="form-label">Descripción</label>
+              <textarea
+                id="descripcion"
+                formControlName="descripcion"
+                class="form-control"
+                [class.is-invalid]="f['descripcion'].invalid && f['descripcion'].touched"
+                placeholder="Descripción opcional del valor..."
+                rows="3"
+                maxlength="255"
+              ></textarea>
+              <div
+                *ngIf="f['descripcion'].invalid && f['descripcion'].touched"
+                class="invalid-feedback"
+              >
+                <span *ngIf="f['descripcion'].errors?.['maxlength']">
+                  Máximo 255 caracteres
+                </span>
+              </div>
+            </div>
+
+            <div class="form-group mb-4">
+              <div class="form-check">
+                <input
+                  id="activo"
+                  type="checkbox"
+                  formControlName="activo"
+                  class="form-check-input"
+                />
+                <label for="activo" class="form-check-label">
+                  Valor Activo
+                </label>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="goBack()"
+                [disabled]="loading"
+              >
+                <i class="bi bi-x-circle"></i> Cancelar
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="valorForm.invalid || loading"
+              >
+                <span *ngIf="!loading">
+                  <i class="bi bi-check-circle"></i>
+                  {{ isEditMode ? 'Actualizar' : 'Crear' }} Valor
+                </span>
+                <span *ngIf="loading">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  {{ isEditMode ? 'Actualizando...' : 'Creando...' }}
+                </span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

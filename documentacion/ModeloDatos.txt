@@ -1,0 +1,1094 @@
+Vamos a diseñar el Modelo Conceptual de Datos procurando:
+* mantener una estructura cercana a la actual para facilitar la migración 
+* usar nombres en español 
+* separar claramente: 
+o tablas núcleo 
+o tablas derivadas 
+o tablas históricas de mercado 
+o catálogos 
+* dejar preparado el modelo para crecer sin romper demasiado lo que ya tienes 
+Voy a plantearlo como modelo conceptual propuesto, no todavía como SQL físico.
+
+1. Criterios de diseño
+1.1 Mantener cercanía con el sistema actual
+Se conservará la lógica principal actual basada en:
+* inversión 
+* amortización 
+* otros valores 
+* balance / consolidado 
+* snapshots diarios 
+* históricos de mercado 
+1.2 Rediseñar solo donde realmente hace falta
+Se recomienda conservar la esencia funcional, pero corrigiendo estos puntos:
+* propietario ya no como texto libre 
+* aportante separado de propietario 
+* estados como catálogos 
+* mejor normalización de personas y grupos familiares 
+* tablas derivadas claramente separadas de tablas transaccionales 
+1.3 Nombres en español
+Las entidades principales se definirán en español, por ejemplo:
+* inversion 
+* amortizacion 
+* grupo_familiar 
+* persona 
+* usuario 
+* emisor 
+* instrumento 
+* catalogo 
+* catalogo_valor 
+
+2. Vista general del modelo conceptual
+El modelo conceptual quedaría dividido en estos bloques:
+* A. Seguridad y acceso
+* usuario 
+* rol 
+* B. Estructura familiar / patrimonial
+* grupo_familiar 
+* persona 
+* grupo_familiar_persona 
+* C. Catálogos
+* catalogo 
+* catalogo_valor 
+* D. Negocio principal
+* emisor 
+* instrumento 
+* inversion 
+* amortizacion 
+* venta_inversion 
+* documento_inversion 
+* E. Valores externos / balance
+* otro_valor 
+* F. Tablas derivadas / snapshots
+* consolidado_inversion 
+* variacion_capital 
+* variacion_capital_detalle 
+* acciones_ultimas_transacciones 
+* G. Históricos de mercado
+* acciones_his 
+* bonos_his 
+* obligaciones_his 
+* papeles_his 
+* facturas_his 
+* genericos_his 
+* titularizaciones_his 
+* dividendos_his 
+* rendimientos_his 
+
+3. Entidades conceptuales principales
+3.1 usuario
+Representa las credenciales de acceso al sistema.
+* Atributos principales
+* id_usuario 
+* nombre_usuario 
+* clave 
+* correo 
+* id_rol 
+* id_persona 
+* activo 
+* fecha_creacion 
+* fecha_actualizacion 
+* Relación
+* un usuario pertenece a un rol 
+* un usuario puede estar asociado a una persona 
+
+3.2 rol
+Representa el perfil de acceso.
+* Atributos principales
+* id_rol 
+* nombre 
+* descripcion 
+* activo 
+* Valores típicos
+* Administrador 
+* Patriarca 
+* Integrante familiar 
+
+3.3 grupo_familiar
+Representa la cuenta principal o grupo patrimonial.
+* Atributos principales
+* id_grupo_familiar 
+* nombre 
+* descripcion 
+* id_patriarca 
+* activo 
+* fecha_creacion 
+* Relación
+* un grupo familiar tiene muchas personas 
+* un grupo familiar tiene muchas inversiones 
+
+3.4 persona
+Representa cualquier persona vinculada al sistema.
+* Atributos principales
+* id_persona 
+* nombres 
+* apellidos 
+* identificacion 
+* correo 
+* telefono 
+* activo 
+* fecha_creacion 
+* Observación
+Aquí vivirían tanto:
+* propietarios 
+* aportantes 
+* integrantes familiares 
+* patriarca 
+
+3.5 grupo_familiar_persona
+Tabla de relación entre grupo familiar y persona.
+* Atributos principales
+* id_grupo_familiar_persona 
+* id_grupo_familiar 
+* id_persona 
+* id_tipo_relacion 
+* activo 
+* fecha_creacion 
+* Ejemplos de tipo de relación
+* Patriarca 
+* Integrante 
+* Aportante 
+* Beneficiario 
+
+3.6 catalogo
+Equivalente conceptual de reference.
+* Atributos principales
+* id_catalogo 
+* codigo 
+* nombre 
+* descripcion 
+* activo 
+* Ejemplos
+* TIPO_INVERSION 
+* ESTADO_INVERSION 
+* ESTADO_AMORTIZACION 
+* TIPO_USUARIO 
+* TIPO_RELACION_FAMILIAR 
+* TIPO_OTRO_VALOR 
+* TIPO_MONEDA 
+
+3.7 catalogo_valor
+Equivalente conceptual de dictionary.
+* Atributos principales
+* id_catalogo_valor 
+* id_catalogo 
+* codigo 
+* nombre 
+* descripcion 
+* orden 
+* activo 
+
+3.8 emisor
+Representa empresas o entidades emisoras.
+* Atributos principales
+* id_emisor 
+* nombre 
+* sigla 
+* identificacion 
+* id_tipo_emisor 
+* activo 
+* Relación
+* un emisor puede tener muchos instrumentos 
+* un emisor puede tener muchas inversiones 
+
+3.9 instrumento
+Representa el instrumento financiero base.
+* Atributos principales
+* id_instrumento 
+* id_emisor 
+* id_tipo_inversion 
+* codigo_titulo 
+* nombre 
+* fecha_emision 
+* fecha_vencimiento 
+* tasa_referencial 
+* activo 
+* Observación
+Esta entidad ayuda a desacoplar:
+* el instrumento del mercado 
+* la compra específica que tú realizaste 
+
+3.10 inversion
+Esta sigue siendo la tabla principal del negocio y debe mantenerse muy cercana a la actual para facilitar migración.
+* Atributos principales
+* id_inversion 
+* id_grupo_familiar 
+* id_instrumento 
+* id_propietario 
+* id_aportante 
+* fecha_compra 
+* fecha_emision 
+* fecha_vencimiento 
+* fecha_venta 
+* id_emisor 
+* id_tipo_inversion 
+* id_estado_inversion 
+* valor_nominal 
+* capital_invertido 
+* tasa_interes 
+* rendimiento_nominal 
+* rendimiento_efectivo 
+* valor_efectivo 
+* interes_mensual 
+* interes_primer_mes 
+* fecha_primer_pago 
+* precio_compra 
+* precio_neto_compra 
+* comision_bolsa 
+* comision_casa_valores 
+* retencion_fuente 
+* codigo_seb 
+* codigo_bce 
+* observacion 
+* activo 
+* eliminado 
+* fecha_creacion 
+* fecha_actualizacion 
+* Claves conceptuales
+* propietario y aportante ya no serán texto, sino FK a persona 
+* tipo_inversion y estado_inversion serán FK a catálogo 
+* Observación de migración
+Esta tabla debe mapearse de manera muy cercana a la actual inversion.
+
+3.11 amortizacion
+También debe mantenerse muy cercana a la actual para facilitar migración.
+* Atributos principales
+* id_amortizacion 
+* id_inversion 
+* numero_cuota 
+* fecha_pago 
+* interes 
+* capital 
+* descuento 
+* total 
+* retencion 
+* id_estado_amortizacion 
+* pagada 
+* activo 
+* eliminado 
+* fecha_creacion 
+* fecha_actualizacion 
+* Observación
+Aunque se mantenga pagada, idealmente el estado real debe venir de catálogo.
+
+3.12 venta_inversion
+Nueva entidad para registrar operaciones de venta parcial o total.
+* Atributos principales
+* id_venta_inversion 
+* id_inversion 
+* fecha_venta 
+* tipo_venta 
+* porcentaje_vendido 
+* valor_nominal_vendido 
+* valor_efectivo_vendido 
+* precio_venta 
+* observacion 
+* activo 
+* fecha_creacion 
+* Valores de tipo_venta
+* Parcial 
+* Total 
+* Valor
+Esto permite evitar sobrecargar la tabla inversión con toda la lógica histórica de ventas.
+
+3.13 documento_inversion
+Permite asociar archivos o soportes a una inversión.
+* Atributos principales
+* id_documento_inversion 
+* id_inversion 
+* nombre_archivo 
+* ruta_archivo 
+* tipo_documento 
+* observacion 
+* activo 
+* fecha_creacion 
+* Ejemplos
+* liquidación PDF 
+* tabla de amortización 
+* soporte de compra 
+
+3.14 otro_valor
+Debe unificar el concepto actual de othervalue y posiblemente absorber balance.
+* Atributos principales
+* id_otro_valor 
+* id_grupo_familiar 
+* id_propietario 
+* id_tipo_otro_valor 
+* descripcion 
+* valor 
+* fecha_desde 
+* fecha_hasta 
+* activo 
+* eliminado 
+* fecha_creacion 
+* fecha_actualizacion 
+* Ejemplos de tipo
+* Cuenta bancaria 
+* Deuda 
+* Saldo en casa de valores 
+* Otro activo 
+* Otro pasivo 
+* Observación
+Aquí conviene unificar balance + othervalue.
+
+4. Tablas derivadas / snapshots
+Estas no son tablas maestras del negocio. Se alimentan por Stored Procedure diario.
+
+4.1 consolidado_inversion
+Reemplaza y moderniza consolidado_inversiones.
+* Atributos principales
+* id_consolidado_inversion 
+* fecha_corte 
+* id_grupo_familiar 
+* id_propietario 
+* id_tipo_inversion 
+* id_emisor 
+* fecha_vencimiento 
+* tasa 
+* rendimiento 
+* capital 
+* activo 
+* fecha_creacion 
+* Observación
+Mantiene la función actual, pero con mejor normalización.
+
+4.2 variacion_capital
+Cabecera de snapshot diario del capital.
+* Atributos principales
+* id_variacion_capital 
+* fecha_corte 
+* id_grupo_familiar 
+* capital_total 
+* capital_propio 
+* observacion 
+* fecha_creacion 
+
+4.3 variacion_capital_detalle
+Detalle del snapshot por persona.
+* Atributos principales
+* id_variacion_capital_detalle 
+* id_variacion_capital 
+* id_persona 
+* capital_persona 
+* tipo_participacion 
+* fecha_creacion 
+* Valor
+Esto reemplaza la estructura rígida actual de variation con columnas fijas por nombre.
+
+4.4 acciones_ultimas_transacciones
+Reemplaza conceptualmente shares_lastdate.
+* Atributos principales
+* id_accion_ultima_transaccion 
+* fecha_corte 
+* emisor 
+* fecha_ultima_transaccion 
+* precio_maximo 
+* precio_minimo 
+* precio_promedio 
+* numero_transacciones 
+* numero_acciones 
+* valor_efectivo 
+* fecha_creacion 
+* Observación
+Como no viene directo de la Bolsa, puede rediseñarse libremente.
+
+5. Tablas históricas de mercado
+Estas deben conservar una estructura muy parecida a la actual porque dependen de la fuente externa.
+
+* 5.1 acciones_his
+* 5.2 bonos_his
+* 5.3 obligaciones_his
+* 5.4 papeles_his
+* 5.5 facturas_his
+* 5.6 genericos_his
+* 5.7 titularizaciones_his
+* 5.8 dividendos_his
+* 5.9 rendimientos_his
+* Criterio general
+Estas tablas:
+* conservan estructura compatible con la fuente 
+* pueden renombrarse a español uniforme 
+* no deberían forzarse a una normalización excesiva 
+* funcionan como histórico de mercado / staging analítico 
+* Recomendación de nombres
+* acciones_his 
+* bonos_his 
+* obligaciones_his 
+* papeles_comerciales_his 
+* facturas_comerciales_his 
+* valores_genericos_his 
+* titularizaciones_his 
+* dividendos_his 
+* rendimientos_his 
+
+6. Relaciones principales del modelo conceptual
+6.1 Seguridad
+* rol 1 --- N usuario 
+* persona 1 --- 0..1 usuario 
+6.2 Grupo familiar
+* grupo_familiar 1 --- N grupo_familiar_persona 
+* persona 1 --- N grupo_familiar_persona 
+6.3 Catálogos
+* catalogo 1 --- N catalogo_valor 
+6.4 Negocio
+* grupo_familiar 1 --- N inversion 
+* persona 1 --- N inversion como propietario 
+* persona 1 --- N inversion como aportante 
+* emisor 1 --- N instrumento 
+* emisor 1 --- N inversion 
+* instrumento 1 --- N inversion 
+* inversion 1 --- N amortizacion 
+* inversion 1 --- N venta_inversion 
+* inversion 1 --- N documento_inversion 
+6.5 Valores externos
+* grupo_familiar 1 --- N otro_valor 
+* persona 1 --- N otro_valor 
+* 6.6 Snapshots
+* grupo_familiar 1 --- N consolidado_inversion 
+* grupo_familiar 1 --- N variacion_capital 
+* variacion_capital 1 --- N variacion_capital_detalle 
+* persona 1 --- N variacion_capital_detalle 
+
+7. Mapeo aproximado desde el modelo actual
+* Se mantiene muy cercano
+* inversion ? inversion 
+* amortizacion ? amortizacion 
+* othervalue ? otro_valor 
+* Se transforma
+* balance ? probablemente absorbido por otro_valor 
+* variation ? variacion_capital + variacion_capital_detalle 
+* consolidado_inversiones ? consolidado_inversion 
+* shares_lastdate ? acciones_ultimas_transacciones 
+* Se conserva casi igual
+* tablas históricas de mercado 
+* Se agrega nuevo
+* usuario 
+* rol 
+* grupo_familiar 
+* persona 
+* grupo_familiar_persona 
+* emisor 
+* instrumento 
+* venta_inversion 
+* documento_inversion 
+* catalogo 
+* catalogo_valor 
+
+8. Recomendaciones de migración
+8.1 Migración simple
+Más fáciles:
+* inversión 
+* amortización 
+* othervalue 
+* reference 
+* dictionary 
+8.2 Migración con transformación
+* variation 
+* consolidado_inversiones 
+* shares_lastdate 
+* balance 
+8.3 Migración casi directa
+* históricos de mercado 
+
+9. Recomendaciones finales del modelo conceptual
+9.1 Mantener inversion como núcleo
+Eso es lo mejor para no romper el sistema ni complicar la migración.
+9.2 No meter demasiada lógica en tablas derivadas
+variation, consolidado_inversiones y acciones_ultimas_transacciones deben seguir viéndose como resultados de proceso diario.
+9.3 Usar catálogos para todo estado o tipo
+Eso te dará mucha flexibilidad.
+9.4 Separar persona de usuario
+No toda persona necesita login, pero toda inversión sí necesita relacionarse con personas.
+9.5 Separar instrumento de inversión
+Eso te permitirá crecer mejor cuando quieras enriquecer análisis de mercado.
+
+* 10. Diagrama conceptual resumido en texto
+ROL ??< USUARIO >?? PERSONA
+
+GRUPO_FAMILIAR ??< GRUPO_FAMILIAR_PERSONA >?? PERSONA
+
+CATALOGO ??< CATALOGO_VALOR
+
+EMISOR ??< INSTRUMENTO ??< INVERSION >?? PERSONA (PROPIETARIO)
+                               ?
+                               ????? PERSONA (APORTANTE)
+
+INVERSION ??< AMORTIZACION
+INVERSION ??< VENTA_INVERSION
+INVERSION ??< DOCUMENTO_INVERSION
+
+GRUPO_FAMILIAR ??< OTRO_VALOR
+
+GRUPO_FAMILIAR ??< CONSOLIDADO_INVERSION
+GRUPO_FAMILIAR ??< VARIACION_CAPITAL ??< VARIACION_CAPITAL_DETALLE >?? PERSONA
+
+ACCIONES_ULTIMAS_TRANSACCIONES
+ACCIONES_HIS
+BONOS_HIS
+OBLIGACIONES_HIS
+PAPELES_COMERCIALES_HIS
+FACTURAS_COMERCIALES_HIS
+VALORES_GENERICOS_HIS
+TITULARIZACIONES_HIS
+DIVIDENDOS_HIS
+RENDIMIENTOS_HIS
+
+11. Próximo paso recomendado
+Ahora que ya tenemos el modelo conceptual, el siguiente paso natural es pasar al modelo lógico, es decir:
+* definir tablas exactas 
+* columnas exactas 
+* PK 
+* FK 
+* tipos de datos 
+* índices sugeridos 
+Y ahí sí dejaríamos lista la base para desarrollo y migración.
+Puedo ayudarte a hacer ese siguiente paso con este formato:
+7. Modelo lógico de datos
+Vamos con el modelo lógico de datos.
+Voy a mantener estos criterios:
+* nombres en español 
+* estructura cercana al sistema actual para facilitar migración 
+* separación entre: 
+o tablas núcleo 
+o tablas derivadas 
+o tablas históricas de mercado 
+o catálogos 
+* preparado para: 
+o multiusuario 
+o grupos familiares 
+o aportante vs propietario 
+o ventas parciales / totales 
+o snapshots diarios 
+No lo pondré todavía como CREATE TABLE SQL final, sino como definición lógica tabla por tabla, que es el paso correcto antes del físico.
+
+7. Modelo lógico de datos
+
+7.1 Tablas de seguridad y acceso
+
+7.1.1 Tabla: rol
+* Propósito
+Almacena los roles del sistema.
+* Campos
+* id_rol — entero, PK 
+* nombre — varchar(100) 
+* descripcion — varchar(255) 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Registros esperados
+* Administrador 
+* Patriarca 
+* Integrante familiar 
+
+7.1.2 Tabla: usuario
+* Propósito
+Almacena las credenciales de acceso.
+* Campos
+* id_usuario — entero, PK 
+* id_rol — entero, FK ? rol.id_rol 
+* id_persona — entero, FK ? persona.id_persona 
+* nombre_usuario — varchar(100) 
+* clave_hash — varchar(255) 
+* correo — varchar(150) 
+* activo — boolean 
+* ultimo_acceso — datetime, nullable 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Restricciones sugeridas
+* nombre_usuario único 
+* correo único opcional 
+
+7.2 Tablas de estructura familiar
+
+7.2.1 Tabla: persona
+* Propósito
+Representa personas relacionadas al sistema: propietarios, aportantes, integrantes, patriarca.
+* Campos
+* id_persona — entero, PK 
+* nombres — varchar(150) 
+* apellidos — varchar(150) 
+* identificacion — varchar(50), nullable 
+* correo — varchar(150), nullable 
+* telefono — varchar(50), nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observación
+Esta tabla reemplaza el uso de nombres en texto libre como propietario.
+
+7.2.2 Tabla: grupo_familiar
+* Propósito
+Representa una familia o cuenta patrimonial.
+* Campos
+* id_grupo_familiar — entero, PK 
+* nombre — varchar(150) 
+* descripcion — varchar(255), nullable 
+* id_patriarca — entero, FK ? persona.id_persona 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+
+7.2.3 Tabla: grupo_familiar_persona
+* Propósito
+Relaciona personas con grupos familiares.
+* Campos
+* id_grupo_familiar_persona — entero, PK 
+* id_grupo_familiar — entero, FK ? grupo_familiar.id_grupo_familiar 
+* id_persona — entero, FK ? persona.id_persona 
+* id_tipo_relacion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Ejemplos de id_tipo_relacion
+* Patriarca 
+* Integrante 
+* Aportante 
+* Beneficiario 
+
+7.3 Tablas de catálogos
+Manteniendo la lógica reference + dictionary, pero en español.
+
+7.3.1 Tabla: catalogo
+* Propósito
+Define la cabecera de cada catálogo.
+* Campos
+* id_catalogo — entero, PK 
+* codigo — varchar(100) 
+* nombre — varchar(150) 
+* descripcion — varchar(255), nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Ejemplos
+* TIPO_INVERSION 
+* ESTADO_INVERSION 
+* ESTADO_AMORTIZACION 
+* TIPO_RELACION_FAMILIAR 
+* TIPO_OTRO_VALOR 
+* TIPO_MONEDA 
+* TIPO_VENTA 
+
+7.3.2 Tabla: catalogo_valor
+* Propósito
+Define los valores de cada catálogo.
+* Campos
+* id_catalogo_valor — entero, PK 
+* id_catalogo — entero, FK ? catalogo.id_catalogo 
+* codigo — varchar(100) 
+* nombre — varchar(150) 
+* descripcion — varchar(255), nullable 
+* orden_visual — entero, nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Restricción sugerida
+* (id_catalogo, codigo) único 
+
+7.4 Tablas maestras de negocio
+
+7.4.1 Tabla: emisor
+* Propósito
+Almacena emisores de instrumentos financieros.
+* Campos
+* id_emisor — entero, PK 
+* nombre — varchar(200) 
+* sigla — varchar(100), nullable 
+* identificacion — varchar(50), nullable 
+* id_tipo_emisor — entero, FK ? catalogo_valor.id_catalogo_valor, nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observación
+Ayuda a normalizar empresa/emisor.
+
+7.4.2 Tabla: instrumento
+* Propósito
+Representa el instrumento financiero base.
+* Campos
+* id_instrumento — entero, PK 
+* id_emisor — entero, FK ? emisor.id_emisor 
+* id_tipo_inversion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* codigo_titulo — varchar(100), nullable 
+* nombre — varchar(200) 
+* fecha_emision — date, nullable 
+* fecha_vencimiento — date, nullable 
+* tasa_referencial — decimal(18,8), nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observación
+No reemplaza la compra; representa el instrumento base del mercado.
+
+7.5 Tablas núcleo del sistema
+
+7.5.1 Tabla: inversion
+* Propósito
+Tabla principal del portafolio.
+* Campos
+* id_inversion — entero, PK 
+* id_grupo_familiar — entero, FK ? grupo_familiar.id_grupo_familiar 
+* id_instrumento — entero, FK ? instrumento.id_instrumento, nullable 
+* id_emisor — entero, FK ? emisor.id_emisor 
+* id_tipo_inversion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* id_propietario — entero, FK ? persona.id_persona 
+* id_aportante — entero, FK ? persona.id_persona, nullable 
+* id_estado_inversion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* fecha_compra — date 
+* fecha_emision — date, nullable 
+* fecha_vencimiento — date, nullable 
+* fecha_venta — date, nullable 
+* valor_nominal — decimal(18,2), nullable 
+* capital_invertido — decimal(18,2) 
+* tasa_interes — decimal(18,8), nullable 
+* rendimiento_nominal — decimal(18,8), nullable 
+* rendimiento_efectivo — decimal(18,8), nullable 
+* valor_efectivo — decimal(18,2), nullable 
+* interes_mensual — decimal(18,2), nullable 
+* interes_primer_mes — decimal(18,2), nullable 
+* fecha_primer_pago — date, nullable 
+* precio_compra — decimal(18,8), nullable 
+* precio_neto_compra — decimal(18,8), nullable 
+* comision_bolsa — decimal(18,2), nullable 
+* comision_casa_valores — decimal(18,2), nullable 
+* retencion_fuente — decimal(18,2), nullable 
+* codigo_seb — varchar(100), nullable 
+* codigo_bce — varchar(100), nullable 
+* observacion — text, nullable 
+* activo — boolean 
+* eliminado — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observaciones de migración
+Esta tabla debe mapearse muy cerca de la actual inversion.
+* Índices sugeridos
+* por id_propietario 
+* por id_tipo_inversion 
+* por id_estado_inversion 
+* por fecha_vencimiento 
+* por id_emisor 
+
+7.5.2 Tabla: amortizacion
+* Propósito
+Almacena los flujos futuros de una inversión.
+* Campos
+* id_amortizacion — entero, PK 
+* id_inversion — entero, FK ? inversion.id_inversion 
+* numero_cuota — entero, nullable 
+* fecha_pago — date 
+* interes — decimal(18,2), nullable 
+* capital — decimal(18,2), nullable 
+* descuento — decimal(18,2), nullable 
+* total — decimal(18,2), nullable 
+* retencion — decimal(18,2), nullable 
+* id_estado_amortizacion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* pagada — boolean, nullable 
+* activo — boolean 
+* eliminado — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observación
+Aunque pagada podría inferirse del estado, se puede mantener por compatibilidad con migración.
+* Índices sugeridos
+* por id_inversion 
+* por fecha_pago 
+* por id_estado_amortizacion 
+
+7.5.3 Tabla: venta_inversion
+* Propósito
+Registra ventas parciales o totales.
+* Campos
+* id_venta_inversion — entero, PK 
+* id_inversion — entero, FK ? inversion.id_inversion 
+* id_tipo_venta — entero, FK ? catalogo_valor.id_catalogo_valor 
+* fecha_venta — date 
+* porcentaje_vendido — decimal(10,4), nullable 
+* valor_nominal_vendido — decimal(18,2), nullable 
+* valor_efectivo_vendido — decimal(18,2), nullable 
+* precio_venta — decimal(18,8), nullable 
+* observacion — text, nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Observación
+Permite manejar múltiples ventas sobre una misma inversión.
+
+7.5.4 Tabla: documento_inversion
+* Propósito
+Adjunta documentos a una inversión.
+* Campos
+* id_documento_inversion — entero, PK 
+* id_inversion — entero, FK ? inversion.id_inversion 
+* nombre_archivo — varchar(255) 
+* ruta_archivo — varchar(500) 
+* id_tipo_documento — entero, FK ? catalogo_valor.id_catalogo_valor, nullable 
+* observacion — text, nullable 
+* activo — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+
+7.5.5 Tabla: otro_valor
+* Propósito
+Unifica othervalue y potencialmente balance.
+* Campos
+* id_otro_valor — entero, PK 
+* id_grupo_familiar — entero, FK ? grupo_familiar.id_grupo_familiar 
+* id_propietario — entero, FK ? persona.id_persona, nullable 
+* id_tipo_otro_valor — entero, FK ? catalogo_valor.id_catalogo_valor 
+* descripcion — varchar(255) 
+* valor — decimal(18,2) 
+* fecha_desde — date, nullable 
+* fecha_hasta — date, nullable 
+* activo — boolean 
+* eliminado — boolean 
+* fecha_creacion — datetime 
+* fecha_actualizacion — datetime 
+* Ejemplos
+* cuenta bancaria 
+* deuda 
+* saldo en casa de valores 
+* otro activo 
+* otro pasivo 
+
+7.6 Tablas derivadas / snapshots
+Estas se generan por Stored Procedure diario.
+
+7.6.1 Tabla: consolidado_inversion
+* Propósito
+Resumen diario de inversiones vigentes.
+* Campos
+* id_consolidado_inversion — entero, PK 
+* fecha_corte — date 
+* id_grupo_familiar — entero, FK ? grupo_familiar.id_grupo_familiar 
+* id_propietario — entero, FK ? persona.id_persona 
+* id_tipo_inversion — entero, FK ? catalogo_valor.id_catalogo_valor 
+* id_emisor — entero, FK ? emisor.id_emisor 
+* fecha_vencimiento — date, nullable 
+* tasa — decimal(18,8), nullable 
+* rendimiento — decimal(18,8), nullable 
+* capital — decimal(18,2) 
+* activo — boolean 
+* fecha_creacion — datetime 
+* Observación
+Reemplaza consolidado_inversiones.
+* Índice sugerido
+* (fecha_corte, id_propietario, id_tipo_inversion) 
+
+7.6.2 Tabla: variacion_capital
+* Propósito
+Cabecera de snapshot diario de capital.
+* Campos
+* id_variacion_capital — entero, PK 
+* fecha_corte — date 
+* id_grupo_familiar — entero, FK ? grupo_familiar.id_grupo_familiar 
+* capital_total — decimal(18,2) 
+* capital_propio — decimal(18,2), nullable 
+* observacion — varchar(255), nullable 
+* fecha_creacion — datetime 
+
+7.6.3 Tabla: variacion_capital_detalle
+* Propósito
+Detalle por persona del snapshot de capital.
+* Campos
+* id_variacion_capital_detalle — entero, PK 
+* id_variacion_capital — entero, FK ? variacion_capital.id_variacion_capital 
+* id_persona — entero, FK ? persona.id_persona 
+* capital_persona — decimal(18,2) 
+* id_tipo_participacion — entero, FK ? catalogo_valor.id_catalogo_valor, nullable 
+* fecha_creacion — datetime 
+* Observación
+Reemplaza la tabla rígida variation.
+
+7.6.4 Tabla: acciones_ultimas_transacciones
+* Propósito
+Resumen diario de la última negociación de acciones por emisor.
+* Campos
+* id_accion_ultima_transaccion — entero, PK 
+* fecha_corte — date 
+* emisor — varchar(200) 
+* fecha_ultima_transaccion — date, nullable 
+* precio_maximo — decimal(18,8), nullable 
+* precio_minimo — decimal(18,8), nullable 
+* precio_promedio — decimal(18,8), nullable 
+* numero_transacciones — entero, nullable 
+* numero_acciones — decimal(18,2), nullable 
+* valor_efectivo — decimal(18,2), nullable 
+* fecha_creacion — datetime 
+* Observación
+Reemplaza shares_lastdate.
+
+7.7 Tablas históricas de mercado
+Aquí conviene mantener estructura cercana a la actual y nombres en español.
+
+7.7.1 Tabla: acciones_his
+* Propósito
+Histórico de transacciones de acciones.
+* Campos base sugeridos
+* id_accion_his — entero, PK 
+* fecha — date 
+* emisor — varchar(200) 
+* nominal — decimal(18,2), nullable 
+* precio — decimal(18,8), nullable 
+* cantidad — decimal(18,2), nullable 
+* efectivo — decimal(18,2), nullable 
+* procedencia — varchar(100), nullable 
+* archivo_origen — varchar(255), nullable 
+* fecha_carga — datetime 
+* Observación
+Ajustar campos exactos a la estructura real de Bolsa.
+
+7.7.2 Tabla: bonos_his
+* Propósito
+Histórico de transacciones de bonos.
+* Campos base sugeridos
+* id_bono_his — entero, PK 
+* fecha — date 
+* decreto — varchar(100), nullable 
+* emisor — varchar(200), nullable 
+* precio_porcentaje — decimal(18,8), nullable 
+* rendimiento — decimal(18,8), nullable 
+* dias_vencimiento — entero, nullable 
+* anios_vencimiento — decimal(18,4), nullable 
+* tasa — decimal(18,8), nullable 
+* valor_nominal — decimal(18,2), nullable 
+* valor_efectivo — decimal(18,2), nullable 
+* fecha_emision — date, nullable 
+* fecha_vencimiento — date, nullable 
+* tipo — varchar(100), nullable 
+* mercado — varchar(100), nullable 
+* archivo_origen — varchar(255), nullable 
+* fecha_carga — datetime 
+
+7.7.3 Tabla: obligaciones_his
+* Propósito
+Histórico de obligaciones negociadas.
+* Campos
+Estructura compatible con la fuente externa, similar a la actual.
+
+7.7.4 Tabla: papeles_comerciales_his
+* Propósito
+Histórico de papeles comerciales.
+* Campos
+Estructura compatible con la fuente externa.
+
+7.7.5 Tabla: facturas_comerciales_his
+* Propósito
+Histórico de facturas comerciales.
+* Campos
+Estructura compatible con la fuente externa.
+
+7.7.6 Tabla: valores_genericos_his
+* Propósito
+Histórico de valores genéricos.
+* Campos
+Estructura compatible con la fuente externa.
+7.7.7 Tabla: titularizaciones_his
+* Propósito
+Histórico de titularizaciones.
+* Campos
+Estructura compatible con la fuente externa.
+
+7.7.8 Tabla: dividendos_his
+* Propósito
+Histórico de dividendos.
+* Campos
+Estructura compatible con la estructura actual.
+
+7.7.9 Tabla: rendimientos_his
+* Propósito
+Histórico de rendimientos o cálculos complementarios.
+* Campos
+Estructura compatible con la actual.
+
+7.8 Relaciones lógicas principales
+* rol 1 — N usuario 
+* persona 1 — 0..1 usuario 
+* grupo_familiar 1 — N grupo_familiar_persona 
+* persona 1 — N grupo_familiar_persona 
+* catalogo 1 — N catalogo_valor 
+* emisor 1 — N instrumento 
+* grupo_familiar 1 — N inversion 
+* persona 1 — N inversion como propietario 
+* persona 1 — N inversion como aportante 
+* instrumento 1 — N inversion 
+* emisor 1 — N inversion 
+* inversion 1 — N amortizacion 
+* inversion 1 — N venta_inversion 
+* inversion 1 — N documento_inversion 
+* grupo_familiar 1 — N otro_valor 
+* grupo_familiar 1 — N consolidado_inversion 
+* grupo_familiar 1 — N variacion_capital 
+* variacion_capital 1 — N variacion_capital_detalle 
+* persona 1 — N variacion_capital_detalle 
+
+7.9 Reglas lógicas importantes
+7.9.1 Estados por catálogo
+Todos los estados y tipos deben referenciar catalogo_valor.
+7.9.2 Propietario y aportante
+Deben ser FK distintas a persona.
+7.9.3 Tablas derivadas
+consolidado_inversion, variacion_capital, variacion_capital_detalle y acciones_ultimas_transacciones no son transaccionales; se regeneran por proceso diario.
+7.9.4 Históricos de mercado
+Deben mantenerse compatibles con la fuente externa y no sobre-normalizarse.
+
+7.10 Mapeo lógico desde el sistema actual
+* Migración casi directa
+* inversion ? inversion 
+* amortizacion ? amortizacion 
+* othervalue ? otro_valor 
+* reference ? catalogo 
+* dictionary ? catalogo_valor 
+* Migración con transformación
+* balance ? otro_valor 
+* variation ? variacion_capital + variacion_capital_detalle 
+* consolidado_inversiones ? consolidado_inversion 
+* shares_lastdate ? acciones_ultimas_transacciones 
+* Migración compatible
+* históricos de mercado ? tablas *_his equivalentes en español 
+
+7.11 Recomendaciones de tipos de datos
+* Para identificadores
+* INT o BIGINT según crecimiento esperado 
+* Para montos
+* DECIMAL(18,2) para valores monetarios 
+* DECIMAL(18,8) para tasas, rendimientos y precios 
+* Para fechas
+* DATE para fechas puras 
+* DATETIME para auditoría y timestamps 
+* Para banderas
+* BOOLEAN o TINYINT(1) según motor 
+
+7.12 Índices sugeridos de alto valor
+* En inversion
+* id_propietario 
+* id_tipo_inversion 
+* id_estado_inversion 
+* fecha_vencimiento 
+* id_emisor 
+* id_grupo_familiar 
+* En amortizacion
+* id_inversion 
+* fecha_pago 
+* id_estado_amortizacion 
+* En consolidado_inversion
+* fecha_corte 
+* id_propietario 
+* id_tipo_inversion 
+* En tablas históricas
+* fecha 
+* emisor 
+* fecha_vencimiento cuando aplique 
+
+7.13 Decisiones que todavía quedan abiertas
+Estas todavía podrían ajustarse antes del modelo físico:
+* si balance desaparece por completo o se absorbe totalmente en otro_valor 
+* si instrumento será obligatorio para toda inversión o opcional al inicio 
+* si pagada se mantiene físicamente en amortizacion 
+* si algunas tablas históricas mantendrán exactamente los mismos nombres de columnas de la Bolsa 
+
+7.14 Resultado esperado del modelo lógico
+Con este diseño ya tendrías una base lista para pasar a:
+* modelo físico 
+* scripts SQL 
+* estrategia de migración 
+* construcción de procedimientos 
+* diseño de ETL y snapshots diarios 
+El siguiente paso natural es convertir esto en una matriz tabla por tabla con columnas exactas, PK, FK, nullabilidad y observaciones de migración, o directamente en DDL SQL inicial.

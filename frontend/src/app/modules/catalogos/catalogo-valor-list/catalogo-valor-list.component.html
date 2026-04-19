@@ -1,0 +1,117 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <button class="btn btn-outline-secondary me-2" (click)="goBack()">
+        <i class="bi bi-arrow-left"></i> Volver
+      </button>
+      <h2 class="d-inline-block mb-0">
+        <span *ngIf="catalogo">{{ catalogo.nombre }}</span>
+        <span *ngIf="!catalogo">Valores del Catálogo</span>
+      </h2>
+    </div>
+    <button class="btn btn-primary"
+            [routerLink]="['/catalogos', catalogoId, 'valores', 'new']"
+            [disabled]="!catalogoId">
+      <i class="bi bi-plus-circle"></i> Nuevo Valor
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando valores del catálogo...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Valores List -->
+  <div *ngIf="!loading && !error">
+    <div *ngIf="valores.length === 0" class="alert alert-info">
+      <i class="bi bi-info-circle"></i>
+      No hay valores registrados para este catálogo
+      <button class="btn btn-sm btn-primary ms-2"
+              [routerLink]="['/catalogos', catalogoId, 'valores', 'new']"
+              [disabled]="!catalogoId">
+        <i class="bi bi-plus"></i> Agregar Primer Valor
+      </button>
+    </div>
+
+    <div *ngIf="valores.length > 0" class="table-responsive">
+      <table class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let valor of valores; trackBy: trackByValorId">
+            <td>{{ valor.id_catalogo_valor }}</td>
+            <td>
+              <code>{{ valor.codigo }}</code>
+            </td>
+            <td>
+              <strong>{{ valor.nombre }}</strong>
+            </td>
+            <td>{{ valor.descripcion || '-' }}</td>
+            <td>
+              <span class="badge bg-info">{{ valor.orden_visual }}</span>
+            </td>
+            <td>
+              <span class="badge"
+                    [class]="valor.activo ? 'bg-success' : 'bg-danger'"
+                    style="cursor: pointer;"
+                    (click)="toggleActive(valor)"
+                    title="Click para cambiar estado">
+                {{ valor.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <div class="btn-group" role="group">
+                <button class="btn btn-sm btn-outline-primary"
+                        [routerLink]="['/catalogos', catalogoId, 'valores', valor.id_catalogo_valor, 'edit']"
+                        title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger"
+                        (click)="deleteValor(valor.id_catalogo_valor)"
+                        title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Summary -->
+    <div class="mt-4 p-3 bg-light rounded">
+      <div class="row text-center">
+        <div class="col-md-4">
+          <h6 class="text-muted">Total Valores</h6>
+          <h4 class="mb-0">{{ valores.length }}</h4>
+        </div>
+        <div class="col-md-4">
+          <h6 class="text-muted">Activos</h6>
+          <h4 class="mb-0 text-success">{{ activosCount }}</h4>
+        </div>
+        <div class="col-md-4">
+          <h6 class="text-muted">Inactivos</h6>
+          <h4 class="mb-0 text-danger">{{ inactivosCount }}</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
