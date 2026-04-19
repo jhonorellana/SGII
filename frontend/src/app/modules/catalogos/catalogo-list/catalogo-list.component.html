@@ -19,67 +19,102 @@
     <i class="bi bi-exclamation-triangle"></i> {{ error }}
   </div>
 
-  <!-- Catálogos List -->
+  <!-- Catálogos List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
-    <div *ngIf="catalogos.length === 0" class="alert alert-info">
-      <i class="bi bi-info-circle"></i> No hay catálogos registrados
-    </div>
+    <p-table #dt [value]="filteredCatalogos" [paginator]="true" [rows]="10"
+             [globalFilterFields]="['codigo','nombre','descripcion']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll">
 
-    <div *ngIf="catalogos.length > 0" class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Código</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th>Valores</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let catalogo of catalogos; trackBy: trackByCatalogoId">
-            <td>{{ catalogo.id_catalogo }}</td>
-            <td>
-              <strong>{{ catalogo.nombre }}</strong>
-            </td>
-            <td>
-              <code>{{ catalogo.codigo }}</code>
-            </td>
-            <td>{{ catalogo.descripcion || '-' }}</td>
-            <td>
-              <span class="badge" [class]="catalogo.activo ? 'bg-success' : 'bg-danger'">
-                {{ catalogo.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td>
-              <span class="badge bg-info">
-                {{ catalogo.valores?.length || 0 }} valores
-              </span>
-            </td>
-            <td>
-              <div class="btn-group" role="group">
-                <button class="btn btn-sm btn-outline-primary" 
-                        routerLink="/catalogos/{{ catalogo.id_catalogo }}/edit"
-                        title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-info" 
-                        routerLink="/catalogos/{{ catalogo.id_catalogo }}/valores"
-                        title="Ver Valores">
-                  <i class="bi bi-list-ul"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger" 
-                        (click)="deleteCatalogo(catalogo.id_catalogo)"
-                        title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar catálogo..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_catalogo">ID <p-sortIcon field="id_catalogo"></p-sortIcon></th>
+          <th pSortableColumn="codigo">Código <p-sortIcon field="codigo"></p-sortIcon></th>
+          <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Valores</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'codigo', 'contains')" class="w-100" placeholder="Filtrar código"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombre', 'contains')" class="w-100" placeholder="Filtrar nombre"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-catalogo>
+        <tr>
+          <td>{{ catalogo.id_catalogo }}</td>
+          <td><code>{{ catalogo.codigo }}</code></td>
+          <td><strong>{{ catalogo.nombre }}</strong></td>
+          <td>{{ catalogo.descripcion || '-' }}</td>
+          <td>
+            <p-tag [value]="catalogo.activo === 1 ? 'Activo' : 'Inactivo'"
+                   [severity]="catalogo.activo === 1 ? 'success' : 'danger'"></p-tag>
+          </td>
+          <td>
+            <span class="badge bg-info">
+              {{ catalogo.valores?.length || 0 }} valores
+            </span>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-primary"
+                      routerLink="/catalogos/{{ catalogo.id_catalogo }}/edit"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-info"
+                      routerLink="/catalogos/{{ catalogo.id_catalogo }}/valores"
+                      title="Ver Valores">
+                <i class="bi bi-list-ul"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      (click)="deleteCatalogo(catalogo.id_catalogo)"
+                      title="Desactivar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje cuando no hay datos -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+            <p class="mt-2">No se encontraron catálogos</p>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
   </div>
 </div>

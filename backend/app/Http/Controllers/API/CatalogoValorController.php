@@ -21,7 +21,7 @@ class CatalogoValorController extends Controller
             ->orderBy('id_catalogo')
             ->orderBy('orden_visual')
             ->get();
-        
+
         return response()->json([
             'success' => true,
             'data' => $valores
@@ -163,7 +163,7 @@ class CatalogoValorController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (soft delete - deactivate).
      */
     public function destroy(string $id): JsonResponse
     {
@@ -176,19 +176,15 @@ class CatalogoValorController extends Controller
             ], 404);
         }
 
-        // Verificar si está siendo utilizado en otras tablas
-        if ($valor->id_catalogo_valor == 1) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se puede eliminar este valor porque está en uso'
-            ], 422);
-        }
-
-        $valor->delete();
+        // Soft delete: inactivar en lugar de borrar físicamente
+        $valor->update([
+            'activo' => false,
+            'fecha_actualizacion' => now()
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Valor de catálogo eliminado exitosamente'
+            'message' => 'Valor de catálogo desactivado exitosamente'
         ]);
     }
 
@@ -207,7 +203,6 @@ class CatalogoValorController extends Controller
         }
 
         $valores = CatalogoValor::where('id_catalogo', $idCatalogo)
-            ->where('activo', true)
             ->orderBy('orden_visual')
             ->get();
 

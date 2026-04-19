@@ -7,7 +7,7 @@ export interface Catalogo {
   nombre: string;
   descripcion?: string;
   codigo: string;
-  activo: boolean;
+  activo: number;
   fecha_creacion: string;
   fecha_actualizacion: string;
   valores?: CatalogoValor[];
@@ -20,7 +20,7 @@ export interface CatalogoValor {
   nombre: string;
   descripcion?: string;
   orden_visual: number;
-  activo: boolean;
+  activo: number;
   fecha_creacion: string;
   fecha_actualizacion: string;
   catalogo?: Catalogo;

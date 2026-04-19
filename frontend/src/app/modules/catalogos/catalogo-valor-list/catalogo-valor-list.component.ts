@@ -1,22 +1,30 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
 import { CatalogoService, Catalogo, CatalogoValor } from '../../../core/catalogo.service';
 
 @Component({
   selector: 'app-catalogo-valor-list',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule, TableModule, InputTextModule, ButtonModule, TagModule],
   templateUrl: './catalogo-valor-list.component.html',
   styleUrl: './catalogo-valor-list.component.css'
 })
 export class CatalogoValorListComponent implements OnInit, OnDestroy {
   valores: CatalogoValor[] = [];
+  filteredValores: CatalogoValor[] = [];
   catalogo: Catalogo | null = null;
   catalogoId: number | null = null;
   loading = false;
   error = '';
+  activoFilter: string = '';
+  @ViewChild('dt') table: any;
   private routeSub: Subscription;
 
   constructor(
@@ -65,7 +73,8 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
     this.catalogoService.getValoresByCatalogo(this.catalogoId).subscribe({
       next: (response) => {
         if (response.success) {
-          this.valores = response.data;
+          this.valores = response.data || [];
+          this.filteredValores = [...this.valores];
         } else {
           this.error = 'Error al cargar los valores del catálogo';
         }
@@ -78,14 +87,29 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
     });
   }
 
+  onGlobalFilter(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.table.filterGlobal(value, 'contains');
+  }
+
+  onActivoFilterChange(value: string): void {
+    this.activoFilter = value;
+    if (value === '') {
+      this.filteredValores = [...this.valores];
+    } else {
+      const activoValue = Number(value);
+      this.filteredValores = this.valores.filter(v => v.activo === activoValue);
+    }
+  }
+
   deleteValor(id: number): void {
-    if (confirm('¿Está seguro de eliminar este valor del catálogo?')) {
+    if (confirm('¿Está seguro de desactivar este valor del catálogo?')) {
       this.catalogoService.deleteCatalogoValor(id).subscribe({
         next: (response) => {
           if (response.success) {
             this.loadValores();
           } else {
-            alert(response.message || 'Error al eliminar el valor');
+            alert(response.message || 'Error al desactivar el valor');
           }
         },
         error: () => {
@@ -96,7 +120,7 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   }
 
   toggleActive(valor: CatalogoValor): void {
-    const action = valor.activo ? 'desactivar' : 'activar';
+    const action = valor.activo === 1 ? 'desactivar' : 'activar';
     if (confirm(`¿Está seguro de ${action} este valor del catálogo?`)) {
       this.catalogoService.toggleActiveCatalogoValor(valor.id_catalogo_valor).subscribe({
         next: (response) => {
@@ -122,10 +146,10 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   }
 
   get activosCount(): number {
-    return this.valores.filter(v => v.activo).length;
+    return this.filteredValores.filter(v => v.activo === 1).length;
   }
 
   get inactivosCount(): number {
-    return this.valores.filter(v => !v.activo).length;
+    return this.filteredValores.filter(v => v.activo === 0).length;
   }
 }

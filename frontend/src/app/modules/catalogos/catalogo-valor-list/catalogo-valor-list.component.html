@@ -30,78 +30,111 @@
     <i class="bi bi-exclamation-triangle"></i> {{ error }}
   </div>
 
-  <!-- Valores List -->
+  <!-- Valores List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
-    <div *ngIf="valores.length === 0" class="alert alert-info">
-      <i class="bi bi-info-circle"></i>
-      No hay valores registrados para este catálogo
-      <button class="btn btn-sm btn-primary ms-2"
-              [routerLink]="['/catalogos', catalogoId, 'valores', 'new']"
-              [disabled]="!catalogoId">
-        <i class="bi bi-plus"></i> Agregar Primer Valor
-      </button>
-    </div>
+    <p-table #dt [value]="filteredValores" [paginator]="true" [rows]="10"
+             [globalFilterFields]="['codigo','nombre','descripcion']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll">
 
-    <div *ngIf="valores.length > 0" class="table-responsive">
-      <table class="table table-striped table-hover">
-        <thead class="table-dark">
-          <tr>
-            <th>ID</th>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Descripción</th>
-            <th>Orden</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let valor of valores; trackBy: trackByValorId">
-            <td>{{ valor.id_catalogo_valor }}</td>
-            <td>
-              <code>{{ valor.codigo }}</code>
-            </td>
-            <td>
-              <strong>{{ valor.nombre }}</strong>
-            </td>
-            <td>{{ valor.descripcion || '-' }}</td>
-            <td>
-              <span class="badge bg-info">{{ valor.orden_visual }}</span>
-            </td>
-            <td>
-              <span class="badge"
-                    [class]="valor.activo ? 'bg-success' : 'bg-danger'"
-                    style="cursor: pointer;"
-                    (click)="toggleActive(valor)"
-                    title="Click para cambiar estado">
-                {{ valor.activo ? 'Activo' : 'Inactivo' }}
-              </span>
-            </td>
-            <td>
-              <div class="btn-group" role="group">
-                <button class="btn btn-sm btn-outline-primary"
-                        [routerLink]="['/catalogos', catalogoId, 'valores', valor.id_catalogo_valor, 'edit']"
-                        title="Editar">
-                  <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger"
-                        (click)="deleteValor(valor.id_catalogo_valor)"
-                        title="Eliminar">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar valor..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_catalogo_valor">ID <p-sortIcon field="id_catalogo_valor"></p-sortIcon></th>
+          <th pSortableColumn="codigo">Código <p-sortIcon field="codigo"></p-sortIcon></th>
+          <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+          <th pSortableColumn="orden_visual">Orden <p-sortIcon field="orden_visual"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'codigo', 'contains')" class="w-100" placeholder="Filtrar código"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombre', 'contains')" class="w-100" placeholder="Filtrar nombre"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
+          <th></th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-valor>
+        <tr>
+          <td>{{ valor.id_catalogo_valor }}</td>
+          <td><code>{{ valor.codigo }}</code></td>
+          <td><strong>{{ valor.nombre }}</strong></td>
+          <td>{{ valor.descripcion || '-' }}</td>
+          <td>
+            <span class="badge bg-info">{{ valor.orden_visual }}</span>
+          </td>
+          <td>
+            <p-tag [value]="valor.activo === 1 ? 'Activo' : 'Inactivo'"
+                   [severity]="valor.activo === 1 ? 'success' : 'danger'"
+                   [style]="{'cursor': 'pointer'}"
+                   (click)="toggleActive(valor)"
+                   title="Click para cambiar estado"></p-tag>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-primary"
+                      [routerLink]="['/catalogos', catalogoId, 'valores', valor.id_catalogo_valor, 'edit']"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      (click)="deleteValor(valor.id_catalogo_valor)"
+                      title="Desactivar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje cuando no hay datos -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+            <p class="mt-2">No se encontraron valores</p>
+            <button class="btn btn-sm btn-primary mt-2"
+                    [routerLink]="['/catalogos', catalogoId, 'valores', 'new']"
+                    [disabled]="!catalogoId">
+              <i class="bi bi-plus"></i> Agregar Primer Valor
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
 
     <!-- Summary -->
     <div class="mt-4 p-3 bg-light rounded">
       <div class="row text-center">
         <div class="col-md-4">
           <h6 class="text-muted">Total Valores</h6>
-          <h4 class="mb-0">{{ valores.length }}</h4>
+          <h4 class="mb-0">{{ filteredValores.length }}</h4>
         </div>
         <div class="col-md-4">
           <h6 class="text-muted">Activos</h6>

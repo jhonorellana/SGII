@@ -18,7 +18,7 @@ class CatalogoController extends Controller
     {
         $catalogos = Catalogo::with(['valores' => function($query) {
             $query->where('activo', true)->orderBy('orden_visual');
-        }])->where('activo', true)->get();
+        }])->get();
 
         return response()->json([
             'success' => true,
@@ -128,7 +128,7 @@ class CatalogoController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (soft delete - deactivate).
      */
     public function destroy(string $id): JsonResponse
     {
@@ -141,20 +141,15 @@ class CatalogoController extends Controller
             ], 404);
         }
 
-        // Verificar si tiene valores activos
-        $valoresActivos = $catalogo->valores()->where('activo', true)->count();
-        if ($valoresActivos > 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se puede eliminar el catálogo porque tiene valores activos'
-            ], 422);
-        }
-
-        $catalogo->delete();
+        // Soft delete: inactivar en lugar de borrar físicamente
+        $catalogo->update([
+            'activo' => false,
+            'fecha_actualizacion' => now()
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Catálogo eliminado exitosamente'
+            'message' => 'Catálogo desactivado exitosamente'
         ]);
     }
 
