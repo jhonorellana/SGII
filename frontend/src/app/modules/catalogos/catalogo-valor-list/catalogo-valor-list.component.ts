@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { FormsModule } from '@angular/forms';
@@ -7,14 +8,19 @@ import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
+import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CatalogoValor } from '../../../core/catalogo.service';
 
 @Component({
   selector: 'app-catalogo-valor-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, TableModule, InputTextModule, ButtonModule, TagModule],
+  imports: [CommonModule, RouterLink, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule],
   templateUrl: './catalogo-valor-list.component.html',
-  styleUrl: './catalogo-valor-list.component.css'
+  styleUrl: './catalogo-valor-list.component.css',
+  providers: [ConfirmationService, MessageService]
 })
 export class CatalogoValorListComponent implements OnInit, OnDestroy {
   valores: CatalogoValor[] = [];
@@ -27,12 +33,24 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   @ViewChild('dt') table: any;
   private routeSub: Subscription;
 
+  // Modal properties
+  displayDialog: boolean = false;
+  isEdit: boolean = false;
+  valorId: number | null = null;
+  valorForm: FormGroup;
+  formLoading: boolean = false;
+  formError: string = '';
+
   constructor(
     private catalogoService: CatalogoService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private fb: FormBuilder,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService
   ) {
     this.routeSub = new Subscription();
+    this.valorForm = this.createForm();
   }
 
   ngOnInit(): void {
@@ -43,6 +61,140 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
         this.loadValores();
       }
     });
+  }
+
+  createForm(): FormGroup {
+    return this.fb.group({
+      codigo: ['', [Validators.required, Validators.maxLength(20)]],
+      nombre: ['', [Validators.required, Validators.maxLength(100)]],
+      descripcion: ['', Validators.maxLength(255)],
+      orden_visual: [1, [Validators.required, Validators.min(1)]],
+      activo: [true]
+    });
+  }
+
+  openNew(): void {
+    this.isEdit = false;
+    this.valorId = null;
+    this.valorForm.reset({ activo: true, orden_visual: 1 });
+    this.formError = '';
+    this.displayDialog = true;
+  }
+
+  openEdit(valor: CatalogoValor): void {
+    this.isEdit = true;
+    this.valorId = valor.id_catalogo_valor;
+    this.valorForm.patchValue({
+      codigo: valor.codigo,
+      nombre: valor.nombre,
+      descripcion: valor.descripcion || '',
+      orden_visual: valor.orden_visual,
+      activo: valor.activo === 1
+    });
+    this.formError = '';
+    this.displayDialog = true;
+  }
+
+  hideDialog(): void {
+    this.displayDialog = false;
+    this.valorForm.reset();
+    this.formError = '';
+  }
+
+  save(): void {
+    if (this.valorForm.invalid) {
+      this.markFormAsDirty();
+      return;
+    }
+
+    this.formLoading = true;
+    this.formError = '';
+
+    const formData = this.valorForm.value;
+    const valorData = {
+      ...formData,
+      id_catalogo: this.catalogoId
+    };
+
+    if (this.isEdit && this.valorId) {
+      this.updateValor(this.valorId, valorData);
+    } else {
+      this.createValor(valorData);
+    }
+  }
+
+  createValor(data: any): void {
+    this.catalogoService.createCatalogoValorById(data).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Valor de catálogo creado exitosamente'
+          });
+          this.hideDialog();
+          this.loadValores();
+        } else {
+          this.formError = response.message || 'Error al crear el valor';
+        }
+        this.formLoading = false;
+      },
+      error: (err) => {
+        if (err.error && err.error.errors) {
+          this.formError = this.formatValidationErrors(err.error.errors);
+        } else {
+          this.formError = 'Error de conexión al servidor';
+        }
+        this.formLoading = false;
+      }
+    });
+  }
+
+  updateValor(id: number, data: any): void {
+    this.catalogoService.updateCatalogoValorById(id, data).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Valor de catálogo actualizado exitosamente'
+          });
+          this.hideDialog();
+          this.loadValores();
+        } else {
+          this.formError = response.message || 'Error al actualizar el valor';
+        }
+        this.formLoading = false;
+      },
+      error: (err) => {
+        if (err.error && err.error.errors) {
+          this.formError = this.formatValidationErrors(err.error.errors);
+        } else {
+          this.formError = 'Error de conexión al servidor';
+        }
+        this.formLoading = false;
+      }
+    });
+  }
+
+  private markFormAsDirty(): void {
+    Object.keys(this.valorForm.controls).forEach(key => {
+      this.valorForm.get(key)?.markAsDirty();
+    });
+  }
+
+  private formatValidationErrors(errors: any): string {
+    const errorMessages = [];
+    for (const field in errors) {
+      if (errors[field]) {
+        errorMessages.push(errors[field].join(', '));
+      }
+    }
+    return errorMessages.join('. ');
+  }
+
+  get f() {
+    return this.valorForm.controls;
   }
 
   ngOnDestroy(): void {
@@ -103,20 +255,38 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   }
 
   deleteValor(id: number): void {
-    if (confirm('¿Está seguro de desactivar este valor del catálogo?')) {
-      this.catalogoService.deleteCatalogoValor(id).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.loadValores();
-          } else {
-            alert(response.message || 'Error al desactivar el valor');
+    this.confirmationService.confirm({
+      message: '¿Está seguro de desactivar este valor del catálogo?',
+      header: 'Confirmar Desactivación',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.catalogoService.deleteCatalogoValor(id).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Éxito',
+                detail: 'Valor desactivado exitosamente'
+              });
+              this.loadValores();
+            } else {
+              this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: response.message || 'Error al desactivar el valor'
+              });
+            }
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Error de conexión al servidor'
+            });
           }
-        },
-        error: () => {
-          alert('Error de conexión al servidor');
-        }
-      });
-    }
+        });
+      }
+    });
   }
 
   toggleActive(valor: CatalogoValor): void {

@@ -1,4 +1,7 @@
 <div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
   <!-- Header -->
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -11,7 +14,7 @@
       </h2>
     </div>
     <button class="btn btn-primary"
-            [routerLink]="['/catalogos', catalogoId, 'valores', 'new']"
+            (click)="openNew()"
             [disabled]="!catalogoId">
       <i class="bi bi-plus-circle"></i> Nuevo Valor
     </button>
@@ -33,6 +36,7 @@
   <!-- Valores List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
     <p-table #dt [value]="filteredValores" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['codigo','nombre','descripcion']"
              [tableStyle]="{'min-width': '80rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
@@ -98,7 +102,7 @@
           <td>
             <div class="btn-group" role="group">
               <button class="btn btn-sm btn-outline-primary"
-                      [routerLink]="['/catalogos', catalogoId, 'valores', valor.id_catalogo_valor, 'edit']"
+                      (click)="openEdit(valor)"
                       title="Editar">
                 <i class="bi bi-pencil"></i>
               </button>
@@ -147,4 +151,123 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal Form -->
+  <p-dialog [header]="isEdit ? 'Editar Valor' : 'Nuevo Valor'"
+           [(visible)]="displayDialog"
+           [modal]="true"
+           [style]="{width: '50vw'}"
+           [draggable]="false"
+           [resizable]="false"
+           (onHide)="hideDialog()">
+    <form [formGroup]="valorForm" (ngSubmit)="save()">
+      <!-- Error State -->
+      <div *ngIf="formError" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="formLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">{{ isEdit ? 'Actualizando valor...' : 'Creando valor...' }}</p>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!formLoading">
+        <div class="mb-3">
+          <label for="codigo" class="form-label">Código <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            id="codigo"
+            formControlName="codigo"
+            [class.is-invalid]="f['codigo'].invalid && f['codigo'].dirty"
+            placeholder="Ej: CERT"
+            maxlength="20"
+            style="text-transform: uppercase;"
+          >
+          <div class="invalid-feedback" *ngIf="f['codigo'].invalid && f['codigo'].dirty">
+            <span *ngIf="f['codigo'].errors?.['required']">El código es requerido</span>
+            <span *ngIf="f['codigo'].errors?.['maxlength']">Máximo 20 caracteres</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+          <input
+            type="text"
+            class="form-control"
+            id="nombre"
+            formControlName="nombre"
+            [class.is-invalid]="f['nombre'].invalid && f['nombre'].dirty"
+            placeholder="Ej: Certificado de Inversión"
+            maxlength="100"
+          >
+          <div class="invalid-feedback" *ngIf="f['nombre'].invalid && f['nombre'].dirty">
+            <span *ngIf="f['nombre'].errors?.['required']">El nombre es requerido</span>
+            <span *ngIf="f['nombre'].errors?.['maxlength']">Máximo 100 caracteres</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="descripcion" class="form-label">Descripción</label>
+          <textarea
+            class="form-control"
+            id="descripcion"
+            formControlName="descripcion"
+            rows="3"
+            placeholder="Descripción detallada del valor..."
+            maxlength="255"
+          ></textarea>
+          <small class="form-text text-muted">{{ f['descripcion'].value?.length || 0 }}/255 caracteres</small>
+        </div>
+
+        <div class="mb-3">
+          <label for="orden_visual" class="form-label">Orden Visual <span class="text-danger">*</span></label>
+          <input
+            type="number"
+            class="form-control"
+            id="orden_visual"
+            formControlName="orden_visual"
+            [class.is-invalid]="f['orden_visual'].invalid && f['orden_visual'].dirty"
+            placeholder="1"
+            min="1"
+          >
+          <div class="invalid-feedback" *ngIf="f['orden_visual'].invalid && f['orden_visual'].dirty">
+            <span *ngIf="f['orden_visual'].errors?.['required']">El orden es requerido</span>
+            <span *ngIf="f['orden_visual'].errors?.['min']">Debe ser mayor a 0</span>
+          </div>
+          <small class="form-text text-muted">Orden en que se mostrará el valor en la lista</small>
+        </div>
+
+        <div class="mb-3" *ngIf="isEdit">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="activo"
+              formControlName="activo"
+            >
+            <label class="form-check-label" for="activo">
+              Valor Activo
+            </label>
+          </div>
+          <small class="form-text text-muted">Los usuarios solo verán valores activos</small>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="hideDialog()" [disabled]="formLoading">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="valorForm.invalid || formLoading">
+            <i class="bi bi-check-circle" *ngIf="!formLoading"></i>
+            <span class="spinner-border spinner-border-sm me-1" *ngIf="formLoading"></span>
+            {{ isEdit ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </p-dialog>
 </div>

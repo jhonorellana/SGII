@@ -77,3 +77,20 @@ code {
   font-size: 0.85rem;
   color: #6c757d;
 }
+
+/* Estilos para PrimeNG Table */
+:host ::ng-deep .p-datatable-thead > tr > th {
+  background-color: #f8f9fa !important;
+  font-weight: 600;
+}
+
+:host ::ng-deep .p-paginator {
+  background-color: #f8f9fa !important;
+  border-top: 1px solid #dee2e6;
+}
+
+:host ::ng-deep .p-datatable-caption {
+  background-color: #f8f9fa !important;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+}
