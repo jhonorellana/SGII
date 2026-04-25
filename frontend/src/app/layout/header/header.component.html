@@ -1,8 +1,7 @@
 <header class="app-header">
   <div class="header-left">
     <div class="user-greeting">
-      <span class="greeting">{{ getGreeting() }}</span>
-      <span class="user-name" *ngIf="currentUser">{{ currentUser.nombre }}</span>
+      <span class="greeting" *ngIf="currentUser">{{ getGreeting() }}, {{ currentUser.nombre_usuario || currentUser.usuario?.nombre_usuario || currentUser.persona?.nombre || 'Usuario' }}</span>
     </div>
   </div>
 
@@ -16,12 +15,15 @@
   <div class="header-right">
     <div class="user-menu" *ngIf="currentUser">
       <div class="user-avatar" (click)="goToProfile()" title="Mi Perfil">
-        {{ getInitials(currentUser.nombre) }}
+        {{ getInitials(currentUser.nombre_usuario) }}
       </div>
       <div class="user-dropdown">
         <button class="dropdown-toggle" type="button" (click)="toggleDropdown()">
           <i class="bi bi-person-circle"></i>
-          <span class="user-name">{{ currentUser.nombre }}</span>
+          <div class="user-info-dropdown">
+            <span class="user-name">{{ currentUser.nombre_usuario || currentUser.usuario?.nombre_usuario || currentUser.persona?.nombre || 'Usuario' }}</span>
+            <span class="user-role">{{ currentUser.rol || currentUser.usuario?.rol || '' }}</span>
+          </div>
           <i class="bi bi-chevron-down"></i>
         </button>
         <ul class="dropdown-menu" [class.show]="isDropdownOpen">

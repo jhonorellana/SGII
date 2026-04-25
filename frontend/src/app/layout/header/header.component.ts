@@ -45,7 +45,8 @@ export class HeaderComponent implements OnInit {
 
   getInitials(name: string): string {
     if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    const userName = name || this.currentUser?.nombre_usuario || this.currentUser?.usuario?.nombre_usuario || this.currentUser?.persona?.nombre || 'Usuario';
+    return userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
   }
 
   getGreeting(): string {

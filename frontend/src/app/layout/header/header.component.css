@@ -109,6 +109,23 @@
   transition: all 0.3s ease;
 }
 
+.user-info-dropdown {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-info-dropdown .user-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.user-info-dropdown .user-role {
+  font-size: 0.75rem;
+  color: #666;
+}
+
 .dropdown-toggle:hover {
   background: #f8f9fa;
   border-color: var(--primary-color);
