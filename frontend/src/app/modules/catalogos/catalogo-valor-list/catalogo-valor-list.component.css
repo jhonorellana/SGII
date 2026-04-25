@@ -45,7 +45,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   border: none;
   padding: 8px 16px;
   font-weight: 500;
@@ -54,7 +54,7 @@
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+  box-shadow: 0 4px 8px rgba(74, 140, 98, 0.3);
 }
 
 .btn-outline-secondary {
@@ -70,8 +70,8 @@
 }
 
 .btn-outline-primary:hover {
-  background-color: #007bff;
-  border-color: #007bff;
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .btn-outline-danger:hover {
@@ -140,17 +140,26 @@ code {
 
 /* Estilos para PrimeNG Table */
 :host ::ng-deep .p-datatable-thead > tr > th {
-  background-color: #f8f9fa !important;
+  background-color: var(--primary-lighter) !important;
   font-weight: 600;
 }
 
 :host ::ng-deep .p-paginator {
-  background-color: #f8f9fa !important;
+  background-color: var(--primary-lighter) !important;
   border-top: 1px solid #dee2e6;
 }
 
-:host ::ng-deep .p-datatable-caption {
-  background-color: #f8f9fa !important;
+:host ::ng-deep .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
+  background-color: var(--primary-medium) !important;
+  color: var(--primary-dark) !important;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-caption {
+  background-color: var(--primary-medium) !important;
   padding: 1rem;
   border-bottom: 1px solid #dee2e6;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-caption .d-flex {
+  background-color: var(--primary-medium) !important;
 }

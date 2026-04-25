@@ -12,7 +12,7 @@
 }
 
 .card-header {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
   color: white;
   border-bottom: none;
   padding: 20px;
@@ -48,8 +48,8 @@
 }
 
 .form-control:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(74, 140, 98, 0.25);
 }
 
 .form-control.is-invalid {
@@ -93,13 +93,13 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.3);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 4px 6px rgba(74, 140, 98, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 6px 12px rgba(74, 140, 98, 0.4);
 }
 
 .btn-primary:disabled {
@@ -228,27 +228,27 @@
   .container-fluid {
     padding: 15px;
   }
-  
+
   .card-body {
     padding: 20px;
   }
-  
+
   .btn {
     padding: 10px 20px;
     font-size: 0.9rem;
   }
-  
+
   .row {
     margin-right: -10px;
     margin-left: -10px;
   }
-  
+
   .col-md-6,
   .col-md-8 {
     padding-right: 10px;
     padding-left: 10px;
   }
-  
+
   .col-md-6 {
     flex: 0 0 100%;
     max-width: 100%;
