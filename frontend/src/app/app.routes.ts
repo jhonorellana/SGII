@@ -7,6 +7,10 @@ import { CatalogoFormComponent } from './modules/catalogos/catalogo-form/catalog
 import { CatalogoValorListComponent } from './modules/catalogos/catalogo-valor-list/catalogo-valor-list.component';
 import { CatalogoValorFormComponent } from './modules/catalogos/catalogo-valor-form/catalogo-valor-form.component';
 
+console.log('[app.routes] Importing PersonaListComponent...');
+import { PersonaListComponent } from './modules/personas/persona-list/persona-list.component';
+console.log('[app.routes] PersonaListComponent imported successfully');
+
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
@@ -20,6 +24,7 @@ export const routes: Routes = [
       { path: 'catalogos/:id/valores', component: CatalogoValorListComponent },
       { path: 'catalogos/:id/valores/new', component: CatalogoValorFormComponent },
       { path: 'catalogos/:id/valores/:valorId/edit', component: CatalogoValorFormComponent },
+      { path: 'personas', component: PersonaListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

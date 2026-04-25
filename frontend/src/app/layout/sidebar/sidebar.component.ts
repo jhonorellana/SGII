@@ -22,6 +22,7 @@ export class SidebarComponent implements OnInit {
   isCollapsed = false;
   currentPath = '';
   currentUser: any = null;
+  expandedMenuItems: Set<string> = new Set();
 
   menuItems: MenuItem[] = [
     {
@@ -37,7 +38,7 @@ export class SidebarComponent implements OnInit {
     {
       title: 'Datos Maestros',
       icon: 'bi-database',
-      path: '/datos-maestros',
+      path: '',
       children: [
         {
           title: 'Personas',
@@ -134,8 +135,12 @@ export class SidebarComponent implements OnInit {
   }
 
   toggleMenuItem(item: MenuItem): void {
-    // Toggle expanded state for menu items with children
-    // This is handled by the template with the isExpanded method
+    const key = item.title;
+    if (this.expandedMenuItems.has(key)) {
+      this.expandedMenuItems.delete(key);
+    } else {
+      this.expandedMenuItems.add(key);
+    }
   }
 
   isActive(path: string): boolean {
@@ -144,7 +149,7 @@ export class SidebarComponent implements OnInit {
 
   isExpanded(item: MenuItem): boolean {
     if (!item.children) return false;
-    return item.children.some(child => this.isActive(child.path));
+    return this.expandedMenuItems.has(item.title) || item.children.some(child => this.isActive(child.path));
   }
 
   logout(): void {

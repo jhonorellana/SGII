@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CatalogoController;
 use App\Http\Controllers\API\CatalogoValorController;
+use App\Http\Controllers\API\PersonaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +31,9 @@ Route::get('catalogos/{codigo}/valores', [CatalogoController::class, 'getValores
 Route::apiResource('catalogo-valores', CatalogoValorController::class);
 Route::get('catalogo-valores/catalogo/{idCatalogo}', [CatalogoValorController::class, 'getByCatalogo']);
 Route::patch('catalogo-valores/{id}/toggle-active', [CatalogoValorController::class, 'toggleActive']);
+
+// Rutas de Personas (temporalmente sin autenticación para pruebas)
+Route::apiResource('personas', PersonaController::class);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

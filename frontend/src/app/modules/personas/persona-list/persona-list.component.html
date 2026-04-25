@@ -1,0 +1,256 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Personas</h2>
+    <button class="btn btn-primary" (click)="openNew()">
+      <i class="bi bi-plus-circle"></i> Nueva Persona
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando personas...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Personas List con PrimeNG Table -->
+  <div *ngIf="!loading && !error">
+    <p-table #dt [value]="filteredPersonas" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['nombres','apellidos','identificacion','correo','telefono']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar persona..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_persona">ID <p-sortIcon field="id_persona"></p-sortIcon></th>
+          <th pSortableColumn="apellidos">Apellidos <p-sortIcon field="apellidos"></p-sortIcon></th>
+          <th pSortableColumn="nombres">Nombres <p-sortIcon field="nombres"></p-sortIcon></th>
+          <th pSortableColumn="identificacion">Identificación <p-sortIcon field="identificacion"></p-sortIcon></th>
+          <th pSortableColumn="correo">Correo <p-sortIcon field="correo"></p-sortIcon></th>
+          <th pSortableColumn="telefono">Teléfono <p-sortIcon field="telefono"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'apellidos', 'contains')" class="w-100" placeholder="Filtrar apellidos"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombres', 'contains')" class="w-100" placeholder="Filtrar nombres"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'identificacion', 'contains')" class="w-100" placeholder="Filtrar identificación"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'correo', 'contains')" class="w-100" placeholder="Filtrar correo"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'telefono', 'contains')" class="w-100" placeholder="Filtrar teléfono"/></th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-persona>
+        <tr>
+          <td>{{ persona.id_persona }}</td>
+          <td><strong>{{ persona.apellidos }}</strong></td>
+          <td>{{ persona.nombres }}</td>
+          <td><code>{{ persona.identificacion || '-' }}</code></td>
+          <td>{{ persona.correo || '-' }}</td>
+          <td>{{ persona.telefono || '-' }}</td>
+          <td>
+            <p-tag [value]="persona.activo === 1 ? 'Activo' : 'Inactivo'"
+                   [severity]="persona.activo === 1 ? 'success' : 'danger'"></p-tag>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-primary"
+                      (click)="openEdit(persona)"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      (click)="deletePersona(persona.id_persona)"
+                      title="Desactivar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje cuando no hay datos -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+            <p class="mt-2">No se encontraron personas</p>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+  </div>
+
+  <!-- Modal Form -->
+  <p-dialog [header]="isEdit ? 'Editar Persona' : 'Nueva Persona'"
+           [(visible)]="displayDialog"
+           [modal]="true"
+           [style]="{width: '50vw'}"
+           [draggable]="false"
+           [resizable]="false"
+           (onHide)="hideDialog()">
+    <form [formGroup]="personaForm" (ngSubmit)="save()">
+      <!-- Error State -->
+      <div *ngIf="formError" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="formLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">{{ isEdit ? 'Actualizando persona...' : 'Creando persona...' }}</p>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!formLoading">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="nombres" class="form-label">Nombres <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="nombres"
+              formControlName="nombres"
+              [class.is-invalid]="f['nombres'].invalid && f['nombres'].dirty"
+              placeholder="Ej: Juan Carlos"
+              maxlength="150"
+            >
+            <div class="invalid-feedback" *ngIf="f['nombres'].invalid && f['nombres'].dirty">
+              <span *ngIf="f['nombres'].errors?.['required']">Los nombres son requeridos</span>
+              <span *ngIf="f['nombres'].errors?.['maxlength']">Máximo 150 caracteres</span>
+            </div>
+          </div>
+
+          <div class="col-md-6 mb-3">
+            <label for="apellidos" class="form-label">Apellidos <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="apellidos"
+              formControlName="apellidos"
+              [class.is-invalid]="f['apellidos'].invalid && f['apellidos'].dirty"
+              placeholder="Ej: Pérez López"
+              maxlength="150"
+            >
+            <div class="invalid-feedback" *ngIf="f['apellidos'].invalid && f['apellidos'].dirty">
+              <span *ngIf="f['apellidos'].errors?.['required']">Los apellidos son requeridos</span>
+              <span *ngIf="f['apellidos'].errors?.['maxlength']">Máximo 150 caracteres</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="identificacion" class="form-label">Identificación</label>
+          <input
+            type="text"
+            class="form-control"
+            id="identificacion"
+            formControlName="identificacion"
+            [class.is-invalid]="f['identificacion'].invalid && f['identificacion'].dirty"
+            placeholder="Ej: 1712345678"
+            maxlength="50"
+          >
+          <div class="invalid-feedback" *ngIf="f['identificacion'].invalid && f['identificacion'].dirty">
+            <span *ngIf="f['identificacion'].errors?.['maxlength']">Máximo 50 caracteres</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="correo" class="form-label">Correo Electrónico</label>
+          <input
+            type="email"
+            class="form-control"
+            id="correo"
+            formControlName="correo"
+            [class.is-invalid]="f['correo'].invalid && f['correo'].dirty"
+            placeholder="Ej: juan.perez@email.com"
+            maxlength="150"
+          >
+          <div class="invalid-feedback" *ngIf="f['correo'].invalid && f['correo'].dirty">
+            <span *ngIf="f['correo'].errors?.['email']">Ingrese un correo válido</span>
+            <span *ngIf="f['correo'].errors?.['maxlength']">Máximo 150 caracteres</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="telefono" class="form-label">Teléfono</label>
+          <input
+            type="text"
+            class="form-control"
+            id="telefono"
+            formControlName="telefono"
+            [class.is-invalid]="f['telefono'].invalid && f['telefono'].dirty"
+            placeholder="Ej: 0991234567"
+            maxlength="50"
+          >
+          <div class="invalid-feedback" *ngIf="f['telefono'].invalid && f['telefono'].dirty">
+            <span *ngIf="f['telefono'].errors?.['maxlength']">Máximo 50 caracteres</span>
+          </div>
+        </div>
+
+        <div class="mb-3" *ngIf="isEdit">
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="activo"
+              formControlName="activo"
+            >
+            <label class="form-check-label" for="activo">
+              Persona Activa
+            </label>
+          </div>
+          <small class="form-text text-muted">Las personas inactivas no podrán ser asignadas a inversiones</small>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="hideDialog()" [disabled]="formLoading">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="personaForm.invalid || formLoading">
+            <i class="bi bi-check-circle" *ngIf="!formLoading"></i>
+            <span class="spinner-border spinner-border-sm me-1" *ngIf="formLoading"></span>
+            {{ isEdit ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </p-dialog>
+</div>
