@@ -42,79 +42,12 @@
   border: none;
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-  border: none;
-  padding: 8px 16px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(74, 140, 98, 0.3);
-}
-
-.btn-outline-primary:hover {
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-}
-
-.btn-outline-info:hover {
-  background-color: #17a2b8;
-  border-color: #17a2b8;
-}
-
-.btn-outline-danger:hover {
-  background-color: #dc3545;
-  border-color: #dc3545;
-}
-
 code {
   background-color: #f8f9fa;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.85rem;
   color: #6c757d;
-}
-
-/* Estilos para PrimeNG Table */
-:host ::ng-deep .p-datatable-thead {
-  background-color: var(--primary-lighter) !important;
-}
-
-:host ::ng-deep .p-datatable-thead > tr > th {
-  background-color: var(--primary-lighter) !important;
-  font-weight: 600;
-}
-
-:host ::ng-deep .p-datatable-tbody > tr:hover {
-  background-color: var(--primary-lightest) !important;
-}
-
-:host ::ng-deep .p-paginator {
-  background-color: var(--primary-lighter) !important;
-  border-top: 1px solid #dee2e6;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-pages .p-paginator-page.p-highlight {
-  background-color: var(--primary-medium) !important;
-  color: var(--primary-dark) !important;
-}
-
-:host ::ng-deep .p-datatable .p-datatable-caption {
-  background-color: var(--primary-medium) !important;
-  padding: 1rem;
-  border-bottom: 1px solid #dee2e6;
-}
-
-:host ::ng-deep .p-datatable .p-datatable-caption .d-flex {
-  background-color: var(--primary-medium) !important;
-}
-
-:host ::ng-deep .p-datatable .p-datatable-caption input::placeholder {
-  color: var(--primary-light) !important;
-  opacity: 0.7;
 }
 
 /* Estilos específicos para el dropdown de Tipo Emisor en el modal */
