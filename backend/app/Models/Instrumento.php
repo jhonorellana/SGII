@@ -22,6 +22,7 @@ class Instrumento extends Model
         'codigo_titulo_vector',
         'codigo_seb',
         'codigo_bce',
+        'calificacion_riesgo',
         'activo',
         'fecha_creacion',
         'fecha_actualizacion'

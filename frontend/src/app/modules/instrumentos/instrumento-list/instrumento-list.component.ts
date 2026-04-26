@@ -50,6 +50,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     nombre: '',
     fecha_emision: '',
     fecha_vencimiento: '',
+    calificacion_riesgo: '',
     activo: true
   };
 
@@ -63,6 +64,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     { field: 'emisor.nombre', header: 'Emisor' },
     { field: 'tipoInversion.nombre', header: 'Tipo Inversión' },
     { field: 'tasa_referencial', header: 'Tasa Referencial' },
+    { field: 'calificacion_riesgo', header: 'Calificación Riesgo' },
     { field: 'fecha_emision', header: 'Fecha Emisión' },
     { field: 'fecha_vencimiento', header: 'Fecha Vencimiento' },
     { field: 'activo', header: 'Estado' }
@@ -135,6 +137,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
       nombre: '',
       fecha_emision: '',
       fecha_vencimiento: '',
+      calificacion_riesgo: '',
       activo: true
     };
     this.displayDialog = true;
@@ -143,6 +146,13 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
   openEdit(instrumento: Instrumento): void {
     this.isEdit = true;
     this.instrumento = { ...instrumento };
+    // Formatear fechas a YYYY-MM-DD
+    if (this.instrumento.fecha_emision) {
+      this.instrumento.fecha_emision = this.formatDate(this.instrumento.fecha_emision);
+    }
+    if (this.instrumento.fecha_vencimiento) {
+      this.instrumento.fecha_vencimiento = this.formatDate(this.instrumento.fecha_vencimiento);
+    }
     this.displayDialog = true;
   }
 
@@ -228,6 +238,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
       'Emisor': i.emisor?.nombre || '',
       'Tipo Inversión': i.tipoInversion?.nombre || '',
       'Tasa Referencial': i.tasa_referencial ? i.tasa_referencial + '%' : '',
+      'Calificación Riesgo': i.calificacion_riesgo || '',
       'Fecha Emisión': this.formatDate(i.fecha_emision),
       'Fecha Vencimiento': this.formatDate(i.fecha_vencimiento),
       'Estado': i.activo ? 'Activo' : 'Inactivo'
@@ -248,6 +259,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
       'Emisor': i.emisor?.nombre || '',
       'Tipo Inversión': i.tipoInversion?.nombre || '',
       'Tasa Referencial': i.tasa_referencial ? i.tasa_referencial + '%' : '',
+      'Calificación Riesgo': i.calificacion_riesgo || '',
       'Fecha Emisión': this.formatDate(i.fecha_emision),
       'Fecha Vencimiento': this.formatDate(i.fecha_vencimiento),
       'Estado': i.activo ? 'Activo' : 'Inactivo'

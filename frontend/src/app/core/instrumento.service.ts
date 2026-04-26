@@ -15,6 +15,7 @@ export interface Instrumento {
   codigo_titulo_vector?: string;
   codigo_seb?: string;
   codigo_bce?: string;
+  calificacion_riesgo?: string;
   activo: boolean;
   fecha_creacion?: string;
   fecha_actualizacion?: string;

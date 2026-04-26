@@ -27,6 +27,7 @@ class InstrumentoResource extends JsonResource
             'codigo_titulo_vector' => $this->codigo_titulo_vector,
             'codigo_seb' => $this->codigo_seb,
             'codigo_bce' => $this->codigo_bce,
+            'calificacion_riesgo' => $this->calificacion_riesgo,
             'activo' => (bool) $this->activo,
             'fecha_creacion' => $this->fecha_creacion,
             'fecha_actualizacion' => $this->fecha_actualizacion,

@@ -9,6 +9,7 @@ use App\Http\Controllers\API\PersonaController;
 use App\Http\Controllers\API\GrupoFamiliarController;
 use App\Http\Controllers\API\EmisorController;
 use App\Http\Controllers\API\InstrumentoController;
+use App\Http\Controllers\API\InversionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,6 +47,9 @@ Route::apiResource('emisores', EmisorController::class);
 
 // Rutas de Instrumentos (temporalmente sin autenticación para pruebas)
 Route::apiResource('instrumentos', InstrumentoController::class);
+
+// Rutas de Inversiones (temporalmente sin autenticación para pruebas)
+Route::apiResource('inversiones', InversionController::class);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

@@ -40,6 +40,7 @@ class InstrumentoController extends Controller
             'codigo_titulo_vector' => 'nullable|string|max:50',
             'codigo_seb' => 'nullable|string|max:50',
             'codigo_bce' => 'nullable|string|max:50',
+            'calificacion_riesgo' => 'nullable|string|max:6',
             'activo' => 'boolean'
         ]);
 
@@ -59,6 +60,7 @@ class InstrumentoController extends Controller
             'codigo_titulo_vector' => $request->codigo_titulo_vector,
             'codigo_seb' => $request->codigo_seb,
             'codigo_bce' => $request->codigo_bce,
+            'calificacion_riesgo' => $request->calificacion_riesgo,
             'activo' => $request->has('activo') ? $request->activo : true,
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
@@ -104,6 +106,7 @@ class InstrumentoController extends Controller
             'codigo_titulo_vector' => 'nullable|string|max:50',
             'codigo_seb' => 'nullable|string|max:50',
             'codigo_bce' => 'nullable|string|max:50',
+            'calificacion_riesgo' => 'nullable|string|max:6',
             'activo' => 'boolean'
         ]);
 
@@ -123,6 +126,7 @@ class InstrumentoController extends Controller
             'codigo_titulo_vector' => $request->codigo_titulo_vector,
             'codigo_seb' => $request->codigo_seb,
             'codigo_bce' => $request->codigo_bce,
+            'calificacion_riesgo' => $request->calificacion_riesgo,
             'activo' => $request->has('activo') ? $request->activo : $instrumento->activo,
             'fecha_actualizacion' => now()
         ]);

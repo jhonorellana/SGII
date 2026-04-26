@@ -20,7 +20,7 @@
   <!-- Instrumentos List con PrimeNG Table -->
   <p-table #dt [value]="instrumentos" [paginator]="true" [rows]="10"
            [rowsPerPageOptions]="[10, 20, 50, 100]"
-           [globalFilterFields]="['id_instrumento','nombre','emisor.nombre','tipoInversion.nombre','tasa_referencial']"
+           [globalFilterFields]="['id_instrumento','nombre','emisor.nombre','tipoInversion.nombre','tasa_referencial','calificacion_riesgo']"
            [tableStyle]="{'min-width': '80rem'}"
            styleClass="p-datatable-sm p-datatable-gridlines"
            responsiveLayout="scroll">
@@ -44,6 +44,7 @@
         <th pSortableColumn="emisor.nombre">Emisor <p-sortIcon field="emisor.nombre"></p-sortIcon></th>
         <th pSortableColumn="tipoInversion.nombre">Tipo Inversión <p-sortIcon field="tipoInversion.nombre"></p-sortIcon></th>
         <th pSortableColumn="tasa_referencial">Tasa Referencial <p-sortIcon field="tasa_referencial"></p-sortIcon></th>
+        <th pSortableColumn="calificacion_riesgo">Calificación Riesgo <p-sortIcon field="calificacion_riesgo"></p-sortIcon></th>
         <th pSortableColumn="fecha_emision">Fecha Emisión <p-sortIcon field="fecha_emision"></p-sortIcon></th>
         <th pSortableColumn="fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="fecha_vencimiento"></p-sortIcon></th>
         <th>Estado</th>
@@ -67,6 +68,7 @@
           </p-dropdown>
         </th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tasa_referencial', 'contains')" class="w-100" placeholder="Filtrar tasa"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'calificacion_riesgo', 'contains')" class="w-100" placeholder="Filtrar calificación"/></th>
         <th><input pInputText type="text" (input)="onDateFilter($event, 'fecha_emision')" class="w-100" placeholder="YYYY-MM-DD"/></th>
         <th><input pInputText type="text" (input)="onDateFilter($event, 'fecha_vencimiento')" class="w-100" placeholder="YYYY-MM-DD"/></th>
         <th>
@@ -94,6 +96,7 @@
           <span *ngIf="!instrumento.tipoInversion" class="text-muted">- ({{ instrumento.id_tipo_inversion }})</span>
         </td>
         <td>{{ instrumento.tasa_referencial ? instrumento.tasa_referencial + '%' : '-' }}</td>
+        <td>{{ instrumento.calificacion_riesgo || '-' }}</td>
         <td>{{ formatDate(instrumento.fecha_emision) }}</td>
         <td>{{ formatDate(instrumento.fecha_vencimiento) }}</td>
         <td>
@@ -116,7 +119,7 @@
     <!-- Empty state -->
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="text-center py-4">
+        <td colspan="9" class="text-center py-4">
           <i class="bi bi-inbox fs-1 text-muted"></i>
           <p class="mb-0 text-muted">No hay instrumentos registrados</p>
         </td>
@@ -145,6 +148,11 @@
       </div>
 
       <div class="mb-3">
+        <label for="calificacion_riesgo">Calificación Riesgo</label>
+        <input pInputText id="calificacion_riesgo" [(ngModel)]="instrumento.calificacion_riesgo" class="form-control" maxlength="6" />
+      </div>
+
+      <div class="mb-3">
         <label for="id_emisor">Emisor <span class="text-danger">*</span></label>
         <p-dropdown id="id_emisor" [(ngModel)]="instrumento.id_emisor" [options]="emisores" optionLabel="nombre" optionValue="id_emisor"
           placeholder="Seleccione Emisor" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
@@ -158,12 +166,12 @@
 
       <div class="mb-3">
         <label for="fecha_emision">Fecha Emisión <span class="text-danger">*</span></label>
-        <p-calendar id="fecha_emision" [(ngModel)]="instrumento.fecha_emision" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width': '100%'}" required></p-calendar>
+        <input type="text" id="fecha_emision" [(ngModel)]="instrumento.fecha_emision" class="form-control" placeholder="YYYY-MM-DD" required>
       </div>
 
       <div class="mb-3">
         <label for="fecha_vencimiento">Fecha Vencimiento <span class="text-danger">*</span></label>
-        <p-calendar id="fecha_vencimiento" [(ngModel)]="instrumento.fecha_vencimiento" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width': '100%'}" required></p-calendar>
+        <input type="text" id="fecha_vencimiento" [(ngModel)]="instrumento.fecha_vencimiento" class="form-control" placeholder="YYYY-MM-DD" required>
       </div>
 
       <div class="mb-3">
