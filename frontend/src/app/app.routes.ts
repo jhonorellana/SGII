@@ -6,18 +6,16 @@ import { CatalogoListComponent } from './modules/catalogos/catalogo-list/catalog
 import { CatalogoFormComponent } from './modules/catalogos/catalogo-form/catalogo-form.component';
 import { CatalogoValorListComponent } from './modules/catalogos/catalogo-valor-list/catalogo-valor-list.component';
 import { CatalogoValorFormComponent } from './modules/catalogos/catalogo-valor-form/catalogo-valor-form.component';
-
-console.log('[app.routes] Importing PersonaListComponent...');
 import { PersonaListComponent } from './modules/personas/persona-list/persona-list.component';
-console.log('[app.routes] PersonaListComponent imported successfully');
-
 import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-familiar-list/grupo-familiar-list.component';
+import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
     path: '',
     component: MainLayoutComponent,
+    canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'catalogos', component: CatalogoListComponent },

@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService, LoginRequest } from '../../core/auth.service';
 
@@ -19,7 +19,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       nombre_usuario: ['', [Validators.required]],
@@ -46,8 +47,9 @@ export class LoginComponent {
           // Actualizar usuario actual
           this.authService['currentUserSubject'].next(response.data.usuario);
 
-          // Redirigir al dashboard
-          this.router.navigate(['/dashboard']);
+          // Redirigir a la URL original o al dashboard
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+          this.router.navigate([returnUrl]);
         } else {
           this.errorMessage = response.message || 'Error en el login';
         }

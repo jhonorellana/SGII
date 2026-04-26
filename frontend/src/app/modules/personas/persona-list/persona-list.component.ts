@@ -50,7 +50,6 @@ export class PersonaListComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    console.log('[PersonaList] Component initialized');
     this.loadPersonas();
   }
 
@@ -187,13 +186,11 @@ export class PersonaListComponent implements OnInit {
   }
 
   loadPersonas(): void {
-    console.log('[PersonaList] Loading personas...');
     this.loading = true;
     this.error = '';
 
     this.personaService.getAll().subscribe({
       next: (response) => {
-        console.log('[PersonaList] Response:', response);
         if (response.success) {
           this.personas = response.data || [];
           this.filteredPersonas = [...this.personas];
@@ -203,7 +200,6 @@ export class PersonaListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        console.error('[PersonaList] Error:', err);
         this.error = 'Error de conexión al servidor';
         this.loading = false;
       }
