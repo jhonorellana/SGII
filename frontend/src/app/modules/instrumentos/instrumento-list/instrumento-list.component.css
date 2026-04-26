@@ -38,6 +38,10 @@
   font-weight: 600;
 }
 
+:host ::ng-deep .p-datatable-tbody > tr:hover {
+  background-color: var(--primary-lightest) !important;
+}
+
 :host ::ng-deep .p-paginator {
   background-color: var(--primary-lighter) !important;
   border-top: 1px solid #dee2e6;
