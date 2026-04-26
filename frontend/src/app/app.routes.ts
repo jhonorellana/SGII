@@ -11,6 +11,8 @@ console.log('[app.routes] Importing PersonaListComponent...');
 import { PersonaListComponent } from './modules/personas/persona-list/persona-list.component';
 console.log('[app.routes] PersonaListComponent imported successfully');
 
+import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-familiar-list/grupo-familiar-list.component';
+
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   {
@@ -25,6 +27,7 @@ export const routes: Routes = [
       { path: 'catalogos/:id/valores/new', component: CatalogoValorFormComponent },
       { path: 'catalogos/:id/valores/:valorId/edit', component: CatalogoValorFormComponent },
       { path: 'personas', component: PersonaListComponent },
+      { path: 'grupos-familiares', component: GrupoFamiliarListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

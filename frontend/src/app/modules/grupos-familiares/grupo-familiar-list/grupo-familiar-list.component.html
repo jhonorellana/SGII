@@ -1,0 +1,168 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Grupos Familiares</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nuevo Grupo Familiar
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando grupos familiares...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Grupos Familiares List con PrimeNG Table -->
+  <div *ngIf="!loading && !error">
+    <p-table #dt [value]="filteredGruposFamiliares" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['nombre','descripcion']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar grupo familiar..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_grupo_familiar">ID <p-sortIcon field="id_grupo_familiar"></p-sortIcon></th>
+          <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+          <th pSortableColumn="patriarca">Patriarca <p-sortIcon field="patriarca"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombre', 'contains')" class="w-100" placeholder="Filtrar nombre"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
+          <th></th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-grupo>
+        <tr>
+          <td>{{ grupo.id_grupo_familiar }}</td>
+          <td><strong>{{ grupo.nombre }}</strong></td>
+          <td>{{ grupo.descripcion || '-' }}</td>
+          <td>
+            <span *ngIf="grupo.patriarca">{{ grupo.patriarca.apellidos }} {{ grupo.patriarca.nombres }}</span>
+            <span *ngIf="!grupo.patriarca" class="text-muted">-</span>
+          </td>
+          <td>
+            <p-tag [value]="grupo.activo === 1 ? 'Activo' : 'Inactivo'"
+                   [severity]="grupo.activo === 1 ? 'success' : 'danger'"></p-tag>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" (click)="openEdit(grupo)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(grupo)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Empty state -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center py-4">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="mb-0 text-muted">No hay grupos familiares registrados</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Modal para crear/editar -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Grupo Familiar' : 'Nuevo Grupo Familiar'"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div *ngIf="formError" class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+    </div>
+
+    <form [formGroup]="grupoFamiliarForm" (ngSubmit)="save()">
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="nombre" formControlName="nombre"
+               [class.is-invalid]="grupoFamiliarForm.get('nombre')?.invalid && grupoFamiliarForm.get('nombre')?.touched">
+        <div class="invalid-feedback" *ngIf="grupoFamiliarForm.get('nombre')?.invalid && grupoFamiliarForm.get('nombre')?.touched">
+          El nombre es obligatorio y no puede exceder 255 caracteres
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción</label>
+        <textarea class="form-control" id="descripcion" formControlName="descripcion" rows="3"></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_patriarca" class="form-label">Patriarca</label>
+        <p-dropdown id="id_patriarca" [options]="personas" optionLabel="label" optionValue="id_persona"
+                   formControlName="id_patriarca" [showClear]="true" placeholder="Seleccione una persona"
+                   [filter]="true" filterBy="label" [style]="{'width': '100%'}" appendTo="body"
+                   panelStyleClass="patriarca-dropdown-panel">
+        </p-dropdown>
+        <small class="text-muted d-block mt-2">Persona que será el patriarca del grupo familiar</small>
+      </div>
+
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="activo" formControlName="activo">
+        <label class="form-check-label" for="activo">Activo</label>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-secondary" (click)="displayDialog = false" [disabled]="formLoading">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="formLoading">
+          <span *ngIf="formLoading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ isEdit ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </p-dialog>
+</div>
