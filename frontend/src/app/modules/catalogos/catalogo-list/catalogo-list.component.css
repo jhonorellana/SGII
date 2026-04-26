@@ -79,6 +79,10 @@ code {
 }
 
 /* Estilos para PrimeNG Table */
+:host ::ng-deep .p-datatable-thead {
+  background-color: var(--primary-lighter) !important;
+}
+
 :host ::ng-deep .p-datatable-thead > tr > th {
   background-color: var(--primary-lighter) !important;
   font-weight: 600;

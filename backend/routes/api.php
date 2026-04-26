@@ -7,6 +7,7 @@ use App\Http\Controllers\API\CatalogoController;
 use App\Http\Controllers\API\CatalogoValorController;
 use App\Http\Controllers\API\PersonaController;
 use App\Http\Controllers\API\GrupoFamiliarController;
+use App\Http\Controllers\API\EmisorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,9 @@ Route::apiResource('personas', PersonaController::class);
 
 // Rutas de Grupos Familiares (temporalmente sin autenticación para pruebas)
 Route::apiResource('grupos-familiares', GrupoFamiliarController::class);
+
+// Rutas de Emisores (temporalmente sin autenticación para pruebas)
+Route::apiResource('emisores', EmisorController::class);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

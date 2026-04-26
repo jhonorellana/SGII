@@ -113,8 +113,8 @@ code {
   opacity: 0.7;
 }
 
-/* Estilos específicos para el dropdown de Patriarca en el modal */
-:host ::ng-deep .patriarca-dropdown-panel {
+/* Estilos específicos para el dropdown de Tipo Emisor en el modal */
+:host ::ng-deep .tipo-emisor-dropdown-panel {
   min-width: 400px !important;
   max-width: 600px !important;
 }

@@ -1,0 +1,193 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Emisores</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nuevo Emisor
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando emisores...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Emisores List con PrimeNG Table -->
+  <div *ngIf="!loading && !error">
+    <p-table #dt [value]="filteredEmisores" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['nombre','sigla','identificacion']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar emisor..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_emisor">ID <p-sortIcon field="id_emisor"></p-sortIcon></th>
+          <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+          <th pSortableColumn="sigla">Sigla <p-sortIcon field="sigla"></p-sortIcon></th>
+          <th pSortableColumn="identificacion">Identificación <p-sortIcon field="identificacion"></p-sortIcon></th>
+          <th pSortableColumn="tipo_emisor">Tipo Emisor <p-sortIcon field="tipo_emisor"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombre', 'contains')" class="w-100" placeholder="Filtrar nombre"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'sigla', 'contains')" class="w-100" placeholder="Filtrar sigla"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'identificacion', 'contains')" class="w-100" placeholder="Filtrar identificación"/></th>
+          <th>
+            <p-dropdown [options]="tiposEmisor" optionLabel="label" optionValue="id_catalogo_valor"
+                       (onChange)="dt.filter($event.value, 'id_tipo_emisor', 'equals')"
+                       [showClear]="true" placeholder="Todos los tipos"
+                       [filter]="true" filterBy="label" styleClass="w-100">
+            </p-dropdown>
+          </th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-emisor>
+        <tr>
+          <td>{{ emisor.id_emisor }}</td>
+          <td><strong>{{ emisor.nombre }}</strong></td>
+          <td>{{ emisor.sigla }}</td>
+          <td>{{ emisor.identificacion }}</td>
+          <td>
+            <span *ngIf="emisor.tipo_emisor">{{ emisor.tipo_emisor.nombre }}</span>
+            <span *ngIf="!emisor.tipo_emisor" class="text-muted">-</span>
+          </td>
+          <td>
+            <p-tag [value]="emisor.activo === 1 ? 'Activo' : 'Inactivo'"
+                   [severity]="emisor.activo === 1 ? 'success' : 'danger'"></p-tag>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" (click)="openEdit(emisor)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(emisor)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Empty state -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="mb-0 text-muted">No hay emisores registrados</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Modal para crear/editar -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Emisor' : 'Nuevo Emisor'"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div *ngIf="formError" class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+    </div>
+
+    <form [formGroup]="emisorForm" (ngSubmit)="save()">
+      <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="nombre" formControlName="nombre"
+               [class.is-invalid]="emisorForm.get('nombre')?.invalid && emisorForm.get('nombre')?.touched">
+        <div class="invalid-feedback" *ngIf="emisorForm.get('nombre')?.invalid && emisorForm.get('nombre')?.touched">
+          El nombre es obligatorio y no puede exceder 255 caracteres
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="sigla" class="form-label">Sigla <span class="text-danger">*</span></label>
+        <input type="text" class="form-control" id="sigla" formControlName="sigla"
+               [class.is-invalid]="emisorForm.get('sigla')?.invalid && emisorForm.get('sigla')?.touched">
+        <div class="invalid-feedback" *ngIf="emisorForm.get('sigla')?.invalid && emisorForm.get('sigla')?.touched">
+          La sigla es obligatoria y no puede exceder 50 caracteres
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="identificacion" class="form-label">Identificación</label>
+        <input type="text" class="form-control" id="identificacion" formControlName="identificacion"
+               [class.is-invalid]="emisorForm.get('identificacion')?.invalid && emisorForm.get('identificacion')?.touched">
+        <div class="invalid-feedback" *ngIf="emisorForm.get('identificacion')?.invalid && emisorForm.get('identificacion')?.touched">
+          La identificación no puede exceder 50 caracteres
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_tipo_emisor" class="form-label">Tipo Emisor <span class="text-danger">*</span></label>
+        <p-dropdown id="id_tipo_emisor" [options]="tiposEmisor" optionLabel="label" optionValue="id_catalogo_valor"
+                   formControlName="id_tipo_emisor" [showClear]="true" placeholder="Seleccione un tipo"
+                   [filter]="true" filterBy="label" [style]="{'width': '100%'}" appendTo="body"
+                   panelStyleClass="tipo-emisor-dropdown-panel"
+                   [class.is-invalid]="emisorForm.get('id_tipo_emisor')?.invalid && emisorForm.get('id_tipo_emisor')?.touched">
+        </p-dropdown>
+        <div class="invalid-feedback d-block" *ngIf="emisorForm.get('id_tipo_emisor')?.invalid && emisorForm.get('id_tipo_emisor')?.touched">
+          El tipo de emisor es obligatorio
+        </div>
+      </div>
+
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="activo" formControlName="activo">
+        <label class="form-check-label" for="activo">Activo</label>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-secondary" (click)="displayDialog = false" [disabled]="formLoading">
+          Cancelar
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="formLoading">
+          <span *ngIf="formLoading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ isEdit ? 'Actualizar' : 'Guardar' }}
+        </button>
+      </div>
+    </form>
+  </p-dialog>
+</div>

@@ -8,6 +8,7 @@ import { CatalogoValorListComponent } from './modules/catalogos/catalogo-valor-l
 import { CatalogoValorFormComponent } from './modules/catalogos/catalogo-valor-form/catalogo-valor-form.component';
 import { PersonaListComponent } from './modules/personas/persona-list/persona-list.component';
 import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-familiar-list/grupo-familiar-list.component';
+import { EmisorListComponent } from './modules/emisores/emisor-list/emisor-list.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -26,6 +27,7 @@ export const routes: Routes = [
       { path: 'catalogos/:id/valores/:valorId/edit', component: CatalogoValorFormComponent },
       { path: 'personas', component: PersonaListComponent },
       { path: 'grupos-familiares', component: GrupoFamiliarListComponent },
+      { path: 'emisores', component: EmisorListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },
