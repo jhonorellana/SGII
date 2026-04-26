@@ -12,6 +12,8 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CreateCatalogoRequest, UpdateCatalogoRequest } from '../../../core/catalogo.service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-catalogo-list',
@@ -252,5 +254,33 @@ export class CatalogoListComponent implements OnInit {
 
   trackByCatalogoId(index: number, catalogo: Catalogo): number {
     return catalogo.id_catalogo;
+  }
+
+  exportToExcel(): void {
+    const dataToExport = this.table.filteredValue || this.catalogos;
+    const exportData = dataToExport.map((catalogo: Catalogo) => ({
+      ID: catalogo.id_catalogo,
+      Código: catalogo.codigo,
+      Nombre: catalogo.nombre,
+      Descripción: catalogo.descripcion || '',
+      Estado: catalogo.activo === 1 ? 'Activo' : 'Inactivo',
+      'N° Valores': catalogo.valores?.length || 0
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Catálogos');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fileName = `catálogos_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    saveAs(blob, fileName);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo Excel exportado correctamente'
+    });
   }
 }

@@ -13,6 +13,8 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CatalogoValor } from '../../../core/catalogo.service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-catalogo-valor-list',
@@ -321,5 +323,32 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
 
   get inactivosCount(): number {
     return this.filteredValores.filter(v => v.activo === 0).length;
+  }
+
+  exportToExcel(): void {
+    const dataToExport = this.table.filteredValue || this.valores;
+    const exportData = dataToExport.map((valor: CatalogoValor) => ({
+      ID: valor.id_catalogo_valor,
+      Código: valor.codigo,
+      Nombre: valor.nombre,
+      Descripción: valor.descripcion || '',
+      Estado: valor.activo === 1 ? 'Activo' : 'Inactivo'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Valores del Catálogo');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fileName = `valores_catálogo_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    saveAs(blob, fileName);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo Excel exportado correctamente'
+    });
   }
 }

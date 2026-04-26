@@ -4,9 +4,14 @@
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Personas</h2>
-    <button class="btn btn-primary" (click)="openNew()">
-      <i class="bi bi-plus-circle"></i> Nueva Persona
-    </button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nueva Persona
+      </button>
+    </div>
   </div>
 
   <!-- Loading State -->

@@ -11,6 +11,8 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { PersonaService, Persona, PersonaRequest } from '../../../core/persona.service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 @Component({
   selector: 'app-persona-list',
@@ -258,5 +260,34 @@ export class PersonaListComponent implements OnInit {
 
   trackByPersonaId(index: number, persona: Persona): number {
     return persona.id_persona;
+  }
+
+  exportToExcel(): void {
+    const dataToExport = this.table.filteredValue || this.personas;
+    const exportData = dataToExport.map((persona: Persona) => ({
+      ID: persona.id_persona,
+      Apellidos: persona.apellidos,
+      Nombres: persona.nombres,
+      Identificación: persona.identificacion || '',
+      Correo: persona.correo || '',
+      Teléfono: persona.telefono || '',
+      Estado: persona.activo === 1 ? 'Activo' : 'Inactivo'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Personas');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fileName = `personas_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    saveAs(blob, fileName);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo Excel exportado correctamente'
+    });
   }
 }
