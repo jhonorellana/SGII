@@ -13,6 +13,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { PersonaService, Persona, PersonaRequest } from '../../../core/persona.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-persona-list',
@@ -288,6 +290,42 @@ export class PersonaListComponent implements OnInit {
       severity: 'success',
       summary: 'Éxito',
       detail: 'Archivo Excel exportado correctamente'
+    });
+  }
+
+  exportToPDF(): void {
+    const dataToExport = this.table.filteredValue || this.personas;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Personas', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = dataToExport.map((persona: Persona) => [
+      persona.id_persona,
+      persona.apellidos,
+      persona.nombres,
+      persona.identificacion || '',
+      persona.correo || '',
+      persona.telefono || '',
+      persona.activo === 1 ? 'Activo' : 'Inactivo'
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Apellidos', 'Nombres', 'Identificación', 'Correo', 'Teléfono', 'Estado']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [97, 178, 125] }
+    });
+
+    doc.save(`personas_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo PDF exportado correctamente'
     });
   }
 }

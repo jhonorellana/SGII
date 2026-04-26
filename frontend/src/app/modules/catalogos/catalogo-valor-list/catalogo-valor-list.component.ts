@@ -15,6 +15,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CatalogoValor } from '../../../core/catalogo.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-catalogo-valor-list',
@@ -349,6 +351,40 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
       severity: 'success',
       summary: 'Éxito',
       detail: 'Archivo Excel exportado correctamente'
+    });
+  }
+
+  exportToPDF(): void {
+    const dataToExport = this.table.filteredValue || this.valores;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Valores del Catálogo', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = dataToExport.map((valor: CatalogoValor) => [
+      valor.id_catalogo_valor,
+      valor.codigo,
+      valor.nombre,
+      valor.descripcion || '',
+      valor.activo === 1 ? 'Activo' : 'Inactivo'
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Código', 'Nombre', 'Descripción', 'Estado']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [97, 178, 125] }
+    });
+
+    doc.save(`valores_catálogo_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo PDF exportado correctamente'
     });
   }
 }

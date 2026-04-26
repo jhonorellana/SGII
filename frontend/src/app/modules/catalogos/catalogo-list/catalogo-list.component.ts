@@ -14,6 +14,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CreateCatalogoRequest, UpdateCatalogoRequest } from '../../../core/catalogo.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 @Component({
   selector: 'app-catalogo-list',
@@ -281,6 +283,41 @@ export class CatalogoListComponent implements OnInit {
       severity: 'success',
       summary: 'Éxito',
       detail: 'Archivo Excel exportado correctamente'
+    });
+  }
+
+  exportToPDF(): void {
+    const dataToExport = this.table.filteredValue || this.catalogos;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Catálogos', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = dataToExport.map((catalogo: Catalogo) => [
+      catalogo.id_catalogo,
+      catalogo.codigo,
+      catalogo.nombre,
+      catalogo.descripcion || '',
+      catalogo.activo === 1 ? 'Activo' : 'Inactivo',
+      catalogo.valores?.length || 0
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Código', 'Nombre', 'Descripción', 'Estado', 'N° Valores']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [97, 178, 125] }
+    });
+
+    doc.save(`catálogos_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo PDF exportado correctamente'
     });
   }
 }
