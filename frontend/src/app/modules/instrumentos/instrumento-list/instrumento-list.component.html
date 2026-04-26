@@ -1,0 +1,205 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Instrumentos</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nuevo Instrumento
+      </button>
+    </div>
+  </div>
+
+  <!-- Instrumentos List con PrimeNG Table -->
+  <p-table #dt [value]="instrumentos" [paginator]="true" [rows]="10"
+           [rowsPerPageOptions]="[10, 20, 50, 100]"
+           [globalFilterFields]="['id_instrumento','nombre','emisor.nombre','tipoInversion.nombre','tasa_referencial']"
+           [tableStyle]="{'min-width': '80rem'}"
+           styleClass="p-datatable-sm p-datatable-gridlines"
+           responsiveLayout="scroll">
+
+    <!-- Header con buscador global -->
+    <ng-template pTemplate="caption">
+      <div class="d-flex justify-content-end align-items-center">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" #globalFilter (input)="dt.filterGlobal(globalFilter.value, 'contains')"
+                 placeholder="Buscar instrumento..." class="w-100"/>
+        </span>
+      </div>
+    </ng-template>
+
+    <!-- Columnas -->
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="id_instrumento">ID <p-sortIcon field="id_instrumento"></p-sortIcon></th>
+        <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+        <th pSortableColumn="emisor.nombre">Emisor <p-sortIcon field="emisor.nombre"></p-sortIcon></th>
+        <th pSortableColumn="tipoInversion.nombre">Tipo Inversión <p-sortIcon field="tipoInversion.nombre"></p-sortIcon></th>
+        <th pSortableColumn="tasa_referencial">Tasa Referencial <p-sortIcon field="tasa_referencial"></p-sortIcon></th>
+        <th pSortableColumn="fecha_emision">Fecha Emisión <p-sortIcon field="fecha_emision"></p-sortIcon></th>
+        <th pSortableColumn="fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="fecha_vencimiento"></p-sortIcon></th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+      <tr>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_instrumento', 'equals')" class="w-100" placeholder="Filtrar ID"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'nombre', 'contains')" class="w-100" placeholder="Filtrar nombre"/></th>
+        <th>
+          <p-dropdown [options]="emisores" optionLabel="nombre" optionValue="id_emisor"
+                     (onChange)="dt.filter($event.value, 'id_emisor', 'equals')"
+                     [showClear]="true" placeholder="Todos los emisores"
+                     [filter]="true" filterBy="nombre" styleClass="w-100">
+          </p-dropdown>
+        </th>
+        <th>
+          <p-dropdown [options]="tiposInversion" optionLabel="nombre" optionValue="id_catalogo_valor"
+                     (onChange)="dt.filter($event.value, 'id_tipo_inversion', 'equals')"
+                     [showClear]="true" placeholder="Todos los tipos"
+                     [filter]="true" filterBy="nombre" styleClass="w-100">
+          </p-dropdown>
+        </th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tasa_referencial', 'contains')" class="w-100" placeholder="Filtrar tasa"/></th>
+        <th><input pInputText type="text" (input)="onDateFilter($event, 'fecha_emision')" class="w-100" placeholder="YYYY-MM-DD"/></th>
+        <th><input pInputText type="text" (input)="onDateFilter($event, 'fecha_vencimiento')" class="w-100" placeholder="YYYY-MM-DD"/></th>
+        <th>
+          <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </th>
+        <th></th>
+      </tr>
+    </ng-template>
+
+    <!-- Filas de datos -->
+    <ng-template pTemplate="body" let-instrumento>
+      <tr>
+        <td>{{ instrumento.id_instrumento }}</td>
+        <td><strong>{{ instrumento.nombre }}</strong></td>
+        <td>
+          <span *ngIf="instrumento.emisor">{{ instrumento.emisor.nombre }}</span>
+          <span *ngIf="!instrumento.emisor" class="text-muted">-</span>
+        </td>
+        <td>
+          <span *ngIf="instrumento.tipoInversion">{{ instrumento.tipoInversion.nombre }}</span>
+          <span *ngIf="!instrumento.tipoInversion" class="text-muted">- ({{ instrumento.id_tipo_inversion }})</span>
+        </td>
+        <td>{{ instrumento.tasa_referencial ? instrumento.tasa_referencial + '%' : '-' }}</td>
+        <td>{{ formatDate(instrumento.fecha_emision) }}</td>
+        <td>{{ formatDate(instrumento.fecha_vencimiento) }}</td>
+        <td>
+          <p-tag [value]="instrumento.activo ? 'Activo' : 'Inactivo'"
+                 [severity]="instrumento.activo ? 'success' : 'danger'"></p-tag>
+        </td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-sm btn-outline-info" (click)="openEdit(instrumento)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="delete(instrumento)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <!-- Empty state -->
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="8" class="text-center py-4">
+          <i class="bi bi-inbox fs-1 text-muted"></i>
+          <p class="mb-0 text-muted">No hay instrumentos registrados</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Modal para crear/editar -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Instrumento' : 'Nuevo Instrumento'"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div class="p-fluid">
+      <div class="mb-3">
+        <label for="codigo_titulo">Código Título <span class="text-danger">*</span></label>
+        <input pInputText id="codigo_titulo" [(ngModel)]="instrumento.codigo_titulo" class="form-control" required />
+      </div>
+
+      <div class="mb-3">
+        <label for="nombre">Nombre <span class="text-danger">*</span></label>
+        <input type="text" id="nombre" class="form-control" [(ngModel)]="instrumento.nombre" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="tasa_referencial">Tasa Referencial</label>
+        <input type="number" id="tasa_referencial" class="form-control" [(ngModel)]="instrumento.tasa_referencial" step="0.00000001">
+      </div>
+
+      <div class="mb-3">
+        <label for="id_emisor">Emisor <span class="text-danger">*</span></label>
+        <p-dropdown id="id_emisor" [(ngModel)]="instrumento.id_emisor" [options]="emisores" optionLabel="nombre" optionValue="id_emisor"
+          placeholder="Seleccione Emisor" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_tipo_inversion">Tipo Inversión <span class="text-danger">*</span></label>
+        <p-dropdown id="id_tipo_inversion" [(ngModel)]="instrumento.id_tipo_inversion" [options]="tiposInversion" optionLabel="nombre" optionValue="id_catalogo_valor"
+          placeholder="Seleccione Tipo Inversión" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
+      </div>
+
+      <div class="mb-3">
+        <label for="fecha_emision">Fecha Emisión <span class="text-danger">*</span></label>
+        <p-calendar id="fecha_emision" [(ngModel)]="instrumento.fecha_emision" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width': '100%'}" required></p-calendar>
+      </div>
+
+      <div class="mb-3">
+        <label for="fecha_vencimiento">Fecha Vencimiento <span class="text-danger">*</span></label>
+        <p-calendar id="fecha_vencimiento" [(ngModel)]="instrumento.fecha_vencimiento" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width': '100%'}" required></p-calendar>
+      </div>
+
+      <div class="mb-3">
+        <label for="tasa_referencial">Tasa Referencial</label>
+        <input pInputText id="tasa_referencial" [(ngModel)]="instrumento.tasa_referencial" type="number" step="0.00000001" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label for="fechas_recuperacion">Fechas Recuperación</label>
+        <input pInputText id="fechas_recuperacion" [(ngModel)]="instrumento.fechas_recuperacion" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label for="codigo_titulo_vector">Código Título Vector</label>
+        <input pInputText id="codigo_titulo_vector" [(ngModel)]="instrumento.codigo_titulo_vector" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label for="codigo_seb">Código SEB</label>
+        <input pInputText id="codigo_seb" [(ngModel)]="instrumento.codigo_seb" class="form-control" />
+      </div>
+
+      <div class="mb-3">
+        <label for="codigo_bce">Código BCE</label>
+        <input pInputText id="codigo_bce" [(ngModel)]="instrumento.codigo_bce" class="form-control" />
+      </div>
+
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="activo" [(ngModel)]="instrumento.activo">
+        <label class="form-check-label" for="activo">Activo</label>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button type="button" class="btn btn-secondary" (click)="displayDialog = false">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!instrumento.codigo_titulo || !instrumento.nombre || !instrumento.id_emisor || !instrumento.id_tipo_inversion || !instrumento.fecha_emision || !instrumento.fecha_vencimiento">Guardar</button>
+    </ng-template>
+  </p-dialog>
+</div>

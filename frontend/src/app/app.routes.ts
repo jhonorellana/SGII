@@ -9,6 +9,7 @@ import { CatalogoValorFormComponent } from './modules/catalogos/catalogo-valor-f
 import { PersonaListComponent } from './modules/personas/persona-list/persona-list.component';
 import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-familiar-list/grupo-familiar-list.component';
 import { EmisorListComponent } from './modules/emisores/emisor-list/emisor-list.component';
+import { InstrumentoListComponent } from './modules/instrumentos/instrumento-list/instrumento-list.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -28,6 +29,7 @@ export const routes: Routes = [
       { path: 'personas', component: PersonaListComponent },
       { path: 'grupos-familiares', component: GrupoFamiliarListComponent },
       { path: 'emisores', component: EmisorListComponent },
+      { path: 'instrumentos', component: InstrumentoListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },
