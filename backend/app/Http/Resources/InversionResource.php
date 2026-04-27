@@ -58,10 +58,14 @@ class InversionResource extends JsonResource
                 'id_instrumento' => $this->instrumento->id_instrumento,
                 'nombre' => $this->instrumento->nombre,
                 'codigo_titulo' => $this->instrumento->codigo_titulo,
+                'codigo_titulo_vector' => $this->instrumento->codigo_titulo_vector,
                 'fecha_emision' => $this->instrumento->fecha_emision,
                 'fecha_vencimiento' => $this->instrumento->fecha_vencimiento,
                 'tasa_referencial' => $this->instrumento->tasa_referencial,
                 'calificacion_riesgo' => $this->instrumento->calificacion_riesgo,
+                'codigo_seb' => $this->instrumento->codigo_seb,
+                'codigo_bce' => $this->instrumento->codigo_bce,
+                'activo' => (bool) $this->instrumento->activo,
                 'emisor' => $this->instrumento->emisor ? [
                     'id_emisor' => $this->instrumento->emisor->id_emisor,
                     'nombre' => $this->instrumento->emisor->nombre,
@@ -74,12 +78,14 @@ class InversionResource extends JsonResource
             ] : null,
             'propietario' => $this->propietario ? [
                 'id_persona' => $this->propietario->id_persona,
-                'nombre' => $this->propietario->nombre,
+                'nombres' => $this->propietario->nombres,
+                'apellidos' => $this->propietario->apellidos,
                 'identificacion' => $this->propietario->identificacion,
             ] : null,
             'aportante' => $this->aportante ? [
                 'id_persona' => $this->aportante->id_persona,
-                'nombre' => $this->aportante->nombre,
+                'nombres' => $this->aportante->nombres,
+                'apellidos' => $this->aportante->apellidos,
                 'identificacion' => $this->aportante->identificacion,
             ] : null,
             'estadoInversion' => $this->estadoInversion ? [

@@ -10,6 +10,7 @@ import { PersonaListComponent } from './modules/personas/persona-list/persona-li
 import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-familiar-list/grupo-familiar-list.component';
 import { EmisorListComponent } from './modules/emisores/emisor-list/emisor-list.component';
 import { InstrumentoListComponent } from './modules/instrumentos/instrumento-list/instrumento-list.component';
+import { InversionListComponent } from './modules/inversiones/inversion-list/inversion-list.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -30,6 +31,7 @@ export const routes: Routes = [
       { path: 'grupos-familiares', component: GrupoFamiliarListComponent },
       { path: 'emisores', component: EmisorListComponent },
       { path: 'instrumentos', component: InstrumentoListComponent },
+      { path: 'inversiones', component: InversionListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

@@ -1,0 +1,387 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Inversiones</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nueva Inversión
+      </button>
+    </div>
+  </div>
+
+  <!-- Inversiones List con PrimeNG Table -->
+  <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
+           [rowsPerPageOptions]="[10, 20, 50, 100]"
+           [globalFilterFields]="['id_inversion','propietario.nombres','instrumento.emisor.nombre','instrumento.tipoInversion.nombre','valor_nominal','capital_invertido','fecha_compra','instrumento.fecha_emision','instrumento.fecha_vencimiento']"
+           [tableStyle]="{'min-width': '80rem'}"
+           styleClass="p-datatable-sm p-datatable-gridlines"
+           responsiveLayout="scroll">
+
+    <!-- Header con buscador global -->
+    <ng-template pTemplate="caption">
+      <div class="d-flex justify-content-end align-items-center">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" #globalFilter (input)="dt.filterGlobal(globalFilter.value, 'contains')"
+                 placeholder="Buscar inversión..." class="w-100"/>
+        </span>
+      </div>
+    </ng-template>
+
+    <!-- Columnas -->
+    <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
+        <th pSortableColumn="propietario.nombres">Propietario <p-sortIcon field="propietario.nombres"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.emisor.nombre">Emisor <p-sortIcon field="instrumento.emisor.nombre"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.tipoInversion.nombre">Tipo Inversión <p-sortIcon field="instrumento.tipoInversion.nombre"></p-sortIcon></th>
+        <th pSortableColumn="valor_nominal">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+        <th pSortableColumn="capital_invertido">Capital Invertido <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+        <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.fecha_emision">Fecha Emision <p-sortIcon field="instrumento.fecha_emision"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="instrumento.fecha_vencimiento"></p-sortIcon></th>
+        <th pSortableColumn="estadoInversion.nombre">Estado <p-sortIcon field="estadoInversion.nombre"></p-sortIcon></th>
+        <th class="text-center" style="width: 120px;">Acciones</th>
+      </tr>
+      <tr>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'equals')" class="w-100" placeholder="Filtrar ID"/></th>
+        <th>
+          <p-dropdown [options]="propietarios" optionLabel="nombres" optionValue="id_persona"
+                     (onChange)="dt.filter($event.value, 'id_propietario', 'equals')"
+                     [showClear]="true" placeholder="Todos"
+                     [filter]="true" filterBy="nombres" styleClass="w-100">
+          </p-dropdown>
+        </th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.emisor.nombre', 'contains')" class="w-100" placeholder="Filtrar emisor"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.tipoInversion.nombre', 'contains')" class="w-100" placeholder="Filtrar tipo"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" class="w-100" placeholder="Filtrar valor"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" class="w-100" placeholder="Filtrar capital"/></th>
+        <th><input pInputText type="text" (input)="onFechaFilterChange('fecha_compra', $any($event.target).value)" class="w-100" placeholder="YYYY-MM-DD"/></th>
+        <th><input pInputText type="text" (input)="onFechaFilterChange('instrumento.fecha_emision', $any($event.target).value)" class="w-100" placeholder="YYYY-MM-DD"/></th>
+        <th><input pInputText type="text" (input)="onFechaFilterChange('instrumento.fecha_vencimiento', $any($event.target).value)" class="w-100" placeholder="YYYY-MM-DD"/></th>
+        <th>
+          <p-dropdown [options]="estadosInversion" optionLabel="nombre" optionValue="id_catalogo_valor"
+                     (onChange)="dt.filter($event.value, 'id_estado_inversion', 'equals')"
+                     [showClear]="true" placeholder="Todos"
+                     [filter]="true" filterBy="nombre" styleClass="w-100">
+          </p-dropdown>
+        </th>
+        <th class="text-center" style="width: 120px;"></th>
+      </tr>
+    </ng-template>
+
+    <!-- Filas de datos -->
+    <ng-template pTemplate="body" let-inversion>
+      <tr>
+        <td>{{ inversion.id_inversion }}</td>
+        <td>
+          <span *ngIf="inversion.propietario">{{ inversion.propietario.nombres }}</span>
+          <span *ngIf="!inversion.propietario" class="text-muted">-</span>
+        </td>
+        <td>
+          <span *ngIf="inversion.instrumento?.emisor">{{ inversion.instrumento.emisor.nombre }}</span>
+          <span *ngIf="!inversion.instrumento?.emisor" class="text-muted">-</span>
+        </td>
+        <td>
+          <span *ngIf="inversion.instrumento?.tipoInversion">{{ inversion.instrumento.tipoInversion.nombre }}</span>
+          <span *ngIf="!inversion.instrumento?.tipoInversion" class="text-muted">-</span>
+        </td>
+        <td class="text-end">{{ formatNumber(inversion.valor_nominal) }}</td>
+        <td class="text-end">{{ formatNumber(inversion.capital_invertido) }}</td>
+        <td>{{ formatDate(inversion.fecha_compra) }}</td>
+        <td>{{ formatDate(inversion.instrumento?.fecha_emision) }}</td>
+        <td>{{ formatDate(inversion.instrumento?.fecha_vencimiento) }}</td>
+        <td>
+          <span *ngIf="inversion.estadoInversion">{{ inversion.estadoInversion.nombre }}</span>
+          <span *ngIf="!inversion.estadoInversion" class="text-muted">-</span>
+        </td>
+        <td class="text-center" style="width: 120px;">
+          <div class="btn-group justify-content-center">
+            <button class="btn btn-sm btn-outline-primary" (click)="viewInstrumento(inversion)" title="Ver detalle del instrumento">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-info" (click)="openEdit(inversion)" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="delete(inversion)" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <!-- Empty state -->
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="11" class="text-center py-4">
+          <i class="bi bi-inbox fs-1 text-muted"></i>
+          <p class="mb-0 text-muted">No hay inversiones registradas</p>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Modal para crear/editar con Acordeones -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Inversión' : 'Nueva Inversión'"
+            [style]="{width: '70vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div class="p-fluid">
+      <p-accordion [multiple]="true">
+        <!-- Sección 1: Datos Básicos -->
+        <p-accordionTab header="Datos Básicos">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="id_grupo_familiar">Grupo Familiar <span class="text-danger">*</span></label>
+              <p-dropdown id="id_grupo_familiar" [(ngModel)]="inversion.id_grupo_familiar" [options]="gruposFamiliares" optionLabel="nombre" optionValue="id_grupo_familiar"
+                placeholder="Seleccione Grupo Familiar" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_instrumento">Instrumento</label>
+              <p-dropdown id="id_instrumento" [(ngModel)]="inversion.id_instrumento" [options]="instrumentos" optionLabel="nombre" optionValue="id_instrumento"
+                placeholder="Seleccione Instrumento" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" (onChange)="onInstrumentoChange()"></p-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_propietario">Propietario <span class="text-danger">*</span></label>
+              <p-dropdown id="id_propietario" [(ngModel)]="inversion.id_propietario" [options]="propietarios" optionLabel="nombres" optionValue="id_persona"
+                placeholder="Seleccione Propietario" [style]="{'width': '100%'}" [filter]="true" filterBy="nombres" required></p-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_aportante">Aportante</label>
+              <p-dropdown id="id_aportante" [(ngModel)]="inversion.id_aportante" [options]="aportantes" optionLabel="nombres" optionValue="id_persona"
+                placeholder="Seleccione Aportante" [style]="{'width': '100%'}" [filter]="true" filterBy="nombres"></p-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="id_estado_inversion">Estado Inversión <span class="text-danger">*</span></label>
+              <p-dropdown id="id_estado_inversion" [(ngModel)]="inversion.id_estado_inversion" [options]="estadosInversion" optionLabel="nombre" optionValue="id_catalogo_valor"
+                placeholder="Seleccione Estado" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="liquidacion">Liquidación <span class="text-danger">*</span></label>
+              <input type="text" id="liquidacion" [(ngModel)]="inversion.liquidacion" class="form-control" placeholder="Código de liquidación" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fecha_compra">Fecha Compra <span class="text-danger">*</span></label>
+              <input type="text" id="fecha_compra" [(ngModel)]="inversion.fecha_compra" class="form-control" placeholder="YYYY-MM-DD" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fecha_venta">Fecha Venta</label>
+              <input type="text" id="fecha_venta" [(ngModel)]="inversion.fecha_venta" class="form-control" placeholder="YYYY-MM-DD">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="fecha_primer_pago">Fecha Primer Pago</label>
+              <input type="text" id="fecha_primer_pago" [(ngModel)]="inversion.fecha_primer_pago" class="form-control" placeholder="YYYY-MM-DD">
+            </div>
+          </div>
+        </p-accordionTab>
+
+        <!-- Sección 2: Valores Monetarios -->
+        <p-accordionTab header="Valores Monetarios">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="valor_nominal">Valor Nominal <span class="text-danger">*</span></label>
+              <input type="number" id="valor_nominal" [(ngModel)]="inversion.valor_nominal" class="form-control" (ngModelChange)="onValorNominalChange()" step="0.01" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="monto_a_negociar">Monto a Negociar</label>
+              <input type="number" id="monto_a_negociar" [(ngModel)]="inversion.monto_a_negociar" class="form-control" step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="capital_invertido">Capital Invertido <span class="text-danger">*</span></label>
+              <input type="number" id="capital_invertido" [(ngModel)]="inversion.capital_invertido" class="form-control" step="0.01" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="precio_compra">Precio Compra <span class="text-danger">*</span></label>
+              <input type="number" id="precio_compra" [(ngModel)]="inversion.precio_compra" class="form-control" (ngModelChange)="onPrecioCompraChange()" step="0.00000001" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="precio_neto_compra">Precio Neto Compra (Calculado)</label>
+              <input type="number" id="precio_neto_compra" [(ngModel)]="inversion.precio_neto_compra" class="form-control bg-light" readonly step="0.00000001">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="valor_efectivo">Valor Efectivo</label>
+              <input type="number" id="valor_efectivo" [(ngModel)]="inversion.valor_efectivo" class="form-control" step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="valor_sin_comision">Valor Sin Comisión (Calculado)</label>
+              <input type="number" id="valor_sin_comision" [(ngModel)]="inversion.valor_sin_comision" class="form-control bg-light" readonly step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="valor_con_interes">Valor Con Interés (Calculado)</label>
+              <input type="number" id="valor_con_interes" [(ngModel)]="inversion.valor_con_interes" class="form-control bg-light" readonly step="0.01">
+            </div>
+          </div>
+        </p-accordionTab>
+
+        <!-- Sección 3: Tasas e Intereses -->
+        <p-accordionTab header="Tasas e Intereses">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="tasa_interes">Tasa Interés <span class="text-danger">*</span></label>
+              <input type="number" id="tasa_interes" [(ngModel)]="inversion.tasa_interes" class="form-control" (ngModelChange)="onTasaInteresChange()" step="0.00000001" required>
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="interes_mensual">Interés Mensual (Calculado)</label>
+              <input type="number" id="interes_mensual" [(ngModel)]="inversion.interes_mensual" class="form-control bg-light" readonly step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="interes_primer_mes">Interés Primer Mes (Calculado)</label>
+              <input type="number" id="interes_primer_mes" [(ngModel)]="inversion.interes_primer_mes" class="form-control bg-light" readonly step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="interes_acumulado_previo">Interés Acumulado Previo</label>
+              <input type="number" id="interes_acumulado_previo" [(ngModel)]="inversion.interes_acumulado_previo" class="form-control" (ngModelChange)="onInteresAcumuladoPrevioChange()" step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="rendimiento_nominal">Rendimiento Nominal</label>
+              <input type="number" id="rendimiento_nominal" [(ngModel)]="inversion.rendimiento_nominal" class="form-control" step="0.00000001">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="rendimiento_efectivo">Rendimiento Efectivo</label>
+              <input type="number" id="rendimiento_efectivo" [(ngModel)]="inversion.rendimiento_efectivo" class="form-control" step="0.00000001">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="tasa_mensual_real">Tasa Mensual Real (Calculado)</label>
+              <input type="number" id="tasa_mensual_real" [(ngModel)]="inversion.tasa_mensual_real" class="form-control bg-light" readonly step="0.01">
+            </div>
+          </div>
+        </p-accordionTab>
+
+        <!-- Sección 4: Comisiones y Retenciones -->
+        <p-accordionTab header="Comisiones y Retenciones">
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="comision_bolsa">Comisión Bolsa</label>
+              <input type="number" id="comision_bolsa" [(ngModel)]="inversion.comision_bolsa" class="form-control" (ngModelChange)="onComisionesChange()" step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="comision_casa_valores">Comisión Casa Valores</label>
+              <input type="number" id="comision_casa_valores" [(ngModel)]="inversion.comision_casa_valores" class="form-control" (ngModelChange)="onComisionesChange()" step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="total_comisiones">Total Comisiones (Calculado)</label>
+              <input type="number" id="total_comisiones" [(ngModel)]="inversion.total_comisiones" class="form-control bg-light" readonly step="0.01">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label for="retencion_fuente">Retención Fuente</label>
+              <input type="number" id="retencion_fuente" [(ngModel)]="inversion.retencion_fuente" class="form-control" step="0.01">
+            </div>
+          </div>
+        </p-accordionTab>
+
+        <!-- Sección 5: Otros -->
+        <p-accordionTab header="Otros">
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label for="observacion">Observación</label>
+              <textarea id="observacion" [(ngModel)]="inversion.observacion" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="expirado" [(ngModel)]="inversion.expirado">
+                <label class="form-check-label" for="expirado">Expirado</label>
+              </div>
+            </div>
+            <div class="col-md-6 mb-3">
+              <div class="form-check">
+                <input type="checkbox" class="form-check-input" id="activo" [(ngModel)]="inversion.activo">
+                <label class="form-check-label" for="activo">Activo</label>
+              </div>
+            </div>
+          </div>
+        </p-accordionTab>
+      </p-accordion>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button type="button" class="btn btn-secondary" (click)="displayDialog = false">Cancelar</button>
+      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!inversion.id_grupo_familiar || !inversion.id_propietario || !inversion.id_estado_inversion || !inversion.liquidacion || !inversion.fecha_compra || !inversion.capital_invertido">Guardar</button>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal para ver detalle del instrumento -->
+  <p-dialog [(visible)]="displayInstrumentoDialog" header="Detalle del Instrumento"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            (onHide)="displayInstrumentoDialog = false">
+    <div *ngIf="selectedInstrumento">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">ID Instrumento:</label>
+          <p>{{ selectedInstrumento.id_instrumento }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Nombre:</label>
+          <p>{{ selectedInstrumento.nombre }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Código Título:</label>
+          <p>{{ selectedInstrumento.codigo_titulo }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Código Título Vector:</label>
+          <p>{{ selectedInstrumento.codigo_titulo_vector || '-' }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Calificación Riesgo:</label>
+          <p>{{ selectedInstrumento.calificacion_riesgo || '-' }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Emisor:</label>
+          <p>{{ selectedInstrumento.emisor?.nombre || '-' }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Tipo Inversión:</label>
+          <p>{{ selectedInstrumento.tipoInversion?.nombre || '-' }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha Emisión:</label>
+          <p>{{ formatDate(selectedInstrumento.fecha_emision) }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha Vencimiento:</label>
+          <p>{{ formatDate(selectedInstrumento.fecha_vencimiento) }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Tasa Referencial:</label>
+          <p>{{ selectedInstrumento.tasa_referencial || '-' }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Código SEB:</label>
+          <p>{{ selectedInstrumento.codigo_seb || '-' }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Código BCE:</label>
+          <p>{{ selectedInstrumento.codigo_bce || '-' }}</p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Activo:</label>
+          <p>{{ selectedInstrumento.activo ? 'Sí' : 'No' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <button type="button" class="btn btn-secondary" (click)="displayInstrumentoDialog = false">Cerrar</button>
+    </ng-template>
+  </p-dialog>
+</div>

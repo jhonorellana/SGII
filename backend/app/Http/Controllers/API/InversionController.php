@@ -16,7 +16,7 @@ class InversionController extends Controller
      */
     public function index()
     {
-        $inversiones = Inversion::with(['grupoFamiliar', 'instrumento', 'propietario', 'aportante', 'estadoInversion'])
+        $inversiones = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])
             ->orderBy('id_inversion', 'desc')
             ->get();
 
@@ -103,7 +103,7 @@ class InversionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json($inversion->load(['grupoFamiliar', 'instrumento', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_CREATED);
+        return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_CREATED);
     }
 
     /**
@@ -111,7 +111,7 @@ class InversionController extends Controller
      */
     public function show($id)
     {
-        $inversion = Inversion::with(['grupoFamiliar', 'instrumento', 'propietario', 'aportante', 'estadoInversion'])->find($id);
+        $inversion = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])->find($id);
 
         if (!$inversion) {
             return response()->json(['message' => 'Inversión no encontrada'], Response::HTTP_NOT_FOUND);
@@ -204,7 +204,7 @@ class InversionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json($inversion->load(['grupoFamiliar', 'instrumento', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_OK);
+        return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_OK);
     }
 
     /**
