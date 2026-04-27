@@ -4,11 +4,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { CatalogoService, Catalogo, CreateCatalogoRequest, UpdateCatalogoRequest } from '../../../core/catalogo.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 @Component({
   selector: 'app-catalogo-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, ModalActionsComponent],
   templateUrl: './catalogo-form.component.html',
   styleUrl: './catalogo-form.component.css'
 })

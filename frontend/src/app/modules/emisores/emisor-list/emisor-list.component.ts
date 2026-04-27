@@ -13,6 +13,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { EmisorService } from '../../../core/emisor.service';
 import { CatalogoService } from '../../../core/catalogo.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -41,7 +42,7 @@ interface EmisorRequest {
 @Component({
   selector: 'app-emisor-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, DropdownModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, DropdownModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule, ModalActionsComponent],
   templateUrl: './emisor-list.component.html',
   styleUrl: './emisor-list.component.css',
   providers: [ConfirmationService, MessageService]

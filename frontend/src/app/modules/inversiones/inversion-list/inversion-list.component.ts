@@ -17,6 +17,7 @@ import { EmisorService } from '../../../core/emisor.service';
 import { InstrumentoService } from '../../../core/instrumento.service';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 @Component({
   selector: 'app-inversion-list',
@@ -32,7 +33,8 @@ import { PersonaService } from '../../../core/persona.service';
     ToastModule,
     ConfirmDialogModule,
     TagModule,
-    FormsModule
+    FormsModule,
+    ModalActionsComponent
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './inversion-list.component.html',

@@ -302,8 +302,13 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <button type="button" class="btn btn-secondary" (click)="displayDialog = false">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!inversion.id_grupo_familiar || !inversion.id_propietario || !inversion.id_estado_inversion || !inversion.liquidacion || !inversion.fecha_compra || !inversion.capital_invertido">Guardar</button>
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+        [disabled]="!inversion.id_grupo_familiar || !inversion.id_propietario || !inversion.id_estado_inversion || !inversion.liquidacion || !inversion.fecha_compra || !inversion.capital_invertido"
+        (onCancel)="displayDialog = false"
+        (onSave)="save()">
+      </app-modal-actions>
     </ng-template>
   </p-dialog>
 
@@ -381,7 +386,11 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <button type="button" class="btn btn-secondary" (click)="displayInstrumentoDialog = false">Cerrar</button>
+      <app-modal-actions
+        [cancelText]="'Cerrar'"
+        [showSaveButton]="false"
+        (onCancel)="displayInstrumentoDialog = false">
+      </app-modal-actions>
     </ng-template>
   </p-dialog>
 </div>

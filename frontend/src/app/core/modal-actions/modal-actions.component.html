@@ -1,0 +1,10 @@
+<div class="d-flex justify-content-end gap-2">
+  <button *ngIf="showCancelButton" type="button" class="btn btn-outline-secondary" (click)="onCancelClick()" [disabled]="loading">
+    <i class="bi bi-x-circle"></i> {{ cancelText }}
+  </button>
+  <button *ngIf="showSaveButton" type="button" class="btn btn-primary" (click)="onSaveClick()" [disabled]="disabled || loading">
+    <i class="bi bi-save" *ngIf="!loading"></i>
+    <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
+    {{ saveText }}
+  </button>
+</div>

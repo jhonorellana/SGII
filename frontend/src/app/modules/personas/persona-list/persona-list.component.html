@@ -249,14 +249,14 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-4">
-          <button type="button" class="btn btn-outline-secondary" (click)="hideDialog()" [disabled]="formLoading">
-            <i class="bi bi-x-circle"></i> Cancelar
-          </button>
-          <button type="submit" class="btn btn-primary" [disabled]="personaForm.invalid || formLoading">
-            <i class="bi bi-check-circle" *ngIf="!formLoading"></i>
-            <span class="spinner-border spinner-border-sm me-1" *ngIf="formLoading"></span>
-            {{ isEdit ? 'Actualizar' : 'Guardar' }}
-          </button>
+          <app-modal-actions
+            [cancelText]="'Cancelar'"
+            [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+            [loading]="formLoading"
+            [disabled]="personaForm.invalid"
+            (onCancel)="hideDialog()"
+            (onSave)="save()">
+          </app-modal-actions>
         </div>
       </div>
     </form>

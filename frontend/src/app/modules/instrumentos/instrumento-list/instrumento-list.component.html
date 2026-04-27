@@ -206,8 +206,13 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <button type="button" class="btn btn-secondary" (click)="displayDialog = false">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="save()" [disabled]="!instrumento.codigo_titulo || !instrumento.nombre || !instrumento.id_emisor || !instrumento.id_tipo_inversion || !instrumento.fecha_emision || !instrumento.fecha_vencimiento">Guardar</button>
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+        [disabled]="!instrumento.codigo_titulo || !instrumento.nombre || !instrumento.id_emisor || !instrumento.id_tipo_inversion || !instrumento.fecha_emision || !instrumento.fecha_vencimiento"
+        (onCancel)="displayDialog = false"
+        (onSave)="save()">
+      </app-modal-actions>
     </ng-template>
   </p-dialog>
 </div>

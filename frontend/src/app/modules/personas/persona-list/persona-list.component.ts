@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { PersonaService, Persona, PersonaRequest } from '../../../core/persona.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -19,7 +20,7 @@ import autoTable from 'jspdf-autotable';
 @Component({
   selector: 'app-persona-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule, ModalActionsComponent],
   templateUrl: './persona-list.component.html',
   styleUrl: './persona-list.component.css',
   providers: [ConfirmationService, MessageService]

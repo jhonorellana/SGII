@@ -14,6 +14,7 @@ import { FormsModule } from '@angular/forms';
 import { InstrumentoService, Instrumento } from '../../../core/instrumento.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { EmisorService } from '../../../core/emisor.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 @Component({
   selector: 'app-instrumento-list',
@@ -29,7 +30,8 @@ import { EmisorService } from '../../../core/emisor.service';
     ToastModule,
     ConfirmDialogModule,
     TagModule,
-    FormsModule
+    FormsModule,
+    ModalActionsComponent
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './instrumento-list.component.html',

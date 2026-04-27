@@ -31,10 +31,10 @@
         <div class="col-md-6">
           <div class="mb-3">
             <label for="nombre" class="form-label">Nombre del Catálogo <span class="text-danger">*</span></label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="nombre" 
+            <input
+              type="text"
+              class="form-control"
+              id="nombre"
               formControlName="nombre"
               [class.is-invalid]="f['nombre'].invalid && f['nombre'].dirty"
               placeholder="Ej: Tipo de Inversión"
@@ -50,10 +50,10 @@
         <div class="col-md-6">
           <div class="mb-3">
             <label for="codigo" class="form-label">Código <span class="text-danger">*</span></label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="codigo" 
+            <input
+              type="text"
+              class="form-control"
+              id="codigo"
               formControlName="codigo"
               [class.is-invalid]="f['codigo'].invalid && f['codigo'].dirty"
               placeholder="Ej: TIPO_INVERSION"
@@ -73,9 +73,9 @@
         <div class="col-md-12">
           <div class="mb-3">
             <label for="descripcion" class="form-label">Descripción</label>
-            <textarea 
-              class="form-control" 
-              id="descripcion" 
+            <textarea
+              class="form-control"
+              id="descripcion"
               formControlName="descripcion"
               rows="3"
               placeholder="Descripción detallada del catálogo..."
@@ -90,10 +90,10 @@
         <div class="col-md-12">
           <div class="mb-3">
             <div class="form-check">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="activo" 
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="activo"
                 formControlName="activo"
               >
               <label class="form-check-label" for="activo">
@@ -108,14 +108,14 @@
       <div class="row">
         <div class="col-md-12">
           <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
-              <i class="bi bi-x-circle"></i> Cancelar
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="catalogoForm.invalid || loading">
-              <i class="bi bi-save" *ngIf="!loading"></i>
-              <span class="spinner-border spinner-border-sm me-1" *ngIf="loading"></span>
-              {{ isEdit ? 'Actualizar' : 'Guardar' }}
-            </button>
+            <app-modal-actions
+              [cancelText]="'Cancelar'"
+              [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+              [loading]="loading"
+              [disabled]="catalogoForm.invalid"
+              (onCancel)="cancel()"
+              (onSave)="onSubmit()">
+            </app-modal-actions>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -39,7 +40,7 @@ interface GrupoFamiliarRequest {
 @Component({
   selector: 'app-grupo-familiar-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, DropdownModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, TableModule, InputTextModule, DropdownModule, ButtonModule, TagModule, DialogModule, ToastModule, ConfirmDialogModule, ModalActionsComponent],
   templateUrl: './grupo-familiar-list.component.html',
   styleUrl: './grupo-familiar-list.component.css',
   providers: [ConfirmationService, MessageService]
