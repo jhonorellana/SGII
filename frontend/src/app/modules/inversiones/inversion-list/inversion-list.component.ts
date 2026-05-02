@@ -11,6 +11,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TagModule } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { EmisorService } from '../../../core/emisor.service';
@@ -97,7 +98,8 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     private personaService: PersonaService,
     private catalogoService: CatalogoService,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -109,6 +111,13 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.loadAportantes();
     this.loadEstadosInversion();
     this.setFechaActual();
+
+    // Verificar si se debe abrir el modal de creación
+    this.route.queryParams.subscribe(params => {
+      if (params['create'] === 'true') {
+        setTimeout(() => this.openNew(), 500);
+      }
+    });
   }
 
   ngAfterViewInit(): void {
@@ -262,29 +271,38 @@ export class InversionListComponent implements OnInit, AfterViewInit {
 
   // Cálculos automáticos
   onValorNominalChange(): void {
-    this.calcularValorSinComision();
-    this.calcularInteresMensual();
-    this.calcularPrecioNetoCompra();
+    this.recalcularTodos();
   }
 
   onPrecioCompraChange(): void {
-    this.calcularValorSinComision();
-    this.calcularPrecioNetoCompra();
+    this.recalcularTodos();
   }
 
   onTasaInteresChange(): void {
-    this.calcularInteresMensual();
+    this.recalcularTodos();
+  }
+
+  onValorEfectivoChange(): void {
+    this.recalcularTodos();
   }
 
   onComisionesChange(): void {
-    this.calcularTotalComisiones();
-    this.calcularValorConInteres();
-    this.calcularTasaMensualReal();
+    this.recalcularTodos();
   }
 
   onInteresAcumuladoPrevioChange(): void {
+    this.recalcularTodos();
+  }
+
+  recalcularTodos(): void {
+    this.calcularValorSinComision();
+    this.calcularInteresMensual();
+    this.calcularTotalComisiones();
+    this.calcularCapitalInvertido();
     this.calcularInteresPrimerMes();
     this.calcularValorConInteres();
+    this.calcularTasaMensualReal();
+    this.calcularPrecioNetoCompra();
   }
 
   calcularValorSinComision(): void {
@@ -303,6 +321,12 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     const comisionBolsa = this.inversion.comision_bolsa || 0;
     const comisionCasa = this.inversion.comision_casa_valores || 0;
     this.inversion.total_comisiones = comisionBolsa + comisionCasa;
+  }
+
+  calcularCapitalInvertido(): void {
+    const valorEfectivo = this.inversion.valor_efectivo || 0;
+    const totalComisiones = this.inversion.total_comisiones || 0;
+    this.inversion.capital_invertido = valorEfectivo + totalComisiones;
   }
 
   calcularInteresPrimerMes(): void {
@@ -330,6 +354,8 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     if (this.inversion.valor_sin_comision && this.inversion.total_comisiones && this.inversion.valor_nominal) {
       const montoPagado = this.inversion.valor_sin_comision + this.inversion.total_comisiones;
       this.inversion.precio_neto_compra = (montoPagado / this.inversion.valor_nominal) * 100;
+    } else {
+      this.inversion.precio_neto_compra = 0;
     }
   }
 

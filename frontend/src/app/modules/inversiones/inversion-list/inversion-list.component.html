@@ -195,8 +195,8 @@
               <input type="number" id="monto_a_negociar" [(ngModel)]="inversion.monto_a_negociar" class="form-control" step="0.01">
             </div>
             <div class="col-md-4 mb-3">
-              <label for="capital_invertido">Capital Invertido <span class="text-danger">*</span></label>
-              <input type="number" id="capital_invertido" [(ngModel)]="inversion.capital_invertido" class="form-control" step="0.01" required>
+              <label for="capital_invertido">Capital Invertido (Calculado)</label>
+              <input type="number" id="capital_invertido" [(ngModel)]="inversion.capital_invertido" class="form-control bg-light" readonly step="0.01">
             </div>
             <div class="col-md-4 mb-3">
               <label for="precio_compra">Precio Compra <span class="text-danger">*</span></label>
@@ -208,7 +208,7 @@
             </div>
             <div class="col-md-4 mb-3">
               <label for="valor_efectivo">Valor Efectivo</label>
-              <input type="number" id="valor_efectivo" [(ngModel)]="inversion.valor_efectivo" class="form-control" step="0.01">
+              <input type="number" id="valor_efectivo" [(ngModel)]="inversion.valor_efectivo" class="form-control" (ngModelChange)="onValorEfectivoChange()" step="0.01">
             </div>
             <div class="col-md-4 mb-3">
               <label for="valor_sin_comision">Valor Sin Comisión (Calculado)</label>
@@ -305,7 +305,7 @@
       <app-modal-actions
         [cancelText]="'Cancelar'"
         [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
-        [disabled]="!inversion.id_grupo_familiar || !inversion.id_propietario || !inversion.id_estado_inversion || !inversion.liquidacion || !inversion.fecha_compra || !inversion.capital_invertido"
+        [disabled]="!inversion.id_grupo_familiar || !inversion.id_propietario || !inversion.id_estado_inversion || !inversion.liquidacion || !inversion.fecha_compra || !inversion.valor_nominal || !inversion.precio_compra || !inversion.tasa_interes"
         (onCancel)="displayDialog = false"
         (onSave)="save()">
       </app-modal-actions>
