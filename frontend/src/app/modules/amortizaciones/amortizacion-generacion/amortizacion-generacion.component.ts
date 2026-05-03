@@ -10,6 +10,9 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { AmortizacionGeneracionService, GeneracionParams, InversionParametros, TablaAmortizacion, CuotaAmortizacion, ApiResponse } from '../../../core/amortizacion-generacion.service';
 import { InversionService } from '../../../core/inversion.service';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 @Component({
   selector: 'app-amortizacion-generacion',
@@ -38,6 +41,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   inversiones: any[] = [];
   parametrosInversion: InversionParametros | null = null;
   tablaPrevisualizacion: TablaAmortizacion | null = null;
+  cuotasAmortizacion: CuotaAmortizacion[] = [];
   loading = false;
   submitted = false;
   showPreview = false;
@@ -321,6 +325,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         console.log('Respuesta del servidor:', response);
 
         this.tablaPrevisualizacion = response.data || null;
+        this.cuotasAmortizacion = response.data?.cuotas || [];
         this.showPreview = true;
         this.loading = false;
 
@@ -644,5 +649,213 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
   get tipoAmortizacionControl(): FormControl {
     return this.generacionForm.get('tipo_amortizacion') as FormControl;
+  }
+
+  // Métodos de exportación
+  exportarExcel(): void {
+    if (!this.cuotasAmortizacion || this.cuotasAmortizacion.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'No hay datos para exportar'
+      });
+      return;
+    }
+
+    try {
+      // Preparar datos para Excel
+      const datosExcel = this.cuotasAmortizacion.map(cuota => ({
+        'N° Cuota': cuota.numero_cuota,
+        'Fecha Pago': this.formatDate(cuota.fecha_pago),
+        'Capital Restante': cuota.capital_restante,
+        'Capital Retorno': cuota.capital_retorno,
+        'Interés': cuota.interes_parcial,
+        'Premio/Descuento': cuota.premio,
+        'Total Cuota': cuota.interes_total
+      }));
+
+      // Crear workbook y worksheet
+      const ws = XLSX.utils.json_to_sheet(datosExcel);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Tabla de Amortización');
+
+      // Agregar información general
+      const infoGeneral = [
+        ['INFORMACIÓN DE AMORTIZACIÓN'],
+        ['Inversión:', this.getInversionDisplay(this.inversionSeleccionada)],
+        ['Tipo Amortización:', this.tipoAmortizacionDisplay],
+        ['Frecuencia:', `${this.generacionForm.value.frecuencia_pago} meses`],
+        ['Fecha Generación:', this.formatDate(new Date().toISOString())],
+        [],
+        ['RESUMEN'],
+        ['Total Cuotas:', this.cuotasAmortizacion.length],
+        ['Total Intereses:', this.formatCurrency(this.tablaPrevisualizacion?.total_intereses || 0)],
+        ['Total Capital:', this.formatCurrency(this.tablaPrevisualizacion?.total_capital || 0)],
+        ['Total Descuento:', this.formatCurrency(this.tablaPrevisualizacion?.total_descuento || 0)]
+      ];
+
+      const wsInfo = XLSX.utils.aoa_to_sheet(infoGeneral);
+      XLSX.utils.book_append_sheet(wb, wsInfo, 'Información');
+
+      // Generar y descargar archivo
+      const fileName = `Tabla_Amortizacion_${this.getInversionDisplay(this.inversionSeleccionada)}_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: 'Archivo Excel exportado correctamente'
+      });
+
+    } catch (error) {
+      console.error('Error al exportar Excel:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo exportar el archivo Excel'
+      });
+    }
+  }
+
+  exportarPDF(): void {
+    if (!this.cuotasAmortizacion || this.cuotasAmortizacion.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'No hay datos para exportar'
+      });
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+
+      // Configurar fuente
+      doc.setFont('helvetica');
+
+      // Título
+      doc.setFontSize(16);
+      doc.text('TABLA DE AMORTIZACIÓN', 105, 20, { align: 'center' });
+
+      // Información general
+      doc.setFontSize(10);
+      const infoY = 35;
+      doc.text(`Inversión: ${this.getInversionDisplay(this.inversionSeleccionada)}`, 20, infoY);
+      doc.text(`Tipo: ${this.tipoAmortizacionDisplay}`, 20, infoY + 8);
+      doc.text(`Frecuencia: ${this.generacionForm.value.frecuencia_pago} meses`, 20, infoY + 16);
+      doc.text(`Fecha Generación: ${this.formatDate(new Date().toISOString())}`, 20, infoY + 24);
+
+      // Resumen
+      doc.setFontSize(12);
+      doc.text('RESUMEN', 20, infoY + 40);
+      doc.setFontSize(10);
+      doc.text(`Total Cuotas: ${this.cuotasAmortizacion.length}`, 20, infoY + 50);
+      doc.text(`Total Intereses: ${this.formatCurrency(this.tablaPrevisualizacion?.total_intereses || 0)}`, 20, infoY + 58);
+      doc.text(`Total Capital: ${this.formatCurrency(this.tablaPrevisualizacion?.total_capital || 0)}`, 20, infoY + 66);
+      doc.text(`Total Descuento: ${this.formatCurrency(this.tablaPrevisualizacion?.total_descuento || 0)}`, 20, infoY + 74);
+
+      // Tabla de amortización
+      const headers = [['N°', 'Fecha', 'Capital', 'Interés', 'Descuento', 'Total']];
+      const data = this.cuotasAmortizacion.map(cuota => [
+        cuota.numero_cuota.toString(),
+        this.formatDate(cuota.fecha_pago),
+        this.formatCurrency(cuota.capital_retorno),
+        this.formatCurrency(cuota.interes_parcial),
+        this.formatCurrency(cuota.premio),
+        this.formatCurrency(cuota.interes_total)
+      ]);
+
+      // Agregar tabla
+      (doc as any).autoTable({
+        head: headers,
+        body: data,
+        startY: infoY + 85,
+        theme: 'grid',
+        styles: {
+          fontSize: 8,
+          cellPadding: 2
+        },
+        headStyles: {
+          fillColor: [63, 81, 181],
+          textColor: 255
+        },
+        columnStyles: {
+          0: { cellWidth: 15 }, // N°
+          1: { cellWidth: 25 }, // Fecha
+          2: { cellWidth: 30 }, // Capital
+          3: { cellWidth: 30 }, // Interés
+          4: { cellWidth: 30 }, // Descuento
+          5: { cellWidth: 30 }  // Total
+        }
+      });
+
+      // Pie de página
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.text(`Página ${i} de ${pageCount}`, 105, 290, { align: 'center' });
+      }
+
+      // Generar y descargar archivo
+      const fileName = `Tabla_Amortizacion_${this.getInversionDisplay(this.inversionSeleccionada)}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(fileName);
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: 'Archivo PDF exportado correctamente'
+      });
+
+    } catch (error) {
+      console.error('Error al exportar PDF:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo exportar el archivo PDF'
+      });
+    }
+  }
+
+  exportarExcelDesdeBD(): void {
+    // Obtener datos desde la base de datos y exportar
+    this.cargarDatosParaExportar().then(() => {
+      this.exportarExcel();
+    });
+  }
+
+  exportarPDFDesdeBD(): void {
+    // Obtener datos desde la base de datos y exportar
+    this.cargarDatosParaExportar().then(() => {
+      this.exportarPDF();
+    });
+  }
+
+  private async cargarDatosParaExportar(): Promise<void> {
+    if (!this.inversionSeleccionada) return;
+
+    try {
+      const params: GeneracionParams = {
+        id_inversion: this.inversionSeleccionada.id_inversion,
+        frecuencia_pago: this.generacionForm.value.frecuencia_pago,
+        cuotas_diferir: this.generacionForm.value.cuotas_diferir,
+        tipo_amortizacion: this.generacionForm.value.tipo_amortizacion
+      };
+
+      const response = await this.generacionService.previsualizar(params).toPromise();
+      if (response && response.data) {
+        this.tablaPrevisualizacion = response.data;
+        this.cuotasAmortizacion = response.data.cuotas;
+        this.showPreview = true;
+      }
+
+    } catch (error) {
+      console.error('Error al cargar datos para exportar:', error);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudieron cargar los datos para exportar'
+      });
+    }
   }
 }
