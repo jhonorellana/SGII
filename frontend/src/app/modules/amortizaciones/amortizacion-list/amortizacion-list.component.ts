@@ -62,7 +62,7 @@ export class AmortizacionListComponent implements OnInit {
 
   cols: any[] = [
     { field: 'id_amortizacion', header: 'ID' },
-    { field: 'inversion', header: 'Inversión' },
+    { field: 'inversion.id_inversion', header: 'Inversión' },
     { field: 'inversion.propietario.nombres', header: 'Propietario' },
     { field: 'fecha_pago', header: 'Fecha Pago' },
     { field: 'interes', header: 'Interés' },

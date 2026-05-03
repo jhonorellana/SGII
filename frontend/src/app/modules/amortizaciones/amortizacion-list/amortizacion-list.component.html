@@ -34,7 +34,7 @@
     <ng-template pTemplate="header">
       <tr>
         <th pSortableColumn="id_amortizacion">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
-        <th pSortableColumn="inversion">Inversión <p-sortIcon field="inversion"></p-sortIcon></th>
+        <th pSortableColumn="inversion.id_inversion">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
         <th pSortableColumn="inversion.propietario.nombres">Propietario <p-sortIcon field="inversion.propietario.nombres"></p-sortIcon></th>
         <th pSortableColumn="fecha_pago">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
         <th pSortableColumn="interes">Interés <p-sortIcon field="interes"></p-sortIcon></th>
@@ -43,17 +43,17 @@
         <th pSortableColumn="total">Total <p-sortIcon field="total"></p-sortIcon></th>
         <th pSortableColumn="estado_amortizacion">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
         <th pSortableColumn="activo">Activo <p-sortIcon field="activo"></p-sortIcon></th>
-        <th>Acciones</th>
+        <th class="text-center" style="width: 120px;">Acciones</th>
       </tr>
       <tr>
         <th></th>
         <th><input pInputText type="text" (input)="onInversionFilterChange($event)" placeholder="Código o Liquidación" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" (input)="table.filter($any($event.target).value, 'inversion.propietario.nombres', 'contains')" placeholder="Filtrar propietario" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" (input)="table.filter($any($event.target).value, 'inversion.propietario.nombres', 'contains')" placeholder="Propietario" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
         <th><input pInputText type="text" (input)="table.filter($any($event.target).value, 'fecha_pago', 'contains')" placeholder="YYYY-MM-DD" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'interes', 'equals')" placeholder="Filtrar interés" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'capital', 'equals')" placeholder="Filtrar capital" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'total', 'equals')" placeholder="Filtrar total" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'interes', 'equals')" placeholder="Interés" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'capital', 'equals')" placeholder="Capital" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'descuento', 'equals')" placeholder="Descuento" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'total', 'equals')" placeholder="Total" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
         <th>
           <select (change)="table.filter($any($event.target).value, 'estado_amortizacion.nombre', 'equals')" class="form-select form-select-sm" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
             <option value="">Todos</option>
@@ -78,7 +78,7 @@
             <ng-container *ngSwitchCase="'id_amortizacion'">
               {{amortizacion.id_amortizacion}}
             </ng-container>
-            <ng-container *ngSwitchCase="'inversion'">
+            <ng-container *ngSwitchCase="'inversion.id_inversion'">
               {{formatInversion(amortizacion.inversion)}}
             </ng-container>
             <ng-container *ngSwitchCase="'inversion.propietario.nombres'">
@@ -106,8 +106,14 @@
               <p-tag [value]="amortizacion.activo ? 'Sí' : 'No'" [severity]="amortizacion.activo ? 'success' : 'danger'"></p-tag>
             </ng-container>
             <ng-container *ngSwitchCase="'acciones'">
-              <button pButton type="button" icon="pi pi-pencil" class="p-button-rounded p-button-text" (click)="edit(amortizacion)"></button>
-              <button pButton type="button" icon="pi pi-trash" class="p-button-rounded p-button-text p-button-danger" (click)="delete(amortizacion)"></button>
+              <div class="btn-group justify-content-center">
+                <button class="btn btn-sm btn-outline-info" (click)="edit(amortizacion)" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="delete(amortizacion)" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
             </ng-container>
           </ng-container>
         </td>
