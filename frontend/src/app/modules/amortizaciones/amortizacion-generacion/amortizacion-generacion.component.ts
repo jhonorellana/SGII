@@ -42,6 +42,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   submitted = false;
   showPreview = false;
   showResults = false;
+  mostrarCuotasPrevias = false; // Control para mostrar/ocultar cuotas previas a la compra
 
   // Propiedades computadas para el template
   get inversionSeleccionada(): any {
@@ -245,6 +246,9 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
     if (!this.parametrosInversion) return;
 
     try {
+      // Resetear el filtro de cuotas previas al cargar nuevos parámetros
+      this.mostrarCuotasPrevias = false;
+
       // Usar la misma lógica que getFrecuenciaSugerida()
       const frecuenciaSugerida = this.getFrecuenciaSugerida();
 
@@ -528,6 +532,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
     this.tablaPrevisualizacion = null;
     this.showPreview = false;
     this.showResults = false;
+    this.mostrarCuotasPrevias = false; // Resetear filtro de cuotas previas
     this.submitted = false;
   }
 
@@ -553,6 +558,49 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
       : `${fechaCompra} ${fechaVencimiento}`;
 
     return `${codigo} - ${liquidacion} - ${tipoInstrumento} - ${fechas}`;
+  }
+
+  // Filtrar cuotas según fecha de compra
+  getCuotasFiltradas(): any[] {
+    if (!this.tablaPrevisualizacion || !this.tablaPrevisualizacion.cuotas) {
+      return [];
+    }
+
+    // Si se muestran todas las cuotas, devolver todo
+    if (this.mostrarCuotasPrevias) {
+      return this.tablaPrevisualizacion.cuotas;
+    }
+
+    // Filtrar cuotas con fecha >= fecha de compra
+    const fechaCompra = this.parametrosInversion?.fecha_compra;
+    if (!fechaCompra) {
+      return this.tablaPrevisualizacion.cuotas; // Si no hay fecha de compra, mostrar todo
+    }
+
+    return this.tablaPrevisualizacion.cuotas.filter(cuota => {
+      return new Date(cuota.fecha_pago) >= new Date(fechaCompra);
+    });
+  }
+
+  // Obtener cuotas previas (antes de la fecha de compra)
+  getCuotasPrevias(): any[] {
+    if (!this.tablaPrevisualizacion || !this.tablaPrevisualizacion.cuotas || !this.parametrosInversion?.fecha_compra) {
+      return [];
+    }
+
+    const fechaCompra = this.parametrosInversion.fecha_compra;
+    if (!fechaCompra) {
+      return [];
+    }
+
+    return this.tablaPrevisualizacion.cuotas.filter(cuota => {
+      return new Date(cuota.fecha_pago) < new Date(fechaCompra);
+    });
+  }
+
+  // Toggle para mostrar/ocultar cuotas previas
+  toggleCuotasPrevias(): void {
+    this.mostrarCuotasPrevias = !this.mostrarCuotasPrevias;
   }
 
   getTipoAmortizacionDisplay(tipo: string): string {
