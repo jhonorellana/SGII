@@ -603,6 +603,14 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
     this.mostrarCuotasPrevias = !this.mostrarCuotasPrevias;
   }
 
+  // Verificar si hay cuotas con interés acumulado previo
+  tieneCuotasConInteresAcumulado(): boolean {
+    if (!this.tablaPrevisualizacion || !this.tablaPrevisualizacion.cuotas) {
+      return false;
+    }
+    return this.tablaPrevisualizacion.cuotas.some(cuota => cuota.tiene_interes_acumulado_previo);
+  }
+
   getTipoAmortizacionDisplay(tipo: string): string {
     return tipo === 'A' ? 'Alemana' : 'Francesa';
   }

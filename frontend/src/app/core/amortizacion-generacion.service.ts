@@ -37,6 +37,8 @@ export interface CuotaAmortizacion {
   premio: number;
   interes_total: number;
   flujo: number;
+  tiene_interes_acumulado_previo?: boolean;
+  interes_acumulado_previo_aplicado?: number;
 }
 
 export interface TablaAmortizacion {

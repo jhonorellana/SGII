@@ -241,13 +241,40 @@
                         <td>{{ cuota.numero_cuota }}</td>
                         <td>{{ formatDate(cuota.fecha_pago) }}</td>
                         <td class="text-end">{{ formatCurrency(cuota.capital_restante) }}</td>
-                        <td class="text-end">{{ formatCurrency(cuota.capital_devuelto) }}</td>
+                        <td class="text-end">
+                          <div *ngIf="!cuota.tiene_interes_acumulado_previo">
+                            {{ formatCurrency(cuota.capital_retorno) }}
+                          </div>
+                          <div *ngIf="cuota.tiene_interes_acumulado_previo" class="text-start">
+                            <div class="small">
+                              <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0">
+                                {{ formatCurrency(cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado) }}
+                              </div>
+                              <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0" class="text-success fw-bold">
+                                +{{ formatCurrency(cuota.interes_acumulado_previo_aplicado) }}
+                              </div>
+                              <div class="text-primary fw-bold border-top pt-1" *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0">
+                                {{ formatCurrency(cuota.capital_retorno) }}
+                              </div>
+                              <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado === 0" class="text-end fw-bold">
+                                {{ formatCurrency(cuota.capital_retorno) }}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
                         <td class="text-end">{{ formatCurrency(cuota.interes_parcial) }}</td>
                         <td class="text-end">{{ formatCurrency(cuota.premio) }}</td>
                         <td class="text-end fw-bold">{{ formatCurrency(cuota.interes_total) }}</td>
                       </tr>
                     </tbody>
                   </table>
+                </div>
+
+                <!-- Nota explicativa -->
+                <div *ngIf="tieneCuotasConInteresAcumulado()" class="mt-2">
+                  <small class="text-muted">
+                    <em>Capital retorno en negrita incluye interés acumulado previo pagado al vendedor en la fecha de compra</em>
+                  </small>
                 </div>
 
                 <!-- Cuotas previas (solo si se muestran) -->
@@ -271,13 +298,40 @@
                           <td>{{ cuota.numero_cuota }}</td>
                           <td>{{ formatDate(cuota.fecha_pago) }}</td>
                           <td class="text-end">{{ formatCurrency(cuota.capital_restante) }}</td>
-                          <td class="text-end">{{ formatCurrency(cuota.capital_devuelto) }}</td>
+                          <td class="text-end">
+                            <div *ngIf="!cuota.tiene_interes_acumulado_previo">
+                              {{ formatCurrency(cuota.capital_retorno) }}
+                            </div>
+                            <div *ngIf="cuota.tiene_interes_acumulado_previo" class="text-start">
+                              <div class="small">
+                                <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0">
+                                  {{ formatCurrency(cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado) }}
+                                </div>
+                                <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0" class="text-success fw-bold">
+                                  +{{ formatCurrency(cuota.interes_acumulado_previo_aplicado) }}
+                                </div>
+                                <div class="text-primary fw-bold border-top pt-1" *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado > 0">
+                                  {{ formatCurrency(cuota.capital_retorno) }}
+                                </div>
+                                <div *ngIf="cuota.capital_retorno - cuota.interes_acumulado_previo_aplicado === 0" class="text-end fw-bold">
+                                  {{ formatCurrency(cuota.capital_retorno) }}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
                           <td class="text-end">{{ formatCurrency(cuota.interes_parcial) }}</td>
                           <td class="text-end">{{ formatCurrency(cuota.premio) }}</td>
                           <td class="text-end fw-bold">{{ formatCurrency(cuota.interes_total) }}</td>
                         </tr>
                       </tbody>
                     </table>
+                  </div>
+
+                  <!-- Nota explicativa -->
+                  <div *ngIf="tieneCuotasConInteresAcumulado()" class="mt-2">
+                    <small class="text-muted">
+                      <em>Capital retorno en negrita incluye interés acumulado previo pagado al vendedor en la fecha de compra</em>
+                    </small>
                   </div>
                 </div>
               </div>

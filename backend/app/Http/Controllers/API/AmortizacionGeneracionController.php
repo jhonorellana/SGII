@@ -353,14 +353,65 @@ class AmortizacionGeneracionController extends Controller
                 }
             }
 
-            // Ajustar primera cuota con valores de BD
-            if ($numeroCuota === 1 && $fechaPrimerPago && $fecha >= $fechaPrimerPago) {
+            // Ajustar cuotas posteriores a la fecha de compra con interés acumulado previo
+            $fechaCompra = $inversion->fecha_compra ? new Carbon($inversion->fecha_compra) : null;
+            $esPrimeraCuotaDespuesCompra = false;
+
+            if ($fechaCompra && $fecha > $fechaCompra) {
+                // Esta es la primera cuota después de la fecha de compra
+                if (!isset($primeraCuotaDespuesCompraEncontrada)) {
+                    $primeraCuotaDespuesCompraEncontrada = true;
+                    $esPrimeraCuotaDespuesCompra = true;
+
+                    // Aplicar lógica de interés acumulado previo
+                    if ($interesAcumuladoPrevio > 0) {
+                        // Guardar valores originales para logging
+                        $interesParcialOriginal = $interesParcial;
+                        $capitalRetornoOriginal = $capitalRetorno;
+
+                        // Restar el interés acumulado previo del interés parcial
+                        $interesParcialAjustado = max(0, $interesParcial - $interesAcumuladoPrevio);
+
+                        // Agregar el interés acumulado previo al capital retorno
+                        $capitalRetornoAjustado = $capitalRetorno + $interesAcumuladoPrevio;
+
+                        // Actualizar valores
+                        $interesParcial = $interesParcialAjustado;
+                        $capitalRetorno = $capitalRetornoAjustado;
+
+                        // Recalcular el total (suma de interés ajustado + capital ajustado)
+                        $interesTotal = $interesParcial + $capitalRetorno;
+
+                        \Log::info('Ajuste por interés acumulado previo en primera cuota después de compra:', [
+                            'numero_cuota' => $numeroCuota,
+                            'fecha_pago' => $fecha->format('Y-m-d'),
+                            'fecha_compra' => $fechaCompra->format('Y-m-d'),
+                            'interes_parcial_original' => $interesParcialOriginal,
+                            'interes_acumulado_previo' => $interesAcumuladoPrevio,
+                            'interes_parcial_ajustado' => $interesParcial,
+                            'capital_retorno_original' => $capitalRetornoOriginal,
+                            'capital_retorno_ajustado' => $capitalRetorno,
+                            'interes_total' => $interesTotal
+                        ]);
+                    }
+                }
+            }
+
+            // Mantener lógica existente para primera cuota si aplica
+            if ($numeroCuota === 1 && $fechaPrimerPago && $fecha >= $fechaPrimerPago && !$esPrimeraCuotaDespuesCompra) {
                 $capitalDevueltoCuota = $interesAcumuladoPrevio;
                 $interesParcial = $primerMesInteres;
                 $premio = 0;
             }
 
-            $interesTotal = $interesParcial + $premio;
+            // Calcular el total correctamente
+            if ($esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0) {
+                // Para la primera cuota después de compra, el total incluye el capital ajustado
+                $interesTotal = $interesParcial + $capitalRetorno;
+            } else {
+                // Para las demás cuotas, el cálculo normal
+                $interesTotal = $interesParcial + $premio;
+            }
 
             $cuotas[] = [
                 'numero_cuota' => $numeroCuota,
@@ -371,7 +422,9 @@ class AmortizacionGeneracionController extends Controller
                 'interes_parcial' => $interesParcial,
                 'premio' => $premio,
                 'interes_total' => round($interesTotal, 2),
-                'flujo' => round($interesParcial + $capitalDevueltoCuota + $premio, 2)
+                'flujo' => round($interesParcial + $capitalDevueltoCuota + $premio, 2),
+                'tiene_interes_acumulado_previo' => $esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0,
+                'interes_acumulado_previo_aplicado' => $esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0 ? $interesAcumuladoPrevio : 0
             ];
 
             $numeroCuota++;
