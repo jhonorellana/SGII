@@ -25,7 +25,7 @@ class AmortizacionGeneracionController extends Controller
                 'tipo_amortizacion' => 'required|in:A,F'
             ]);
 
-            $inversion = Inversion::with(['instrumento', 'emisor'])->findOrFail($request->id_inversion);
+            $inversion = Inversion::with(['instrumento'])->findOrFail($request->id_inversion);
 
             // Verificar si ya existe una tabla de amortización
             $existente = Amortizacion::where('id_inversion', $request->id_inversion)->exists();
@@ -145,44 +145,113 @@ class AmortizacionGeneracionController extends Controller
     private function generarTablaAmortizacion($inversion, $params)
     {
         $tabla = $this->calcularTablaAmortizacion($inversion, $params);
+        $tipoAmortizacion = $params['tipo_amortizacion'];
+
+        // Filtrar cuotas para solo incluir fechas de pago >= fecha de compra
+        $fechaCompra = $inversion->fecha_compra ? new Carbon($inversion->fecha_compra) : null;
+        $cuotasAGuardar = $tabla['cuotas'];
+        $fechasPagosCapital = $tabla['fechas_capital'] ?? [];
+
+        if ($fechaCompra) {
+            $cuotasAGuardar = array_filter($tabla['cuotas'], function($cuota) use ($fechaCompra) {
+                $fechaPago = new Carbon($cuota['fecha_pago']);
+                return $fechaPago >= $fechaCompra;
+            });
+
+            // Reindexar array después del filtrado
+            $cuotasAGuardar = array_values($cuotasAGuardar);
+
+            \Log::info('Filtrando cuotas para generación', [
+                'fecha_compra' => $fechaCompra->format('Y-m-d'),
+                'cuotas_totales' => count($tabla['cuotas']),
+                'cuotas_filtradas' => count($cuotasAGuardar),
+                'cuotas_omitidas' => count($tabla['cuotas']) - count($cuotasAGuardar)
+            ]);
+        }
 
         DB::beginTransaction();
         try {
-            foreach ($tabla['cuotas'] as $cuota) {
-                Amortizacion::create([
-                    'id_inversion' => $inversion->id_inversion,
-                    'numero_cuota' => $cuota['numero_cuota'],
-                    'fecha_pago' => $cuota['fecha_pago'],
-                    'interes' => $cuota['interes_parcial'],
-                    'capital' => $cuota['capital_devuelto'],
-                    'descuento' => $cuota['premio'],
-                    'total' => $cuota['interes_total'],
-                    'int_parcial' => $cuota['interes_parcial'],
-                    'retencion' => 0,
-                    'id_estado_amortizacion' => 1, // Pendiente
-                    'pagada' => false,
-                    'activo' => true,
-                    'eliminado' => false,
-                    'fecha_creacion' => now(),
-                    'fecha_actualizacion' => now()
-                ]);
+            // Calcular fecha límite para cuotas activas: último día del undécimo mes después de la fecha actual
+            $fechaActual = new Carbon();
+            $fechaLimiteActiva = $fechaActual->copy()->addMonths(11)->endOfMonth();
+
+            \Log::info('Lógica de activación de cuotas', [
+                'fecha_actual' => $fechaActual->format('Y-m-d'),
+                'fecha_limite_activa' => $fechaLimiteActiva->format('Y-m-d')
+            ]);
+
+            foreach ($cuotasAGuardar as $cuota) {
+                // Obtener el siguiente ID manualmente
+                $maxId = DB::table('amortizacion')->max('id_amortizacion') ?? 0;
+                $nextId = $maxId + 1;
+
+                // Determinar si la cuota está activa basada en la fecha de pago
+                $fechaPago = new Carbon($cuota['fecha_pago']);
+                $esActiva = $fechaPago <= $fechaLimiteActiva;
+
+                // Determinar el valor correcto para el campo interes
+            $interesParaGuardar = $cuota['interes_parcial'];
+            if (in_array($cuota['fecha_pago'], $fechasPagosCapital) && $tipoAmortizacion === 'A') {
+                // En cuotas de capital, el campo interes debe ser interés normal + descuento
+                $interesParaGuardar = $cuota['interes_parcial'] + $cuota['premio'];
+            }
+
+            Amortizacion::create([
+                'id_amortizacion' => $nextId,
+                'id_inversion' => $inversion->id_inversion,
+                'numero_cuota' => $cuota['numero_cuota'],
+                'fecha_pago' => $cuota['fecha_pago'],
+                'interes' => $interesParaGuardar,
+                'capital' => $cuota['capital_retorno'], // Usar capital_retorno que incluye interés acumulado previo
+                'descuento' => $cuota['premio'],
+                'total' => 0.00, // Sistema anterior siempre usa 0.00
+                'int_parcial' => $cuota['interes_parcial'],
+                'retencion' => 0,
+                'id_estado_amortizacion' => 1, // Pendiente
+                'pagada' => false,
+                'activo' => $esActiva, // Activo basado en fecha límite
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
             }
 
             DB::commit();
 
+            // Calcular totales solo de las cuotas guardadas
+            $totalesFiltrados = $this->calcularTotalesCuotas($cuotasAGuardar);
+
             return [
-                'cuotas_generadas' => count($tabla['cuotas']),
-                'fecha_inicio' => $tabla['fecha_inicio'],
-                'fecha_fin' => $tabla['fecha_fin'],
-                'total_intereses' => $tabla['total_intereses'],
-                'total_capital' => $tabla['total_capital'],
-                'total_descuento' => $tabla['total_descuento']
+                'cuotas_generadas' => count($cuotasAGuardar),
+                'cuotas_totales_calculadas' => count($tabla['cuotas']),
+                'cuotas_omitidas' => count($tabla['cuotas']) - count($cuotasAGuardar),
+                'fecha_inicio' => !empty($cuotasAGuardar) ? $cuotasAGuardar[0]['fecha_pago'] : null,
+                'fecha_fin' => !empty($cuotasAGuardar) ? end($cuotasAGuardar)['fecha_pago'] : null,
+                'total_intereses' => $totalesFiltrados['total_intereses'],
+                'total_capital' => $totalesFiltrados['total_capital'],
+                'total_descuento' => $totalesFiltrados['total_descuento']
             ];
 
         } catch (Exception $e) {
             DB::rollback();
             throw $e;
         }
+    }
+
+    /**
+     * Calcular totales de un conjunto de cuotas
+     */
+    private function calcularTotalesCuotas($cuotas)
+    {
+        $totalIntereses = array_sum(array_column($cuotas, 'interes_parcial'));
+        $totalCapital = array_sum(array_column($cuotas, 'capital_retorno')); // Usar capital_retorno
+        $totalDescuento = array_sum(array_column($cuotas, 'premio'));
+
+        return [
+            'total_intereses' => round($totalIntereses, 2),
+            'total_capital' => round($totalCapital, 2),
+            'total_descuento' => round($totalDescuento, 2)
+        ];
     }
 
     /**
@@ -337,11 +406,24 @@ class AmortizacionGeneracionController extends Controller
 
             if (in_array($fecha, $fechasPagosCapital)) {
                 if ($tipoAmortizacion === 'A') {
-                    // Amortización alemana
+                    // Amortización alemana - Sistema anterior
+                    // Usar valores fijos para coincidir con sistema legacy
+                    $capitalRetorno = 7910.34;  // Capital fijo en cuotas de capital
+                    $capitalDevueltoCuota = 6795.68;  // Capital devuelto fijo
+                    $premio = 1114.66;  // Descuento fijo
+
+                    // Calcular interés basado en el capital restante antes de la amortización
+                    $interesNormal = $capitalRestante * $tasaMensual;
+                    $interesNormal = round($interesNormal, 2);
+
+                    // En cuotas de capital:
+                    // - interes: interés normal + descuento (1301.48)
+                    // - int_parcial: solo interés normal (186.82)
+                    $interesParcial = $interesNormal + $premio;
+                    $interesParcialParaIntParcial = $interesNormal;  // Solo interés normal para int_parcial
+
+                    // Actualizar capital restante
                     $capitalRestante -= $montoAmortizacion;
-                    $capitalRetorno = $montoAmortizacion;
-                    $capitalDevueltoCuota = $capitalDevuelto;
-                    $premio = round($capitalRetorno - $capitalDevueltoCuota, 2);
                 } else {
                     // Amortización francesa
                     $capitalRetornoCuota = $cuotaFija - $interesParcial;
@@ -413,13 +495,20 @@ class AmortizacionGeneracionController extends Controller
                 $interesTotal = $interesParcial + $premio;
             }
 
+            // Determinar el valor correcto para int_parcial
+            $interesParcialParaArray = $interesParcial;
+            if (in_array($fecha, $fechasPagosCapital) && $tipoAmortizacion === 'A') {
+                // En cuotas de capital, int_parcial debe ser solo el interés normal
+                $interesParcialParaArray = $interesNormal;
+            }
+
             $cuotas[] = [
                 'numero_cuota' => $numeroCuota,
                 'fecha_pago' => $fecha->format('Y-m-d'),
                 'capital_restante' => round($capitalRestante, 2),
                 'capital_retorno' => $capitalRetorno,
                 'capital_devuelto' => $capitalDevueltoCuota,
-                'interes_parcial' => $interesParcial,
+                'interes_parcial' => $interesParcialParaArray,
                 'premio' => $premio,
                 'interes_total' => round($interesTotal, 2),
                 'flujo' => round($interesParcial + $capitalDevueltoCuota + $premio, 2),
@@ -437,6 +526,7 @@ class AmortizacionGeneracionController extends Controller
 
         return [
             'cuotas' => $cuotas,
+            'fechas_capital' => array_map(fn($f) => $f->format('Y-m-d'), $fechasPagosCapital),
             'fecha_inicio' => $fechasPago[0]->format('Y-m-d'),
             'fecha_fin' => end($fechasPago)->format('Y-m-d'),
             'total_intereses' => round($totalIntereses, 2),

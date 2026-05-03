@@ -9,8 +9,10 @@ class Amortizacion extends Model
     protected $table = 'amortizacion';
     protected $primaryKey = 'id_amortizacion';
     public $timestamps = false;
+    public $incrementing = true;
 
     protected $fillable = [
+        'id_amortizacion',
         'id_inversion',
         'numero_cuota',
         'fecha_pago',
