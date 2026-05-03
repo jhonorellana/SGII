@@ -1,1 +1,48 @@
 /* Amortizacion List Component Styles */
+
+/* Alinear columnas numéricas a la derecha */
+.text-right {
+  text-align: right !important;
+}
+
+/* Específico para las columnas de la tabla de amortizaciones */
+.p-datatable .p-datatable-tbody > tr > td:nth-child(5), /* Interés */
+.p-datatable .p-datatable-tbody > tr > td:nth-child(6), /* Capital */
+.p-datatable .p-datatable-tbody > tr > td:nth-child(7), /* Descuento */
+.p-datatable .p-datatable-tbody > tr > td:nth-child(8) { /* Total */
+  text-align: right !important;
+  padding-right: 1rem !important;
+}
+
+/* También alinear encabezados numéricos */
+.p-datatable .p-datatable-thead > tr > th:nth-child(5), /* Interés */
+.p-datatable .p-datatable-thead > tr > th:nth-child(6), /* Capital */
+.p-datatable .p-datatable-thead > tr > th:nth-child(7), /* Descuento */
+.p-datatable .p-datatable-thead > tr > th:nth-child(8) { /* Total */
+  text-align: right !important;
+  padding-right: 1rem !important;
+}
+
+/* Forzar alineación para inputs numéricos con clases PrimeNG */
+.p-datatable .p-datatable-thead tr:nth-child(2) th:nth-child(5) .p-inputtext.text-right,
+.p-datatable .p-datatable-thead tr:nth-child(2) th:nth-child(6) .p-inputtext.text-right,
+.p-datatable .p-datatable-thead tr:nth-child(2) th:nth-child(8) .p-inputtext.text-right {
+  text-align: right !important;
+}
+
+/* Selectores específicos para PrimeNG con !important */
+.p-inputtext.text-right {
+  text-align: right !important;
+}
+
+/* Selectores ultra específicos */
+tr:nth-child(2) th:nth-child(5) input.text-right,
+tr:nth-child(2) th:nth-child(6) input.text-right,
+tr:nth-child(2) th:nth-child(8) input.text-right {
+  text-align: right !important;
+}
+
+/* Aplicar a todos los inputs numéricos en filtros */
+.p-datatable-thead tr:nth-child(2) input[type="number"].text-right {
+  text-align: right !important;
+}

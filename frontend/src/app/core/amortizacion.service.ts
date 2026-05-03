@@ -21,6 +21,7 @@ export interface Amortizacion {
   fecha_actualizacion?: string;
   inversion?: any;
   estadoAmortizacion?: any;
+  estado_amortizacion?: any; // Para datos del backend con snake_case
 }
 
 @Injectable({

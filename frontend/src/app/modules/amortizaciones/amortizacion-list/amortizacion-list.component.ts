@@ -1,19 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { TagModule } from 'primeng/tag';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { FormsModule } from '@angular/forms';
 import { AmortizacionService, Amortizacion } from '../../../core/amortizacion.service';
 import { InversionService } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 
 @Component({
@@ -38,6 +42,7 @@ import { ModalActionsComponent } from '../../../core/modal-actions';
   styleUrls: ['./amortizacion-list.component.css']
 })
 export class AmortizacionListComponent implements OnInit {
+  @ViewChild('table') table!: any;
   amortizaciones: Amortizacion[] = [];
   inversiones: any[] = [];
   estadosAmortizacion: any[] = [];
@@ -57,7 +62,7 @@ export class AmortizacionListComponent implements OnInit {
 
   cols: any[] = [
     { field: 'id_amortizacion', header: 'ID' },
-    { field: 'inversion.id_inversion', header: 'Inversión' },
+    { field: 'inversion', header: 'Inversión' },
     { field: 'inversion.propietario.nombres', header: 'Propietario' },
     { field: 'fecha_pago', header: 'Fecha Pago' },
     { field: 'interes', header: 'Interés' },
@@ -65,7 +70,6 @@ export class AmortizacionListComponent implements OnInit {
     { field: 'descuento', header: 'Descuento' },
     { field: 'total', header: 'Total' },
     { field: 'estado_amortizacion', header: 'Estado' },
-    { field: 'pagada', header: 'Pagada' },
     { field: 'activo', header: 'Activo' },
     { field: 'acciones', header: 'Acciones' }
   ];
@@ -188,6 +192,35 @@ export class AmortizacionListComponent implements OnInit {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
 
+  formatInversion(inversion: any): string {
+    if (!inversion) return '-';
+    const codigo = inversion.id_inversion || '';
+    const liquidacion = inversion.liquidacion || '';
+    return liquidacion ? `${codigo} - ${liquidacion}` : codigo.toString();
+  }
+
+  onInversionFilterChange(event: any): void {
+    const value = event.target.value;
+    if (!value) {
+      this.table.filteredValue = this.amortizaciones;
+      return;
+    }
+
+    const filtered = this.amortizaciones.filter(amortizacion => {
+      if (!amortizacion.inversion) return false;
+
+      const codigo = amortizacion.inversion.id_inversion?.toString() || '';
+      const liquidacion = amortizacion.inversion.liquidacion?.toString() || '';
+      const formattedText = this.formatInversion(amortizacion.inversion);
+
+      return codigo.includes(value) ||
+             liquidacion.toLowerCase().includes(value.toLowerCase()) ||
+             formattedText.toLowerCase().includes(value.toLowerCase());
+    });
+
+    this.table.filteredValue = filtered;
+  }
+
   formatDate(date: string): string {
     if (!date) return '-';
     const d = new Date(date);
@@ -207,5 +240,76 @@ export class AmortizacionListComponent implements OnInit {
       default:
         return 'info';
     }
+  }
+
+  exportToExcel(): void {
+    const dataToExport = this.table.filteredValue || this.amortizaciones;
+    const exportData = dataToExport.map((amortizacion: Amortizacion) => ({
+      ID: amortizacion.id_amortizacion,
+      'Inversión': this.formatInversion(amortizacion.inversion),
+      Propietario: amortizacion.inversion?.propietario?.nombres || '',
+      'Fecha Pago': this.formatDate(amortizacion.fecha_pago),
+      Interés: amortizacion.interes,
+      Capital: amortizacion.capital,
+      Descuento: amortizacion.descuento,
+      Total: amortizacion.total,
+      Estado: amortizacion.estado_amortizacion?.nombre || '',
+      Activo: amortizacion.activo ? 'Sí' : 'No'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Amortizaciones');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fileName = `amortizaciones_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    saveAs(blob, fileName);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo Excel exportado correctamente'
+    });
+  }
+
+  exportToPDF(): void {
+    const dataToExport = this.table.filteredValue || this.amortizaciones;
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Amortizaciones', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = dataToExport.map((amortizacion: Amortizacion) => [
+      amortizacion.id_amortizacion,
+      this.formatInversion(amortizacion.inversion),
+      amortizacion.inversion?.propietario?.nombres || '',
+      this.formatDate(amortizacion.fecha_pago),
+      amortizacion.interes,
+      amortizacion.capital,
+      amortizacion.descuento,
+      amortizacion.total,
+      amortizacion.estado_amortizacion?.nombre || '',
+      amortizacion.activo ? 'Sí' : 'No'
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Inversión', 'Propietario', 'Fecha Pago', 'Interés', 'Capital', 'Descuento', 'Total', 'Estado', 'Activo']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [97, 178, 125] }
+    });
+
+    doc.save(`amortizaciones_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo PDF exportado correctamente'
+    });
   }
 }
