@@ -76,6 +76,11 @@ export class SidebarComponent implements OnInit {
           title: 'Amortizaciones',
           icon: 'bi-calculator',
           path: '/amortizaciones'
+        },
+        {
+          title: 'Generación de Tablas',
+          icon: 'bi-table',
+          path: '/amortizaciones/generacion'
         }
       ]
     },

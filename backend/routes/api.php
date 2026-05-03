@@ -11,6 +11,7 @@ use App\Http\Controllers\API\EmisorController;
 use App\Http\Controllers\API\InstrumentoController;
 use App\Http\Controllers\API\InversionController;
 use App\Http\Controllers\API\AmortizacionController;
+use App\Http\Controllers\API\AmortizacionGeneracionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +56,12 @@ Route::apiResource('inversiones', InversionController::class);
 // Rutas de Amortizaciones (temporalmente sin autenticación para pruebas)
 Route::apiResource('amortizaciones', AmortizacionController::class);
 Route::get('amortizaciones/inversion/{idInversion}', [AmortizacionController::class, 'getByInversion']);
+
+// Rutas de Generación de Amortizaciones (temporalmente sin autenticación para pruebas)
+Route::post('amortizaciones/generar', [AmortizacionGeneracionController::class, 'generar']);
+Route::get('amortizaciones/parametros/{id_inversion}', [AmortizacionGeneracionController::class, 'getParametros']);
+Route::post('amortizaciones/previsualizar', [AmortizacionGeneracionController::class, 'previsualizar']);
+Route::delete('amortizaciones/eliminar/{id_inversion}', [AmortizacionGeneracionController::class, 'eliminar']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

@@ -12,6 +12,7 @@ import { EmisorListComponent } from './modules/emisores/emisor-list/emisor-list.
 import { InstrumentoListComponent } from './modules/instrumentos/instrumento-list/instrumento-list.component';
 import { InversionListComponent } from './modules/inversiones/inversion-list/inversion-list.component';
 import { AmortizacionListComponent } from './modules/amortizaciones/amortizacion-list/amortizacion-list.component';
+import { AmortizacionGeneracionComponent } from './modules/amortizaciones/amortizacion-generacion/amortizacion-generacion.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -34,6 +35,7 @@ export const routes: Routes = [
       { path: 'instrumentos', component: InstrumentoListComponent },
       { path: 'inversiones', component: InversionListComponent },
       { path: 'amortizaciones', component: AmortizacionListComponent },
+      { path: 'amortizaciones/generacion', component: AmortizacionGeneracionComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

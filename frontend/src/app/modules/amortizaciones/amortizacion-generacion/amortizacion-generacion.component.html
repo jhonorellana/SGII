@@ -1,0 +1,365 @@
+<div class="card">
+  <div class="card-header">
+    <h2>Generación Automática de Tabla de Amortización</h2>
+    <p class="text-muted">Complete los parámetros para generar la tabla de amortización de una inversión</p>
+  </div>
+
+  <div class="card-body">
+    <div *ngIf="loading" class="text-center">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-2">Cargando inversiones...</p>
+    </div>
+
+    <div *ngIf="!loading">
+      <form [formGroup]="generacionForm" (ngSubmit)="onGenerar()">
+        <!-- Selección de Inversión -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <label for="id_inversion" class="form-label">Inversión *</label>
+            <select
+              id="id_inversion"
+              class="form-select"
+              formControlName="id_inversion"
+              [class.is-invalid]="submitted && f['id_inversion'].errors">
+              <option value="">Seleccione una inversión...</option>
+              <option *ngFor="let inversion of inversiones" [value]="inversion.id_inversion">
+                {{ getInversionDisplay(inversion) }}
+              </option>
+            </select>
+            <div class="invalid-feedback" *ngIf="submitted && f['id_inversion'].errors">
+              La inversión es requerida
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje si no hay inversiones -->
+        <div *ngIf="!loading && inversiones.length === 0" class="alert alert-warning">
+          No hay inversiones disponibles para generar tablas de amortización.
+        </div>
+
+        <!-- Parámetros de Generación -->
+        <div class="row mb-4" *ngIf="parametrosInversion">
+          <div class="col-md-12">
+            <h5>Parámetros de Generación</h5>
+            <div class="row">
+              <div class="col-md-3">
+                <label for="frecuencia_pago" class="form-label">Frecuencia de Pago (meses) *</label>
+                <select
+                  id="frecuencia_pago"
+                  class="form-select"
+                  formControlName="frecuencia_pago"
+                  [class.is-invalid]="submitted && f['frecuencia_pago'].errors">
+                  <option *ngFor="let freq of [1,2,3,4,6,12]" [value]="freq">
+                    {{ freq === 1 ? 'Mensual' : freq === 2 ? 'Bimensual' : freq === 3 ? 'Trimestral' : freq === 4 ? 'Cuatrimestral' : freq === 6 ? 'Semestral' : 'Anual' }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="submitted && f['frecuencia_pago'].errors">
+                  La frecuencia de pago es requerida
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label for="cuotas_diferir" class="form-label">Cuotas a Diferir *</label>
+                <select
+                  id="cuotas_diferir"
+                  class="form-select"
+                  formControlName="cuotas_diferir"
+                  [class.is-invalid]="submitted && f['cuotas_diferir'].errors">
+                  <option *ngFor="let cuota of [0,1,2,3,4,5,6,7,8,9,10,11,12]" [value]="cuota">
+                    {{ cuota === 0 ? 'Sin diferir' : cuota + ' cuotas' }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="submitted && f['cuotas_diferir'].errors">
+                  Las cuotas a diferir son requeridas
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <label for="tipo_amortizacion" class="form-label">Tipo de Amortización *</label>
+                <select
+                  id="tipo_amortizacion"
+                  class="form-select"
+                  formControlName="tipo_amortizacion"
+                  [class.is-invalid]="submitted && f['tipo_amortizacion'].errors">
+                  <option value="A">Alemana</option>
+                  <option value="F">Francesa</option>
+                </select>
+                <div class="invalid-feedback" *ngIf="submitted && f['tipo_amortizacion'].errors">
+                  El tipo de amortización es requerido
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información de la Inversión Seleccionada -->
+        <div class="row mb-4" *ngIf="parametrosInversion">
+          <div class="col-md-12">
+            <div class="card bg-light">
+              <div class="card-body">
+                <h6 class="card-title">Datos del Instrumento</h6>
+                <div class="row">
+                  <div class="col-md-2">
+                    <small class="text-muted">Valor Nominal:</small><br>
+                    <strong>{{ formatCurrency(parametrosInversion.valor_nominal) }}</strong>
+                  </div>
+                  <div class="col-md-2">
+                    <small class="text-muted">Capital Invertido:</small><br>
+                    <strong>{{ formatCurrency(parametrosInversion.capital_invertido) }}</strong>
+                  </div>
+                  <div class="col-md-2">
+                    <small class="text-muted">Tasa de Interés:</small><br>
+                    <strong>{{ parametrosInversion.tasa_interes }}%</strong>
+                  </div>
+                  <div class="col-md-2">
+                    <small class="text-muted">Valor Interés:</small><br>
+                    <strong>{{ formatCurrency(parametrosInversion.valor_interes) }}</strong>
+                  </div>
+                  <div class="col-md-2">
+                    <small class="text-muted">Tipo Instrumento:</small><br>
+                    <strong class="text-capitalize">{{ parametrosInversion.tipo_instrumento }}</strong>
+                    <br><small class="text-muted">({{ parametrosInversion.tipo_instrumento_codigo }})</small>
+                  </div>
+                  <div class="col-md-2">
+                    <small class="text-muted">Frecuencia Sugerida:</small><br>
+                    <strong>{{ getFrecuenciaSugerida() }}</strong>
+                  </div>
+                </div>
+                <div class="row mt-3">
+                  <div class="col-md-3">
+                    <small class="text-muted">Fecha de Emisión:</small><br>
+                    <strong>{{ formatDate(parametrosInversion.fecha_emision) }}</strong>
+                  </div>
+                  <div class="col-md-3">
+                    <small class="text-muted">Fecha de Vencimiento:</small><br>
+                    <strong>{{ formatDate(parametrosInversion.fecha_vencimiento) }}</strong>
+                  </div>
+                  <div class="col-md-6">
+                    <small class="text-muted">Fechas de Recuperación de Capital:</small><br>
+                    <div *ngIf="getFechasRecuperacionCount() > 0">
+                      <span class="badge bg-primary me-1">{{ getFechasRecuperacionCount() }} fechas</span>
+                      <div class="mt-1">
+                        <small class="text-muted">
+                          <span *ngFor="let fecha of getFechasRecuperacionFormateadas(); let last = last">
+                            {{ formatDate(fecha) }}<span *ngIf="!last">, </span>
+                          </span>
+                        </small>
+                      </div>
+                    </div>
+                    <div *ngIf="getFechasRecuperacionCount() === 0">
+                      <span class="badge bg-warning">No especificadas</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <div class="alert alert-info">
+                      <small class="d-block">
+                        <strong>Parámetros de Cálculo:</strong>
+                        Método {{ tipoAmortizacionDisplay }} |
+                        Plazo: {{ calcularPlazoMeses() }} meses |
+                        Frecuencia: {{ generacionForm.value?.frecuencia_pago || 1 }} {{ getFrecuenciaTexto() }}
+                      </small>
+                      <hr class="my-2">
+                      <small class="d-block text-muted">
+                        <strong>Fuente de Datos:</strong><br>
+                        📊 <strong>Desde Tabla Inversión:</strong> valor_nominal, capital_invertido, tasa_interes<br>
+                        🗓️ <strong>Desde Tabla Instrumento:</strong> fecha_emision, fecha_vencimiento, valor_interes, fechas_recuperacion<br>
+                        🏷️ <strong>Desde Catálogo Valor:</strong> tipo_instrumento (descripción), tipo_instrumento_codigo (valor)
+                      </small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Información Detallada de Cálculo -->
+        <div class="row mb-4" *ngIf="parametrosInversion">
+          <div class="col-md-12">
+            <div class="card border-info">
+              <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                  <i class="bi bi-calculator"></i> Parámetros de Cálculo para Tabla de Amortización
+                  <small class="d-block mt-1">Datos obtenidos desde la tabla Instrumento</small>
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6">
+                    <h6 class="text-primary">Datos Base del Instrumento</h6>
+                    <ul class="list-unstyled small">
+                      <li><strong>Método de Amortización:</strong> {{ tipoAmortizacionDisplay }}</li>
+                      <li><strong>Valor Nominal:</strong> {{ formatCurrency(parametrosInversion.valor_nominal) }}</li>
+                      <li><strong>Capital Invertido:</strong> {{ formatCurrency(parametrosInversion.capital_invertido) }}</li>
+                      <li><strong>Valor del Interés:</strong> {{ formatCurrency(parametrosInversion.valor_interes) }}</li>
+                      <li><strong>Tasa de Interés:</strong> {{ parametrosInversion.tasa_interes }}%</li>
+                    </ul>
+                  </div>
+                  <div class="col-md-6">
+                    <h6 class="text-primary">Fechas y Plazos</h6>
+                    <ul class="list-unstyled small">
+                      <li><strong>Fecha de Emisión:</strong> {{ formatDate(parametrosInversion.fecha_emision) }}</li>
+                      <li><strong>Fecha de Vencimiento:</strong> {{ formatDate(parametrosInversion.fecha_vencimiento) }}</li>
+                      <li><strong>Plazo Total:</strong> {{ calcularPlazoMeses() }} meses</li>
+                      <li><strong>Frecuencia de Pago:</strong> {{ generacionForm.value?.frecuencia_pago || 1 }} {{ getFrecuenciaTexto() }}</li>
+                      <li><strong>Cuotas Diferidas:</strong> {{ generacionForm.value?.cuotas_diferir || 0 }}</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="row mt-3">
+                  <div class="col-md-12">
+                    <h6 class="text-primary">Consideraciones Especiales</h6>
+                    <div class="row">
+                      <div class="col-md-4">
+                        <ul class="list-unstyled small">
+                          <li><strong>Tipo de Instrumento:</strong> <span class="text-capitalize">{{ parametrosInversion.tipo_instrumento }}</span></li>
+                          <li><strong>Frecuencia Sugerida:</strong> {{ getFrecuenciaSugerida() }}</li>
+                        </ul>
+                      </div>
+                      <div class="col-md-8">
+                        <ul class="list-unstyled small">
+                          <li><strong>Fechas de Recuperación:</strong>
+                            <span class="badge me-1" [class]="getFechasRecuperacionCount() > 0 ? 'bg-success' : 'bg-warning'">
+                              {{ getFechasRecuperacionCount() > 0 ? getFechasRecuperacionCount() + ' fechas' : 'No especificadas' }}
+                            </span>
+                          </li>
+                          <li *ngIf="getFechasRecuperacionCount() > 0" class="mt-2">
+                            <strong>Detalle de Fechas:</strong>
+                            <div class="mt-1 p-2 bg-light rounded">
+                              <div class="row">
+                                <div *ngFor="let fecha of getFechasRecuperacionFormateadas(); let i = index"
+                                     class="col-md-3 col-sm-4 col-6 mb-2">
+                                  <span class="badge bg-info text-wrap">
+                                    <i class="bi bi-calendar-date"></i> {{ formatDate(fecha) }}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                          <li><strong>Estado de Validación:</strong>
+                            <span class="badge" [class]="validarFechasInversion() ? 'bg-success' : 'bg-danger'">
+                              {{ validarFechasInversion() ? 'Válido' : 'Inválido' }}
+                            </span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row mb-4" *ngIf="parametrosInversion">
+          <div class="col-md-12">
+            <!-- Alerta si no hay fechas de recuperación -->
+            <div class="alert alert-warning" *ngIf="!parametrosInversion.fechas_recuperacion">
+              <h6 class="alert-heading">
+                <i class="bi bi-exclamation-triangle"></i> Fechas de Recuperación No Especificadas
+              </h6>
+              <p class="mb-0">
+                Las fechas de recuperación de capital no están definidas. Esto puede afectar la precisión de la tabla de amortización generada.
+              </p>
+            </div>
+
+            <!-- Alerta si las fechas son inválidas -->
+            <div class="alert alert-danger" *ngIf="validarFechasInversion() === false">
+              <h6 class="alert-heading">
+                <i class="bi bi-exclamation-circle"></i> Fechas Inválidas
+              </h6>
+              <p class="mb-0">
+                Las fechas de emisión o vencimiento son inválidas. Por favor verifique los datos de la inversión.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Previsualización de la Tabla -->
+        <div class="row mb-4" *ngIf="showPreview && tablaPrevisualizacion">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-header">
+                <h6>Previsualización - Tabla de Amortización</h6>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-striped table-sm">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Fecha Pago</th>
+                        <th>Capital Restante</th>
+                        <th>Capital Retorno</th>
+                        <th>Interés</th>
+                        <th>Premio</th>
+                        <th>Total Cuota</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let cuota of tablaPrevisualizacion.cuotas">
+                        <td>{{ cuota.numero_cuota }}</td>
+                        <td>{{ formatDate(cuota.fecha_pago) }}</td>
+                        <td class="text-end">{{ formatCurrency(cuota.capital_restante) }}</td>
+                        <td class="text-end">{{ formatCurrency(cuota.capital_devuelto) }}</td>
+                        <td class="text-end">{{ formatCurrency(cuota.interes_parcial) }}</td>
+                        <td class="text-end">{{ formatCurrency(cuota.premio) }}</td>
+                        <td class="text-end fw-bold">{{ formatCurrency(cuota.interes_total) }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row">
+          <div class="col-12">
+            <button type="button" class="btn btn-secondary me-2" (click)="onLimpiar()">
+              <i class="bi bi-arrow-clockwise"></i> Limpiar
+            </button>
+            <button type="button" class="btn btn-primary me-2" (click)="onPrevisualizar()" [disabled]="generacionForm.invalid">
+              <i class="bi bi-eye"></i> Previsualizar
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="generacionForm.invalid">
+              <i class="bi bi-check-circle"></i> Generar Tabla
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Resultados de la Generación -->
+<div *ngIf="showResults" class="mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="alert alert-success">
+        <h5 class="alert-heading">
+          <i class="bi bi-check-circle"></i> ¡Tabla Generada Exitosamente!
+        </h5>
+        <p class="mb-0">
+          La tabla de amortización ha sido generada y guardada en la base de datos.
+          Puede ver los detalles en el módulo de Amortizaciones.
+        </p>
+        <hr>
+        <p class="mb-0">
+          <small>
+            <strong>Inversión:</strong> {{ getInversionDisplay(inversionSeleccionada) }}<br>
+            <strong>Tipo:</strong> {{ tipoAmortizacionDisplay }}<br>
+            <strong>Frecuencia:</strong> {{ generacionForm.value.frecuencia_pago }} meses
+          </small>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

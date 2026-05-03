@@ -18,6 +18,8 @@ class Instrumento extends Model
         'fecha_emision',
         'fecha_vencimiento',
         'tasa_referencial',
+        'valor_interes',
+        'tipo_instrumento',
         'fechas_recuperacion',
         'codigo_titulo_vector',
         'codigo_seb',
@@ -30,6 +32,7 @@ class Instrumento extends Model
 
     protected $casts = [
         'tasa_referencial' => 'decimal:8',
+        'valor_interes' => 'decimal:2',
         'fecha_emision' => 'date',
         'fecha_vencimiento' => 'date',
         'activo' => 'boolean'
