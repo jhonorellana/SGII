@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
 
 export interface Catalogo {
@@ -89,7 +89,9 @@ export class CatalogoService {
   }
 
   getValoresByCatalogo(idCatalogo: number): Observable<any> {
-    return this.apiService.get<CatalogoValor[]>(`catalogo-valores/catalogo/${idCatalogo}`);
+    return this.apiService.get<CatalogoValor[]>(`catalogo-valores/catalogo/${idCatalogo}`).pipe(
+      map((response: any) => response.data || [])
+    );
   }
 
   createCatalogoValor(valor: CreateCatalogoValorRequest): Observable<any> {

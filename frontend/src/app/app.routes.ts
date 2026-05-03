@@ -11,6 +11,7 @@ import { GrupoFamiliarListComponent } from './modules/grupos-familiares/grupo-fa
 import { EmisorListComponent } from './modules/emisores/emisor-list/emisor-list.component';
 import { InstrumentoListComponent } from './modules/instrumentos/instrumento-list/instrumento-list.component';
 import { InversionListComponent } from './modules/inversiones/inversion-list/inversion-list.component';
+import { AmortizacionListComponent } from './modules/amortizaciones/amortizacion-list/amortizacion-list.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -32,6 +33,7 @@ export const routes: Routes = [
       { path: 'emisores', component: EmisorListComponent },
       { path: 'instrumentos', component: InstrumentoListComponent },
       { path: 'inversiones', component: InversionListComponent },
+      { path: 'amortizaciones', component: AmortizacionListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

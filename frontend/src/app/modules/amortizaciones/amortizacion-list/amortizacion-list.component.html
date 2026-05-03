@@ -1,0 +1,148 @@
+<div class="p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Amortizaciones</h2>
+    <button pButton type="button" label="Nueva Amortización" icon="pi pi-plus" (click)="openNew()" class="p-button-primary"></button>
+  </div>
+
+  <p-table #table [value]="amortizaciones" [columns]="cols" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]"
+            [globalFilterFields]="['id_amortizacion', 'inversion.id_inversion', 'numero_cuota', 'fecha_pago']"
+            [(selection)]="selectedAmortizaciones" dataKey="id_amortizacion">
+    <ng-template pTemplate="caption">
+      <div class="d-flex justify-content-between align-items-center">
+        <input pInputText type="text" placeholder="Buscar..." #filter (input)="table.filter(filter.value, 'id_amortizacion', 'contains')">
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="header" let-columns>
+      <tr>
+        <th *ngFor="let col of columns" pSortableColumn="{{col.field}}">
+          {{col.header}}
+          <p-sortIcon field="{{col.field}}"></p-sortIcon>
+        </th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-amortizacion let-columns="columns">
+      <tr>
+        <td *ngFor="let col of columns">
+          <ng-container [ngSwitch]="col.field">
+            <ng-container *ngSwitchCase="'id_amortizacion'">
+              {{amortizacion.id_amortizacion}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'inversion.id_inversion'">
+              {{amortizacion.inversion?.id_inversion || '-'}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'inversion.propietario.nombres'">
+              {{amortizacion.inversion?.propietario?.nombres || '-'}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'fecha_pago'">
+              {{formatDate(amortizacion.fecha_pago)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'interes'">
+              {{formatCurrency(amortizacion.interes)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'capital'">
+              {{formatCurrency(amortizacion.capital)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'descuento'">
+              {{formatCurrency(amortizacion.descuento)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'total'">
+              {{formatCurrency(amortizacion.total)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'estado_amortizacion'">
+              <p-tag [value]="amortizacion.estado_amortizacion?.nombre || '-'" [severity]="getSeverity(amortizacion.estado_amortizacion?.nombre)"></p-tag>
+            </ng-container>
+            <ng-container *ngSwitchCase="'pagada'">
+              <p-tag [value]="amortizacion.pagada ? 'Sí' : 'No'" [severity]="amortizacion.pagada ? 'success' : 'warning'"></p-tag>
+            </ng-container>
+            <ng-container *ngSwitchCase="'activo'">
+              <p-tag [value]="amortizacion.activo ? 'Sí' : 'No'" [severity]="amortizacion.activo ? 'success' : 'danger'"></p-tag>
+            </ng-container>
+            <ng-container *ngSwitchCase="'acciones'">
+              <button pButton type="button" icon="pi pi-pencil" class="p-button-rounded p-button-text" (click)="edit(amortizacion)"></button>
+              <button pButton type="button" icon="pi pi-trash" class="p-button-rounded p-button-text p-button-danger" (click)="delete(amortizacion)"></button>
+            </ng-container>
+          </ng-container>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Modal para crear/editar -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Amortización' : 'Nueva Amortización'"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div class="p-fluid">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="id_inversion">Inversión <span class="text-danger">*</span></label>
+          <p-dropdown id="id_inversion" [(ngModel)]="amortizacion.id_inversion" [options]="inversiones" optionLabel="id_inversion" optionValue="id_inversion"
+            placeholder="Seleccione Inversión" [style]="{'width': '100%'}" [filter]="true" required></p-dropdown>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="numero_cuota">N° Cuota</label>
+          <input type="number" id="numero_cuota" [(ngModel)]="amortizacion.numero_cuota" class="form-control">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="fecha_pago">Fecha Pago <span class="text-danger">*</span></label>
+          <input type="date" id="fecha_pago" [(ngModel)]="amortizacion.fecha_pago" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="id_estado_amortizacion">Estado <span class="text-danger">*</span></label>
+          <p-dropdown id="id_estado_amortizacion" [(ngModel)]="amortizacion.id_estado_amortizacion" [options]="estadosAmortizacion" optionLabel="nombre" optionValue="id_catalogo_valor"
+            placeholder="Seleccione Estado" [style]="{'width': '100%'}" [filter]="true" required></p-dropdown>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label for="interes">Interés</label>
+          <input type="number" id="interes" [(ngModel)]="amortizacion.interes" class="form-control" step="0.01">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="capital">Capital</label>
+          <input type="number" id="capital" [(ngModel)]="amortizacion.capital" class="form-control" step="0.01">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="descuento">Descuento</label>
+          <input type="number" id="descuento" [(ngModel)]="amortizacion.descuento" class="form-control" step="0.01">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="total">Total</label>
+          <input type="number" id="total" [(ngModel)]="amortizacion.total" class="form-control" step="0.01">
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="pagada" [(ngModel)]="amortizacion.pagada">
+          <label class="form-check-label" for="pagada">Pagada</label>
+        </div>
+        <div class="col-md-6 mb-3 form-check">
+          <input type="checkbox" class="form-check-input" id="activo" [(ngModel)]="amortizacion.activo">
+          <label class="form-check-label" for="activo">Activo</label>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+        [disabled]="!amortizacion.id_inversion || !amortizacion.fecha_pago || !amortizacion.id_estado_amortizacion"
+        (onCancel)="displayDialog = false"
+        (onSave)="save()">
+      </app-modal-actions>
+    </ng-template>
+  </p-dialog>
+
+  <p-confirmDialog></p-confirmDialog>
+  <p-toast></p-toast>
+</div>

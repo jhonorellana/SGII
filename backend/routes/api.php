@@ -10,6 +10,7 @@ use App\Http\Controllers\API\GrupoFamiliarController;
 use App\Http\Controllers\API\EmisorController;
 use App\Http\Controllers\API\InstrumentoController;
 use App\Http\Controllers\API\InversionController;
+use App\Http\Controllers\API\AmortizacionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +51,10 @@ Route::apiResource('instrumentos', InstrumentoController::class);
 
 // Rutas de Inversiones (temporalmente sin autenticación para pruebas)
 Route::apiResource('inversiones', InversionController::class);
+
+// Rutas de Amortizaciones (temporalmente sin autenticación para pruebas)
+Route::apiResource('amortizaciones', AmortizacionController::class);
+Route::get('amortizaciones/inversion/{idInversion}', [AmortizacionController::class, 'getByInversion']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {
