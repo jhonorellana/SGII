@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -47,10 +47,15 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   showPreview = false;
   showResults = false;
   mostrarCuotasPrevias = false; // Control para mostrar/ocultar cuotas previas a la compra
+  modalVisible = false; // Control para mostrar/ocultar el modal de detalles
+
+  // ViewChild para el modal
+  @ViewChild('detalleInversionModal') detalleModal!: ElementRef;
 
   // Propiedades computadas para el template
   get inversionSeleccionada(): any {
-    return this.inversiones.find(i => i.id_inversion === this.generacionForm.value?.id_inversion);
+    const idSeleccionado = this.generacionForm.value?.id_inversion;
+    return this.inversiones.find(i => i.id_inversion == idSeleccionado);
   }
 
   get tipoAmortizacionDisplay(): string {
@@ -857,5 +862,31 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         detail: 'No se pudieron cargar los datos para exportar'
       });
     }
+  }
+
+  // Método para ver detalles de inversión
+  verDetalleInversion(): void {
+    if (!this.inversionSeleccionada) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor seleccione una inversión primero'
+      });
+      return;
+    }
+
+    // Mostrar modal simple
+    this.modalVisible = true;
+  }
+
+  // Método para cerrar modal
+  cerrarModal(): void {
+    this.modalVisible = false;
+  }
+
+  // Método para formatear tasa
+  formatTasa(tasa: number): string {
+    if (tasa === null || tasa === undefined) return 'N/A';
+    return `${(tasa * 100).toFixed(2)}%`;
   }
 }

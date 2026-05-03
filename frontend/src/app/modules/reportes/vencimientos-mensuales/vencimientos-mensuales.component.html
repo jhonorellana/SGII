@@ -1,0 +1,176 @@
+<div class="container-fluid">
+  <!-- Header del Reporte -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-calendar-month me-2"></i>
+        🧾 Vencimientos Mensuales
+      </h4>
+      <small class="text-white-50">
+        Resumen mensual de flujos financieros por tipo de componente
+      </small>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-4">
+        Visualice de forma clara cuánto se recibe mes a mes, cómo se compone cada flujo
+        (interés, capital, premio) y los totales anuales con estado de ejecución.
+      </p>
+
+      <!-- Filtros -->
+      <div class="row mb-4">
+        <div class="col-md-3">
+          <label for="anio" class="form-label">Año *</label>
+          <p-dropdown
+            id="anio"
+            [options]="anios"
+            formControlName="anio"
+            [showClear]="false"
+            placeholder="Seleccione año"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        <div class="col-md-3">
+          <label for="mes" class="form-label">Mes (opcional)</label>
+          <p-dropdown
+            id="mes"
+            [options]="meses"
+            formControlName="mes"
+            [showClear]="true"
+            placeholder="Todos los meses"
+            styleClass="w-full">
+          </p-dropdown>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <button
+            pButton
+            type="button"
+            label="Generar Reporte"
+            icon="pi pi-search"
+            class="p-button-primary me-2"
+            (click)="generarReporte()"
+            [disabled]="loading">
+          </button>
+          <button
+            pButton
+            type="button"
+            label="Exportar Excel"
+            icon="pi pi-file-excel"
+            class="p-button-success me-2"
+            (click)="exportarExcel()"
+            [disabled]="vencimientosMensuales.length === 0">
+          </button>
+          <button
+            pButton
+            type="button"
+            label="Exportar PDF"
+            icon="pi pi-file-pdf"
+            class="p-button-danger"
+            (click)="exportarPDF()"
+            [disabled]="vencimientosMensuales.length === 0">
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="text-center py-5">
+        <p-progressSpinner></p-progressSpinner>
+        <p class="mt-2">Generando reporte...</p>
+      </div>
+
+      <!-- Tabla de Resultados -->
+      <div *ngIf="!loading && vencimientosMensuales.length > 0">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover reporte-table">
+            <thead class="table-dark">
+              <tr>
+                <th class="text-center" style="width: 80px;">Año</th>
+                <th class="text-left" style="width: 120px;">Mes</th>
+                <th class="text-end" style="width: 140px;">Interés</th>
+                <th class="text-end" style="width: 140px;">Capital</th>
+                <th class="text-end" style="width: 140px;">Premio</th>
+                <th class="text-end" style="width: 140px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas mensuales -->
+              <tr
+                *ngFor="let item of vencimientosMensuales"
+                [class.table-active]="item.es_mes_actual"
+                class="fila-mensual">
+                <td class="text-center">{{ item.anio }}</td>
+                <td class="text-left">
+                  <strong>{{ item.nombre_mes }}</strong>
+                  <span *ngIf="item.es_mes_actual" class="badge bg-warning ms-2">Actual</span>
+                </td>
+                <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                <td class="text-end">{{ formatCurrency(item.premio) }}</td>
+                <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+              </tr>
+
+              <!-- Filas de resumen -->
+              <tr class="table-secondary fw-bold">
+                <td colspan="2" class="text-center">ANUAL TOTAL</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.total || 0) }}</td>
+              </tr>
+              <tr class="table-info fw-bold">
+                <td colspan="2" class="text-center">ANUAL EJECUTADO</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.total || 0) }}</td>
+              </tr>
+              <tr class="table-warning fw-bold">
+                <td colspan="2" class="text-center">ANUAL PENDIENTE</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.total || 0) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumen en Cards -->
+        <div class="row mt-4">
+          <div class="col-md-4">
+            <div class="card border-primary">
+              <div class="card-body text-center">
+                <h6 class="card-title text-primary">Total Anual</h6>
+                <h4 class="text-primary">{{ formatCurrency(resumenAnual[0]?.total || 0) }}</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-success">
+              <div class="card-body text-center">
+                <h6 class="card-title text-success">Ejecutado</h6>
+                <h4 class="text-success">{{ formatCurrency(resumenAnual[1]?.total || 0) }}</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-warning">
+              <div class="card-body text-center">
+                <h6 class="card-title text-warning">Pendiente</h6>
+                <h4 class="text-warning">{{ formatCurrency(resumenAnual[2]?.total || 0) }}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay datos -->
+      <div *ngIf="!loading && vencimientosMensuales.length === 0" class="text-center py-5">
+        <i class="bi bi-calendar-x display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">No hay datos disponibles</h5>
+        <p class="text-muted">Seleccione un año y haga clic en "Generar Reporte"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>

@@ -18,16 +18,26 @@
         <div class="row mb-4">
           <div class="col-md-6">
             <label for="id_inversion" class="form-label">Inversión *</label>
-            <select
-              id="id_inversion"
-              class="form-select"
-              formControlName="id_inversion"
-              [class.is-invalid]="submitted && f['id_inversion'].errors">
-              <option value="">Seleccione una inversión...</option>
-              <option *ngFor="let inversion of inversiones" [value]="inversion.id_inversion">
-                {{ getInversionDisplay(inversion) }}
-              </option>
-            </select>
+            <div class="input-group">
+              <select
+                id="id_inversion"
+                class="form-select"
+                formControlName="id_inversion"
+                [class.is-invalid]="submitted && f['id_inversion'].errors">
+                <option value="">Seleccione una inversión...</option>
+                <option *ngFor="let inversion of inversiones" [value]="inversion.id_inversion">
+                  {{ getInversionDisplay(inversion) }}
+                </option>
+              </select>
+              <button
+                type="button"
+                class="btn btn-outline-primary"
+                (click)="verDetalleInversion()"
+                [disabled]="!inversionSeleccionada"
+                title="Ver detalles de la inversión seleccionada">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
             <div class="invalid-feedback" *ngIf="submitted && f['id_inversion'].errors">
               La inversión es requerida
             </div>
@@ -404,3 +414,243 @@
 
 <p-toast></p-toast>
 <p-confirmDialog></p-confirmDialog>
+
+<!-- Modal simple para ver detalles de inversión -->
+<div *ngIf="modalVisible" class="modal-simple-overlay" (click)="cerrarModal()">
+  <div class="modal-simple-content" (click)="$event.stopPropagation()">
+    <div class="modal-simple-header">
+      <h5>
+        <i class="bi bi-info-circle me-2"></i>
+        Detalles de la Inversión
+      </h5>
+      <button type="button" class="btn-close" (click)="cerrarModal()" aria-label="Close">×</button>
+    </div>
+    <div class="modal-simple-body" *ngIf="inversionSeleccionada">
+      <!-- Información General -->
+      <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="bi bi-building me-2"></i>Información General</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>ID Inversión:</strong> {{ inversionSeleccionada.id_inversion }}<br>
+              <strong>Nombre:</strong> {{ inversionSeleccionada.nombre || 'N/A' }}<br>
+              <strong>Emisor:</strong> {{ inversionSeleccionada.emisor?.nombre || 'N/A' }}<br>
+              <strong>Tipo de Inversión:</strong> {{ inversionSeleccionada.instrumento?.nombre || 'N/A' }}
+            </div>
+            <div class="col-md-6">
+              <strong>Fecha Compra:</strong> {{ formatDate(inversionSeleccionada.fecha_compra) }}<br>
+              <strong>Fecha Vencimiento:</strong> {{ formatDate(inversionSeleccionada.fecha_vencimiento) }}<br>
+              <strong>Moneda:</strong> {{ inversionSeleccionada.moneda?.nombre || 'N/A' }}<br>
+              <strong>Estado:</strong>
+              <span class="badge"
+                    [class]="inversionSeleccionada.estado?.id_estado_inversion === 1 ? 'bg-success' : 'bg-secondary'">
+                {{ inversionSeleccionada.estado?.nombre || 'N/A' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Datos Financieros -->
+      <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Datos Financieros</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-4">
+              <strong>Valor Nominal:</strong><br>
+              <span class="fs-5 text-primary">{{ formatCurrency(inversionSeleccionada.valor_nominal) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Capital Invertido:</strong><br>
+              <span class="fs-5 text-primary">{{ formatCurrency(inversionSeleccionada.monto_invertido) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Tasa Interés:</strong><br>
+              <span class="fs-5 text-primary">{{ formatTasa(inversionSeleccionada.tasa_interes) }}</span>
+            </div>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-md-4">
+              <strong>Liquidación:</strong><br>
+              <span class="fs-6 text-info">{{ formatCurrency(inversionSeleccionada.liquidacion || 0) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Rendimiento:</strong><br>
+              <span class="fs-6 text-info">{{ formatTasa(inversionSeleccionada.rendimiento || 0) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Interés Acumulado Previo:</strong><br>
+              <span class="fs-6 text-info">{{ formatCurrency(inversionSeleccionada.interes_acumulado_previo || 0) }}</span>
+            </div>
+          </div>
+          <hr>
+          <div class="row">
+            <div class="col-md-4">
+              <strong>Precio Limpio:</strong><br>
+              <span class="fs-6 text-info">{{ formatCurrency(inversionSeleccionada.precio_limpio) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Precio Sucio:</strong><br>
+              <span class="fs-6 text-info">{{ formatCurrency(inversionSeleccionada.precio_sucio) }}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Interés Corrido:</strong><br>
+              <span class="fs-6 text-info">{{ formatCurrency(inversionSeleccionada.interes_corrido || 0) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fechas de Recuperación -->
+      <div class="card" *ngIf="inversionSeleccionada.fechas_recuperacion && inversionSeleccionada.fechas_recuperacion.length > 0">
+        <div class="card-header bg-warning text-dark">
+          <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Fechas de Recuperación de Capital</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-12">
+              <table class="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>N°</th>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let fecha of inversionSeleccionada.fechas_recuperacion; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ formatDate(fecha.fecha) }}</td>
+                    <td class="text-end">{{ formatCurrency(fecha.monto) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-simple-footer">
+      <button type="button" class="btn btn-secondary" (click)="cerrarModal()">
+        <i class="bi bi-x-circle me-1"></i>
+        Cerrar
+      </button>
+      <button type="button" class="btn btn-primary" (click)="cerrarModal()">
+        <i class="bi bi-check-circle me-1"></i>
+        Confirmar Selección
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Estilos CSS para el modal simple -->
+<style>
+.modal-simple-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+.modal-simple-content {
+  background: white;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-simple-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #dee2e6;
+  background: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.modal-simple-header h5 {
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+}
+
+.modal-simple-header .btn-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-simple-body {
+  padding: 1rem;
+  color: #333;
+}
+
+.modal-simple-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid #dee2e6;
+  background: #f8f9fa;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Asegurar que los textos en los cards sean visibles */
+.modal-simple-body .card {
+  border: 1px solid #dee2e6;
+}
+
+.modal-simple-body .card-header {
+  color: white;
+}
+
+/* Corregir específicamente el header de Información General */
+.modal-simple-body .card-header.bg-primary {
+  color: white !important;
+  background-color: #0d6efd !important;
+}
+
+.modal-simple-body .card-header.bg-success {
+  color: white !important;
+  background-color: #198754 !important;
+}
+
+.modal-simple-body .card-header.bg-warning {
+  color: #212529 !important;
+  background-color: #ffc107 !important;
+}
+
+.modal-simple-body .card-body {
+  color: #333;
+  background: white;
+}
+
+.modal-simple-body strong {
+  color: #333;
+}
+
+.modal-simple-body .text-primary {
+  color: #0d6efd !important;
+}
+
+.modal-simple-body .text-info {
+  color: #0dcaf0 !important;
+}
+</style>

@@ -13,6 +13,7 @@ import { InstrumentoListComponent } from './modules/instrumentos/instrumento-lis
 import { InversionListComponent } from './modules/inversiones/inversion-list/inversion-list.component';
 import { AmortizacionListComponent } from './modules/amortizaciones/amortizacion-list/amortizacion-list.component';
 import { AmortizacionGeneracionComponent } from './modules/amortizaciones/amortizacion-generacion/amortizacion-generacion.component';
+import { VencimientosMensualesComponent } from './modules/reportes/vencimientos-mensuales/vencimientos-mensuales.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -36,6 +37,7 @@ export const routes: Routes = [
       { path: 'inversiones', component: InversionListComponent },
       { path: 'amortizaciones', component: AmortizacionListComponent },
       { path: 'amortizaciones/generacion', component: AmortizacionGeneracionComponent },
+      { path: 'reportes/vencimientos-mensuales', component: VencimientosMensualesComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

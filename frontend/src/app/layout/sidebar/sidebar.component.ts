@@ -90,6 +90,11 @@ export class SidebarComponent implements OnInit {
       path: '/reportes',
       children: [
         {
+          title: 'Vencimientos Mensuales',
+          icon: 'bi-calendar-month',
+          path: '/reportes/vencimientos-mensuales'
+        },
+        {
           title: 'Reporte de Inversiones',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/inversiones'
