@@ -534,7 +534,25 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   // Métodos de utilidad
   getInversionDisplay(inversion: any): string {
     if (!inversion) return '';
-    return `${inversion.id_inversion} - ${inversion.liquidacion || 'Sin liquidación'}`;
+
+    const codigo = inversion.id_inversion || '';
+    const liquidacion = inversion.liquidacion || 'Sin liquidación';
+    const tipoInstrumento = inversion.instrumento?.tipoInversion?.descripcion ||
+                           inversion.instrumento?.tipoInversion?.nombre ||
+                           inversion.tipo_instrumento || 'Sin tipo';
+
+    // Fechas desde instrumento
+    const fechaCompra = inversion.fecha_compra ? this.formatDate(inversion.fecha_compra) : 'Sin fecha';
+    const fechaVencimiento = inversion.instrumento?.fecha_vencimiento ?
+                             this.formatDate(inversion.instrumento.fecha_vencimiento) :
+                             'Sin vencimiento';
+
+    // Formato: "Compra: YYYY-MM-DD - Vencimiento: YYYY-MM-DD"
+    const fechas = fechaCompra !== 'Sin fecha' && fechaVencimiento !== 'Sin vencimiento'
+      ? `Compra: ${fechaCompra} - Vencimiento: ${fechaVencimiento}`
+      : `${fechaCompra} ${fechaVencimiento}`;
+
+    return `${codigo} - ${liquidacion} - ${tipoInstrumento} - ${fechas}`;
   }
 
   getTipoAmortizacionDisplay(tipo: string): string {

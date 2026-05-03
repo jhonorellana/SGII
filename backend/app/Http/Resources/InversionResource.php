@@ -74,6 +74,7 @@ class InversionResource extends JsonResource
                 'tipoInversion' => $this->instrumento->tipoInversion ? [
                     'id_catalogo_valor' => $this->instrumento->tipoInversion->id_catalogo_valor,
                     'nombre' => $this->instrumento->tipoInversion->nombre,
+                    'descripcion' => $this->instrumento->tipoInversion->descripcion,
                 ] : null,
             ] : null,
             'propietario' => $this->propietario ? [
