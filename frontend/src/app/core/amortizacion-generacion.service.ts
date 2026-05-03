@@ -21,6 +21,7 @@ export interface InversionParametros {
   fechas_recuperacion: string;
   tipo_instrumento: string; // desde catalogo_valor.descripcion
   tipo_instrumento_codigo: string; // desde catalogo_valor.valor
+  fecha_compra?: string;
   interes_primer_mes?: number;
   interes_acumulado_previo?: number;
   fechas_pagos_capital?: string;

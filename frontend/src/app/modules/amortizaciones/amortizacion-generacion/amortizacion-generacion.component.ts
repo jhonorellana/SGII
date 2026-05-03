@@ -176,22 +176,24 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   }
 
   getFrecuenciaSugerida(): string {
-    if (!this.parametrosInversion) return 'N/A';
+    if (!this.parametrosInversion) return '1';
 
-    const tipoCodigo = this.parametrosInversion.tipo_instrumento_codigo?.toLowerCase();
-    if (tipoCodigo === 'bono' || tipoCodigo === 'b') {
-      return 'Mensual (sugerido para bonos)';
-    } else if (tipoCodigo === 'obligacion' || tipoCodigo === 'obligaciones' || tipoCodigo === 'o') {
-      return 'Trimestral (sugerido para obligaciones)';
+    const tipoInstrumento = this.parametrosInversion.tipo_instrumento?.toLowerCase() || '';
+
+    // Reglas específicas según tipo de instrumento
+    if (tipoInstrumento.includes('bono') && tipoInstrumento.includes('estado')) {
+      return '1'; // Mensual para Bonos del Estado
+    } else if (tipoInstrumento.includes('obligacion')) {
+      return '3'; // Trimestral para Obligaciones
     }
 
-    // Basado en el plazo
+    // Reglas por defecto basadas en el plazo
     const meses = this.calcularPlazoMeses();
-    if (meses <= 6) return 'Mensual';
-    if (meses <= 12) return 'Mensual';
-    if (meses <= 24) return 'Bimensual';
-    if (meses <= 36) return 'Trimestral';
-    return 'Semestral';
+    if (meses <= 6) return '1'; // Mensual
+    if (meses <= 12) return '1'; // Mensual
+    if (meses <= 24) return '2'; // Bimensual
+    if (meses <= 36) return '3'; // Trimestral
+    return '6'; // Semestral
   }
 
   calcularPlazoMeses(): number {
@@ -243,32 +245,15 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
     if (!this.parametrosInversion) return;
 
     try {
-      // Determinar frecuencia sugerida basada en el tipo de instrumento
-      const tipoInstrumento = this.parametrosInversion.tipo_instrumento?.toLowerCase();
-      let frecuenciaSugerida = 1; // Por defecto mensual
+      // Usar la misma lógica que getFrecuenciaSugerida()
+      const frecuenciaSugerida = this.getFrecuenciaSugerida();
 
-      if (tipoInstrumento === 'bono') {
-        frecuenciaSugerida = 1; // Para bonos normalmente es cada mes
-      } else if (tipoInstrumento === 'obligacion') {
-        frecuenciaSugerida = 3; // Para obligaciones cada tres meses
-      } else {
-        // Si no hay tipo definido, basarse en el plazo
-        const mesesTotales = this.calcularPlazoMeses();
-        if (mesesTotales <= 6) {
-          frecuenciaSugerida = 1; // Mensual
-        } else if (mesesTotales <= 12) {
-          frecuenciaSugerida = 1; // Mensual
-        } else if (mesesTotales <= 24) {
-          frecuenciaSugerida = 2; // Bimensual
-        } else if (mesesTotales <= 36) {
-          frecuenciaSugerida = 3; // Trimestral
-        } else {
-          frecuenciaSugerida = 6; // Semestral
-        }
-      }
+      // Aplicar la frecuencia sugerida al combo
+      this.generacionForm.patchValue({
+        frecuencia_pago: parseInt(frecuenciaSugerida)
+      });
 
-      // Aplicar la frecuencia sugerida
-      this.generacionForm.patchValue({ frecuencia_pago: frecuenciaSugerida });
+      console.log('Frecuencia sugerida aplicada:', frecuenciaSugerida, 'para tipo:', this.parametrosInversion.tipo_instrumento);
 
       // Mostrar información importante en consola para depuración
       console.log('Datos importantes para generación (desde tabla instrumento):', {
@@ -285,7 +270,6 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         // Configuración
         frecuenciaPago: frecuenciaSugerida,
         tipoInstrumento: this.parametrosInversion.tipo_instrumento + ' (catalogo_valor.descripcion)',
-        tipoInstrumentoCodigo: this.parametrosInversion.tipo_instrumento_codigo + ' (catalogo_valor.valor)',
         // Fechas de recuperación desde instrumento
         fechasRecuperacionRaw: this.parametrosInversion.fechas_recuperacion + ' (instrumento)',
         fechasRecuperacionProcesadas: this.getFechasRecuperacionFormateadas(),

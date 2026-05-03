@@ -100,57 +100,58 @@
             <div class="card bg-light">
               <div class="card-body">
                 <h6 class="card-title">Datos del Instrumento</h6>
-                <div class="row">
-                  <div class="col-md-2">
+
+                <!-- Primera fila: Datos financieros -->
+                <div class="row g-2">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Valor Nominal:</small><br>
                     <strong>{{ formatCurrency(parametrosInversion.valor_nominal) }}</strong>
                   </div>
-                  <div class="col-md-2">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Capital Invertido:</small><br>
                     <strong>{{ formatCurrency(parametrosInversion.capital_invertido) }}</strong>
                   </div>
-                  <div class="col-md-2">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Tasa de Interés:</small><br>
                     <strong>{{ parametrosInversion.tasa_interes }}%</strong>
                   </div>
-                  <div class="col-md-2">
-                    <small class="text-muted">Valor Interés:</small><br>
-                    <strong>{{ formatCurrency(parametrosInversion.valor_interes) }}</strong>
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
+                    <small class="text-muted">Interés Acumulado Previo:</small><br>
+                    <strong>{{ formatCurrency(parametrosInversion.interes_acumulado_previo ?? 0) }}</strong>
                   </div>
-                  <div class="col-md-2">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Tipo Instrumento:</small><br>
                     <strong class="text-capitalize">{{ parametrosInversion.tipo_instrumento }}</strong>
-                    <br><small class="text-muted">({{ parametrosInversion.tipo_instrumento_codigo }})</small>
-                  </div>
-                  <div class="col-md-2">
-                    <small class="text-muted">Frecuencia Sugerida:</small><br>
-                    <strong>{{ getFrecuenciaSugerida() }}</strong>
                   </div>
                 </div>
-                <div class="row mt-3">
-                  <div class="col-md-3">
+
+                <!-- Segunda fila: Fechas alineadas -->
+                <div class="row g-2 mt-3">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
+                    <small class="text-muted">Fecha de Compra:</small><br>
+                    <strong>{{ formatDate(parametrosInversion.fecha_compra ?? '') }}</strong>
+                  </div>
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Fecha de Emisión:</small><br>
                     <strong>{{ formatDate(parametrosInversion.fecha_emision) }}</strong>
                   </div>
-                  <div class="col-md-3">
+                  <div class="col" style="flex: 0 0 20%; max-width: 20%;">
                     <small class="text-muted">Fecha de Vencimiento:</small><br>
                     <strong>{{ formatDate(parametrosInversion.fecha_vencimiento) }}</strong>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col" style="flex: 0 0 40%; max-width: 40%;">
                     <small class="text-muted">Fechas de Recuperación de Capital:</small><br>
-                    <div *ngIf="getFechasRecuperacionCount() > 0">
-                      <span class="badge bg-primary me-1">{{ getFechasRecuperacionCount() }} fechas</span>
-                      <div class="mt-1">
-                        <small class="text-muted">
-                          <span *ngFor="let fecha of getFechasRecuperacionFormateadas(); let last = last">
-                            {{ formatDate(fecha) }}<span *ngIf="!last">, </span>
-                          </span>
-                        </small>
-                      </div>
-                    </div>
-                    <div *ngIf="getFechasRecuperacionCount() === 0">
-                      <span class="badge bg-warning">No especificadas</span>
-                    </div>
+                    <strong *ngIf="getFechasRecuperacionCount() > 0" class="d-block">
+                      {{ getFechasRecuperacionCount() }} fechas:
+                      <span class="text-wrap" style="word-break: break-word;">
+                        <span *ngFor="let fecha of getFechasRecuperacionFormateadas(); let last = last">
+                          {{ formatDate(fecha) }}<span *ngIf="!last">, </span>
+                        </span>
+                      </span>
+                    </strong>
+                    <strong *ngIf="getFechasRecuperacionCount() === 0">
+                      <span class="text-muted">No especificadas</span>
+                    </strong>
                   </div>
                 </div>
                 <div class="row mt-3">
@@ -165,9 +166,9 @@
                       <hr class="my-2">
                       <small class="d-block text-muted">
                         <strong>Fuente de Datos:</strong><br>
-                        📊 <strong>Desde Tabla Inversión:</strong> valor_nominal, capital_invertido, tasa_interes<br>
+                        📊 <strong>Desde Tabla Inversión:</strong> valor_nominal, capital_invertido, tasa_interes, fecha_compra, interes_acumulado_previo<br>
                         🗓️ <strong>Desde Tabla Instrumento:</strong> fecha_emision, fecha_vencimiento, valor_interes, fechas_recuperacion<br>
-                        🏷️ <strong>Desde Catálogo Valor:</strong> tipo_instrumento (descripción), tipo_instrumento_codigo (valor)
+                        🏷️ <strong>Desde Catálogo Valor:</strong> tipo_instrumento (descripción)
                       </small>
                     </div>
                   </div>
@@ -177,86 +178,9 @@
           </div>
         </div>
 
-        <!-- Información Detallada de Cálculo -->
+        <!-- Alerta si no hay fechas de recuperación -->
         <div class="row mb-4" *ngIf="parametrosInversion">
           <div class="col-md-12">
-            <div class="card border-info">
-              <div class="card-header bg-info text-white">
-                <h6 class="mb-0">
-                  <i class="bi bi-calculator"></i> Parámetros de Cálculo para Tabla de Amortización
-                  <small class="d-block mt-1">Datos obtenidos desde la tabla Instrumento</small>
-                </h6>
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6">
-                    <h6 class="text-primary">Datos Base del Instrumento</h6>
-                    <ul class="list-unstyled small">
-                      <li><strong>Método de Amortización:</strong> {{ tipoAmortizacionDisplay }}</li>
-                      <li><strong>Valor Nominal:</strong> {{ formatCurrency(parametrosInversion.valor_nominal) }}</li>
-                      <li><strong>Capital Invertido:</strong> {{ formatCurrency(parametrosInversion.capital_invertido) }}</li>
-                      <li><strong>Valor del Interés:</strong> {{ formatCurrency(parametrosInversion.valor_interes) }}</li>
-                      <li><strong>Tasa de Interés:</strong> {{ parametrosInversion.tasa_interes }}%</li>
-                    </ul>
-                  </div>
-                  <div class="col-md-6">
-                    <h6 class="text-primary">Fechas y Plazos</h6>
-                    <ul class="list-unstyled small">
-                      <li><strong>Fecha de Emisión:</strong> {{ formatDate(parametrosInversion.fecha_emision) }}</li>
-                      <li><strong>Fecha de Vencimiento:</strong> {{ formatDate(parametrosInversion.fecha_vencimiento) }}</li>
-                      <li><strong>Plazo Total:</strong> {{ calcularPlazoMeses() }} meses</li>
-                      <li><strong>Frecuencia de Pago:</strong> {{ generacionForm.value?.frecuencia_pago || 1 }} {{ getFrecuenciaTexto() }}</li>
-                      <li><strong>Cuotas Diferidas:</strong> {{ generacionForm.value?.cuotas_diferir || 0 }}</li>
-                    </ul>
-                  </div>
-                </div>
-                <div class="row mt-3">
-                  <div class="col-md-12">
-                    <h6 class="text-primary">Consideraciones Especiales</h6>
-                    <div class="row">
-                      <div class="col-md-4">
-                        <ul class="list-unstyled small">
-                          <li><strong>Tipo de Instrumento:</strong> <span class="text-capitalize">{{ parametrosInversion.tipo_instrumento }}</span></li>
-                          <li><strong>Frecuencia Sugerida:</strong> {{ getFrecuenciaSugerida() }}</li>
-                        </ul>
-                      </div>
-                      <div class="col-md-8">
-                        <ul class="list-unstyled small">
-                          <li><strong>Fechas de Recuperación:</strong>
-                            <span class="badge me-1" [class]="getFechasRecuperacionCount() > 0 ? 'bg-success' : 'bg-warning'">
-                              {{ getFechasRecuperacionCount() > 0 ? getFechasRecuperacionCount() + ' fechas' : 'No especificadas' }}
-                            </span>
-                          </li>
-                          <li *ngIf="getFechasRecuperacionCount() > 0" class="mt-2">
-                            <strong>Detalle de Fechas:</strong>
-                            <div class="mt-1 p-2 bg-light rounded">
-                              <div class="row">
-                                <div *ngFor="let fecha of getFechasRecuperacionFormateadas(); let i = index"
-                                     class="col-md-3 col-sm-4 col-6 mb-2">
-                                  <span class="badge bg-info text-wrap">
-                                    <i class="bi bi-calendar-date"></i> {{ formatDate(fecha) }}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </li>
-                          <li><strong>Estado de Validación:</strong>
-                            <span class="badge" [class]="validarFechasInversion() ? 'bg-success' : 'bg-danger'">
-                              {{ validarFechasInversion() ? 'Válido' : 'Inválido' }}
-                            </span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="row mb-4" *ngIf="parametrosInversion">
-          <div class="col-md-12">
-            <!-- Alerta si no hay fechas de recuperación -->
             <div class="alert alert-warning" *ngIf="!parametrosInversion.fechas_recuperacion">
               <h6 class="alert-heading">
                 <i class="bi bi-exclamation-triangle"></i> Fechas de Recuperación No Especificadas

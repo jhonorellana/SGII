@@ -77,7 +77,8 @@ class AmortizacionGeneracionController extends Controller
                     'fechas_recuperacion' => $inversion->instrumento ? $inversion->instrumento->fechas_recuperacion : null,
                     'interes_primer_mes' => $inversion->interes_primer_mes,
                     'interes_acumulado_previo' => $inversion->interes_acumulado_previo,
-                    'fechas_pagos_capital' => $inversion->fechas_pagos_capital
+                    'fechas_pagos_capital' => $inversion->fechas_pagos_capital,
+                    'fecha_compra' => $inversion->fecha_compra
                 ]
             ]);
 
