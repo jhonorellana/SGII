@@ -8,7 +8,11 @@ export interface VencimientoMensual {
   nombre_mes: string;
   interes: number;
   capital: number;
+  descuento: number;
   premio: number;
+  interes_moroso: number;
+  capital_moroso: number;
+  descuento_moroso: number;
   total: number;
   es_mes_actual?: boolean;
 }
@@ -22,15 +26,18 @@ export interface ResumenAnual {
 }
 
 export interface VencimientosMensualesResponse {
-  vencimientos: VencimientoMensual[];
-  resumen_anual: ResumenAnual[];
+  success: boolean;
+  data: {
+    vencimientos: VencimientoMensual[];
+    resumen_anual: ResumenAnual[];
+  };
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class VencimientosMensualesService {
-  private apiUrl = '/api/reportes/vencimientos-mensuales';
+  private apiUrl = 'http://localhost:8000/api/reportes/vencimientos-mensuales';
 
   constructor(private http: HttpClient) {}
 

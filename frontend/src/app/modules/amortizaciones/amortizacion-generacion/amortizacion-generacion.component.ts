@@ -62,6 +62,11 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
     return this.generacionForm.value?.tipo_amortizacion === 'A' ? 'Alemana' : 'Francesa';
   }
 
+  // Getter para asegurar acceso desde el template
+  get cuotasAmortizacionArray(): CuotaAmortizacion[] {
+    return this.cuotasAmortizacion;
+  }
+
   private subscriptions = new Subscription();
 
   constructor(
@@ -658,18 +663,18 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
   // Métodos de exportación
   exportarExcel(): void {
-    if (!this.cuotasAmortizacion || this.cuotasAmortizacion.length === 0) {
+    if (!this.cuotasAmortizacionArray || this.cuotasAmortizacionArray.length === 0) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
-        detail: 'No hay datos para exportar'
+        detail: 'No hay datos de cuotas para exportar'
       });
       return;
     }
 
     try {
       // Preparar datos para Excel
-      const datosExcel = this.cuotasAmortizacion.map(cuota => ({
+      const datosExcel = this.cuotasAmortizacionArray.map(cuota => ({
         'N° Cuota': cuota.numero_cuota,
         'Fecha Pago': this.formatDate(cuota.fecha_pago),
         'Capital Restante': cuota.capital_restante,
@@ -693,7 +698,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         ['Fecha Generación:', this.formatDate(new Date().toISOString())],
         [],
         ['RESUMEN'],
-        ['Total Cuotas:', this.cuotasAmortizacion.length],
+        ['Total Cuotas:', this.cuotasAmortizacionArray.length],
         ['Total Intereses:', this.formatCurrency(this.tablaPrevisualizacion?.total_intereses || 0)],
         ['Total Capital:', this.formatCurrency(this.tablaPrevisualizacion?.total_capital || 0)],
         ['Total Descuento:', this.formatCurrency(this.tablaPrevisualizacion?.total_descuento || 0)]
@@ -723,7 +728,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   }
 
   exportarPDF(): void {
-    if (!this.cuotasAmortizacion || this.cuotasAmortizacion.length === 0) {
+    if (!this.cuotasAmortizacionArray || this.cuotasAmortizacionArray.length === 0) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
@@ -754,14 +759,14 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
       doc.setFontSize(12);
       doc.text('RESUMEN', 20, infoY + 40);
       doc.setFontSize(10);
-      doc.text(`Total Cuotas: ${this.cuotasAmortizacion.length}`, 20, infoY + 50);
+      doc.text(`Total Cuotas: ${this.cuotasAmortizacionArray.length}`, 20, infoY + 50);
       doc.text(`Total Intereses: ${this.formatCurrency(this.tablaPrevisualizacion?.total_intereses || 0)}`, 20, infoY + 58);
       doc.text(`Total Capital: ${this.formatCurrency(this.tablaPrevisualizacion?.total_capital || 0)}`, 20, infoY + 66);
       doc.text(`Total Descuento: ${this.formatCurrency(this.tablaPrevisualizacion?.total_descuento || 0)}`, 20, infoY + 74);
 
       // Tabla de amortización
       const headers = [['N°', 'Fecha', 'Capital', 'Interés', 'Descuento', 'Total']];
-      const data = this.cuotasAmortizacion.map(cuota => [
+      const data = this.cuotasAmortizacionArray.map(cuota => [
         cuota.numero_cuota.toString(),
         this.formatDate(cuota.fecha_pago),
         this.formatCurrency(cuota.capital_retorno),

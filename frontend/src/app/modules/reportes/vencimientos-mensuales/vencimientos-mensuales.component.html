@@ -17,64 +17,92 @@
       </p>
 
       <!-- Filtros -->
-      <div class="row mb-4">
-        <div class="col-md-3">
-          <label for="anio" class="form-label">Año *</label>
-          <p-dropdown
-            id="anio"
-            [options]="anios"
-            formControlName="anio"
-            [showClear]="false"
-            placeholder="Seleccione año"
-            styleClass="w-full">
-          </p-dropdown>
+      <form [formGroup]="reporteForm">
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <label for="anio" class="form-label">Año *</label>
+            <p-dropdown
+              id="anio"
+              [options]="anios"
+              formControlName="anio"
+              [showClear]="false"
+              placeholder="Seleccione año"
+              styleClass="w-full">
+            </p-dropdown>
+          </div>
+          <div class="col-md-3">
+            <label for="mes" class="form-label">Mes (opcional)</label>
+            <p-dropdown
+              id="mes"
+              [options]="meses"
+              formControlName="mes"
+              [showClear]="true"
+              placeholder="Todos los meses"
+              styleClass="w-full">
+            </p-dropdown>
+          </div>
+          <div class="col-md-6 d-flex align-items-end">
+            <button
+              pButton
+              type="button"
+              label="Generar Reporte"
+              icon="pi pi-search"
+              class="p-button-primary me-2"
+              (click)="generarReporte()"
+              [disabled]="loading">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="Exportar Excel"
+              icon="pi pi-file-excel"
+              class="p-button-success me-2"
+              (click)="exportarExcel()"
+              [disabled]="vencimientosMensuales.length === 0">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="Exportar PDF"
+              icon="pi pi-file-pdf"
+              class="p-button-danger"
+              (click)="exportarPDF()"
+              [disabled]="vencimientosMensuales.length === 0">
+            </button>
+          </div>
         </div>
-        <div class="col-md-3">
-          <label for="mes" class="form-label">Mes (opcional)</label>
-          <p-dropdown
-            id="mes"
-            [options]="meses"
-            formControlName="mes"
-            [showClear]="true"
-            placeholder="Todos los meses"
-            styleClass="w-full">
-          </p-dropdown>
-        </div>
-        <div class="col-md-6 d-flex align-items-end">
-          <button
-            pButton
-            type="button"
-            label="Generar Reporte"
-            icon="pi pi-search"
-            class="p-button-primary me-2"
-            (click)="generarReporte()"
-            [disabled]="loading">
-          </button>
-          <button
-            pButton
-            type="button"
-            label="Exportar Excel"
-            icon="pi pi-file-excel"
-            class="p-button-success me-2"
-            (click)="exportarExcel()"
-            [disabled]="vencimientosMensuales.length === 0">
-          </button>
-          <button
-            pButton
-            type="button"
-            label="Exportar PDF"
-            icon="pi pi-file-pdf"
-            class="p-button-danger"
-            (click)="exportarPDF()"
-            [disabled]="vencimientosMensuales.length === 0">
-          </button>
-        </div>
-      </div>
+      </form>
 
       <!-- Loading -->
       <div *ngIf="loading" class="text-center py-5">
         <p-progressSpinner></p-progressSpinner>
         <p class="mt-2">Generando reporte...</p>
+      </div>
+
+      <!-- Gráfico de Barras -->
+      <div class="row mb-4" *ngIf="!loading && vencimientosMensuales.length > 0">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-bar-chart-fill me-2"></i>
+                📊 Gráfico de Vencimientos Mensuales
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="position: relative; height: 400px;">
+                <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType">
+                </canvas>
+              </div>
+              <div class="mt-3 text-center">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Gráfico de barras apiladas mostrando la composición de cuotas mensuales (Interés + Capital + Premio)
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Tabla de Resultados -->
@@ -85,10 +113,13 @@
               <tr>
                 <th class="text-center" style="width: 80px;">Año</th>
                 <th class="text-left" style="width: 120px;">Mes</th>
-                <th class="text-end" style="width: 140px;">Interés</th>
-                <th class="text-end" style="width: 140px;">Capital</th>
-                <th class="text-end" style="width: 140px;">Premio</th>
-                <th class="text-end" style="width: 140px;">Total</th>
+                <th class="text-end" style="width: 120px;">Interés</th>
+                <th class="text-end" style="width: 120px;">Capital</th>
+                <th class="text-end" style="width: 120px;">Premio</th>
+                <th class="text-end" style="width: 120px;">Interés riesgo</th>
+                <th class="text-end" style="width: 120px;">Capital riesgo</th>
+                <th class="text-end" style="width: 120px;">Premio riesgo</th>
+                <th class="text-end" style="width: 120px;">Total</th>
               </tr>
             </thead>
             <tbody>
@@ -105,30 +136,42 @@
                 <td class="text-end">{{ formatCurrency(item.interes) }}</td>
                 <td class="text-end">{{ formatCurrency(item.capital) }}</td>
                 <td class="text-end">{{ formatCurrency(item.premio) }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes_moroso || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital_moroso || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(item.descuento_moroso || 0) }}</td>
                 <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
               </tr>
 
               <!-- Filas de resumen -->
               <tr class="table-secondary fw-bold">
                 <td colspan="2" class="text-center">ANUAL TOTAL</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.interes || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.capital || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.premio || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[0]?.total || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0].interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0].capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0].premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[0].total || 0) }}</td>
               </tr>
               <tr class="table-info fw-bold">
                 <td colspan="2" class="text-center">ANUAL EJECUTADO</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.interes || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.capital || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.premio || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[1]?.total || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1].interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1].capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1].premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[1].total || 0) }}</td>
               </tr>
               <tr class="table-warning fw-bold">
                 <td colspan="2" class="text-center">ANUAL PENDIENTE</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.interes || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.capital || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.premio || 0) }}</td>
-                <td class="text-end">{{ formatCurrency(resumenAnual[2]?.total || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2].interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2].capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2].premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenAnual[2].total || 0) }}</td>
               </tr>
             </tbody>
           </table>
@@ -140,7 +183,7 @@
             <div class="card border-primary">
               <div class="card-body text-center">
                 <h6 class="card-title text-primary">Total Anual</h6>
-                <h4 class="text-primary">{{ formatCurrency(resumenAnual[0]?.total || 0) }}</h4>
+                <h4 class="text-primary">{{ formatCurrency(resumenAnual[0].total || 0) }}</h4>
               </div>
             </div>
           </div>
@@ -148,7 +191,7 @@
             <div class="card border-success">
               <div class="card-body text-center">
                 <h6 class="card-title text-success">Ejecutado</h6>
-                <h4 class="text-success">{{ formatCurrency(resumenAnual[1]?.total || 0) }}</h4>
+                <h4 class="text-success">{{ formatCurrency(resumenAnual[1].total || 0) }}</h4>
               </div>
             </div>
           </div>
@@ -156,7 +199,7 @@
             <div class="card border-warning">
               <div class="card-body text-center">
                 <h6 class="card-title text-warning">Pendiente</h6>
-                <h4 class="text-warning">{{ formatCurrency(resumenAnual[2]?.total || 0) }}</h4>
+                <h4 class="text-warning">{{ formatCurrency(resumenAnual[2].total || 0) }}</h4>
               </div>
             </div>
           </div>

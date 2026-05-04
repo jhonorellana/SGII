@@ -12,6 +12,7 @@ use App\Http\Controllers\API\InstrumentoController;
 use App\Http\Controllers\API\InversionController;
 use App\Http\Controllers\API\AmortizacionController;
 use App\Http\Controllers\API\AmortizacionGeneracionController;
+use App\Http\Controllers\API\VencimientosMensualesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +63,11 @@ Route::post('amortizaciones/generar', [AmortizacionGeneracionController::class, 
 Route::get('amortizaciones/parametros/{id_inversion}', [AmortizacionGeneracionController::class, 'getParametros']);
 Route::post('amortizaciones/previsualizar', [AmortizacionGeneracionController::class, 'previsualizar']);
 Route::delete('amortizaciones/eliminar/{id_inversion}', [AmortizacionGeneracionController::class, 'eliminar']);
+
+// Rutas de Reportes de Vencimientos Mensuales (temporalmente sin autenticación para pruebas)
+Route::get('reportes/vencimientos-mensuales', [VencimientosMensualesController::class, 'getVencimientosMensuales']);
+Route::get('reportes/vencimientos-mensuales/exportar/excel', [VencimientosMensualesController::class, 'exportarExcel']);
+Route::get('reportes/vencimientos-mensuales/exportar/pdf', [VencimientosMensualesController::class, 'exportarPDF']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {
