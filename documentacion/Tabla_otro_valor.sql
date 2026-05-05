@@ -1,0 +1,22 @@
+CREATE TABLE `otro_valor` (
+  `id_otro_valor` int(11) NOT NULL AUTO_INCREMENT,
+  `id_grupo_familiar` int(11) NOT NULL,
+  `id_propietario` int(11) DEFAULT NULL,
+  `id_tipo_otro_valor` int(11) NOT NULL,
+  `descripcion` varchar(255) NOT NULL,
+  `valor` decimal(18,2) NOT NULL,
+  `fecha_desde` date DEFAULT NULL,
+  `fecha_hasta` date DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `eliminado` tinyint(1) NOT NULL DEFAULT 0,
+  `fecha_creacion` datetime NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_otro_valor`),
+  KEY `idx_otro_valor_grupo_familiar` (`id_grupo_familiar`),
+  KEY `idx_otro_valor_propietario` (`id_propietario`),
+  KEY `idx_otro_valor_tipo` (`id_tipo_otro_valor`),
+  KEY `idx_otro_valor_fechas` (`fecha_desde`,`fecha_hasta`),
+  CONSTRAINT `fk_otro_valor_grupo_familiar` FOREIGN KEY (`id_grupo_familiar`) REFERENCES `grupo_familiar` (`id_grupo_familiar`),
+  CONSTRAINT `fk_otro_valor_propietario` FOREIGN KEY (`id_propietario`) REFERENCES `persona` (`id_persona`),
+  CONSTRAINT `fk_otro_valor_tipo` FOREIGN KEY (`id_tipo_otro_valor`) REFERENCES `catalogo_valor` (`id_catalogo_valor`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

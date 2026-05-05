@@ -189,7 +189,6 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarAnios();
-    this.generarDatosEjemplo();
   }
 
   ngOnDestroy(): void {
@@ -246,14 +245,12 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error al generar reporte:', error);
-        // Si falla el servicio, usar datos de ejemplo
-        this.generarDatosEjemplo();
         this.loading = false;
 
         this.messageService.add({
-          severity: 'info',
-          summary: 'Información',
-          detail: 'Usando datos de ejemplo - Servicio no disponible'
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo conectar con el backend. Por favor, verifique la conexión.'
         });
       }
     });
@@ -267,92 +264,45 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
     this.barChartData.datasets[2].data = this.vencimientosMensuales.map(v => v.premio);    // Premio (arriba)
   }
 
-  generarDatosEjemplo(): void {
-    const anioSeleccionado = this.reporteForm.get('anio')?.value || new Date().getFullYear();
-    const mesSeleccionado = this.reporteForm.get('mes')?.value;
-    const fechaActual = new Date();
-    const mesActual = fechaActual.getMonth() + 1;
-    const anioActual = fechaActual.getFullYear();
-
-    // Datos de ejemplo basados en el resultado esperado
-    const datosEjemplo = [
-      { mes: 1, nombre: 'Enero', interes: 3759.43, capital: 2478.44, premio: 75.36 },
-      { mes: 2, nombre: 'Febrero', interes: 5030.79, capital: 11586.90, premio: 123.76 },
-      { mes: 3, nombre: 'Marzo', interes: 4487.88, capital: 9814.69, premio: 0.00 },
-      { mes: 4, nombre: 'Abril', interes: 2773.17, capital: 5795.51, premio: 123.52 },
-      { mes: 5, nombre: 'Mayo', interes: 2660.10, capital: 7257.01, premio: 123.76 },
-      { mes: 6, nombre: 'Junio', interes: 3039.92, capital: 10866.14, premio: 40.32 },
-      { mes: 7, nombre: 'Julio', interes: 2361.83, capital: 4941.82, premio: 123.52 },
-      { mes: 8, nombre: 'Agosto', interes: 2492.03, capital: 10425.67, premio: 123.76 },
-      { mes: 9, nombre: 'Septiembre', interes: 2856.97, capital: 8131.12, premio: 40.32 },
-      { mes: 10, nombre: 'Octubre', interes: 2247.86, capital: 4941.82, premio: 123.54 },
-      { mes: 11, nombre: 'Noviembre', interes: 2025.95, capital: 7635.35, premio: 123.76 },
-      { mes: 12, nombre: 'Diciembre', interes: 2677.63, capital: 8177.39, premio: 40.32 }
-    ];
-
-    // Generar datos para todos los meses o el mes específico
-    const datos: VencimientoMensual[] = [];
-
-    for (const item of datosEjemplo) {
-      if (mesSeleccionado && mesSeleccionado !== item.mes) continue;
-
-      const total = item.interes + item.capital + item.premio;
-
-      datos.push({
-        anio: anioSeleccionado,
-        mes: item.mes,
-        nombre_mes: item.nombre,
-        interes: item.interes,
-        capital: item.capital,
-        descuento: item.premio,
-        premio: item.premio,
-        interes_moroso: 0,
-        capital_moroso: 0,
-        descuento_moroso: 0,
-        total: total,
-        es_mes_actual: anioSeleccionado === anioActual && item.mes === mesActual
-      });
+  calcularResumenAnual(): void {
+    // Calcular resumen basado en los datos reales del backend
+    if (!this.vencimientosMensuales || this.vencimientosMensuales.length === 0) {
+      this.resumenAnual = [];
+      return;
     }
 
-    this.vencimientosMensuales = datos;
-    this.actualizarGrafico();
-    this.calcularResumenAnual();
-  }
+    // Calcular totales reales
+    const total = this.vencimientosMensuales.reduce((acc, item) => ({
+      interes: acc.interes + item.interes,
+      capital: acc.capital + item.capital,
+      premio: acc.premio + item.premio,
+      total: acc.total + item.total
+    }), { interes: 0, capital: 0, premio: 0, total: 0 });
 
-  calcularResumenAnual(): void {
+    // Calcular ejecutado (meses pasados)
     const fechaActual = new Date();
     const mesActual = fechaActual.getMonth() + 1;
-    const anioActual = fechaActual.getFullYear();
-    const anioSeleccionado = this.reporteForm.get('anio')?.value || anioActual;
-
-    // Calcular totales basados en los datos del resultado esperado
-    const totalAnual = {
-      interes: 36413.56,
-      capital: 92051.86,
-      premio: 1061.94,
-      total: 128465.42
-    };
-
-    // Calcular ejecutado (hasta el mes actual - asumiendo que estamos en mayo)
-    const ejecutadoAnual = {
-      interes: 16079.41,
-      capital: 29675.54,
-      premio: 322.64,
-      total: 45754.95
-    };
+    const ejecutado = this.vencimientosMensuales
+      .filter(item => item.mes <= mesActual)
+      .reduce((acc, item) => ({
+        interes: acc.interes + item.interes,
+        capital: acc.capital + item.capital,
+        premio: acc.premio + item.premio,
+        total: acc.total + item.total
+      }), { interes: 0, capital: 0, premio: 0, total: 0 });
 
     // Calcular pendiente
-    const pendienteAnual = {
-      interes: 20334.15,
-      capital: 62376.32,
-      premio: 739.30,
-      total: 82710.47
+    const pendiente = {
+      interes: total.interes - ejecutado.interes,
+      capital: total.capital - ejecutado.capital,
+      premio: total.premio - ejecutado.premio,
+      total: total.total - ejecutado.total
     };
 
     this.resumenAnual = [
-      { tipo: 'TOTAL', ...totalAnual },
-      { tipo: 'EJECUTADO', ...ejecutadoAnual },
-      { tipo: 'PENDIENTE', ...pendienteAnual }
+      { tipo: 'TOTAL', ...total },
+      { tipo: 'EJECUTADO', ...ejecutado },
+      { tipo: 'PENDIENTE', ...pendiente }
     ];
   }
 

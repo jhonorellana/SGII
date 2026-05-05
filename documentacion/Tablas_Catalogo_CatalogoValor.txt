@@ -1,0 +1,31 @@
+CREATE TABLE `catalogo` (
+  `id_catalogo` int(11) NOT NULL AUTO_INCREMENT,
+  `codigo` varchar(100) NOT NULL,
+  `nombre` varchar(150) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `fecha_creacion` datetime NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_catalogo`),
+  UNIQUE KEY `uq_catalogo_codigo` (`codigo`),
+  UNIQUE KEY `uq_catalogo_nombre` (`nombre`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+
+CREATE TABLE `catalogo_valor` (
+  `id_catalogo_valor` int(11) NOT NULL AUTO_INCREMENT,
+  `id_catalogo` int(11) NOT NULL,
+  `codigo` varchar(100) NOT NULL,
+  `nombre` varchar(150) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `orden_visual` int(11) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `fecha_creacion` datetime NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_catalogo_valor`),
+  UNIQUE KEY `uq_catalogo_valor` (`id_catalogo`,`codigo`),
+  KEY `idx_catalogo_valor_catalogo` (`id_catalogo`),
+  KEY `idx_catalogo_valor_nombre` (`nombre`),
+  CONSTRAINT `fk_catalogo_valor_catalogo` FOREIGN KEY (`id_catalogo`) REFERENCES `catalogo` (`id_catalogo`)
+) ENGINE=InnoDB AUTO_INCREMENT=162 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

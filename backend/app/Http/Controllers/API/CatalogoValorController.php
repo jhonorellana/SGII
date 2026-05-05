@@ -193,23 +193,34 @@ class CatalogoValorController extends Controller
      */
     public function getByCatalogo(string $idCatalogo): JsonResponse
     {
-        $catalogo = Catalogo::find($idCatalogo);
+        try {
+            // Convertir a entero y validar
+            $catalogoId = (int) $idCatalogo;
 
-        if (!$catalogo) {
+            $catalogo = Catalogo::find($catalogoId);
+
+            if (!$catalogo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Catálogo no encontrado'
+                ], 404);
+            }
+
+            $valores = CatalogoValor::where('id_catalogo', $catalogoId)
+                ->orderBy('orden_visual')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $valores
+            ]);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Catálogo no encontrado'
-            ], 404);
+                'message' => 'Error al obtener los valores del catálogo: ' . $e->getMessage()
+            ], 500);
         }
-
-        $valores = CatalogoValor::where('id_catalogo', $idCatalogo)
-            ->orderBy('orden_visual')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'data' => $valores
-        ]);
     }
 
     /**

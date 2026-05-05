@@ -89,9 +89,7 @@ export class CatalogoService {
   }
 
   getValoresByCatalogo(idCatalogo: number): Observable<any> {
-    return this.apiService.get<CatalogoValor[]>(`catalogo-valores/catalogo/${idCatalogo}`).pipe(
-      map((response: any) => response.data || [])
-    );
+    return this.apiService.get<CatalogoValor[]>(`catalogo-valores/catalogo/${idCatalogo}`);
   }
 
   createCatalogoValor(valor: CreateCatalogoValorRequest): Observable<any> {
