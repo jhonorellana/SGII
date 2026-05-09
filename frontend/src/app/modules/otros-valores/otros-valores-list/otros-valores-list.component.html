@@ -221,7 +221,7 @@
     <div class="col-md-4">
       <div class="card bg-success bg-opacity-10 border-success">
         <div class="card-body">
-          <h6 class="text-success">Total Activos</h6>
+          <h6 class="text-success">Activos Corrientes</h6>
           <div class="display-6 fw-bold text-success">{{ formatValor(totalActivos) }}</div>
         </div>
       </div>
@@ -229,7 +229,7 @@
     <div class="col-md-4">
       <div class="card bg-danger bg-opacity-10 border-danger">
         <div class="card-body">
-          <h6 class="text-danger">Total Pasivos</h6>
+          <h6 class="text-danger">Pasivos Corrientes</h6>
           <div class="display-6 fw-bold text-danger">{{ formatValor(totalPasivos) }}</div>
         </div>
       </div>
@@ -237,7 +237,7 @@
     <div class="col-md-4">
       <div class="card bg-primary bg-opacity-10 border-primary">
         <div class="card-body">
-          <h6 class="text-primary">Patrimonio Neto</h6>
+          <h6 class="text-primary">Total Corriente</h6>
           <div class="display-6 fw-bold" [ngClass]="getTipoClaseCss(patrimonioNeto)">
             {{ formatValor(patrimonioNeto) }}
           </div>

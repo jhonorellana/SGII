@@ -14,6 +14,7 @@ import { InversionListComponent } from './modules/inversiones/inversion-list/inv
 import { AmortizacionListComponent } from './modules/amortizaciones/amortizacion-list/amortizacion-list.component';
 import { AmortizacionGeneracionComponent } from './modules/amortizaciones/amortizacion-generacion/amortizacion-generacion.component';
 import { VencimientosMensualesComponent } from './modules/reportes/vencimientos-mensuales/vencimientos-mensuales.component';
+import { PatrimonioConsolidadoComponent } from './modules/reportes/patrimonio-consolidado/patrimonio-consolidado.component';
 import { OtrosValoresListComponent } from './modules/otros-valores/otros-valores-list/otros-valores-list.component';
 import { AuthGuard } from './core/auth.guard';
 
@@ -39,6 +40,7 @@ export const routes: Routes = [
       { path: 'amortizaciones', component: AmortizacionListComponent },
       { path: 'amortizaciones/generacion', component: AmortizacionGeneracionComponent },
       { path: 'reportes/vencimientos-mensuales', component: VencimientosMensualesComponent },
+      { path: 'reportes/patrimonio-consolidado', component: PatrimonioConsolidadoComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]

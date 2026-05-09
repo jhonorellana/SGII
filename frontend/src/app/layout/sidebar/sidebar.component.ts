@@ -100,6 +100,11 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/vencimientos-mensuales'
         },
         {
+          title: 'Patrimonio Consolidado',
+          icon: 'bi-wallet2',
+          path: '/reportes/patrimonio-consolidado'
+        },
+        {
           title: 'Reporte de Inversiones',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/inversiones'

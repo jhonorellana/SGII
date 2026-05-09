@@ -14,6 +14,7 @@ use App\Http\Controllers\API\AmortizacionController;
 use App\Http\Controllers\API\AmortizacionGeneracionController;
 use App\Http\Controllers\API\VencimientosMensualesController;
 use App\Http\Controllers\API\OtroValorController;
+use App\Http\Controllers\API\PatrimonioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -75,6 +76,11 @@ Route::delete('amortizaciones/eliminar/{id_inversion}', [AmortizacionGeneracionC
 Route::get('reportes/vencimientos-mensuales', [VencimientosMensualesController::class, 'getVencimientosMensuales']);
 Route::get('reportes/vencimientos-mensuales/exportar/excel', [VencimientosMensualesController::class, 'exportarExcel']);
 Route::get('reportes/vencimientos-mensuales/exportar/pdf', [VencimientosMensualesController::class, 'exportarPDF']);
+
+// Rutas de Reportes de Patrimonio Consolidado (temporalmente sin autenticación para pruebas)
+Route::get('reportes/patrimonio/consolidado', [PatrimonioController::class, 'getPatrimonioConsolidado']);
+Route::get('reportes/patrimonio/consolidado/exportar/excel', [PatrimonioController::class, 'exportarExcel']);
+Route::get('reportes/patrimonio/consolidado/exportar/pdf', [PatrimonioController::class, 'exportarPDF']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

@@ -1,0 +1,82 @@
+.container-fluid {
+  padding: 20px;
+}
+
+.table-responsive {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.card {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+}
+
+.alert {
+  border-radius: 8px;
+  border: none;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+
+.bg-success {
+  background-color: #198754 !important;
+}
+
+.border-success {
+  border-color: #198754 !important;
+}
+
+/* Controlar tamaño del datepicker */
+::ng-deep .p-datepicker {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+::ng-deep .p-datepicker .p-datepicker-header {
+  padding: 0.5rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar {
+  padding: 0.5rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar td {
+  padding: 0.25rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar td > span {
+  font-size: 0.875rem;
+}
