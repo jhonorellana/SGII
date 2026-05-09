@@ -1,18 +1,23 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CalendarModule } from 'primeng/calendar';
+import { ToastModule } from 'primeng/toast';
+import { ChartModule } from 'primeng/chart';
 import { PatrimonioService, PatrimonioItem } from '../../../core/patrimonio.service';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
-import { ChartModule } from 'primeng/chart';
-import { Chart, ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
+import { ChartData } from 'chart.js';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { UserOptions } from 'jspdf-autotable';
 
 @Component({
   selector: 'app-patrimonio-consolidado',
@@ -230,6 +235,9 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   }
 
   exportarExcel(): void {
+    console.log('*** BOTÓN EXCEL PRESIONADO ***');
+    console.log('=== INICIANDO EXPORTACIÓN EXCEL ===');
+
     const params = {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
@@ -237,37 +245,39 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       id_propietario: this.reporteForm.get('id_propietario')?.value
     };
 
-    this.patrimonioService.exportarExcel(params).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const fechaInicio = params.fecha_inicio;
-        const fechaFin = params.fecha_fin;
-        a.download = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+    console.log('Parámetros de exportación:', params);
 
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Exportación',
-          detail: 'Archivo Excel descargado correctamente'
-        });
+    this.patrimonioService.exportarExcel(params).subscribe({
+      next: (response) => {
+        console.log('=== RECIBIDO JSON DEL BACKEND ===');
+        console.log('Response:', response);
+
+        if (response.success && response.data) {
+          console.log('JSON válido, generando Excel en frontend...');
+          this.generarExcelFrontend(response.data, params.fecha_inicio, params.fecha_fin);
+        } else {
+          console.log('JSON no tiene la estructura esperada');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Formato de datos inválido para generar Excel'
+          });
+        }
       },
       error: (error) => {
         console.error('Error al exportar Excel:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'No se pudo exportar el archivo Excel'
+          detail: 'No se pudo exportar el archivo Excel. Verifique la conexión con el servidor.'
         });
       }
     });
   }
 
   exportarPDF(): void {
+    console.log('=== INICIANDO EXPORTACIÓN PDF ===');
+
     const params = {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
@@ -275,34 +285,157 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       id_propietario: this.reporteForm.get('id_propietario')?.value
     };
 
-    this.patrimonioService.exportarPDF(params).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const fechaInicio = params.fecha_inicio;
-        const fechaFin = params.fecha_fin;
-        a.download = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
+    console.log('Parámetros de exportación PDF:', params);
 
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Exportación',
-          detail: 'Archivo PDF descargado correctamente'
-        });
+    this.patrimonioService.exportarPDF(params).subscribe({
+      next: (response) => {
+        console.log('=== RECIBIDO JSON DEL BACKEND PARA PDF ===');
+        console.log('Response:', response);
+
+        if (response.success && response.data) {
+          console.log('JSON válido, generando PDF en frontend...');
+          this.generarPDFFrontend(response.data, params.fecha_inicio, params.fecha_fin);
+        } else {
+          console.log('JSON no tiene la estructura esperada');
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Formato de datos inválido para generar PDF'
+          });
+        }
       },
       error: (error) => {
         console.error('Error al exportar PDF:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'No se pudo exportar el archivo PDF'
+          detail: 'No se pudo exportar el archivo PDF. Verifique la conexión con el servidor.'
         });
       }
     });
+  }
+
+  // Método helper para descargar archivos
+  private descargarArchivo(blob: Blob, extension: string, fechaInicio: string, fechaFin: string, tipo: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.${extension}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Exportación',
+      detail: `Archivo ${tipo} descargado correctamente`
+    });
+  }
+
+  // Método para generar PDF en frontend
+  private generarPDFFrontend(data: any, fechaInicio: string, fechaFin: string): void {
+    console.log('=== INICIANDO GENERAR PDF FRONTEND ===');
+    console.log('Datos recibidos:', data);
+    console.log('Fechas:', fechaInicio, fechaFin);
+
+    try {
+      console.log('Paso 1: Creando documento PDF...');
+      // Crear documento PDF
+      const doc = new jsPDF();
+
+      console.log('Paso 2: Configurando fuente y tamaño...');
+      // Configurar fuente
+      doc.setFontSize(20);
+
+      console.log('Paso 3: Agregando título...');
+      // Agregar título
+      doc.text('Reporte de Patrimonio Consolidado', 105, 20, { align: 'center' });
+
+      console.log('Paso 4: Agregando período...');
+      // Agregar período
+      doc.setFontSize(12);
+      doc.text(`Período: ${fechaInicio} - ${fechaFin}`, 105, 30, { align: 'center' });
+
+      console.log('Paso 5: Creando tabla manualmente...');
+      // Crear tabla manualmente sin autoTable
+      let yPosition = 50;
+
+      // Encabezados de la tabla
+      doc.setFillColor(59, 130, 246);
+      doc.setTextColor(255);
+      doc.setFontSize(10);
+
+      // Dibujar celdas de encabezado
+      doc.rect(20, yPosition, 80, 10, 'F');
+      doc.rect(100, yPosition, 80, 10, 'F');
+      doc.text('Detalle', 60, yPosition + 7, { align: 'center' });
+      doc.text('Valor', 140, yPosition + 7, { align: 'center' });
+
+      yPosition += 10;
+
+      // Datos de la tabla (excluir el TOTAL del array)
+      const datosSinTotal = data.patrimonio.filter((item: PatrimonioItem) => item.detalle !== 'TOTAL');
+
+      doc.setTextColor(0);
+      doc.setFontSize(10);
+
+      datosSinTotal.forEach((item: PatrimonioItem) => {
+        // Filas normales - fondo blanco
+        doc.setFillColor(255, 255, 255);
+        doc.setTextColor(0);
+
+        // Dibujar celdas
+        doc.rect(20, yPosition, 80, 10, 'F');
+        doc.rect(100, yPosition, 80, 10, 'F');
+
+        // Agregar texto - detalle centrado, valor alineado a la derecha
+        doc.text(item.detalle, 60, yPosition + 7, { align: 'center' });
+        doc.text(this.formatCurrency(item.valor), 175, yPosition + 7, { align: 'right' });
+
+        yPosition += 10;
+      });
+
+      // Fila de total separada
+      yPosition += 5;
+      doc.setFillColor(34, 197, 94);
+      doc.setTextColor(255);
+      doc.setFontSize(10);
+
+      doc.rect(20, yPosition, 80, 10, 'F');
+      doc.rect(100, yPosition, 80, 10, 'F');
+      doc.text('TOTAL', 60, yPosition + 7, { align: 'center' });
+      doc.text(this.formatCurrency(data.total), 175, yPosition + 7, { align: 'right' });
+
+      console.log('Paso 6: Agregando pie de página...');
+      // Agregar pie de página
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 105, 280, { align: 'center' });
+
+      console.log('Paso 7: Guardando PDF...');
+      // Guardar PDF
+      const fileName = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.pdf`;
+      doc.save(fileName);
+
+      console.log('Paso 8: PDF generado exitosamente');
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Exportación',
+        detail: 'Archivo PDF generado y descargado correctamente'
+      });
+
+    } catch (error) {
+      console.error('=== ERROR EN GENERAR PDF ===');
+      console.error('Error:', error);
+      console.error('Stack:', (error as Error).stack);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo generar el archivo PDF. Intente nuevamente.'
+      });
+    }
   }
 
   formatDate(date: Date): string {
@@ -311,6 +444,74 @@ export class PatrimonioConsolidadoComponent implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  // Método para generar Excel en frontend
+  private generarExcelFrontend(data: any, fechaInicio: string, fechaFin: string): void {
+    console.log('=== INICIANDO GENERAR EXCEL FRONTEND ===');
+    console.log('Datos recibidos:', data);
+    console.log('Fechas:', fechaInicio, fechaFin);
+
+    try {
+      console.log('Paso 1: Creando workbook...');
+      // Crear workbook
+      const wb = XLSX.utils.book_new();
+
+      console.log('Paso 2: Preparando datos...');
+      // Preparar datos para el Excel
+      const wsData = [
+        ['Reporte de Patrimonio Consolidado'],
+        [`Período: ${fechaInicio} - ${fechaFin}`],
+        [],
+        ['Detalle', 'Valor'],
+        ...data.patrimonio.map((item: PatrimonioItem) => [item.detalle, item.valor]),
+        [],
+        ['Total', data.total]
+      ];
+
+      console.log('Paso 3: Datos preparados:', wsData);
+
+      console.log('Paso 4: Creando worksheet...');
+      // Crear worksheet
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      console.log('Paso 5: Configurando columnas...');
+      // Configurar anchos de columnas
+      ws['!cols'] = [
+        { wch: 30 }, // Columna Detalle
+        { wch: 15 }  // Columna Valor
+      ];
+
+      console.log('Paso 6: Agregando worksheet al workbook...');
+      // Agregar worksheet al workbook
+      XLSX.utils.book_append_sheet(wb, ws, 'Patrimonio Consolidado');
+
+      console.log('Paso 7: Preparando descarga...');
+      // Generar y descargar archivo
+      const fileName = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.xlsx`;
+      console.log('Nombre del archivo:', fileName);
+
+      console.log('Paso 8: Escribiendo archivo...');
+      XLSX.writeFile(wb, fileName);
+
+      console.log('Paso 9: Archivo Excel generado exitosamente');
+
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Exportación',
+        detail: 'Archivo Excel generado y descargado correctamente'
+      });
+
+    } catch (error) {
+      console.error('=== ERROR EN GENERAR EXCEL ===');
+      console.error('Error:', error);
+      console.error('Stack:', (error as Error).stack);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo generar el archivo Excel. Intente nuevamente.'
+      });
+    }
   }
 
   formatCurrency(value: number): string {
@@ -356,26 +557,45 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       '#20B2AA'  // Light Sea Green
     ];
 
-    // Generar leyenda de colores
-    this.leyendaColores = datosOrdenados.map((item: any, index: number) => {
-      const porcentaje = ((item.valor / total) * 100).toFixed(1);
-      return {
-        color: coloresFinancieros[index],
-        label: item.detalle,
-        valor: item.valor,
-        porcentaje: `${porcentaje}%`
-      };
-    });
-
+    // Configuración del gráfico de donut
     this.chartData = {
       labels: datosOrdenados.map((item: any) => item.detalle),
       datasets: [{
         data: datosOrdenados.map((item: any) => item.valor),
         backgroundColor: coloresFinancieros.slice(0, datosOrdenados.length),
         borderWidth: 2,
-        borderColor: '#ffffff',
-        hoverOffset: 8
+        borderColor: '#ffffff'
       }]
     };
+
+    // Configuración de opciones del gráfico
+    this.chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false // Ocultamos la leyenda del gráfico porque tenemos una personalizada
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context: any) {
+              const label = context.label || '';
+              const value = context.raw || 0;
+              const percentage = ((value / total) * 100).toFixed(1);
+              return `${label}: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(value)} (${percentage}%)`;
+            }
+          }
+        }
+      },
+      cutout: '70%'
+    };
+
+    // Calcular leyenda de colores
+    this.leyendaColores = datosOrdenados.map((item: any, index: number) => ({
+      color: coloresFinancieros[index % coloresFinancieros.length],
+      label: item.detalle,
+      valor: item.valor,
+      porcentaje: ((item.valor / total) * 100).toFixed(1)
+    }));
   }
 }
