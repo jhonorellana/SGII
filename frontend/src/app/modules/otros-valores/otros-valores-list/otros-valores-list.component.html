@@ -1,0 +1,409 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Otros Valores</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nuevo Valor
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="grupoFilter" class="form-label">Grupo Familiar</label>
+          <p-dropdown
+            id="grupoFilter"
+            [options]="gruposFamiliares"
+            optionLabel="nombre"
+            optionValue="id_grupo_familiar"
+            [(ngModel)]="idGrupoFilter"
+            placeholder="Todos los grupos"
+            [showClear]="true"
+            styleClass="w-100"
+            (onChange)="applyFilters()">
+          </p-dropdown>
+        </div>
+
+        <div class="col-md-3">
+          <label for="propietarioFilter" class="form-label">Propietario</label>
+          <p-dropdown
+            id="propietarioFilter"
+            [options]="personas"
+            optionLabel="nombre_completo"
+            optionValue="id"
+            [(ngModel)]="idPropietarioFilter"
+            placeholder="Todos los propietarios"
+            [showClear]="true"
+            styleClass="w-100"
+            (onChange)="applyFilters()">
+          </p-dropdown>
+        </div>
+
+        <div class="col-md-3">
+          <label for="tipoFilter" class="form-label">Tipo de Valor</label>
+          <p-dropdown
+            id="tipoFilter"
+            [options]="tipos"
+            optionLabel="nombre"
+            optionValue="id_catalogo_valor"
+            [(ngModel)]="idTipoFilter"
+            placeholder="Todos los tipos"
+            [showClear]="true"
+            styleClass="w-100"
+            (onChange)="applyFilters()">
+          </p-dropdown>
+        </div>
+
+        <div class="col-md-2">
+          <label for="vigentesFilter" class="form-label">Solo Vigentes</label>
+          <div class="form-check mt-2">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="vigentesFilter"
+              [(ngModel)]="soloVigentesFilter"
+              (change)="applyFilters()">
+            <label class="form-check-label" for="vigentesFilter">
+              Filtrar vigentes
+            </label>
+          </div>
+        </div>
+
+        <div class="col-md-1 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+            <i class="bi bi-x-circle"></i> Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando valores...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="!loading && !error">
+    <p-table
+      #dt
+      [value]="filteredValores"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 20, 50, 100]"
+      [globalFilterFields]="['descripcion', 'grupoFamiliarNombre', 'propietarioNombre', 'tipoNombre']"
+      [tableStyle]="{'min-width': '80rem'}"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      [loading]="loading"
+      responsiveLayout="scroll">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar valor..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_otro_valor">ID <p-sortIcon field="id_otro_valor"></p-sortIcon></th>
+          <th pSortableColumn="grupoFamiliarNombre">Grupo Familiar <p-sortIcon field="grupoFamiliarNombre"></p-sortIcon></th>
+          <th pSortableColumn="propietarioNombre">Propietario <p-sortIcon field="propietarioNombre"></p-sortIcon></th>
+          <th pSortableColumn="tipoNombre">Tipo <p-sortIcon field="tipoNombre"></p-sortIcon></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
+          <th pSortableColumn="valor">Valor <p-sortIcon field="valor"></p-sortIcon></th>
+          <th pSortableColumn="fecha_desde">Desde <p-sortIcon field="fecha_desde"></p-sortIcon></th>
+          <th pSortableColumn="fecha_hasta">Hasta <p-sortIcon field="fecha_hasta"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'grupoFamiliarNombre', 'contains')" class="w-100" placeholder="Filtrar grupo"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietarioNombre', 'contains')" class="w-100" placeholder="Filtrar propietario"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tipoNombre', 'contains')" class="w-100" placeholder="Filtrar tipo"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th>
+            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="1">Activo</option>
+              <option value="0">Inactivo</option>
+            </select>
+          </th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-valor>
+        <tr>
+          <td>{{ valor.id_otro_valor }}</td>
+          <td><strong>{{ valor.grupoFamiliarNombre || 'N/A' }}</strong></td>
+          <td>{{ valor.propietarioNombre || 'N/A' }}</td>
+          <td><code>{{ valor.tipoNombre || 'N/A' }}</code></td>
+          <td>{{ valor.descripcion }}</td>
+          <td [ngClass]="getTipoClaseCss(valor.valor)" class="fw-bold">
+            {{ formatValor(valor.valor) }}
+          </td>
+          <td>{{ formatDate(valor.fecha_desde) }}</td>
+          <td>{{ formatDate(valor.fecha_hasta) }}</td>
+          <td>
+            <p-tag
+              [value]="valor.activo ? 'Activo' : 'Inactivo'"
+              [severity]="valor.activo ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-sm btn-outline-primary"
+                      (click)="openEdit(valor)"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-warning"
+                      (click)="toggleActive(valor)"
+                      [title]="valor.activo ? 'Desactivar' : 'Activar'">
+                <i class="bi bi-power"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                      (click)="deleteValor(valor.id_otro_valor)"
+                      title="Eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje cuando no hay datos -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="text-center py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+            <p class="mt-2">No se encontraron valores</p>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+  </div>
+
+  <!-- Resumen Financiero -->
+  <div class="row mt-4">
+    <div class="col-md-4">
+      <div class="card bg-success bg-opacity-10 border-success">
+        <div class="card-body">
+          <h6 class="text-success">Total Activos</h6>
+          <div class="display-6 fw-bold text-success">{{ formatValor(totalActivos) }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-danger bg-opacity-10 border-danger">
+        <div class="card-body">
+          <h6 class="text-danger">Total Pasivos</h6>
+          <div class="display-6 fw-bold text-danger">{{ formatValor(totalPasivos) }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-primary bg-opacity-10 border-primary">
+        <div class="card-body">
+          <h6 class="text-primary">Patrimonio Neto</h6>
+          <div class="display-6 fw-bold" [ngClass]="getTipoClaseCss(patrimonioNeto)">
+            {{ formatValor(patrimonioNeto) }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Form -->
+  <p-dialog [header]="isEdit ? 'Editar Valor' : 'Nuevo Valor'"
+           [(visible)]="displayDialog"
+           [modal]="true"
+           [style]="{width: '50vw'}"
+           [draggable]="false"
+           [resizable]="false"
+           (onHide)="hideDialog()">
+    <form [formGroup]="valorForm" (ngSubmit)="save()">
+      <!-- Error State -->
+      <div *ngIf="formError" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="formLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">{{ isEdit ? 'Actualizando valor...' : 'Creando valor...' }}</p>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!formLoading">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="id_grupo_familiar" class="form-label">Grupo Familiar <span class="text-danger">*</span></label>
+            <p-dropdown
+              id="id_grupo_familiar"
+              formControlName="id_grupo_familiar"
+              [options]="gruposFamiliares"
+              optionLabel="nombre"
+              optionValue="id_grupo_familiar"
+              placeholder="Seleccione grupo familiar"
+              [showClear]="true"
+              styleClass="w-100"
+              [class.is-invalid]="f['id_grupo_familiar'].invalid && f['id_grupo_familiar'].dirty">
+            </p-dropdown>
+            <div class="invalid-feedback" *ngIf="f['id_grupo_familiar'].invalid && f['id_grupo_familiar'].dirty">
+              El grupo familiar es requerido
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="id_propietario" class="form-label">Propietario</label>
+            <p-dropdown
+              id="id_propietario"
+              formControlName="id_propietario"
+              [options]="personas"
+              optionLabel="nombre_completo"
+              optionValue="id"
+              placeholder="Seleccione propietario"
+              [showClear]="true"
+              styleClass="w-100">
+            </p-dropdown>
+          </div>
+
+          <div class="col-md-6">
+            <label for="id_tipo_otro_valor" class="form-label">Tipo de Valor <span class="text-danger">*</span></label>
+            <p-dropdown
+              id="id_tipo_otro_valor"
+              formControlName="id_tipo_otro_valor"
+              [options]="tipos"
+              optionLabel="nombre"
+              optionValue="id_catalogo_valor"
+              placeholder="Seleccione tipo"
+              [showClear]="true"
+              styleClass="w-100"
+              [class.is-invalid]="f['id_tipo_otro_valor'].invalid && f['id_tipo_otro_valor'].dirty">
+            </p-dropdown>
+            <div class="invalid-feedback" *ngIf="f['id_tipo_otro_valor'].invalid && f['id_tipo_otro_valor'].dirty">
+              El tipo de valor es requerido
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="valor" class="form-label">Valor <span class="text-danger">*</span></label>
+            <input
+              type="number"
+              step="0.01"
+              class="form-control"
+              id="valor"
+              formControlName="valor"
+              placeholder="0.00"
+              [class.is-invalid]="f['valor'].invalid && f['valor'].dirty">
+            <div class="invalid-feedback" *ngIf="f['valor'].invalid && f['valor'].dirty">
+              El valor es requerido
+            </div>
+          </div>
+
+          <div class="col-12">
+            <label for="descripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+            <input
+              type="text"
+              class="form-control"
+              id="descripcion"
+              formControlName="descripcion"
+              [class.is-invalid]="f['descripcion'].invalid && f['descripcion'].dirty"
+              placeholder="Ingrese descripción"
+              maxlength="255">
+            <div class="invalid-feedback" *ngIf="f['descripcion'].invalid && f['descripcion'].dirty">
+              La descripción es requerida (máx 255 caracteres)
+            </div>
+            <small class="form-text text-muted">{{ f['descripcion'].value?.length || 0 }}/255 caracteres</small>
+          </div>
+
+          <div class="col-md-6">
+            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+            <p-calendar
+              id="fecha_desde"
+              formControlName="fecha_desde"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Seleccione fecha"
+              styleClass="w-100">
+            </p-calendar>
+          </div>
+
+          <div class="col-md-6">
+            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+            <p-calendar
+              id="fecha_hasta"
+              formControlName="fecha_hasta"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Seleccione fecha"
+              styleClass="w-100">
+            </p-calendar>
+          </div>
+
+          <div class="col-12" *ngIf="isEdit">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="activo"
+                formControlName="activo">
+              <label class="form-check-label" for="activo">
+                Valor Activo
+              </label>
+            </div>
+            <small class="form-text text-muted">Los valores inactivos no se incluirán en los cálculos de patrimonio</small>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="hideDialog()" [disabled]="formLoading">
+            <i class="bi bi-x-circle"></i> Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="valorForm.invalid || formLoading">
+            <i class="bi bi-check-circle" *ngIf="!formLoading"></i>
+            <span class="spinner-border spinner-border-sm me-1" *ngIf="formLoading"></span>
+            {{ isEdit ? 'Actualizar' : 'Guardar' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </p-dialog>
+</div>

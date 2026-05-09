@@ -13,6 +13,7 @@ use App\Http\Controllers\API\InversionController;
 use App\Http\Controllers\API\AmortizacionController;
 use App\Http\Controllers\API\AmortizacionGeneracionController;
 use App\Http\Controllers\API\VencimientosMensualesController;
+use App\Http\Controllers\API\OtroValorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,6 +39,12 @@ Route::get('catalogos/{codigo}/valores', [CatalogoController::class, 'getValores
 Route::apiResource('catalogo-valores', CatalogoValorController::class);
 Route::get('catalogo-valores/catalogo/{idCatalogo}', [CatalogoValorController::class, 'getByCatalogo']);
 Route::patch('catalogo-valores/{id}/toggle-active', [CatalogoValorController::class, 'toggleActive']);
+
+// Rutas de Otros Valores (temporalmente sin autenticación para pruebas)
+Route::get('otros-valores/tipos', [OtroValorController::class, 'getTipos']);
+Route::get('otros-valores/grupo/{idGrupo}/resumen', [OtroValorController::class, 'getResumenByGrupo']);
+Route::patch('otros-valores/{id}/toggle-active', [OtroValorController::class, 'toggleActive']);
+Route::apiResource('otros-valores', OtroValorController::class);
 
 // Rutas de Personas (temporalmente sin autenticación para pruebas)
 Route::apiResource('personas', PersonaController::class);

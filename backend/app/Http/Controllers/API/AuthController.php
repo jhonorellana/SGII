@@ -76,6 +76,17 @@ class AuthController extends Controller
             ->where('nombre_usuario', 'admin')
             ->first();
 
+        // Obtener grupo familiar donde la persona es patriarca
+        $grupoFamiliarPatriarca = $usuario->persona ? $usuario->persona->grupoFamiliarPatriarca : null;
+
+        // Si no es patriarca, obtener el primer grupo familiar al que pertenece
+        if (!$grupoFamiliarPatriarca && $usuario->persona) {
+            $gruposFamiliares = $usuario->persona->gruposFamiliares()->where('activo', 1)->first();
+            $grupoFamiliar = $gruposFamiliares;
+        } else {
+            $grupoFamiliar = $grupoFamiliarPatriarca;
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
@@ -83,7 +94,8 @@ class AuthController extends Controller
                     'id' => $usuario->id_usuario,
                     'nombre_usuario' => $usuario->nombre_usuario,
                     'rol' => $usuario->rol->nombre,
-                    'persona' => $usuario->persona
+                    'persona' => $usuario->persona,
+                    'grupo_familiar' => $grupoFamiliar
                 ]
             ]
         ]);

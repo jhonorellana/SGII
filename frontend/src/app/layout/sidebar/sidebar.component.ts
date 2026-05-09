@@ -59,6 +59,11 @@ export class SidebarComponent implements OnInit {
           title: 'Instrumentos',
           icon: 'bi-graph-up',
           path: '/instrumentos'
+        },
+        {
+          title: 'Otros Valores',
+          icon: 'bi-wallet2',
+          path: '/otros-valores'
         }
       ]
     },

@@ -20,3 +20,7 @@ CREATE TABLE `otro_valor` (
   CONSTRAINT `fk_otro_valor_propietario` FOREIGN KEY (`id_propietario`) REFERENCES `persona` (`id_persona`),
   CONSTRAINT `fk_otro_valor_tipo` FOREIGN KEY (`id_tipo_otro_valor`) REFERENCES `catalogo_valor` (`id_catalogo_valor`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+select * from catalogo
+select * from catalogo_valor where id_catalogo = 7
