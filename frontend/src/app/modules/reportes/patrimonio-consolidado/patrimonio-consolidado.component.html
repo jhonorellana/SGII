@@ -149,10 +149,10 @@
             <div class="card">
               <div class="card-body">
                 <h6 class="card-title text-center mb-3">Distribución del Patrimonio</h6>
-                <div style="position: relative; height: 300px;">
+                <div style="position: relative; height: 350px;">
                   <p-chart type="doughnut" [data]="chartData" [options]="chartOptions"></p-chart>
                   <!-- Texto central del donut -->
-                  <div *ngIf="total > 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                  <div *ngIf="total > 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
                     <small class="text-muted d-block">Patrimonio Total</small>
                     <strong class="text-primary">{{ formatCurrency(total) }}</strong>
                   </div>

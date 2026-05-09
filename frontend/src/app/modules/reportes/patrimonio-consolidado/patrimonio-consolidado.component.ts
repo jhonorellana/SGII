@@ -12,7 +12,7 @@ import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
 import { ChartModule } from 'primeng/chart';
-import { ChartConfiguration } from 'chart.js';
+import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 
 @Component({
   selector: 'app-patrimonio-consolidado',
@@ -39,7 +39,7 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   loading = false;
 
   // Gráfico
-  chartData: ChartConfiguration<'doughnut'>['data'] = {
+  chartData: ChartData<'doughnut'> = {
     labels: [],
     datasets: []
   };
@@ -47,26 +47,27 @@ export class PatrimonioConsolidadoComponent implements OnInit {
     responsive: true,
     maintainAspectRatio: false,
     cutout: '60%',
+    layout: {
+      padding: 20
+    },
     plugins: {
       legend: {
-        position: 'bottom',
-        labels: {
-          padding: 15,
-          font: {
-            size: 11
-          }
-        }
+        display: false // Ocultar leyenda
       },
       tooltip: {
+        enabled: true,
         callbacks: {
           label: (context: any) => {
             const label = context.label || '';
             const value = context.raw || 0;
             const formattedValue = this.formatCurrency(Number(value));
-            const data = context.chart.data.datasets[0].data;
-            const total = data.reduce((sum: number, val: number) => sum + Number(val), 0);
+            const total = context.chart.data.datasets[0].data.reduce((sum: number, val: number) => sum + Number(val), 0);
             const percentage = ((Number(value) / total) * 100).toFixed(2);
-            return `${label}: ${formattedValue} (${percentage}%)`;
+            return [
+              label,
+              formattedValue,
+              `${percentage}%`
+            ];
           }
         }
       }
@@ -320,23 +321,22 @@ export class PatrimonioConsolidadoComponent implements OnInit {
     const datosOrdenados = [...datosSinTotal].sort((a, b) => b.valor - a.valor);
 
     // Paleta de colores financieros consistente
-    // Verdes para liquidez/corriente, Azules para capital/inversiones, Morados para papeles comerciales, Naranja para vencimientos
     const coloresFinancieros = [
       '#2E8B57', // Sea Green - Liquidez/Corriente
-      '#3CB371', // Medium Sea Green
-      '#90EE90', // Light Green
       '#1E90FF', // Dodger Blue - Capital/Inversiones estables
-      '#4169E1', // Royal Blue
-      '#6495ED', // Cornflower Blue
       '#8A2BE2', // Blue Violet - Papeles comerciales
-      '#9370DB', // Medium Purple
-      '#BA55D3', // Medium Orchid
       '#FF8C00', // Dark Orange - Vencimientos próximos
+      '#FF6384', // Red - Otros
+      '#3CB371', // Medium Sea Green
+      '#4169E1', // Royal Blue
+      '#9370DB', // Medium Purple
       '#FFA500', // Orange
-      '#FFD700', // Gold
-      '#DC143C', // Crimson - Valores negativos
-      '#B22222', // Fire Brick
-      '#808080'  // Gray - Otros
+      '#FFCE56', // Yellow
+      '#4BC0C0', // Teal
+      '#9966FF', // Purple
+      '#FF9F40', // Light Orange
+      '#C9CBCF', // Gray
+      '#7CB342'  // Green
     ];
 
     this.chartData = {
