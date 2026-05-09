@@ -11,6 +11,8 @@ import { PatrimonioService, PatrimonioItem } from '../../../core/patrimonio.serv
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
+import { ChartModule } from 'primeng/chart';
+import { ChartConfiguration } from 'chart.js';
 
 @Component({
   selector: 'app-patrimonio-consolidado',
@@ -22,7 +24,8 @@ import { AuthService } from '../../../core/auth.service';
     ButtonModule,
     DropdownModule,
     ProgressSpinnerModule,
-    CalendarModule
+    CalendarModule,
+    ChartModule
   ],
   providers: [MessageService],
   templateUrl: './patrimonio-consolidado.component.html',
@@ -34,6 +37,41 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   patrimonio: PatrimonioItem[] = [];
   total: number = 0;
   loading = false;
+
+  // Gráfico
+  chartData: ChartConfiguration<'doughnut'>['data'] = {
+    labels: [],
+    datasets: []
+  };
+  chartOptions: any = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '60%',
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 15,
+          font: {
+            size: 11
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const formattedValue = this.formatCurrency(Number(value));
+            const data = context.chart.data.datasets[0].data;
+            const total = data.reduce((sum: number, val: number) => sum + Number(val), 0);
+            const percentage = ((Number(value) / total) * 100).toFixed(2);
+            return `${label}: ${formattedValue} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  };
 
   // Dropdowns
   gruposFamiliares: any[] = [];
@@ -152,6 +190,9 @@ export class PatrimonioConsolidadoComponent implements OnInit {
           this.total = response.data.total;
           this.loading = false;
 
+          // Actualizar gráfico
+          this.actualizarGrafico();
+
           this.messageService.add({
             severity: 'success',
             summary: 'Éxito',
@@ -269,5 +310,43 @@ export class PatrimonioConsolidadoComponent implements OnInit {
 
   isTotal(item: PatrimonioItem): boolean {
     return item.detalle === 'TOTAL';
+  }
+
+  actualizarGrafico(): void {
+    // Filtrar el TOTAL para no incluirlo en el gráfico
+    const datosSinTotal = this.patrimonio.filter(item => item.detalle !== 'TOTAL');
+
+    // Ordenar de mayor a menor por valor
+    const datosOrdenados = [...datosSinTotal].sort((a, b) => b.valor - a.valor);
+
+    // Paleta de colores financieros consistente
+    // Verdes para liquidez/corriente, Azules para capital/inversiones, Morados para papeles comerciales, Naranja para vencimientos
+    const coloresFinancieros = [
+      '#2E8B57', // Sea Green - Liquidez/Corriente
+      '#3CB371', // Medium Sea Green
+      '#90EE90', // Light Green
+      '#1E90FF', // Dodger Blue - Capital/Inversiones estables
+      '#4169E1', // Royal Blue
+      '#6495ED', // Cornflower Blue
+      '#8A2BE2', // Blue Violet - Papeles comerciales
+      '#9370DB', // Medium Purple
+      '#BA55D3', // Medium Orchid
+      '#FF8C00', // Dark Orange - Vencimientos próximos
+      '#FFA500', // Orange
+      '#FFD700', // Gold
+      '#DC143C', // Crimson - Valores negativos
+      '#B22222', // Fire Brick
+      '#808080'  // Gray - Otros
+    ];
+
+    this.chartData = {
+      labels: datosOrdenados.map(item => item.detalle),
+      datasets: [{
+        data: datosOrdenados.map(item => item.valor),
+        backgroundColor: coloresFinancieros.slice(0, datosOrdenados.length),
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    };
   }
 }

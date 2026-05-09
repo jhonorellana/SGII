@@ -2,6 +2,11 @@
   padding: 20px;
 }
 
+.card-header {
+  background-color: #0d6efd !important;
+  border-color: #0d6efd !important;
+}
+
 .table-responsive {
   border-radius: 8px;
   overflow: hidden;

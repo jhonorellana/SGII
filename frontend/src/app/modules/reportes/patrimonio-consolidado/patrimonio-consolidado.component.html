@@ -2,7 +2,7 @@
   <!-- Header del Reporte -->
   <div class="card mb-4">
     <div class="card-header bg-primary text-white">
-      <h4 class="mb-0">
+      <h4 class="mb-0 text-white">
         <i class="bi bi-wallet2 me-2"></i>
         💰 Patrimonio Consolidado
       </h4>
@@ -12,14 +12,14 @@
     </div>
     <div class="card-body">
       <p class="text-muted mb-4">
-        Visualice el patrimonio total consolidado del usuario dentro de un período determinado, 
+        Visualice el patrimonio total consolidado del usuario dentro de un período determinado,
         integrando inversiones, cuentas bancarias, saldos disponibles, deudas y otros valores financieros.
       </p>
 
       <!-- Filtros -->
       <form [formGroup]="reporteForm">
         <div class="row mb-4">
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
             <p-calendar
               id="fecha_inicio"
@@ -35,7 +35,7 @@
               styleClass="w-100">
             </p-calendar>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label for="fecha_fin" class="form-label">Fecha Fin *</label>
             <p-calendar
               id="fecha_fin"
@@ -77,7 +77,7 @@
               styleClass="w-100">
             </p-dropdown>
           </div>
-          <div class="col-md-2 d-flex align-items-end">
+          <div class="col-md-4 d-flex align-items-end">
             <button
               pButton
               type="button"
@@ -115,29 +115,51 @@
         <p class="mt-2">Generando reporte...</p>
       </div>
 
-      <!-- Tabla de Resultados -->
+      <!-- Tabla y Gráfico de Resultados -->
       <div *ngIf="!loading && patrimonio.length > 0">
-        <div class="table-responsive">
-          <table class="table table-bordered table-hover reporte-table">
-            <thead class="table-dark">
-              <tr>
-                <th class="text-left">Detalle</th>
-                <th class="text-end">Valor</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                *ngFor="let item of patrimonio"
-                [class.table-success]="isTotal(item)"
-                [class.fw-bold]="isTotal(item)">
-                <td class="text-left">
-                  {{ item.detalle }}
-                  <span *ngIf="isTotal(item)" class="badge bg-success ms-2">TOTAL</span>
-                </td>
-                <td class="text-end">{{ formatCurrency(item.valor) }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="row">
+          <!-- Tabla a la izquierda -->
+          <div class="col-md-7">
+            <div class="table-responsive">
+              <table class="table table-bordered table-hover reporte-table">
+                <thead class="table-dark">
+                  <tr>
+                    <th class="text-left">Detalle</th>
+                    <th class="text-end">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    *ngFor="let item of patrimonio"
+                    [class.table-success]="isTotal(item)"
+                    [class.fw-bold]="isTotal(item)">
+                    <td class="text-left">
+                      {{ item.detalle }}
+                      <span *ngIf="isTotal(item)" class="badge bg-success ms-2">TOTAL</span>
+                    </td>
+                    <td class="text-end">{{ formatCurrency(item.valor) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Gráfico a la derecha -->
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title text-center mb-3">Distribución del Patrimonio</h6>
+                <div style="position: relative; height: 300px;">
+                  <p-chart type="doughnut" [data]="chartData" [options]="chartOptions"></p-chart>
+                  <!-- Texto central del donut -->
+                  <div *ngIf="total > 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <small class="text-muted d-block">Patrimonio Total</small>
+                    <strong class="text-primary">{{ formatCurrency(total) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Resumen en Card -->
