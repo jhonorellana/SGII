@@ -143,3 +143,25 @@ code {
   background-position: right calc(0.375em + 0.1875rem) center;
   background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
+
+/* Controlar tamaño del datepicker */
+::ng-deep .p-datepicker {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+::ng-deep .p-datepicker .p-datepicker-header {
+  padding: 0.5rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar {
+  padding: 0.5rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar td {
+  padding: 0.25rem;
+}
+
+::ng-deep .p-datepicker .p-datepicker-calendar td > span {
+  font-size: 0.875rem;
+}

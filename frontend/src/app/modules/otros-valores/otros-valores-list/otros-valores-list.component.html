@@ -136,7 +136,7 @@
           <th pSortableColumn="propietarioNombre">Propietario <p-sortIcon field="propietarioNombre"></p-sortIcon></th>
           <th pSortableColumn="tipoNombre">Tipo <p-sortIcon field="tipoNombre"></p-sortIcon></th>
           <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion"></p-sortIcon></th>
-          <th pSortableColumn="valor">Valor <p-sortIcon field="valor"></p-sortIcon></th>
+          <th pSortableColumn="valor" class="text-end">Valor <p-sortIcon field="valor"></p-sortIcon></th>
           <th pSortableColumn="fecha_desde">Desde <p-sortIcon field="fecha_desde"></p-sortIcon></th>
           <th pSortableColumn="fecha_hasta">Hasta <p-sortIcon field="fecha_hasta"></p-sortIcon></th>
           <th>Estado</th>
@@ -148,7 +148,7 @@
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietarioNombre', 'contains')" class="w-100" placeholder="Filtrar propietario"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tipoNombre', 'contains')" class="w-100" placeholder="Filtrar tipo"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
-          <th></th>
+          <th class="text-end"></th>
           <th></th>
           <th></th>
           <th>
@@ -170,7 +170,7 @@
           <td>{{ valor.propietarioNombre || 'N/A' }}</td>
           <td><code>{{ valor.tipoNombre || 'N/A' }}</code></td>
           <td>{{ valor.descripcion }}</td>
-          <td [ngClass]="getTipoClaseCss(valor.valor)" class="fw-bold">
+          <td [ngClass]="getTipoClaseCss(valor.valor)" class="fw-bold text-end">
             {{ formatValor(valor.valor) }}
           </td>
           <td>{{ formatDate(valor.fecha_desde) }}</td>
@@ -361,6 +361,10 @@
               [showButtonBar]="true"
               dateFormat="yy-mm-dd"
               placeholder="Seleccione fecha"
+              [monthNavigator]="true"
+              [yearNavigator]="true"
+              yearRange="2020:2030"
+              [appendTo]="'body'"
               styleClass="w-100">
             </p-calendar>
           </div>
@@ -374,6 +378,10 @@
               [showButtonBar]="true"
               dateFormat="yy-mm-dd"
               placeholder="Seleccione fecha"
+              [monthNavigator]="true"
+              [yearNavigator]="true"
+              yearRange="2020:2030"
+              [appendTo]="'body'"
               styleClass="w-100">
             </p-calendar>
           </div>
