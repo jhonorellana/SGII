@@ -12,7 +12,7 @@ import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
 import { ChartModule } from 'primeng/chart';
-import { ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
+import { Chart, ChartConfiguration, ChartData, ChartOptions } from 'chart.js';
 
 @Component({
   selector: 'app-patrimonio-consolidado',
@@ -52,10 +52,20 @@ export class PatrimonioConsolidadoComponent implements OnInit {
     },
     plugins: {
       legend: {
-        display: false // Ocultar leyenda
+        display: false
       },
       tooltip: {
         enabled: true,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        titleFont: {
+          size: 13,
+          weight: '600'
+        },
+        bodyFont: {
+          size: 12
+        },
+        padding: 12,
+        cornerRadius: 6,
         callbacks: {
           label: (context: any) => {
             const label = context.label || '';
@@ -80,6 +90,9 @@ export class PatrimonioConsolidadoComponent implements OnInit {
 
   // Usuario actual
   currentUser: any = null;
+
+  // Leyenda de colores
+  leyendaColores: { color: string; label: string; valor: number; porcentaje: string }[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -317,35 +330,51 @@ export class PatrimonioConsolidadoComponent implements OnInit {
     // Filtrar el TOTAL para no incluirlo en el gráfico
     const datosSinTotal = this.patrimonio.filter(item => item.detalle !== 'TOTAL');
 
-    // Ordenar de mayor a menor por valor
-    const datosOrdenados = [...datosSinTotal].sort((a, b) => b.valor - a.valor);
+    // Calcular el total
+    const total = datosSinTotal.reduce((sum, item) => sum + item.valor, 0);
 
-    // Paleta de colores financieros consistente
+    // Ordenar de mayor a menor por valor
+    const datosOrdenados = [...datosSinTotal].sort((a: any, b: any) => b.valor - a.valor);
+
+    // Paleta de colores financieros extendida para más categorías
     const coloresFinancieros = [
-      '#2E8B57', // Sea Green - Liquidez/Corriente
-      '#1E90FF', // Dodger Blue - Capital/Inversiones estables
-      '#8A2BE2', // Blue Violet - Papeles comerciales
-      '#FF8C00', // Dark Orange - Vencimientos próximos
-      '#FF6384', // Red - Otros
+      '#2E8B57', // Sea Green - Total Corriente
+      '#1E90FF', // Dodger Blue - Capital bonos
+      '#8A2BE2', // Blue Violet - Papeles Comerciales
+      '#FF8C00', // Dark Orange - Obligaciones
+      '#4169E1', // Royal Blue - Acciones
+      '#9370DB', // Medium Purple - Titularizaciones
+      '#FF6384', // Red
       '#3CB371', // Medium Sea Green
-      '#4169E1', // Royal Blue
-      '#9370DB', // Medium Purple
       '#FFA500', // Orange
       '#FFCE56', // Yellow
       '#4BC0C0', // Teal
       '#9966FF', // Purple
       '#FF9F40', // Light Orange
       '#C9CBCF', // Gray
-      '#7CB342'  // Green
+      '#7CB342', // Green
+      '#20B2AA'  // Light Sea Green
     ];
 
+    // Generar leyenda de colores
+    this.leyendaColores = datosOrdenados.map((item: any, index: number) => {
+      const porcentaje = ((item.valor / total) * 100).toFixed(1);
+      return {
+        color: coloresFinancieros[index],
+        label: item.detalle,
+        valor: item.valor,
+        porcentaje: `${porcentaje}%`
+      };
+    });
+
     this.chartData = {
-      labels: datosOrdenados.map(item => item.detalle),
+      labels: datosOrdenados.map((item: any) => item.detalle),
       datasets: [{
-        data: datosOrdenados.map(item => item.valor),
+        data: datosOrdenados.map((item: any) => item.valor),
         backgroundColor: coloresFinancieros.slice(0, datosOrdenados.length),
         borderWidth: 2,
-        borderColor: '#ffffff'
+        borderColor: '#ffffff',
+        hoverOffset: 8
       }]
     };
   }

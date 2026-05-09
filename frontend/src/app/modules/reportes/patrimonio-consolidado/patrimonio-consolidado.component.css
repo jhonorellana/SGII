@@ -35,7 +35,18 @@
 }
 
 .card-body {
-  padding: 1.25rem;
+  padding: 1rem;
+}
+
+.chart-card .card-body {
+  padding: 0.75rem;
+}
+
+.legend-card .card-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .spinner-border {
@@ -84,4 +95,180 @@
 
 ::ng-deep .p-datepicker .p-datepicker-calendar td > span {
   font-size: 0.875rem;
+}
+
+/* Layout del dashboard con alturas iguales */
+.dashboard-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.dashboard-row > div {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.dashboard-row > div:first-child {
+  padding-left: 0;
+}
+
+.dashboard-row > div:last-child {
+  padding-right: 0;
+}
+
+.table-card,
+.chart-card,
+.legend-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.table-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+  border: 1px solid #dee2e6;
+}
+
+.table-card .table-responsive {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;
+}
+
+.chart-card .card-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chart-container {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.chart-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+
+.chart-center-text small {
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  display: block;
+}
+
+.chart-center-text strong {
+  font-size: 13px;
+  font-weight: 600;
+  display: block;
+}
+
+.legend-card .card-body {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.leyenda-container {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 5px;
+  border-radius: 3px;
+  background-color: #f8f9fa;
+  transition: background-color 0.2s ease;
+}
+
+.leyenda-item:hover {
+  background-color: #e9ecef;
+}
+
+.leyenda-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  margin-right: 8px;
+  border: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.leyenda-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.leyenda-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #495057;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.leyenda-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.leyenda-valor {
+  font-size: 11px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.leyenda-porcentaje {
+  font-size: 11px;
+  font-weight: 500;
+  color: #6c757d;
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* Scrollbar personalizado para la leyenda */
+.leyenda-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.leyenda-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.leyenda-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.leyenda-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }

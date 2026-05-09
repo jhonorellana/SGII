@@ -117,44 +117,67 @@
 
       <!-- Tabla y Gráfico de Resultados -->
       <div *ngIf="!loading && patrimonio.length > 0">
-        <div class="row">
+        <div class="row dashboard-row">
           <!-- Tabla a la izquierda -->
-          <div class="col-md-7">
-            <div class="table-responsive">
-              <table class="table table-bordered table-hover reporte-table">
-                <thead class="table-dark">
-                  <tr>
-                    <th class="text-left">Detalle</th>
-                    <th class="text-end">Valor</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr
-                    *ngFor="let item of patrimonio"
-                    [class.table-success]="isTotal(item)"
-                    [class.fw-bold]="isTotal(item)">
-                    <td class="text-left">
-                      {{ item.detalle }}
-                      <span *ngIf="isTotal(item)" class="badge bg-success ms-2">TOTAL</span>
-                    </td>
-                    <td class="text-end">{{ formatCurrency(item.valor) }}</td>
-                  </tr>
-                </tbody>
-              </table>
+          <div class="col-md-4">
+            <div class="table-card">
+              <div class="table-responsive">
+                <table class="table table-bordered table-hover reporte-table">
+                  <thead class="table-dark">
+                    <tr>
+                      <th class="text-left">Detalle</th>
+                      <th class="text-end">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr
+                      *ngFor="let item of patrimonio"
+                      [class.table-success]="isTotal(item)"
+                      [class.fw-bold]="isTotal(item)">
+                      <td class="text-left">
+                        {{ item.detalle }}
+                        <span *ngIf="isTotal(item)" class="badge bg-success ms-2">TOTAL</span>
+                      </td>
+                      <td class="text-end">{{ formatCurrency(item.valor) }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <!-- Gráfico a la derecha -->
+          <!-- Gráfico en el centro -->
           <div class="col-md-5">
-            <div class="card">
+            <div class="card chart-card">
               <div class="card-body">
-                <h6 class="card-title text-center mb-3">Distribución del Patrimonio</h6>
-                <div style="position: relative; height: 350px;">
+                <h6 class="card-title text-center mb-2">Distribución del Patrimonio</h6>
+                <div class="chart-container">
                   <p-chart type="doughnut" [data]="chartData" [options]="chartOptions"></p-chart>
                   <!-- Texto central del donut -->
-                  <div *ngIf="total > 0" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none;">
-                    <small class="text-muted d-block">Patrimonio Total</small>
+                  <div *ngIf="total > 0" class="chart-center-text">
+                    <small class="text-muted d-block">PATRIMONIO TOTAL</small>
                     <strong class="text-primary">{{ formatCurrency(total) }}</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leyenda de colores a la derecha -->
+          <div class="col-md-3">
+            <div class="card legend-card">
+              <div class="card-body">
+                <h6 class="card-title text-center mb-2">Leyenda</h6>
+                <div class="leyenda-container">
+                  <div *ngFor="let item of leyendaColores" class="leyenda-item">
+                    <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                    <div class="leyenda-info">
+                      <div class="leyenda-label">{{ item.label }}</div>
+                      <div class="leyenda-stats">
+                        <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                        <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
