@@ -1,0 +1,59 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_FLUJO_CAPITAL_CONSOLIDADO`(
+    IN `_initialDate` DATE,
+    IN `_finalDate` DATE,
+    IN `_id_grupo_familiar` INT,
+    IN `_id_propietario` INT
+)
+BEGIN
+    -- Consulta principal: Flujo de capital consolidado por fecha, propietario y empresa
+    SELECT
+        a.fecha_pago AS fecha,
+        CONCAT(p.nombres, ' ', p.apellidos) AS propietario,
+        e.nombre AS empresa,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.interes ELSE 0 END) AS interes,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.capital ELSE 0 END) AS capital,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.descuento ELSE 0 END) AS descuento,
+        SUM(CASE WHEN a.pagada = 2 THEN a.interes ELSE 0 END) AS interes_moroso,
+        SUM(CASE WHEN a.pagada = 2 THEN a.capital ELSE 0 END) AS capital_moroso,
+        SUM(CASE WHEN a.pagada = 2 THEN a.descuento ELSE 0 END) AS descuento_moroso,
+        SUM(a.interes + a.capital) AS total
+    FROM amortizacion a
+    INNER JOIN inversion i ON a.id_inversion = i.id_inversion
+    INNER JOIN persona p ON i.id_propietario = p.id_persona
+    INNER JOIN instrumento inst ON i.id_instrumento = inst.id_instrumento
+    INNER JOIN emisor e ON inst.id_emisor = e.id_emisor
+    WHERE a.fecha_pago BETWEEN _initialDate AND _finalDate
+        AND i.activo = 1
+        AND i.eliminado = 0
+        AND a.activo = 1
+        AND a.eliminado = 0
+        AND (_id_grupo_familiar IS NULL OR i.id_grupo_familiar = _id_grupo_familiar)
+        AND (_id_propietario IS NULL OR i.id_propietario = _id_propietario)
+    GROUP BY a.fecha_pago, p.nombres, p.apellidos, e.nombre
+
+    UNION
+
+    -- Fila de totales generales
+    SELECT
+        'X' AS fecha,
+        '' AS propietario,
+        'TOTAL' AS empresa,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.interes ELSE 0 END) AS interes,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.capital ELSE 0 END) AS capital,
+        SUM(CASE WHEN a.pagada IN (1, 0) THEN a.descuento ELSE 0 END) AS descuento,
+        SUM(CASE WHEN a.pagada = 2 THEN a.interes ELSE 0 END) AS interes_moroso,
+        SUM(CASE WHEN a.pagada = 2 THEN a.capital ELSE 0 END) AS capital_moroso,
+        SUM(CASE WHEN a.pagada = 2 THEN a.descuento ELSE 0 END) AS descuento_moroso,
+        SUM(a.interes) + SUM(a.capital) AS total
+    FROM amortizacion a
+    INNER JOIN inversion i ON a.id_inversion = i.id_inversion
+    WHERE a.fecha_pago BETWEEN _initialDate AND _finalDate
+        AND i.activo = 1
+        AND i.eliminado = 0
+        AND a.activo = 1
+        AND a.eliminado = 0
+        AND (_id_grupo_familiar IS NULL OR i.id_grupo_familiar = _id_grupo_familiar)
+        AND (_id_propietario IS NULL OR i.id_propietario = _id_propietario)
+
+    ORDER BY fecha, propietario;
+END

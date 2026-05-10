@@ -1,0 +1,209 @@
+<div class="container-fluid">
+  <!-- Header del Reporte -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-cash-coin me-2"></i>
+        💰 Flujo de Capital Consolidado
+      </h4>
+      <small class="text-white-50">
+        Flujo de capital consolidado por día y propietario entre fechas
+      </small>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-4">
+        Visualice de forma clara las recuperaciones de capital, ingresos por intereses,
+        premios obtenidos y el flujo financiero diario consolidado de inversiones.
+      </p>
+
+      <!-- Filtros -->
+      <form [formGroup]="reporteForm">
+        <div class="row mb-4">
+          <div class="col-md-2">
+            <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
+            <p-calendar
+              id="fecha_inicio"
+              formControlName="fecha_inicio"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Seleccione fecha inicio"
+              styleClass="w-full"
+              [ngStyle]="{'max-width': '160px'}">
+            </p-calendar>
+          </div>
+          <div class="col-md-2">
+            <label for="fecha_fin" class="form-label">Fecha Fin *</label>
+            <p-calendar
+              id="fecha_fin"
+              formControlName="fecha_fin"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Seleccione fecha fin"
+              styleClass="w-full"
+              [ngStyle]="{'max-width': '160px'}">
+            </p-calendar>
+          </div>
+          <div class="col-md-2">
+            <label for="id_grupo_familiar" class="form-label">Grupo Familiar</label>
+            <p-dropdown
+              id="id_grupo_familiar"
+              [options]="gruposFamiliares"
+              optionLabel="nombre"
+              optionValue="id_grupo_familiar"
+              formControlName="id_grupo_familiar"
+              [showClear]="true"
+              placeholder="Todos"
+              styleClass="w-full"
+              [ngStyle]="{'max-width': '160px'}">
+            </p-dropdown>
+          </div>
+          <div class="col-md-2">
+            <label for="id_propietario" class="form-label">Propietario</label>
+            <p-dropdown
+              id="id_propietario"
+              [options]="personas"
+              optionLabel="nombre_completo"
+              optionValue="id"
+              formControlName="id_propietario"
+              [showClear]="true"
+              placeholder="Todos"
+              styleClass="w-full"
+              [ngStyle]="{'max-width': '160px'}">
+            </p-dropdown>
+          </div>
+          <div class="col-md-4 d-flex align-items-end gap-2">
+            <button
+              pButton
+              type="button"
+              label="Buscar"
+              icon="pi pi-search"
+              class="p-button-primary me-2"
+              (click)="generarReporte()"
+              [disabled]="loading">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="Excel"
+              icon="pi pi-file-excel"
+              class="p-button-success me-2"
+              (click)="exportarExcel()"
+              [disabled]="flujoCapital.length === 0">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="PDF"
+              icon="pi pi-file-pdf"
+              class="p-button-danger"
+              (click)="exportarPDF()"
+              [disabled]="flujoCapital.length === 0">
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="text-center py-5">
+        <p-progressSpinner></p-progressSpinner>
+        <p class="mt-2">Generando reporte...</p>
+      </div>
+
+      <!-- Tabla de Resultados -->
+      <div *ngIf="!loading && flujoCapital.length > 0">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover reporte-table">
+            <thead class="table-dark">
+              <tr>
+                <th class="text-center" style="width: 120px;">Fecha</th>
+                <th class="text-left" style="width: 200px;">Propietario</th>
+                <th class="text-left" style="width: 200px;">Empresa/Emisor</th>
+                <th class="text-end" style="width: 120px;">Interés</th>
+                <th class="text-end" style="width: 120px;">Capital</th>
+                <th class="text-end" style="width: 120px;">Premio</th>
+                <th class="text-end" style="width: 120px;">Int. Riesgo</th>
+                <th class="text-end" style="width: 120px;">Cap. Riesgo</th>
+                <th class="text-end" style="width: 120px;">Prem. Riesgo</th>
+                <th class="text-end" style="width: 120px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas de datos -->
+              <tr *ngFor="let item of flujoCapital" class="fila-dato">
+                <td class="text-center">{{ item.fecha }}</td>
+                <td class="text-left">{{ item.propietario }}</td>
+                <td class="text-left">{{ item.empresa }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                <td class="text-end">{{ formatCurrency(item.descuento) }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes_moroso) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital_moroso) }}</td>
+                <td class="text-end">{{ formatCurrency(item.descuento_moroso) }}</td>
+                <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+              </tr>
+
+              <!-- Fila de totales -->
+              <tr class="fila-totales fw-bold">
+                <td colspan="3" class="text-center">TOTALES</td>
+                <td class="text-end">{{ formatCurrency(totales.interes) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.capital) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.descuento) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.interes_moroso) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.capital_moroso) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.descuento_moroso) }}</td>
+                <td class="text-end">{{ formatCurrency(totales.total) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumen en Cards -->
+        <div class="row mt-4">
+          <div class="col-md-3">
+            <div class="card border-primary">
+              <div class="card-body text-center">
+                <h6 class="card-title text-primary">Interés</h6>
+                <h5 class="text-primary">{{ formatCurrency(totales.interes) }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card border-info">
+              <div class="card-body text-center">
+                <h6 class="card-title text-info">Capital</h6>
+                <h5 class="text-info">{{ formatCurrency(totales.capital) }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card border-warning">
+              <div class="card-body text-center">
+                <h6 class="card-title text-warning">Premio</h6>
+                <h5 class="text-warning">{{ formatCurrency(totales.descuento) }}</h5>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card border-success">
+              <div class="card-body text-center">
+                <h6 class="card-title text-success">Total Consolidado</h6>
+                <h5 class="text-success">{{ formatCurrency(totales.total) }}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay datos -->
+      <div *ngIf="!loading && flujoCapital.length === 0" class="text-center py-5">
+        <i class="bi bi-cash-coin display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">No hay datos disponibles</h5>
+        <p class="text-muted">Seleccione las fechas y haga clic en "Buscar"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>

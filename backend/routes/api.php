@@ -15,6 +15,7 @@ use App\Http\Controllers\API\AmortizacionGeneracionController;
 use App\Http\Controllers\API\VencimientosMensualesController;
 use App\Http\Controllers\API\OtroValorController;
 use App\Http\Controllers\API\PatrimonioController;
+use App\Http\Controllers\API\FlujoCapitalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -81,6 +82,11 @@ Route::get('reportes/vencimientos-mensuales/exportar/pdf', [VencimientosMensuale
 Route::get('reportes/patrimonio/consolidado', [PatrimonioController::class, 'getPatrimonioConsolidado']);
 Route::get('reportes/patrimonio/consolidado/exportar/excel', [PatrimonioController::class, 'exportarExcel']);
 Route::get('reportes/patrimonio/consolidado/exportar/pdf', [PatrimonioController::class, 'exportarPDF']);
+
+// Rutas de Reportes de Flujo de Capital Consolidado (temporalmente sin autenticación para pruebas)
+Route::get('reportes/flujo-capital', [FlujoCapitalController::class, 'getFlujoCapital']);
+Route::get('reportes/flujo-capital/exportar/excel', [FlujoCapitalController::class, 'exportarExcel']);
+Route::get('reportes/flujo-capital/exportar/pdf', [FlujoCapitalController::class, 'exportarPDF']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {
