@@ -49,19 +49,19 @@ export class VencimientosMensualesService {
     return this.http.get<VencimientosMensualesResponse>(url);
   }
 
-  exportarExcel(anio: number, mes?: number): Observable<Blob> {
+  exportarExcel(anio: number, mes?: number): Observable<any> {
     let url = `${this.apiUrl}/exportar/excel?anio=${anio}`;
     if (mes) {
       url += `&mes=${mes}`;
     }
-    return this.http.get(url, { responseType: 'blob' });
+    return this.http.get(url);
   }
 
-  exportarPDF(anio: number, mes?: number): Observable<Blob> {
+  exportarPDF(anio: number, mes?: number): Observable<any> {
     let url = `${this.apiUrl}/exportar/pdf?anio=${anio}`;
     if (mes) {
       url += `&mes=${mes}`;
     }
-    return this.http.get(url, { responseType: 'blob' });
+    return this.http.get(url);
   }
 }
