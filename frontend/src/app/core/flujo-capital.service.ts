@@ -20,11 +20,11 @@ export class FlujoCapitalService {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
     queryParams.append('fecha_fin', params.fecha_fin);
-    
+
     if (params.id_grupo_familiar) {
       queryParams.append('id_grupo_familiar', params.id_grupo_familiar.toString());
     }
-    
+
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
     }
@@ -39,22 +39,21 @@ export class FlujoCapitalService {
     fecha_fin: string;
     id_grupo_familiar?: number | null;
     id_propietario?: number | null;
-  }): Observable<Blob> {
+  }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
     queryParams.append('fecha_fin', params.fecha_fin);
-    
+
     if (params.id_grupo_familiar) {
       queryParams.append('id_grupo_familiar', params.id_grupo_familiar.toString());
     }
-    
+
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
     }
 
     return this.http.get(
-      `${this.apiUrl}/reportes/flujo-capital/exportar/excel?${queryParams.toString()}`,
-      { responseType: 'blob' }
+      `${this.apiUrl}/reportes/flujo-capital/exportar/excel?${queryParams.toString()}`
     );
   }
 
@@ -63,22 +62,21 @@ export class FlujoCapitalService {
     fecha_fin: string;
     id_grupo_familiar?: number | null;
     id_propietario?: number | null;
-  }): Observable<Blob> {
+  }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
     queryParams.append('fecha_fin', params.fecha_fin);
-    
+
     if (params.id_grupo_familiar) {
       queryParams.append('id_grupo_familiar', params.id_grupo_familiar.toString());
     }
-    
+
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
     }
 
     return this.http.get(
-      `${this.apiUrl}/reportes/flujo-capital/exportar/pdf?${queryParams.toString()}`,
-      { responseType: 'blob' }
+      `${this.apiUrl}/reportes/flujo-capital/exportar/pdf?${queryParams.toString()}`
     );
   }
 }

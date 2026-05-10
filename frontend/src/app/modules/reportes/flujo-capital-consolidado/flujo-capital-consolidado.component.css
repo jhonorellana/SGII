@@ -39,15 +39,27 @@
 }
 
 /* Estilos para fila de totales */
-.fila-totales {
-  background-color: #0a3622 !important;
+tr.fila-totales {
+  background-color: #198754 !important;
   color: #ffffff !important;
 }
 
-.fila-totales td {
+tr.fila-totales td {
+  background-color: #198754 !important;
   color: #ffffff !important;
   font-weight: 700 !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Selector específico para la tabla */
+.reporte-table tbody tr.fila-totales {
+  background-color: #198754 !important;
+}
+
+.reporte-table tbody tr.fila-totales td {
+  background-color: #198754 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }
 
 /* Alineación de números */
