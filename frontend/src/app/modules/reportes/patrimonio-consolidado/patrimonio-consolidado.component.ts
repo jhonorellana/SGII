@@ -123,8 +123,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   inicializarFormulario(): void {
     // Fecha inicio: hoy
     const fechaInicio = new Date();
-    // Fecha fin: último día del mes 11 (noviembre) del año actual
-    const fechaFin = new Date(fechaInicio.getFullYear(), 11, 31);
+    // Fecha fin: último día del undécimo mes después de la fecha actual
+    const fechaFin = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 12, 0);
 
     this.reporteForm = this.fb.group({
       fecha_inicio: [fechaInicio, Validators.required],
@@ -151,6 +151,11 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       }
 
       this.reporteForm.patchValue(defaultValues);
+
+      // Generar reporte automáticamente con los valores por defecto
+      setTimeout(() => {
+        this.generarReporte();
+      }, 600);
     }, 500);
   }
 
@@ -235,9 +240,6 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   }
 
   exportarExcel(): void {
-    console.log('*** BOTÓN EXCEL PRESIONADO ***');
-    console.log('=== INICIANDO EXPORTACIÓN EXCEL ===');
-
     const params = {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
@@ -245,18 +247,11 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       id_propietario: this.reporteForm.get('id_propietario')?.value
     };
 
-    console.log('Parámetros de exportación:', params);
-
     this.patrimonioService.exportarExcel(params).subscribe({
       next: (response) => {
-        console.log('=== RECIBIDO JSON DEL BACKEND ===');
-        console.log('Response:', response);
-
         if (response.success && response.data) {
-          console.log('JSON válido, generando Excel en frontend...');
           this.generarExcelFrontend(response.data, params.fecha_inicio, params.fecha_fin);
         } else {
-          console.log('JSON no tiene la estructura esperada');
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
@@ -276,8 +271,6 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   }
 
   exportarPDF(): void {
-    console.log('=== INICIANDO EXPORTACIÓN PDF ===');
-
     const params = {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
@@ -285,18 +278,11 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       id_propietario: this.reporteForm.get('id_propietario')?.value
     };
 
-    console.log('Parámetros de exportación PDF:', params);
-
     this.patrimonioService.exportarPDF(params).subscribe({
       next: (response) => {
-        console.log('=== RECIBIDO JSON DEL BACKEND PARA PDF ===');
-        console.log('Response:', response);
-
         if (response.success && response.data) {
-          console.log('JSON válido, generando PDF en frontend...');
           this.generarPDFFrontend(response.data, params.fecha_inicio, params.fecha_fin);
         } else {
-          console.log('JSON no tiene la estructura esperada');
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
@@ -335,29 +321,20 @@ export class PatrimonioConsolidadoComponent implements OnInit {
 
   // Método para generar PDF en frontend
   private generarPDFFrontend(data: any, fechaInicio: string, fechaFin: string): void {
-    console.log('=== INICIANDO GENERAR PDF FRONTEND ===');
-    console.log('Datos recibidos:', data);
-    console.log('Fechas:', fechaInicio, fechaFin);
-
     try {
-      console.log('Paso 1: Creando documento PDF...');
       // Crear documento PDF
       const doc = new jsPDF();
 
-      console.log('Paso 2: Configurando fuente y tamaño...');
       // Configurar fuente
       doc.setFontSize(20);
 
-      console.log('Paso 3: Agregando título...');
       // Agregar título
       doc.text('Reporte de Patrimonio Consolidado', 105, 20, { align: 'center' });
 
-      console.log('Paso 4: Agregando período...');
       // Agregar período
       doc.setFontSize(12);
       doc.text(`Período: ${fechaInicio} - ${fechaFin}`, 105, 30, { align: 'center' });
 
-      console.log('Paso 5: Creando tabla manualmente...');
       // Crear tabla manualmente sin autoTable
       let yPosition = 50;
 
@@ -407,18 +384,14 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       doc.text('TOTAL', 60, yPosition + 7, { align: 'center' });
       doc.text(this.formatCurrency(data.total), 175, yPosition + 7, { align: 'right' });
 
-      console.log('Paso 6: Agregando pie de página...');
       // Agregar pie de página
       doc.setFontSize(8);
       doc.setTextColor(128);
       doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 105, 280, { align: 'center' });
 
-      console.log('Paso 7: Guardando PDF...');
       // Guardar PDF
       const fileName = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.pdf`;
       doc.save(fileName);
-
-      console.log('Paso 8: PDF generado exitosamente');
 
       this.messageService.add({
         severity: 'success',
@@ -427,9 +400,7 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       });
 
     } catch (error) {
-      console.error('=== ERROR EN GENERAR PDF ===');
-      console.error('Error:', error);
-      console.error('Stack:', (error as Error).stack);
+      console.error('Error al generar PDF en frontend:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
@@ -448,16 +419,10 @@ export class PatrimonioConsolidadoComponent implements OnInit {
 
   // Método para generar Excel en frontend
   private generarExcelFrontend(data: any, fechaInicio: string, fechaFin: string): void {
-    console.log('=== INICIANDO GENERAR EXCEL FRONTEND ===');
-    console.log('Datos recibidos:', data);
-    console.log('Fechas:', fechaInicio, fechaFin);
-
     try {
-      console.log('Paso 1: Creando workbook...');
       // Crear workbook
       const wb = XLSX.utils.book_new();
 
-      console.log('Paso 2: Preparando datos...');
       // Preparar datos para el Excel
       const wsData = [
         ['Reporte de Patrimonio Consolidado'],
@@ -469,32 +434,21 @@ export class PatrimonioConsolidadoComponent implements OnInit {
         ['Total', data.total]
       ];
 
-      console.log('Paso 3: Datos preparados:', wsData);
-
-      console.log('Paso 4: Creando worksheet...');
       // Crear worksheet
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
-      console.log('Paso 5: Configurando columnas...');
       // Configurar anchos de columnas
       ws['!cols'] = [
         { wch: 30 }, // Columna Detalle
         { wch: 15 }  // Columna Valor
       ];
 
-      console.log('Paso 6: Agregando worksheet al workbook...');
       // Agregar worksheet al workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Patrimonio Consolidado');
 
-      console.log('Paso 7: Preparando descarga...');
       // Generar y descargar archivo
       const fileName = `patrimonio-consolidado-${fechaInicio}-${fechaFin}.xlsx`;
-      console.log('Nombre del archivo:', fileName);
-
-      console.log('Paso 8: Escribiendo archivo...');
       XLSX.writeFile(wb, fileName);
-
-      console.log('Paso 9: Archivo Excel generado exitosamente');
 
       this.messageService.add({
         severity: 'success',
@@ -503,9 +457,7 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       });
 
     } catch (error) {
-      console.error('=== ERROR EN GENERAR EXCEL ===');
-      console.error('Error:', error);
-      console.error('Stack:', (error as Error).stack);
+      console.error('Error al generar Excel en frontend:', error);
       this.messageService.add({
         severity: 'error',
         summary: 'Error',
