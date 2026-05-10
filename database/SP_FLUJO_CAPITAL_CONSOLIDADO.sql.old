@@ -2,10 +2,10 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_FLUJO_CAPITAL_CONSOLIDADO`(
     IN `_initialDate` DATE,
     IN `_finalDate` DATE,
     IN `_id_grupo_familiar` INT,
-    IN `_id_propietario` INT 
+    IN `_id_propietario` INT
 )
 BEGIN
- -- Consulta principal: Flujo de capital consolidado por fecha, propietario y empresa
+    -- Consulta principal: Flujo de capital consolidado por fecha, propietario y empresa
     SELECT
         a.fecha_pago AS fecha,
         CONCAT(p.nombres, ' ', p.apellidos) AS propietario,
@@ -16,9 +16,7 @@ BEGIN
         SUM(CASE WHEN a.pagada = 2 THEN a.interes ELSE 0 END) AS interes_moroso,
         SUM(CASE WHEN a.pagada = 2 THEN a.capital ELSE 0 END) AS capital_moroso,
         SUM(CASE WHEN a.pagada = 2 THEN a.descuento ELSE 0 END) AS descuento_moroso,
-        SUM(a.interes + a.capital) AS total,
-        e.id_emisor,
-        i.id_propietario
+        SUM(a.interes + a.capital) AS total
     FROM amortizacion a
     INNER JOIN inversion i ON a.id_inversion = i.id_inversion
     INNER JOIN persona p ON i.id_propietario = p.id_persona
@@ -31,8 +29,8 @@ BEGIN
         AND a.eliminado = 0
         AND (_id_grupo_familiar IS NULL OR i.id_grupo_familiar = _id_grupo_familiar)
         AND (_id_propietario IS NULL OR i.id_propietario = _id_propietario)
-    GROUP BY a.fecha_pago, p.nombres, p.apellidos, e.nombre, e.id_emisor, i.id_propietario
-/*
+    GROUP BY a.fecha_pago, p.nombres, p.apellidos, e.nombre
+
     UNION
 
     -- Fila de totales generales
@@ -46,9 +44,7 @@ BEGIN
         SUM(CASE WHEN a.pagada = 2 THEN a.interes ELSE 0 END) AS interes_moroso,
         SUM(CASE WHEN a.pagada = 2 THEN a.capital ELSE 0 END) AS capital_moroso,
         SUM(CASE WHEN a.pagada = 2 THEN a.descuento ELSE 0 END) AS descuento_moroso,
-        SUM(a.interes) + SUM(a.capital) AS total,
-        e.id_emisor,
-        i.id_propietario
+        SUM(a.interes) + SUM(a.capital) AS total
     FROM amortizacion a
     INNER JOIN inversion i ON a.id_inversion = i.id_inversion
     WHERE a.fecha_pago BETWEEN _initialDate AND _finalDate
@@ -58,6 +54,6 @@ BEGIN
         AND a.eliminado = 0
         AND (_id_grupo_familiar IS NULL OR i.id_grupo_familiar = _id_grupo_familiar)
         AND (_id_propietario IS NULL OR i.id_propietario = _id_propietario)
-*/
+
     ORDER BY fecha, propietario;
 END

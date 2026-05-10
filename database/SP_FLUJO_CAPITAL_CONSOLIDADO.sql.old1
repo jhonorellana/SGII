@@ -31,7 +31,7 @@ BEGIN
         AND a.eliminado = 0
         AND (_id_grupo_familiar IS NULL OR i.id_grupo_familiar = _id_grupo_familiar)
         AND (_id_propietario IS NULL OR i.id_propietario = _id_propietario)
-    GROUP BY a.fecha_pago, p.nombres, p.apellidos, e.nombre, e.id_emisor, i.id_propietario
+    GROUP BY a.fecha_pago, p.nombres, p.apellidos, e.nombre
 /*
     UNION
 

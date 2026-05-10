@@ -131,7 +131,7 @@
             </thead>
             <tbody>
               <!-- Filas de datos -->
-              <tr *ngFor="let item of flujoCapital" class="fila-dato">
+              <tr *ngFor="let item of flujoCapital" class="fila-dato clickable-row" (click)="mostrarDetalle(item)">
                 <td class="text-center">{{ item.fecha }}</td>
                 <td class="text-left">{{ item.propietario }}</td>
                 <td class="text-left">{{ item.empresa }}</td>
@@ -205,5 +205,92 @@
     </div>
   </div>
 </div>
+
+  <!-- Modal de Detalle -->
+  <p-dialog
+    [(visible)]="mostrarModalDetalle"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="true"
+    [style]="{width: '90vw', maxWidth: '1200px'}"
+    header="Detalle del Flujo de Capital">
+
+    <ng-container *ngIf="detalleSeleccionado">
+      <!-- Información Consolidada -->
+      <div class="mb-4">
+        <div class="row align-items-center">
+          <div class="col-md-3">
+            <strong>Fecha:</strong> {{ detalleSeleccionado.fecha }}
+          </div>
+          <div class="col-md-3">
+            <strong>Propietario:</strong> {{ detalleSeleccionado.propietario }}
+          </div>
+          <div class="col-md-3">
+            <strong>Empresa:</strong> {{ detalleSeleccionado.empresa }}
+          </div>
+          <div class="col-md-3">
+            <strong>Total:</strong> {{ formatCurrency(detalleSeleccionado.total) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Detalle -->
+      <div class="mb-4">
+        <h5 class="text-info mb-3">Desglose de Componentes</h5>
+
+        <div class="table-responsive" *ngIf="!loadingDetalle">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>INV-AM</th>
+                <th>Fecha Compra</th>
+                <th>Liquidación</th>
+                <th>Nombre Instrumento</th>
+                <th>Cuota</th>
+                <th>Interés</th>
+                <th>Capital</th>
+                <th>Premio</th>
+                <th>Int. Riesgo</th>
+                <th>Cap. Riesgo</th>
+                <th>Prem. Riesgo</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of detalleItems">
+                <td class="text-center">{{ item.id_inversion }}-{{ item.id_amortizacion }}</td>
+                <td class="text-center">{{ item.fecha_compra }}</td>
+                <td class="text-center">{{ item.liquidacion }}</td>
+                <td class="text-left">{{ item.nombre_instrumento }}</td>
+                <td class="text-center">{{ item.cuota }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                <td class="text-end">{{ formatCurrency(item.premio) }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes_riesgo) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital_riesgo) }}</td>
+                <td class="text-end">{{ formatCurrency(item.premio_riesgo) }}</td>
+                <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loadingDetalle" class="text-center p-4">
+          <p-progressSpinner strokeWidth="4" animationDuration=".5s"></p-progressSpinner>
+          <p class="mt-3">Cargando detalle...</p>
+        </div>
+      </div>
+
+      <!-- Botones del Modal -->
+      <app-modal-actions
+        [cancelText]="'Cerrar'"
+        [saveText]="'Exportar'"
+        [loading]="loadingDetalle"
+        (onCancel)="cerrarModalDetalle()"
+        (onSave)="exportarDetalle()">
+      </app-modal-actions>
+    </ng-container>
+  </p-dialog>
 
 <p-toast></p-toast>

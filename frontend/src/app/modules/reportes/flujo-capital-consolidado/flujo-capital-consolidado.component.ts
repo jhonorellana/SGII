@@ -16,6 +16,9 @@ import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CalendarModule } from 'primeng/calendar';
+import { DialogModule } from 'primeng/dialog';
+import { TableModule } from 'primeng/table';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 export interface FlujoCapitalItem {
   fecha: string;
@@ -28,6 +31,8 @@ export interface FlujoCapitalItem {
   capital_moroso: number;
   descuento_moroso: number;
   total: number;
+  id_propietario: number;
+  id_emisor: number;
 }
 
 @Component({
@@ -40,9 +45,12 @@ export interface FlujoCapitalItem {
     ButtonModule,
     DropdownModule,
     ProgressSpinnerModule,
-    CalendarModule
+    CalendarModule,
+    DialogModule,
+    TableModule,
+    ModalActionsComponent
   ],
-  providers: [MessageService],
+  providers: [MessageService, ModalActionsComponent],
   templateUrl: './flujo-capital-consolidado.component.html',
   styleUrls: ['./flujo-capital-consolidado.component.css']
 })
@@ -59,9 +67,17 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     interes_moroso: 0,
     capital_moroso: 0,
     descuento_moroso: 0,
-    total: 0
+    total: 0,
+    id_propietario: 0,
+    id_emisor: 0
   };
   loading = false;
+
+  // Propiedades para el modal de detalle
+  mostrarModalDetalle = false;
+  detalleSeleccionado: FlujoCapitalItem | null = null;
+  detalleItems: any[] = [];
+  loadingDetalle = false;
 
   currentUser: any = null;
   gruposFamiliares: any[] = [];
@@ -191,7 +207,9 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       interes_moroso: 0,
       capital_moroso: 0,
       descuento_moroso: 0,
-      total: 0
+      total: 0,
+      id_propietario: 0,
+      id_emisor: 0
     };
 
     this.flujoCapital.forEach(item => {
@@ -542,5 +560,141 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(value);
+  }
+
+  // Método para mostrar el detalle de una fila
+  mostrarDetalle(item: FlujoCapitalItem): void {
+    this.detalleSeleccionado = item;
+    this.loadingDetalle = true;
+    this.mostrarModalDetalle = true;
+
+    // Obtener el detalle del backend usando IDs
+    const params = {
+      fecha: item.fecha,
+      id_propietario: item.id_propietario,
+      id_emisor: item.id_emisor
+    };
+
+    this.flujoCapitalService.getDetalleFlujoCapital(params).subscribe({
+      next: (response: any) => {
+        this.loadingDetalle = false;
+        if (response.success) {
+          this.detalleItems = response.data || [];
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Advertencia',
+            detail: response.message || 'No se pudo obtener el detalle'
+          });
+        }
+      },
+      error: (error: any) => {
+        this.loadingDetalle = false;
+        console.error('Error al obtener detalle:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo conectar con el backend'
+        });
+      }
+    });
+  }
+
+  // Método para cerrar el modal de detalle
+  cerrarModalDetalle(): void {
+    this.mostrarModalDetalle = false;
+    this.detalleSeleccionado = null;
+    this.detalleItems = [];
+  }
+
+  // Método para exportar el detalle a Excel
+  exportarDetalle(): void {
+    if (this.detalleItems.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'No hay datos para exportar'
+      });
+      return;
+    }
+
+    // Generar Excel con los datos del detalle
+    const wb = XLSX.utils.book_new();
+
+    // Encabezados para el detalle
+    const headers = [
+      'INV-AM',
+      'Fecha Compra',
+      'Liquidación',
+      'Nombre Instrumento',
+      'Cuota',
+      'Interés',
+      'Capital',
+      'Premio',
+      'Int. Riesgo',
+      'Cap. Riesgo',
+      'Prem. Riesgo',
+      'Total'
+    ];
+
+    // Datos del detalle
+    const datosDetalle = this.detalleItems.map(item => [
+      `${item.id_inversion}-${item.id_amortizacion}`,
+      item.fecha_compra,
+      item.liquidacion,
+      item.nombre_instrumento,
+      item.cuota,
+      item.interes,
+      item.capital,
+      item.premio,
+      item.interes_riesgo,
+      item.capital_riesgo,
+      item.premio_riesgo,
+      item.total
+    ]);
+
+    // Crear worksheet
+    const wsData = [headers, ...datosDetalle];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+    // Formato de encabezados
+    const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({r: 0, c: col});
+      if (ws[cellAddress]) {
+        ws[cellAddress].s = {
+          font: {bold: true, color: {rgb: "FFFFFFFF"}},
+          fill: {fgColor: {rgb: "FF4472C4"}}
+        };
+      }
+    }
+
+    // Ancho de columnas
+    ws['!cols'] = [
+      {wch: 15}, // INV-AM
+      {wch: 12}, // Fecha Compra
+      {wch: 12}, // Liquidación
+      {wch: 25}, // Nombre Instrumento
+      {wch: 10}, // Cuota
+      {wch: 12}, // Interés
+      {wch: 12}, // Capital
+      {wch: 12}, // Premio
+      {wch: 12}, // Int. Riesgo
+      {wch: 12}, // Cap. Riesgo
+      {wch: 12}, // Prem. Riesgo
+      {wch: 12}  // Total
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Detalle Flujo Capital');
+
+    // Descargar archivo
+    const fecha = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `detalle-flujo-capital-${fecha}.xlsx`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Exportación',
+      detail: 'Archivo Excel del detalle descargado correctamente'
+    });
   }
 }

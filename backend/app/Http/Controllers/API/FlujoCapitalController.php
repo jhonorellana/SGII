@@ -94,6 +94,108 @@ class FlujoCapitalController extends Controller
     }
 
     /**
+     * Obtener detalle del flujo de capital
+     */
+    public function getDetalleFlujoCapital(Request $request): JsonResponse
+    {
+        // Validación de parámetros
+        $fecha = $request->input('fecha');
+        $idPropietario = $request->input('id_propietario');
+        $idEmisor = $request->input('id_emisor');
+
+        if (!$fecha) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El parámetro fecha es requerido'
+            ], 422);
+        }
+
+        // Validar formato de fecha
+        if (!$this->validarFecha($fecha)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'El formato de la fecha debe ser YYYY-MM-DD'
+            ], 422);
+        }
+
+        try {
+            // Construir query base para obtener todos los campos solicitados usando el nuevo esquema
+            $query = "
+                SELECT
+                    a.id_amortizacion,
+                    i.fecha_compra,
+                    a.id_inversion,
+                    i.liquidacion,
+                    inst.nombre AS nombre_instrumento,
+                    a.numero_cuota,
+                    a.interes,
+                    a.capital,
+                    a.descuento AS premio,
+                    0 AS interes_riesgo,
+                    0 AS capital_riesgo,
+                    0 AS premio_riesgo,
+                    (a.interes + a.capital + a.descuento) AS total
+                FROM amortizacion a
+                INNER JOIN inversion i ON a.id_inversion = i.id_inversion
+                INNER JOIN instrumento inst ON i.id_instrumento = inst.id_instrumento
+                INNER JOIN emisor e ON inst.id_emisor = e.id_emisor
+                WHERE a.fecha_pago = ?
+                AND a.activo = 1
+                AND a.eliminado = 0
+                AND i.activo = 1
+                AND i.eliminado = 0";
+
+            $params = [$fecha];
+
+            // Agregar filtros por ID si se proporcionan
+            if ($idPropietario) {
+                $query .= " AND i.id_propietario = ?";
+                $params[] = $idPropietario;
+            }
+
+            if ($idEmisor) {
+                $query .= " AND e.id_emisor = ?";
+                $params[] = $idEmisor;
+            }
+
+            $query .= " ORDER BY i.fecha_compra, a.numero_cuota";
+
+            $detalles = DB::select($query, $params);
+
+            // Formatear resultados
+            $detalleItems = [];
+            foreach ($detalles as $row) {
+                $detalleItems[] = [
+                    'id_amortizacion' => $row->id_amortizacion,
+                    'fecha_compra' => $row->fecha_compra,
+                    'id_inversion' => $row->id_inversion,
+                    'liquidacion' => $row->liquidacion,
+                    'nombre_instrumento' => $row->nombre_instrumento,
+                    'cuota' => $row->numero_cuota,
+                    'interes' => (float) $row->interes,
+                    'capital' => (float) $row->capital,
+                    'premio' => (float) $row->premio,
+                    'interes_riesgo' => (float) $row->interes_riesgo,
+                    'capital_riesgo' => (float) $row->capital_riesgo,
+                    'premio_riesgo' => (float) $row->premio_riesgo,
+                    'total' => (float) $row->total
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $detalleItems
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener detalle del flujo de capital: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Exportar a Excel
      */
     public function exportarExcel(Request $request): JsonResponse

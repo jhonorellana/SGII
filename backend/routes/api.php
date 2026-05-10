@@ -85,6 +85,7 @@ Route::get('reportes/patrimonio/consolidado/exportar/pdf', [PatrimonioController
 
 // Rutas de Reportes de Flujo de Capital Consolidado (temporalmente sin autenticación para pruebas)
 Route::get('reportes/flujo-capital', [FlujoCapitalController::class, 'getFlujoCapital']);
+Route::get('reportes/flujo-capital/detalle', [FlujoCapitalController::class, 'getDetalleFlujoCapital']);
 Route::get('reportes/flujo-capital/exportar/excel', [FlujoCapitalController::class, 'exportarExcel']);
 Route::get('reportes/flujo-capital/exportar/pdf', [FlujoCapitalController::class, 'exportarPDF']);
 

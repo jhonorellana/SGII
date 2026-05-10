@@ -79,4 +79,25 @@ export class FlujoCapitalService {
       `${this.apiUrl}/reportes/flujo-capital/exportar/pdf?${queryParams.toString()}`
     );
   }
+
+  getDetalleFlujoCapital(params: {
+    fecha: string;
+    id_propietario?: number;
+    id_emisor?: number;
+  }): Observable<any> {
+    const queryParams = new URLSearchParams();
+    queryParams.append('fecha', params.fecha);
+
+    if (params.id_propietario) {
+      queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.id_emisor) {
+      queryParams.append('id_emisor', params.id_emisor.toString());
+    }
+
+    return this.http.get(
+      `${this.apiUrl}/reportes/flujo-capital/detalle?${queryParams.toString()}`
+    );
+  }
 }
