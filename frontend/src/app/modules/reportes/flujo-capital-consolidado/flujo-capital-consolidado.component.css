@@ -215,3 +215,18 @@ tr.fila-totales td {
 .table-responsive::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Estilos personalizados para el modal */
+::ng-deep .custom-modal-header .p-dialog-header {
+  background: #0d6efd !important;
+  color: #ffffff !important;
+  padding: 1.5rem !important;
+  border-bottom: 4px solid #0b5ed7 !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+}
+
+::ng-deep .custom-modal-header .p-dialog-header .p-dialog-title {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
