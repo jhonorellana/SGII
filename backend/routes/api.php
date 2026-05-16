@@ -66,6 +66,7 @@ Route::apiResource('inversiones', InversionController::class);
 // Rutas de Amortizaciones (temporalmente sin autenticación para pruebas)
 Route::apiResource('amortizaciones', AmortizacionController::class);
 Route::get('amortizaciones/inversion/{idInversion}', [AmortizacionController::class, 'getByInversion']);
+Route::post('amortizaciones/desactivar-por-fecha-inversion', [AmortizacionController::class, 'desactivarPorFechaInversion']);
 
 // Rutas de Generación de Amortizaciones (temporalmente sin autenticación para pruebas)
 Route::post('amortizaciones/generar', [AmortizacionGeneracionController::class, 'generar']);

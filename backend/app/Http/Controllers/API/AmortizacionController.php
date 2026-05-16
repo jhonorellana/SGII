@@ -164,4 +164,53 @@ class AmortizacionController extends Controller
 
         return response()->json($amortizaciones, Response::HTTP_OK);
     }
+
+    /**
+     * Desactivar amortizaciones por inversión y fecha de venta
+     */
+    public function desactivarPorFechaInversion(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_inversion' => 'required|exists:inversion,id_inversion',
+            'fecha_venta' => 'required|date'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            // Buscar todas las amortizaciones activas de la inversión con fecha_pago > fecha_venta
+            $amortizaciones = Amortizacion::where('id_inversion', $request->id_inversion)
+                ->where('fecha_pago', '>', $request->fecha_venta)
+                ->where('activo', true)
+                ->where('eliminado', false)
+                ->get();
+
+            $count = 0;
+
+            // Actualizar cada amortización para desactivarla
+            foreach ($amortizaciones as $amortizacion) {
+                $amortizacion->update([
+                    'activo' => false,
+                    'fecha_actualizacion' => now()
+                ]);
+                $count++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Amortizaciones actualizadas correctamente',
+                'count' => $count,
+                'details' => "Se desactivaron {$count} amortizaciones para la inversión {$request->id_inversion} con fecha de pago > {$request->fecha_venta}"
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar amortizaciones',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

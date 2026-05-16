@@ -91,9 +91,10 @@ export class AmortizacionListComponent implements OnInit {
   loadAmortizaciones(): void {
     this.amortizacionService.getAll().subscribe({
       next: (data) => {
-        this.amortizaciones = data;
+        this.amortizaciones = Array.isArray(data) ? data : [];
       },
       error: (error) => {
+        this.amortizaciones = [];
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar amortizaciones' });
       }
     });
@@ -102,9 +103,10 @@ export class AmortizacionListComponent implements OnInit {
   loadInversiones(): void {
     this.inversionService.getAll().subscribe({
       next: (data) => {
-        this.inversiones = data;
+        this.inversiones = Array.isArray(data) ? data : [];
       },
       error: (error) => {
+        this.inversiones = [];
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar inversiones' });
       }
     });
@@ -113,7 +115,7 @@ export class AmortizacionListComponent implements OnInit {
   loadEstadosAmortizacion(): void {
     this.catalogoService.getValoresByCatalogo(5).subscribe({
       next: (data: any) => {
-        this.estadosAmortizacion = data;
+        this.estadosAmortizacion = Array.isArray(data) ? data : [];
       },
       error: (error: any) => {
         this.estadosAmortizacion = [];
@@ -224,7 +226,10 @@ export class AmortizacionListComponent implements OnInit {
   formatDate(date: string): string {
     if (!date) return '-';
     const d = new Date(date);
-    return d.toISOString().split('T')[0];
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   getSeverity(estado: string): 'success' | 'secondary' | 'info' | 'warning' | 'danger' | 'contrast' | undefined {

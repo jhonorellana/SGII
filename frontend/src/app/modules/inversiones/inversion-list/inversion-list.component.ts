@@ -13,12 +13,14 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { InversionService, Inversion } from '../../../core/inversion.service';
+import { AmortizacionService } from '../../../core/amortizacion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { EmisorService } from '../../../core/emisor.service';
 import { InstrumentoService } from '../../../core/instrumento.service';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { CalendarModule } from 'primeng/calendar';
 
 @Component({
   selector: 'app-inversion-list',
@@ -35,6 +37,7 @@ import { ModalActionsComponent } from '../../../core/modal-actions';
     ConfirmDialogModule,
     TagModule,
     FormsModule,
+    CalendarModule,
     ModalActionsComponent
   ],
   providers: [ConfirmationService, MessageService],
@@ -59,6 +62,11 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   selectedInstrumento: any = null;
   displayDialog: boolean = false;
   isEdit: boolean = false;
+
+  // Propiedades para modal de venta
+  displayVentaDialog: boolean = false;
+  selectedInversion: any = null;
+  fechaVenta: string = '';
 
   inversion: Inversion = {
     id_grupo_familiar: 0,
@@ -92,6 +100,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
 
   constructor(
     private inversionService: InversionService,
+    private amortizacionService: AmortizacionService,
     private grupoFamiliarService: GrupoFamiliarService,
     private instrumentoService: InstrumentoService,
     private emisorService: EmisorService,
@@ -251,6 +260,131 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.selectedInstrumento = inversion.instrumento;
     console.log('Instrumento seleccionado:', this.selectedInstrumento);
     this.displayInstrumentoDialog = true;
+  }
+
+  openVentaModal(inversion: any): void {
+    this.selectedInversion = inversion;
+    this.fechaVenta = this.getFechaActual();
+    this.displayVentaDialog = true;
+  }
+
+  getFechaActual(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  dateToString(date: Date): string {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  registrarVenta(): void {
+    if (!this.selectedInversion || !this.fechaVenta) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor seleccione la fecha de venta'
+      });
+      return;
+    }
+
+    // Convertir fecha de p-calendar a string YYYY-MM-DD si es necesario
+    let fechaString = '';
+    if (typeof this.fechaVenta === 'string') {
+      fechaString = this.fechaVenta;
+    } else if (this.fechaVenta && typeof this.fechaVenta === 'object' && 'getFullYear' in this.fechaVenta) {
+      fechaString = this.dateToString(this.fechaVenta as Date);
+    } else {
+      fechaString = String(this.fechaVenta);
+    }
+
+    // Validar que tengamos una fecha válida
+    if (!fechaString) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Fecha inválida',
+        detail: 'Por favor seleccione una fecha válida'
+      });
+      return;
+    }
+
+    // Mostrar diálogo de confirmación
+    this.confirmationService.confirm({
+      message: `¿Está seguro de registrar la venta total del bono ${this.selectedInversion.id_inversion} con fecha ${fechaString}?`,
+      header: 'Confirmar Registro de Venta',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        this.procesarVenta(fechaString);
+      }
+    });
+  }
+
+  procesarVenta(fechaVenta: string): void {
+    // 1. Actualizar el registro de la inversión
+    const inversionActualizada = {
+      ...this.selectedInversion,
+      activo: false,
+      fecha_venta: fechaVenta,
+      id_estado_inversion: 130 // VENDIDA_TOTAL
+    };
+
+    // Llamar al servicio para actualizar la inversión
+    this.inversionService.update(this.selectedInversion.id_inversion, inversionActualizada).subscribe({
+      next: (response) => {
+        console.log('Inversión actualizada:', response);
+
+        // 2. Actualizar los registros en amortizacion
+        this.actualizarAmortizaciones(fechaVenta);
+      },
+      error: (error) => {
+        console.error('Error al actualizar inversión:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al actualizar la inversión'
+        });
+      }
+    });
+  }
+
+  actualizarAmortizaciones(fechaVenta: string): void {
+    console.log(`Actualizando amortizaciones con fecha_pago >= ${fechaVenta} para inversión ${this.selectedInversion.id_inversion}`);
+
+    // Llamar al servicio de amortizaciones para desactivar registros
+    this.amortizacionService.desactivarPorFechaInversion(this.selectedInversion.id_inversion, fechaVenta).subscribe({
+      next: (response) => {
+        console.log('Amortizaciones actualizadas:', response);
+        this.mostrarExitoVenta();
+      },
+      error: (error) => {
+        console.error('Error al actualizar amortizaciones:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al actualizar las amortizaciones'
+        });
+      }
+    });
+  }
+
+  mostrarExitoVenta(): void {
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Venta Registrada',
+      detail: `La venta del bono ${this.selectedInversion.id_inversion} ha sido registrada exitosamente`
+    });
+
+    // Cerrar el modal
+    this.displayVentaDialog = false;
+
+    // Recargar la lista de inversiones
+    this.loadInversiones();
   }
 
   openEdit(inversion: any): void {

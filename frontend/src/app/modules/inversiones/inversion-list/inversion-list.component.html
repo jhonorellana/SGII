@@ -49,7 +49,7 @@
         <th pSortableColumn="instrumento.fecha_emision">Fecha Emision <p-sortIcon field="instrumento.fecha_emision"></p-sortIcon></th>
         <th pSortableColumn="instrumento.fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="instrumento.fecha_vencimiento"></p-sortIcon></th>
         <th pSortableColumn="estadoInversion.nombre">Estado <p-sortIcon field="estadoInversion.nombre"></p-sortIcon></th>
-        <th class="text-center" style="width: 120px;">Acciones</th>
+        <th class="text-center" style="width: 160px;">Acciones</th>
       </tr>
       <tr>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'equals')" class="w-100" placeholder="Filtrar ID"/></th>
@@ -74,7 +74,7 @@
                      [filter]="true" filterBy="nombre" styleClass="w-100">
           </p-dropdown>
         </th>
-        <th class="text-center" style="width: 120px;"></th>
+        <th class="text-center" style="width: 160px;"></th>
       </tr>
     </ng-template>
 
@@ -103,13 +103,16 @@
           <span *ngIf="inversion.estadoInversion">{{ inversion.estadoInversion.nombre }}</span>
           <span *ngIf="!inversion.estadoInversion" class="text-muted">-</span>
         </td>
-        <td class="text-center" style="width: 120px;">
+        <td class="text-center" style="width: 160px;">
           <div class="btn-group justify-content-center">
             <button class="btn btn-sm btn-outline-primary" (click)="viewInstrumento(inversion)" title="Ver detalle del instrumento">
               <i class="bi bi-eye"></i>
             </button>
             <button class="btn btn-sm btn-outline-info" (click)="openEdit(inversion)" title="Editar">
               <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-success" (click)="openVentaModal(inversion)" title="Registrar Venta">
+              <i class="bi bi-cash"></i>
             </button>
             <button class="btn btn-sm btn-outline-danger" (click)="delete(inversion)" title="Eliminar">
               <i class="bi bi-trash"></i>
@@ -390,6 +393,105 @@
         [cancelText]="'Cerrar'"
         [showSaveButton]="false"
         (onCancel)="displayInstrumentoDialog = false">
+      </app-modal-actions>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal para Registrar Venta -->
+  <p-dialog [(visible)]="displayVentaDialog" header="Registrar Venta de Inversión"
+            styleClass="venta-modal" [style]="{width: '60vw'}" [modal]="true" [closable]="true"
+            (onHide)="displayVentaDialog = false">
+    <div *ngIf="selectedInversion" class="venta-modal">
+      <!-- Información Básica de la Inversión -->
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">ID:</label>
+          <p>{{ selectedInversion.id_inversion }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Propietario:</label>
+          <p>{{ selectedInversion.propietario?.nombres || '-' }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha de Compra:</label>
+          <p>{{ formatDate(selectedInversion.fecha_compra) }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha de Emisión:</label>
+          <p>{{ formatDate(selectedInversion.instrumento?.fecha_emision) }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha de Vencimiento:</label>
+          <p>{{ formatDate(selectedInversion.instrumento?.fecha_vencimiento) }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Liquidación:</label>
+          <p>{{ selectedInversion.liquidacion || '-' }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Emisor:</label>
+          <p>{{ selectedInversion.instrumento?.emisor?.nombre || '-' }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Instrumento:</label>
+          <p>{{ selectedInversion.instrumento?.nombre || '-' }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Valor Nominal:</label>
+          <p>{{ formatNumber(selectedInversion.valor_nominal) }}</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Capital Invertido:</label>
+          <p>{{ formatNumber(selectedInversion.capital_invertido) }}</p>
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label fw-bold">Tasa Interés:</label>
+          <p>{{ selectedInversion.tasa_interes || '-' }}</p>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Rendimiento Nominal:</label>
+          <p>{{ selectedInversion.rendimiento_nominal || '-' }}</p>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Tasa Mensual Real:</label>
+          <p>{{ selectedInversion.tasa_mensual_real || '-' }}</p>
+        </div>
+      </div>
+
+      <!-- Campo para Fecha de Venta -->
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label for="fecha_venta" class="form-label fw-bold">Fecha de Venta <span class="text-danger">*</span></label>
+          <p-calendar id="fecha_venta" [(ngModel)]="fechaVenta"
+                     dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD"
+                     class="w-100" required>
+          </p-calendar>
+        </div>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="'Registrar Venta'"
+        [disabled]="!fechaVenta"
+        (onCancel)="displayVentaDialog = false"
+        (onSave)="registrarVenta()">
       </app-modal-actions>
     </ng-template>
   </p-dialog>

@@ -476,7 +476,10 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   formatDate(fecha: string | null): string {
     if (!fecha) return 'N/A';
     const date = new Date(fecha);
-    return date.toISOString().split('T')[0];
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   exportToExcel(): void {
