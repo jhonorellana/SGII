@@ -32,6 +32,7 @@ export class PersonaListComponent implements OnInit {
   error = '';
   @ViewChild('dt') table: any;
   activoFilter: string = '';
+  totalRecords: number = 0;
 
   // Modal properties
   displayDialog: boolean = false;
@@ -195,13 +196,18 @@ export class PersonaListComponent implements OnInit {
         if (response.success) {
           this.personas = response.data || [];
           this.filteredPersonas = [...this.personas];
+          this.totalRecords = this.personas.length;
         } else {
           this.error = 'Error al cargar las personas';
+          this.totalRecords = 0;
         }
         this.loading = false;
       },
       error: (err) => {
         this.error = 'Error de conexión al servidor';
+        this.personas = [];
+        this.filteredPersonas = [];
+        this.totalRecords = 0;
         this.loading = false;
       }
     });
@@ -210,6 +216,15 @@ export class PersonaListComponent implements OnInit {
   onGlobalFilter(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.table.filterGlobal(value, 'contains');
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.personas.length;
+    }
   }
 
   onActivoFilterChange(value: string): void {

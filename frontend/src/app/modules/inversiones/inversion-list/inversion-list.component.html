@@ -20,10 +20,14 @@
   <!-- Inversiones List con PrimeNG Table -->
   <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
            [rowsPerPageOptions]="[10, 20, 50, 100]"
-           [globalFilterFields]="['id_inversion','propietario.nombres','instrumento.emisor.nombre','instrumento.tipoInversion.nombre','valor_nominal','capital_invertido','fecha_compra','instrumento.fecha_emision','instrumento.fecha_vencimiento']"
+           [globalFilterFields]="['id_inversion','propietario.nombres','instrumento.emisor.nombre','instrumento.tipoInversion.nombre','valor_nominal','capital_invertido','fecha_compra','instrumento.fecha_emision','instrumento.fecha_vencimiento','estadoInversion.nombre']"
            [tableStyle]="{'min-width': '80rem'}"
            styleClass="p-datatable-sm p-datatable-gridlines"
-           responsiveLayout="scroll">
+           responsiveLayout="scroll"
+           [totalRecords]="totalRecords"
+           showCurrentPageReport="true"
+           paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+           currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries">
 
     <!-- Header con buscador global -->
     <ng-template pTemplate="caption">

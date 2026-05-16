@@ -55,6 +55,7 @@ export class EmisorListComponent implements OnInit {
   error = '';
   @ViewChild('dt') table: any;
   activoFilter: string = '';
+  totalRecords: number = 0;
 
   // Modal properties
   displayDialog: boolean = false;
@@ -97,13 +98,18 @@ export class EmisorListComponent implements OnInit {
         if (response.success) {
           this.emisores = response.data;
           this.filteredEmisores = response.data;
+          this.totalRecords = this.emisores.length;
         } else {
           this.error = response.message || 'Error al cargar emisores';
+          this.totalRecords = 0;
         }
         this.loading = false;
       },
       error: () => {
         this.error = 'Error de conexión al servidor';
+        this.emisores = [];
+        this.filteredEmisores = [];
+        this.totalRecords = 0;
         this.loading = false;
       }
     });
@@ -254,9 +260,18 @@ export class EmisorListComponent implements OnInit {
     });
   }
 
-  onGlobalFilter(event: any): void {
-    const value = event.target.value;
+  onGlobalFilter(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
     this.table.filterGlobal(value, 'contains');
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.emisores.length;
+    }
   }
 
   onActivoFilterChange(value: string): void {

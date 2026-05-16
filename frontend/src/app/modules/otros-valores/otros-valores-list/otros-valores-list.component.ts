@@ -61,6 +61,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
 
   loading = false;
   error = '';
+  totalRecords: number = 0;
 
   // Filtros
   idGrupoFilter: number | null = null;
@@ -188,14 +189,19 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
         if (response.success) {
           this.valores = response.data || [];
           this.filteredValores = [...this.valores];
+          this.totalRecords = this.valores.length;
           this.calcularResumen();
         } else {
           this.error = response.message || 'Error al cargar los valores';
+          this.totalRecords = 0;
         }
         this.loading = false;
       },
       error: (err) => {
         this.error = err.error?.message || 'Error de conexión al servidor';
+        this.valores = [];
+        this.filteredValores = [];
+        this.totalRecords = 0;
         this.loading = false;
       }
     });
@@ -432,12 +438,16 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
 
   onGlobalFilter(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.filteredValores = this.valores.filter(item =>
-      item.descripcion?.toLowerCase().includes(value.toLowerCase()) ||
-      item.grupoFamiliarNombre?.toLowerCase().includes(value.toLowerCase()) ||
-      item.propietarioNombre?.toLowerCase().includes(value.toLowerCase()) ||
-      item.tipoNombre?.toLowerCase().includes(value.toLowerCase())
-    );
+    this.table.filterGlobal(value, 'contains');
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.valores.length;
+    }
   }
 
   onActivoFilterChange(value: string): void {

@@ -36,6 +36,7 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   error = '';
   activoFilter: string = '';
   @ViewChild('dt') table: any;
+  totalRecords: number = 0;
   private routeSub: Subscription;
 
   // Modal properties
@@ -232,13 +233,18 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
         if (response.success) {
           this.valores = response.data || [];
           this.filteredValores = [...this.valores];
+          this.totalRecords = this.valores.length;
         } else {
           this.error = 'Error al cargar los valores del catálogo';
+          this.totalRecords = 0;
         }
         this.loading = false;
       },
       error: () => {
         this.error = 'Error de conexión al servidor';
+        this.valores = [];
+        this.filteredValores = [];
+        this.totalRecords = 0;
         this.loading = false;
       }
     });
@@ -247,6 +253,15 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   onGlobalFilter(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.table.filterGlobal(value, 'contains');
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.valores.length;
+    }
   }
 
   onActivoFilterChange(value: string): void {

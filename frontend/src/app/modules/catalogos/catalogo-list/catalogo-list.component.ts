@@ -32,6 +32,7 @@ export class CatalogoListComponent implements OnInit {
   error = '';
   @ViewChild('dt') table: any;
   activoFilter: string = '';
+  totalRecords: number = 0;
 
   // Modal properties
   displayDialog: boolean = false;
@@ -191,14 +192,19 @@ export class CatalogoListComponent implements OnInit {
         if (response.success) {
           this.catalogos = response.data || [];
           this.filteredCatalogos = [...this.catalogos];
+          this.totalRecords = this.catalogos.length;
         } else {
           this.error = 'Error al cargar los catálogos';
+          this.totalRecords = 0;
         }
         this.loading = false;
       },
       error: (err) => {
         console.error('[CatalogoList] Error:', err);
         this.error = 'Error de conexión al servidor';
+        this.catalogos = [];
+        this.filteredCatalogos = [];
+        this.totalRecords = 0;
         this.loading = false;
       }
     });
@@ -207,6 +213,15 @@ export class CatalogoListComponent implements OnInit {
   onGlobalFilter(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.table.filterGlobal(value, 'contains');
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.catalogos.length;
+    }
   }
 
   onActivoFilterChange(value: string): void {

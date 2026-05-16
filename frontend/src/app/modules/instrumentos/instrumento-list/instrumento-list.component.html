@@ -23,7 +23,11 @@
            [globalFilterFields]="['id_instrumento','nombre','emisor.nombre','tipoInversion.nombre','tasa_referencial','calificacion_riesgo']"
            [tableStyle]="{'min-width': '80rem'}"
            styleClass="p-datatable-sm p-datatable-gridlines"
-           responsiveLayout="scroll">
+           responsiveLayout="scroll"
+           [totalRecords]="totalRecords"
+           showCurrentPageReport="true"
+           paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+           currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries">
 
     <!-- Header con buscador global -->
     <ng-template pTemplate="caption">

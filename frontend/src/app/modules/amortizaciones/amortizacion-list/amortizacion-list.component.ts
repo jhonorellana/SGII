@@ -46,6 +46,7 @@ export class AmortizacionListComponent implements OnInit {
   amortizaciones: Amortizacion[] = [];
   inversiones: any[] = [];
   estadosAmortizacion: any[] = [];
+  totalRecords: number = 0;
 
   displayDialog: boolean = false;
   isEdit: boolean = false;
@@ -92,9 +93,11 @@ export class AmortizacionListComponent implements OnInit {
     this.amortizacionService.getAll().subscribe({
       next: (data) => {
         this.amortizaciones = Array.isArray(data) ? data : [];
+        this.totalRecords = this.amortizaciones.length;
       },
       error: (error) => {
         this.amortizaciones = [];
+        this.totalRecords = 0;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar amortizaciones' });
       }
     });
@@ -230,6 +233,24 @@ export class AmortizacionListComponent implements OnInit {
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
     const day = String(d.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  onPageChange(event: any): void {
+    // Actualizar totalRecords cuando cambia la página
+    if (this.table && this.table.filteredValue) {
+      this.totalRecords = this.table.filteredValue.length;
+    } else {
+      this.totalRecords = this.amortizaciones.length;
+    }
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.amortizaciones.length;
+    }
   }
 
   getSeverity(estado: string): 'success' | 'secondary' | 'info' | 'warning' | 'danger' | 'contrast' | undefined {

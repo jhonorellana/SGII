@@ -41,6 +41,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
   instrumentos: Instrumento[] = [];
   emisores: any[] = [];
   tiposInversion: any[] = [];
+  totalRecords: number = 0;
 
   displayDialog: boolean = false;
   isEdit: boolean = false;
@@ -99,8 +100,11 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     this.instrumentoService.getAll().subscribe({
       next: (data) => {
         this.instrumentos = Array.isArray(data) ? data : (data as any).data || [];
+        this.totalRecords = this.instrumentos.length;
       },
       error: (error) => {
+        this.instrumentos = [];
+        this.totalRecords = 0;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar instrumentos' });
       }
     });
@@ -231,6 +235,15 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
     const day = String(d.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.instrumentos.length;
+    }
   }
 
   exportToExcel(): void {

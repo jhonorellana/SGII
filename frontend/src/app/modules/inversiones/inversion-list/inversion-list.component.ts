@@ -45,6 +45,7 @@ import { CalendarModule } from 'primeng/calendar';
   styleUrls: ['./inversion-list.component.css']
 })
 export class InversionListComponent implements OnInit, AfterViewInit {
+  @ViewChild('dt') dt: any;
   inversiones: Inversion[] = [];
   inversionesFiltradas: Inversion[] = [];
   gruposFamiliares: any[] = [];
@@ -53,6 +54,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   propietarios: any[] = [];
   aportantes: any[] = [];
   estadosInversion: any[] = [];
+  totalRecords: number = 0;
 
   fechaCompraFilter: string = '';
   fechaEmisionFilter: string = '';
@@ -161,8 +163,12 @@ export class InversionListComponent implements OnInit, AfterViewInit {
         }));
         console.log('Datos transformados:', this.inversiones);
         this.inversionesFiltradas = [...this.inversiones];
+        this.totalRecords = this.inversiones.length;
       },
       error: (error) => {
+        this.inversiones = [];
+        this.inversionesFiltradas = [];
+        this.totalRecords = 0;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar inversiones' });
       }
     });
@@ -599,6 +605,24 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     const month = String(d.getUTCMonth() + 1).padStart(2, '0');
     const day = String(d.getUTCDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  onPageChange(event: any): void {
+    // Actualizar totalRecords cuando cambia la página
+    if (this.dt && this.dt.filteredValue) {
+      this.totalRecords = this.dt.filteredValue.length;
+    } else {
+      this.totalRecords = this.inversiones.length;
+    }
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.inversiones.length;
+    }
   }
 
   formatNumber(value: number | string | undefined): string {
