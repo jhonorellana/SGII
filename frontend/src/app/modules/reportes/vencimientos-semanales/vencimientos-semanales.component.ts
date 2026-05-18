@@ -55,6 +55,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
   detalleSeleccionado: VencimientoSemanal | null = null;
   detalleItems: any[] = [];
   loadingDetalle = false;
+  fechasIncluidas: string[] = [];
+  esLunes = false;
+  totalConsolidado = 0;
 
   // Configuración del gráfico
   public barChartOptions: any = {
@@ -554,33 +557,33 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     return pendiente?.total || 0;
   }
 
-  // Método para mostrar el detalle de una fila
   mostrarDetalle(item: VencimientoSemanal): void {
     this.detalleSeleccionado = item;
     this.loadingDetalle = true;
     this.mostrarModalDetalle = true;
+    this.fechasIncluidas = [];
+    this.esLunes = false;
 
-    // Obtener el detalle del backend por fecha
     this.vencimientosService.getDetalleVencimientosSemanales(item.fecha).subscribe({
-      next: (response: any) => {
+      next: (response) => {
         this.loadingDetalle = false;
-        if (response.success) {
-          this.detalleItems = response.data || [];
+        this.detalleItems = response.data || [];
+        this.fechasIncluidas = response.fechas_incluidas || [];
+        this.esLunes = response.es_lunes || false;
+
+        // Si es lunes, calcular el total consolidado de todas las fechas
+        if (this.esLunes) {
+          this.totalConsolidado = this.detalleItems.reduce((sum, item) => sum + item.total, 0);
         } else {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Advertencia',
-            detail: response.message || 'No se pudo obtener el detalle'
-          });
+          this.totalConsolidado = item.total;
         }
       },
-      error: (error: any) => {
+      error: () => {
         this.loadingDetalle = false;
-        console.error('Error al obtener detalle:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'No se pudo conectar con el backend'
+          detail: 'No se pudo cargar el detalle'
         });
       }
     });
@@ -591,6 +594,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     this.mostrarModalDetalle = false;
     this.detalleSeleccionado = null;
     this.detalleItems = [];
+    this.fechasIncluidas = [];
+    this.esLunes = false;
+    this.totalConsolidado = 0;
   }
 
   // Método para exportar el detalle a Excel
@@ -637,8 +643,16 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       item.total
     ]);
 
-    // Crear worksheet
-    const wsData = [headers, ...datosDetalle];
+    // Crear worksheet con información de rango de fechas si es lunes
+    let wsData = [headers, ...datosDetalle];
+    if (this.esLunes && this.fechasIncluidas.length > 0) {
+      const rangoFechas = this.fechasIncluidas[0] + ' al ' + this.fechasIncluidas[this.fechasIncluidas.length - 1];
+      const infoHeader = ['Vencimientos Consolidados (Sábado, Domingo, Lunes)'];
+      const rangoHeader = ['Rango de fechas: ' + rangoFechas];
+      const totalHeader = ['Total consolidado: ' + this.formatCurrency(this.totalConsolidado)];
+      wsData = [infoHeader, rangoHeader, totalHeader, [], headers, ...datosDetalle];
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(wsData);
 
     // Formato de encabezados
@@ -670,7 +684,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     // Formatear columnas numéricas en Excel
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+    const startRow = this.esLunes ? 5 : 1; // Empezar después de los headers de info si es lunes
+    for (let row = startRow; row <= range.e.r; row++) {
       for (let col = range.s.c + 4; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
         if (ws[cellAddress]) {
@@ -683,7 +698,10 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     // Descargar archivo
     const fecha = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `detalle-vencimientos-semanales-${fecha}.xlsx`);
+    const nombreArchivo = this.esLunes
+      ? `detalle-vencimientos-semanales-sab-dom-lun-${fecha}.xlsx`
+      : `detalle-vencimientos-semanales-${fecha}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
 
     this.messageService.add({
       severity: 'success',

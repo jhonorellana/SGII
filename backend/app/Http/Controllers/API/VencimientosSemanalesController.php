@@ -315,6 +315,7 @@ class VencimientosSemanalesController extends Controller
     /**
      * Obtener detalle de vencimientos por fecha
      * Agrupado por Propietario + Emisor + Tipo de Inversión (para conciliación bancaria)
+     * Si es lunes, incluye sábado y domingo (bancos no operan fines de semana)
      */
     public function getDetalleVencimientosSemanales(Request $request): JsonResponse
     {
@@ -329,6 +330,24 @@ class VencimientosSemanalesController extends Controller
 
         try {
             $fechaCarbon = Carbon::parse($fecha);
+            $fechasABuscar = [];
+
+            // Si es lunes, incluir sábado y domingo (bancos no operan fines de semana)
+            if ($fechaCarbon->dayOfWeek === Carbon::MONDAY) {
+                // Sábado (2 días antes del lunes)
+                $sabado = $fechaCarbon->copy()->subDays(2);
+                $fechasABuscar[] = $sabado->format('Y-m-d');
+
+                // Domingo (1 día antes del lunes)
+                $domingo = $fechaCarbon->copy()->subDays(1);
+                $fechasABuscar[] = $domingo->format('Y-m-d');
+
+                // Lunes
+                $fechasABuscar[] = $fechaCarbon->format('Y-m-d');
+            } else {
+                // Para otros días, solo buscar la fecha seleccionada
+                $fechasABuscar[] = $fechaCarbon->format('Y-m-d');
+            }
 
             // Obtener detalle por fecha agrupado por Propietario + Emisor + Tipo de Inversión
             // Esto refleja cómo las entidades financieras realmente realizan los pagos consolidados
@@ -368,7 +387,7 @@ class VencimientosSemanalesController extends Controller
             ->join('instrumento', 'inversion.id_instrumento', '=', 'instrumento.id_instrumento')
             ->join('emisor', 'instrumento.id_emisor', '=', 'emisor.id_emisor')
             ->join('catalogo_valor', 'instrumento.id_tipo_inversion', '=', 'catalogo_valor.id_catalogo_valor')
-            ->whereDate('fecha_pago', $fecha)
+            ->whereIn('fecha_pago', $fechasABuscar)
             ->where(function($query) {
                 // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
                 $query->where('amortizacion.activo', 1)
@@ -409,7 +428,9 @@ class VencimientosSemanalesController extends Controller
 
             return response()->json([
                 'success' => true,
-                'data' => $detalle
+                'data' => $detalle,
+                'fechas_incluidas' => $fechasABuscar,
+                'es_lunes' => $fechaCarbon->dayOfWeek === Carbon::MONDAY
             ]);
 
         } catch (\Exception $e) {

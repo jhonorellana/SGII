@@ -233,19 +233,36 @@
           <strong>Día:</strong> {{ detalleSeleccionado.nombre_dia }}
         </div>
         <div class="col-md-3">
-          <strong>Fecha:</strong> {{ detalleSeleccionado.fecha }}
+          <strong>Fecha:</strong>
+          <span *ngIf="!esLunes">{{ detalleSeleccionado.fecha }}</span>
+          <span *ngIf="esLunes" class="text-info">
+            {{ fechasIncluidas[0] }} al {{ fechasIncluidas[fechasIncluidas.length - 1] }}
+          </span>
         </div>
         <div class="col-md-3">
-          <strong>Total:</strong> {{ formatCurrency(detalleSeleccionado.total) }}
+          <strong>Total:</strong>
+          <span *ngIf="!esLunes">{{ formatCurrency(detalleSeleccionado.total) }}</span>
+          <span *ngIf="esLunes" class="fw-bold text-info">{{ formatCurrency(totalConsolidado) }}</span>
         </div>
         <div class="col-md-3">
           <span *ngIf="detalleSeleccionado.es_hoy" class="badge bg-warning">Hoy</span>
+          <span *ngIf="esLunes" class="badge bg-info ms-2">Incluye Sábado y Domingo</span>
         </div>
       </div>
     </div>
 
     <!-- Nota explicativa -->
-    <div class="alert alert-info mb-4">
+    <div class="alert alert-info mb-4" *ngIf="esLunes">
+      <small>
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Vista consolidada para lunes:</strong> Incluye vencimientos de sábado, domingo y lunes,
+        ya que los bancos no realizan transferencias en fines de semana. Los pagos están agrupados por
+        Propietario + Emisor + Tipo de Inversión para facilitar la conciliación bancaria.
+      </small>
+    </div>
+
+    <!-- Nota explicativa normal -->
+    <div class="alert alert-info mb-4" *ngIf="!esLunes">
       <small>
         <i class="bi bi-info-circle me-2"></i>
         <strong>Vista consolidada para conciliación bancaria:</strong> Los pagos están agrupados por Propietario + Emisor + Tipo de Inversión,
