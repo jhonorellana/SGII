@@ -85,6 +85,7 @@ Route::get('reportes/vencimientos-mensuales/exportar/pdf', [VencimientosMensuale
 Route::get('reportes/vencimientos-semanales', [VencimientosSemanalesController::class, 'getVencimientosSemanales']);
 Route::get('reportes/vencimientos-semanales/exportar/excel', [VencimientosSemanalesController::class, 'exportarExcel']);
 Route::get('reportes/vencimientos-semanales/exportar/pdf', [VencimientosSemanalesController::class, 'exportarPDF']);
+Route::get('reportes/vencimientos-semanales/detalle', [VencimientosSemanalesController::class, 'getDetalleVencimientosSemanales']);
 
 // Rutas de Reportes de Patrimonio Consolidado (temporalmente sin autenticación para pruebas)
 Route::get('reportes/patrimonio/consolidado', [PatrimonioController::class, 'getPatrimonioConsolidado']);

@@ -125,7 +125,8 @@
               <tr
                 *ngFor="let item of vencimientosSemanales"
                 [class.table-active]="item.es_hoy"
-                class="fila-diaria">
+                class="fila-diaria clickable-row"
+                (click)="mostrarDetalle(item)">
                 <td class="text-center">
                   <strong>{{ item.nombre_dia }}</strong>
                   <span *ngIf="item.es_hoy" class="badge bg-warning ms-2">Hoy</span>
@@ -213,5 +214,99 @@
     </div>
   </div>
 </div>
+
+<!-- Modal de Detalle -->
+<p-dialog
+  [(visible)]="mostrarModalDetalle"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="true"
+  [style]="{width: '90vw', maxWidth: '1200px'}"
+  styleClass="custom-modal-header"
+  header="Detalle de Vencimientos por Día (Consolidado para Conciliación Bancaria)">
+
+  <ng-container *ngIf="detalleSeleccionado">
+    <!-- Información Consolidada -->
+    <div class="mb-4">
+      <div class="row align-items-center">
+        <div class="col-md-3">
+          <strong>Día:</strong> {{ detalleSeleccionado.nombre_dia }}
+        </div>
+        <div class="col-md-3">
+          <strong>Fecha:</strong> {{ detalleSeleccionado.fecha }}
+        </div>
+        <div class="col-md-3">
+          <strong>Total:</strong> {{ formatCurrency(detalleSeleccionado.total) }}
+        </div>
+        <div class="col-md-3">
+          <span *ngIf="detalleSeleccionado.es_hoy" class="badge bg-warning">Hoy</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nota explicativa -->
+    <div class="alert alert-info mb-4">
+      <small>
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Vista consolidada para conciliación bancaria:</strong> Los pagos están agrupados por Propietario + Emisor + Tipo de Inversión,
+        ya que las entidades financieras consolidan múltiples inversiones en una sola transferencia.
+        Esto refleja cómo llegan realmente los depósitos al banco.
+      </small>
+    </div>
+
+    <!-- Tabla de Detalle -->
+    <div class="mb-4">
+      <div class="table-responsive" *ngIf="!loadingDetalle">
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr style="background-color: #4a8c62; color: white;">
+              <th style="background-color: #4a8c62; color: white;">Propietario</th>
+              <th style="background-color: #4a8c62; color: white;">Emisor</th>
+              <th style="background-color: #4a8c62; color: white;">Tipo Inversión</th>
+              <th style="background-color: #4a8c62; color: white; text-align: center;"># Instrumentos</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Interés</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Capital</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Premio</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Int. Riesgo</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Cap. Riesgo</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Prem. Riesgo</th>
+              <th style="background-color: #4a8c62; color: white; text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of detalleItems">
+              <td class="text-left">{{ item.propietario }}</td>
+              <td class="text-left">{{ item.emisor }}</td>
+              <td class="text-left">{{ item.tipo_inversion }}</td>
+              <td class="text-center">{{ item.cantidad_instrumentos }}</td>
+              <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+              <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+              <td class="text-end">{{ formatCurrency(item.premio) }}</td>
+              <td class="text-end">{{ formatCurrency(item.interes_riesgo) }}</td>
+              <td class="text-end">{{ formatCurrency(item.capital_riesgo) }}</td>
+              <td class="text-end">{{ formatCurrency(item.premio_riesgo) }}</td>
+              <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loadingDetalle" class="text-center p-4">
+        <p-progressSpinner strokeWidth="4" animationDuration=".5s"></p-progressSpinner>
+        <p class="mt-3">Cargando detalle...</p>
+      </div>
+    </div>
+
+    <!-- Botones del Modal -->
+    <app-modal-actions
+      [cancelText]="'Cerrar'"
+      [saveText]="'Exportar'"
+      [loading]="loadingDetalle"
+      (onCancel)="cerrarModalDetalle()"
+      (onSave)="exportarDetalle()">
+    </app-modal-actions>
+  </ng-container>
+</p-dialog>
 
 <p-toast></p-toast>

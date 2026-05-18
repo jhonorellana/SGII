@@ -43,6 +43,20 @@
   font-weight: 500;
 }
 
+/* Fila clickeable */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clickable-row:hover {
+  background-color: rgba(74, 140, 98, 0.1) !important;
+}
+
+.clickable-row:hover td {
+  font-weight: 500;
+}
+
 /* Estilos para filas de resumen */
 .table-secondary {
   background-color: #6c757d !important;

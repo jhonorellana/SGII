@@ -63,4 +63,8 @@ export class VencimientosSemanalesService {
     }
     return this.http.get(url);
   }
+
+  getDetalleVencimientosSemanales(fecha: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/detalle?fecha=${fecha}`);
+  }
 }
