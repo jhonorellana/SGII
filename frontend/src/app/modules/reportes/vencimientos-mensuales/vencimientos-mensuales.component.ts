@@ -244,8 +244,7 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
             }
 
             return new Intl.NumberFormat('es-ES', {
-              style: 'currency',
-              currency: 'USD',
+              useGrouping: true,
               minimumFractionDigits: 0,
               maximumFractionDigits: 0
             }).format(total);
@@ -271,6 +270,9 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarAnios();
+
+    // Generar reporte automáticamente al cargar la página (sin mostrar mensajes)
+    this.generarReporte(false);
   }
 
   ngOnDestroy(): void {
@@ -292,13 +294,15 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
     }
   }
 
-  generarReporte(): void {
+  generarReporte(mostrarMensaje: boolean = true): void {
     if (this.reporteForm.invalid) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Advertencia',
-        detail: 'Por favor seleccione un año'
-      });
+      if (mostrarMensaje) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'Por favor seleccione un año'
+        });
+      }
       return;
     }
 
@@ -316,11 +320,13 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
           this.actualizarGrafico();
           this.loading = false;
 
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Éxito',
-            detail: 'Reporte generado correctamente desde el backend'
-          });
+          if (mostrarMensaje) {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Reporte generado correctamente desde el backend'
+            });
+          }
         } else {
           throw new Error('Error en la respuesta del backend');
         }
@@ -329,11 +335,13 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         console.error('Error al generar reporte:', error);
         this.loading = false;
 
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo conectar con el backend. Por favor, verifique la conexión.'
-        });
+        if (mostrarMensaje) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo conectar con el backend. Por favor, verifique la conexión.'
+          });
+        }
       }
     });
   }

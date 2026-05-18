@@ -85,6 +85,9 @@ export class PatrimonioConsolidadoComponent implements OnInit {
             ];
           }
         }
+      },
+      datalabels: {
+        display: false
       }
     }
   };
@@ -537,6 +540,9 @@ export class PatrimonioConsolidadoComponent implements OnInit {
               return `${label}: ${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP' }).format(value)} (${percentage}%)`;
             }
           }
+        },
+        datalabels: {
+          display: false
         }
       },
       cutout: '70%'
