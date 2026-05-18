@@ -1,12 +1,12 @@
 <div class="app-layout">
   <!-- Sidebar -->
-  <app-sidebar></app-sidebar>
-  
+  <app-sidebar (sidebarToggle)="onSidebarToggle($event)"></app-sidebar>
+
   <!-- Main Content Area -->
-  <div class="main-content" [class.expanded]="sidebarCollapsed">
+  <div class="main-content">
     <!-- Header -->
     <app-header></app-header>
-    
+
     <!-- Page Content -->
     <main class="page-content">
       <router-outlet></router-outlet>

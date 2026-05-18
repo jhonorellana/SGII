@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
 import { RecuperacionAnualService, RecuperacionAnualItem } from '../../../core/recuperacion-anual.service';
@@ -8,6 +8,8 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { LayoutService } from '../../../core/layout.service';
+import { Subscription } from 'rxjs';
 
 Chart.register(...registerables);
 Chart.register(ChartDataLabels);
@@ -26,7 +28,7 @@ Chart.register(ChartDataLabels);
   templateUrl: './proyeccion-interes-anual.component.html',
   styleUrls: ['./proyeccion-interes-anual.component.css']
 })
-export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
+export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
   datos: RecuperacionAnualItem[] = [];
 
@@ -36,14 +38,29 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
 
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
 
+  private layoutSubscription: Subscription | null = null;
+
   constructor(
     private recuperacionAnualService: RecuperacionAnualService,
     private messageService: MessageService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private layoutService: LayoutService
   ) {}
 
   ngOnInit(): void {
     this.loadDatos();
+    this.setupLayoutListener();
+  }
+
+  setupLayoutListener(): void {
+    this.layoutSubscription = this.layoutService.sidebarCollapsed$.subscribe(() => {
+      // Wait for the sidebar transition to complete before resizing the chart
+      setTimeout(() => {
+        if (this.chart) {
+          this.chart.resize();
+        }
+      }, 350); // 350ms to account for the 300ms transition + buffer
+    });
   }
 
   ngAfterViewInit(): void {
@@ -267,5 +284,11 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
       (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
       (B < 255 ? B < 1 ? 0 : B : 255)
     ).toString(16).slice(1);
+  }
+
+  ngOnDestroy(): void {
+    if (this.layoutSubscription) {
+      this.layoutSubscription.unsubscribe();
+    }
   }
 }

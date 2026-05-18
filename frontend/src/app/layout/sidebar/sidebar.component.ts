@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -21,6 +21,8 @@ export class SidebarComponent implements OnInit {
   isCollapsed = false;
   currentPath = '';
   expandedMenuItems: Set<string> = new Set();
+
+  @Output() sidebarToggle = new EventEmitter<boolean>();
 
   menuItems: MenuItem[] = [
     {
@@ -157,6 +159,29 @@ export class SidebarComponent implements OnInit {
 
   toggleSidebar(): void {
     this.isCollapsed = !this.isCollapsed;
+    this.sidebarToggle.emit(this.isCollapsed);
+  }
+
+  handleMenuClick(item: MenuItem, event: Event): void {
+    if (this.isCollapsed) {
+      event.preventDefault();
+      // Expand sidebar
+      this.isCollapsed = false;
+      this.sidebarToggle.emit(false);
+
+      // Expand the corresponding submenu if it has children
+      if (item.children) {
+        setTimeout(() => {
+          this.expandedMenuItems.add(item.title);
+        }, 50); // Small delay to allow sidebar expansion to start
+      }
+    } else {
+      // When sidebar is expanded, toggle submenu for items with children
+      if (item.children) {
+        event.preventDefault();
+        this.toggleMenuItem(item);
+      }
+    }
   }
 
   toggleMenuItem(item: MenuItem): void {

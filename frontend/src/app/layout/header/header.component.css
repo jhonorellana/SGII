@@ -1,8 +1,5 @@
 .app-header {
-  position: fixed;
-  top: 0;
-  right: 0;
-  left: 280px;
+  width: 100%;
   height: 70px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
@@ -12,11 +9,7 @@
   padding: 0 30px;
   z-index: 1001;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: left 0.3s ease;
-}
-
-.main-content.expanded .app-header {
-  left: 70px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -191,7 +184,6 @@
 /* Responsive */
 @media (max-width: 768px) {
   .app-header {
-    left: 0;
     padding: 0 15px;
   }
 

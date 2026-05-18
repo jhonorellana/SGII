@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
@@ -17,6 +17,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
+import { LayoutService } from '../../../core/layout.service';
 
 @Component({
   selector: 'app-vencimientos-mensuales',
@@ -260,23 +261,46 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   };
 
   private subscription: Subscription = new Subscription();
+  private layoutSubscription: Subscription | null = null;
+
+  @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private fb: FormBuilder,
     private messageService: MessageService,
-    private vencimientosService: VencimientosMensualesService
+    private vencimientosService: VencimientosMensualesService,
+    private layoutService: LayoutService
   ) {}
 
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarAnios();
+    this.setupLayoutListener();
 
     // Generar reporte automáticamente al cargar la página (sin mostrar mensajes)
     this.generarReporte(false);
   }
 
+  setupLayoutListener(): void {
+    this.layoutSubscription = this.layoutService.sidebarCollapsed$.subscribe(() => {
+      // Wait for the sidebar transition to complete before resizing the chart
+      setTimeout(() => {
+        // ng2-charts handles resize automatically with responsive: true
+        // Just need to trigger a resize event on the canvas
+        if (this.chartCanvas) {
+          const canvas = this.chartCanvas.nativeElement;
+          const event = new Event('resize');
+          window.dispatchEvent(event);
+        }
+      }, 350);
+    });
+  }
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    if (this.layoutSubscription) {
+      this.layoutSubscription.unsubscribe();
+    }
   }
 
   inicializarFormulario(): void {

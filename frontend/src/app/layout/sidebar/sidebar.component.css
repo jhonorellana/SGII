@@ -1,9 +1,8 @@
 .sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
+  flex: 0 0 280px;
   width: 280px;
+  min-width: 280px;
+  height: 100vh;
   background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-light) 100%);
   color: white;
   transition: all 0.3s ease;
@@ -11,10 +10,13 @@
   display: flex;
   flex-direction: column;
   box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  position: relative;
 }
 
 .sidebar.collapsed {
-  width: 70px;
+  flex: 0 0 72px;
+  width: 72px;
+  min-width: 72px;
 }
 
 .sidebar-header {
@@ -23,6 +25,12 @@
   justify-content: space-between;
   padding: 20px;
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  height: 60px;
+}
+
+.sidebar.collapsed .sidebar-header {
+  padding: 10px;
+  justify-content: center;
 }
 
 .logo {
@@ -62,13 +70,23 @@
   color: white;
   font-size: 1.2rem;
   cursor: pointer;
-  padding: 5px;
+  padding: 8px;
   border-radius: 4px;
   transition: all 0.3s ease;
+  flex-shrink: 0;
 }
 
 .toggle-btn:hover {
   background: rgba(255,255,255,0.1);
+}
+
+.sidebar.collapsed .toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 6px;
+  font-size: 1rem;
 }
 
 .user-info {
@@ -244,16 +262,23 @@
 .sidebar.collapsed .sidebar-footer {
   opacity: 0;
   visibility: hidden;
+  position: absolute;
 }
 
 .sidebar.collapsed .logo {
   justify-content: center;
-  padding: 5px;
+  padding: 12px;
+  width: 100%;
 }
 
 .sidebar.collapsed .menu-link {
   justify-content: center;
-  padding: 15px;
+  padding: 20px 0;
+  width: 100%;
+}
+
+.sidebar.collapsed .menu-link i {
+  font-size: 1.5rem;
 }
 
 .sidebar.collapsed .submenu {
@@ -263,11 +288,18 @@
 /* Responsive */
 @media (max-width: 768px) {
   .sidebar {
-    transform: translateX(-100%);
+    flex: 0 0 0;
+    width: 0;
+    min-width: 0;
+    overflow: hidden;
+    padding: 0;
   }
 
   .sidebar:not(.collapsed) {
-    transform: translateX(0);
+    flex: 0 0 280px;
+    width: 280px;
+    min-width: 280px;
+    padding: 0;
   }
 
   .sidebar-header {
@@ -283,19 +315,4 @@
   }
 }
 
-/* Main content adjustment */
-.main-content {
-  margin-left: 280px;
-  transition: margin-left 0.3s ease;
-  min-height: 100vh;
-}
-
-.main-content.expanded {
-  margin-left: 70px;
-}
-
-@media (max-width: 768px) {
-  .main-content {
-    margin-left: 0;
-  }
-}
+/* Main content adjustment - removed, now handled by main-layout */

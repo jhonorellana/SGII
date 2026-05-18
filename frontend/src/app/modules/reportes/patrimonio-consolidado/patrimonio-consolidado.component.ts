@@ -1,7 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
@@ -18,6 +17,8 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { UserOptions } from 'jspdf-autotable';
+import { LayoutService } from '../../../core/layout.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-patrimonio-consolidado',
@@ -102,19 +103,35 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   // Leyenda de colores
   leyendaColores: { color: string; label: string; valor: number; porcentaje: string }[] = [];
 
+  private layoutSubscription: Subscription | null = null;
+
   constructor(
     private fb: FormBuilder,
     private messageService: MessageService,
     private patrimonioService: PatrimonioService,
     private grupoFamiliarService: GrupoFamiliarService,
     private personaService: PersonaService,
-    private authService: AuthService
+    private authService: AuthService,
+    private layoutService: LayoutService
   ) {}
 
   ngOnInit(): void {
     this.inicializarFormulario();
     this.loadCurrentUser();
     this.loadInitialData();
+    this.setupLayoutListener();
+  }
+
+  setupLayoutListener(): void {
+    this.layoutSubscription = this.layoutService.sidebarCollapsed$.subscribe(() => {
+      // Wait for the sidebar transition to complete
+      setTimeout(() => {
+        // PrimeNG Chart handles resize automatically with responsive: true
+        // Just need to trigger a resize event
+        const event = new Event('resize');
+        window.dispatchEvent(event);
+      }, 350);
+    });
   }
 
   loadCurrentUser(): void {
@@ -555,5 +572,11 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       valor: item.valor,
       porcentaje: ((item.valor / total) * 100).toFixed(1)
     }));
+  }
+
+  ngOnDestroy(): void {
+    if (this.layoutSubscription) {
+      this.layoutSubscription.unsubscribe();
+    }
   }
 }

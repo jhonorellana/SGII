@@ -17,7 +17,9 @@
       <a *ngIf="!item.children"
          class="menu-link"
          [routerLink]="item.path"
-         [class.active]="isActive(item.path)">
+         [class.active]="isActive(item.path)"
+         [attr.title]="isCollapsed ? item.title : ''"
+         (click)="handleMenuClick(item, $event)">
         <i class="bi {{ item.icon }}"></i>
         <span class="menu-text">{{ item.title }}</span>
       </a>
@@ -26,7 +28,8 @@
       <div *ngIf="item.children" class="menu-parent">
         <a class="menu-link"
            [class.active]="isExpanded(item)"
-           (click)="toggleMenuItem(item)">
+           (click)="handleMenuClick(item, $event)"
+           [attr.title]="isCollapsed ? item.title : ''">
           <i class="bi {{ item.icon }}"></i>
           <span class="menu-text">{{ item.title }}</span>
           <i class="bi bi-chevron-down menu-arrow"
@@ -36,7 +39,8 @@
           <li class="submenu-item" *ngFor="let child of item.children">
             <a class="submenu-link"
                [routerLink]="child.path"
-               [class.active]="isActive(child.path)">
+               [class.active]="isActive(child.path)"
+               [attr.title]="isCollapsed ? child.title : ''">
               <i class="bi {{ child.icon }}"></i>
               <span class="menu-text">{{ child.title }}</span>
             </a>

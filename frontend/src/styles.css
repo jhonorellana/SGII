@@ -19,6 +19,12 @@
   --light-color: #f8f9fa;
   --dark-color: #343a40;
   --white: #ffffff;
+
+  /* Table Row Colors */
+  --table-row-odd: #ffffff;
+  --table-row-even: #f6fbf8;
+  --table-row-hover: #e8f5ec;
+  --table-header-bg: #e8f5ec;
 }
 
 /* Global Styles */
@@ -52,20 +58,28 @@ body {
 
 /* PrimeNG Table Styles - Global */
 .p-datatable .p-datatable-thead {
-  background-color: var(--primary-lighter) !important;
+  background-color: var(--table-header-bg) !important;
 }
 
 .p-datatable .p-datatable-thead > tr > th {
-  background-color: var(--primary-lighter) !important;
+  background-color: var(--table-header-bg) !important;
   font-weight: 600;
 }
 
+.p-datatable .p-datatable-tbody > tr:nth-child(odd) {
+  background-color: var(--table-row-odd) !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:nth-child(even) {
+  background-color: var(--table-row-even) !important;
+}
+
 .p-datatable .p-datatable-tbody > tr:hover {
-  background-color: var(--primary-lightest) !important;
+  background-color: var(--table-row-hover) !important;
 }
 
 .p-datatable .p-paginator {
-  background-color: var(--primary-lighter) !important;
+  background-color: var(--table-header-bg) !important;
   border-top: 1px solid #dee2e6;
 }
 
