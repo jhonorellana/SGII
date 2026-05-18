@@ -207,3 +207,18 @@
 .table-responsive::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Estilos para el chart-container */
+.chart-container {
+  width: 100% !important;
+  height: 400px !important;
+  position: relative;
+  margin: 0;
+  padding: 0;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+}

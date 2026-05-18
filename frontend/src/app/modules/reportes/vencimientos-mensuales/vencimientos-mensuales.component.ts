@@ -12,6 +12,7 @@ import { VencimientosMensualesService, VencimientoMensual, ResumenAnual } from '
 import { Subscription } from 'rxjs';
 import { NgChartsModule } from 'ng2-charts';
 import { ChartOptions, ChartType } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -61,53 +62,63 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   ];
 
   // Configuración del gráfico
-  public barChartOptions: ChartOptions = {
+  public barChartOptions: any = {
     responsive: true,
-    plugins: {
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 25,
+        right: 5,
+        bottom: 5,
+        left: 5
+      }
+    },
+    plugins: [ChartDataLabels, {
       legend: {
         position: 'top',
+        labels: {
+          padding: 20,
+          font: {
+            size: 11
+          },
+          boxWidth: 5,
+          usePointStyle: true
+        }
       },
       title: {
-        display: true,
-        text: 'Vencimientos Mensuales - Composición de Cuotas'
+        display: false
       },
       tooltip: {
         mode: 'index',
         intersect: false,
-        displayColors: false, // Desactiva los recuadros de colores
+        displayColors: false,
         callbacks: {
-          title: function(context) {
-            // Título con el mes
+          title: function(context: any) {
             return context[0].label;
           },
-          label: function(context) {
-            // Solo mostrar etiqueta para el primer dataset para evitar duplicación
+          label: function(context: any) {
             if (context.datasetIndex === 0) {
               const index = context.dataIndex;
               const datasets = context.chart.data.datasets;
 
-              // Obtener todos los valores para este mes (convertir a número)
               const capital = Number(datasets[0].data[index]) || 0;
               const interes = Number(datasets[1].data[index]) || 0;
               const premio = Number(datasets[2].data[index]) || 0;
               const total = capital + interes + premio;
 
-              // Formatear valores
               const formatCurrency = (value: number) => {
                 return new Intl.NumberFormat('es-ES', {
                   style: 'currency',
                   currency: 'USD',
                   minimumFractionDigits: 2,
-                  useGrouping: true // Activar separación de miles
+                  useGrouping: true
                 }).format(value);
               };
 
-              // Función para alinear texto a la derecha con espacios
               const alignRight = (text: string, width: number) => {
                 return ' '.repeat(Math.max(0, width - text.length)) + text;
               };
 
-              // Crear etiquetas con alineación derecha de los valores y ancho mínimo
               const labels = [
                 `Capital:  ${alignRight(formatCurrency(capital), 11)}`,
                 `Interés:   ${alignRight(formatCurrency(interes), 11)}`,
@@ -118,34 +129,59 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
 
               return labels;
             }
-            // Para los otros datasets, no mostrar nada
             return '';
           }
         }
       }
-    },
+    }],
     scales: {
       x: {
         stacked: true,
         title: {
           display: true,
-          text: 'Meses'
+          text: 'Meses',
+          font: {
+            size: 11,
+            weight: 'bold'
+          },
+          padding: { top: 4 }
+        },
+        grid: {
+          display: false
+        },
+        ticks: {
+          font: {
+            size: 10
+          },
+          padding: 4
         }
       },
       y: {
         stacked: true,
         title: {
           display: true,
-          text: 'Monto (USD)'
+          text: 'Monto (USD)',
+          font: {
+            size: 11,
+            weight: 'bold'
+          },
+          padding: { bottom: 4 }
+        },
+        grid: {
+          color: '#e5e7eb'
         },
         ticks: {
-          callback: function(value) {
+          callback: function(value: any) {
             return new Intl.NumberFormat('es-ES', {
               style: 'currency',
               currency: 'USD',
               minimumFractionDigits: 0
             }).format(Number(value));
-          }
+          },
+          font: {
+            size: 9
+          },
+          padding: 4
         }
       }
     }
@@ -161,7 +197,12 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         backgroundColor: 'rgba(255, 99, 132, 0.8)',
         borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
-        order: 1 // Primero (abajo)
+        order: 1,
+        barPercentage: 0.95,
+        categoryPercentage: 0.95,
+        datalabels: {
+          display: false
+        }
       },
       {
         label: 'Interés',
@@ -169,7 +210,12 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         backgroundColor: 'rgba(54, 162, 235, 0.8)',
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
-        order: 2 // Segundo (medio)
+        order: 2,
+        barPercentage: 0.95,
+        categoryPercentage: 0.95,
+        datalabels: {
+          display: false
+        }
       },
       {
         label: 'Premio',
@@ -177,7 +223,39 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         backgroundColor: 'rgba(75, 192, 192, 0.8)',
         borderColor: 'rgba(75, 192, 192, 1)',
         borderWidth: 1,
-        order: 3 // Tercero (arriba)
+        order: 3,
+        barPercentage: 0.95,
+        categoryPercentage: 0.95,
+        datalabels: {
+          display: true,
+          anchor: 'end',
+          align: 'top',
+          formatter: function(value: any, context: any) {
+            const index = context.dataIndex;
+            const datasets = context.chart.data.datasets;
+
+            const capital = Number(datasets[0].data[index]) || 0;
+            const interes = Number(datasets[1].data[index]) || 0;
+            const premio = Number(datasets[2].data[index]) || 0;
+            const total = capital + interes + premio;
+
+            if (total === 0) {
+              return '';
+            }
+
+            return new Intl.NumberFormat('es-ES', {
+              style: 'currency',
+              currency: 'USD',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+            }).format(total);
+          },
+          font: {
+            weight: 'bold',
+            size: 10
+          },
+          color: '#333'
+        }
       }
     ]
   };
