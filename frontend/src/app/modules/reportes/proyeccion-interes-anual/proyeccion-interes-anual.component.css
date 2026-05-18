@@ -1,0 +1,44 @@
+.container-fluid {
+  padding: 20px;
+}
+
+h2 {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.text-muted {
+  color: #6c757d !important;
+  margin-bottom: 12px;
+}
+
+.p-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+  padding: 15px;
+}
+
+.chart-container {
+  height: 400px;
+  margin-bottom: 0;
+  padding: 5px;
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  width: 100%;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+}
+
+.text-end {
+  text-align: right;
+}

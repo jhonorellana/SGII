@@ -110,6 +110,16 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/flujo-capital-consolidado'
         },
         {
+          title: 'Recuperación Anual',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/recuperacion-anual'
+        },
+        {
+          title: 'Proyección de Interés Anual',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/proyeccion-interes-anual'
+        },
+        {
           title: 'Reporte de Inversiones',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/inversiones'

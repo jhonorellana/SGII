@@ -16,6 +16,8 @@ import { AmortizacionGeneracionComponent } from './modules/amortizaciones/amorti
 import { VencimientosMensualesComponent } from './modules/reportes/vencimientos-mensuales/vencimientos-mensuales.component';
 import { PatrimonioConsolidadoComponent } from './modules/reportes/patrimonio-consolidado/patrimonio-consolidado.component';
 import { FlujoCapitalConsolidadoComponent } from './modules/reportes/flujo-capital-consolidado/flujo-capital-consolidado.component';
+import { RecuperacionAnualComponent } from './modules/reportes/recuperacion-anual/recuperacion-anual.component';
+import { ProyeccionInteresAnualComponent } from './modules/reportes/proyeccion-interes-anual/proyeccion-interes-anual.component';
 import { OtrosValoresListComponent } from './modules/otros-valores/otros-valores-list/otros-valores-list.component';
 import { AuthGuard } from './core/auth.guard';
 
@@ -43,6 +45,8 @@ export const routes: Routes = [
       { path: 'reportes/vencimientos-mensuales', component: VencimientosMensualesComponent },
       { path: 'reportes/patrimonio-consolidado', component: PatrimonioConsolidadoComponent },
       { path: 'reportes/flujo-capital-consolidado', component: FlujoCapitalConsolidadoComponent },
+      { path: 'reportes/recuperacion-anual', component: RecuperacionAnualComponent },
+      { path: 'reportes/proyeccion-interes-anual', component: ProyeccionInteresAnualComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]

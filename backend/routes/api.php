@@ -16,6 +16,7 @@ use App\Http\Controllers\API\VencimientosMensualesController;
 use App\Http\Controllers\API\OtroValorController;
 use App\Http\Controllers\API\PatrimonioController;
 use App\Http\Controllers\API\FlujoCapitalController;
+use App\Http\Controllers\API\RecuperacionAnualController;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,6 +90,9 @@ Route::get('reportes/flujo-capital', [FlujoCapitalController::class, 'getFlujoCa
 Route::get('reportes/flujo-capital/detalle', [FlujoCapitalController::class, 'getDetalleFlujoCapital']);
 Route::get('reportes/flujo-capital/exportar/excel', [FlujoCapitalController::class, 'exportarExcel']);
 Route::get('reportes/flujo-capital/exportar/pdf', [FlujoCapitalController::class, 'exportarPDF']);
+
+// Rutas de Reportes de Recuperación Anual
+Route::get('reportes/recuperacion-anual', [RecuperacionAnualController::class, 'getRecuperacionAnual']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {
