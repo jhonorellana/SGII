@@ -63,6 +63,11 @@ export class SidebarComponent implements OnInit {
       path: '/reportes',
       children: [
         {
+          title: 'Vencimientos Semanales',
+          icon: 'bi-calendar-week',
+          path: '/reportes/vencimientos-semanales'
+        },
+        {
           title: 'Vencimientos Mensuales',
           icon: 'bi-calendar-month',
           path: '/reportes/vencimientos-mensuales'
@@ -73,18 +78,18 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/patrimonio-consolidado'
         },
         {
-          title: 'Flujo de Capital Consolidado',
+          title: 'Flujo Capital',
           icon: 'bi-cash-coin',
           path: '/reportes/flujo-capital-consolidado'
         },
         {
           title: 'Recuperación Anual',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-cash-stack',
           path: '/reportes/recuperacion-anual'
         },
         {
-          title: 'Proyección de Interés Anual',
-          icon: 'bi-graph-up-arrow',
+          title: 'Proyección Interés',
+          icon: 'bi-bar-chart-line',
           path: '/reportes/proyeccion-interes-anual'
         },
         {

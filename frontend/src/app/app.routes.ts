@@ -14,6 +14,7 @@ import { InversionListComponent } from './modules/inversiones/inversion-list/inv
 import { AmortizacionListComponent } from './modules/amortizaciones/amortizacion-list/amortizacion-list.component';
 import { AmortizacionGeneracionComponent } from './modules/amortizaciones/amortizacion-generacion/amortizacion-generacion.component';
 import { VencimientosMensualesComponent } from './modules/reportes/vencimientos-mensuales/vencimientos-mensuales.component';
+import { VencimientosSemanalesComponent } from './modules/reportes/vencimientos-semanales/vencimientos-semanales.component';
 import { PatrimonioConsolidadoComponent } from './modules/reportes/patrimonio-consolidado/patrimonio-consolidado.component';
 import { FlujoCapitalConsolidadoComponent } from './modules/reportes/flujo-capital-consolidado/flujo-capital-consolidado.component';
 import { RecuperacionAnualComponent } from './modules/reportes/recuperacion-anual/recuperacion-anual.component';
@@ -43,6 +44,7 @@ export const routes: Routes = [
       { path: 'amortizaciones', component: AmortizacionListComponent },
       { path: 'amortizaciones/generacion', component: AmortizacionGeneracionComponent },
       { path: 'reportes/vencimientos-mensuales', component: VencimientosMensualesComponent },
+      { path: 'reportes/vencimientos-semanales', component: VencimientosSemanalesComponent },
       { path: 'reportes/patrimonio-consolidado', component: PatrimonioConsolidadoComponent },
       { path: 'reportes/flujo-capital-consolidado', component: FlujoCapitalConsolidadoComponent },
       { path: 'reportes/recuperacion-anual', component: RecuperacionAnualComponent },

@@ -1,0 +1,217 @@
+<div class="container-fluid">
+  <!-- Header del Reporte -->
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-calendar-week me-2"></i>
+        🧾 Vencimientos Semanales
+      </h4>
+      <small class="text-white-50">
+        Resumen semanal de flujos financieros por día (Sábado a Viernes)
+      </small>
+    </div>
+    <div class="card-body">
+      <p class="text-muted mb-4">
+        Visualice de forma clara cuánto se recibe día a día durante la semana actual,
+        cómo se compone cada flujo (interés, capital, premio) y los totales semanales.
+      </p>
+
+      <!-- Filtros -->
+      <form [formGroup]="reporteForm">
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <label for="fecha" class="form-label">Fecha de Referencia *</label>
+            <p-calendar
+              id="fecha"
+              formControlName="fecha"
+              [showIcon]="true"
+              [showButtonBar]="true"
+              dateFormat="yy-mm-dd"
+              placeholder="Seleccione fecha"
+              styleClass="w-full">
+            </p-calendar>
+          </div>
+          <div class="col-md-9 d-flex align-items-end">
+            <button
+              pButton
+              type="button"
+              label="Generar Reporte"
+              icon="pi pi-search"
+              class="p-button-primary me-2"
+              (click)="generarReporte()"
+              [disabled]="loading">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="Exportar Excel"
+              icon="pi pi-file-excel"
+              class="p-button-success me-2"
+              (click)="exportarExcel()"
+              [disabled]="vencimientosSemanales.length === 0">
+            </button>
+            <button
+              pButton
+              type="button"
+              label="Exportar PDF"
+              icon="pi pi-file-pdf"
+              class="p-button-danger"
+              (click)="exportarPDF()"
+              [disabled]="vencimientosSemanales.length === 0">
+            </button>
+          </div>
+        </div>
+        <div class="row mb-3">
+          <div class="col-12">
+            <small class="text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              Se mostrará la semana que incluye esta fecha (Sábado a Viernes)
+            </small>
+          </div>
+        </div>
+      </form>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="text-center py-5">
+        <p-progressSpinner></p-progressSpinner>
+        <p class="mt-2">Generando reporte...</p>
+      </div>
+
+      <!-- Gráfico de Barras -->
+      <div class="row mb-4" *ngIf="!loading && vencimientosSemanales.length > 0">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-bar-chart-fill me-2"></i>
+                📊 Gráfico de Vencimientos Semanales
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="chart-container">
+                <canvas #chartCanvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType">
+                </canvas>
+              </div>
+              <div class="mt-3 text-center">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Gráfico de barras apiladas mostrando la composición diaria (Interés + Capital + Premio)
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Resultados -->
+      <div *ngIf="!loading && vencimientosSemanales.length > 0">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover reporte-table">
+            <thead class="table-dark">
+              <tr>
+                <th class="text-center" style="width: 100px;">Día</th>
+                <th class="text-left" style="width: 120px;">Fecha</th>
+                <th class="text-end" style="width: 120px;">Interés</th>
+                <th class="text-end" style="width: 120px;">Capital</th>
+                <th class="text-end" style="width: 120px;">Premio</th>
+                <th class="text-end" style="width: 120px;">Interés riesgo</th>
+                <th class="text-end" style="width: 120px;">Capital riesgo</th>
+                <th class="text-end" style="width: 120px;">Premio riesgo</th>
+                <th class="text-end" style="width: 120px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Filas diarias -->
+              <tr
+                *ngFor="let item of vencimientosSemanales"
+                [class.table-active]="item.es_hoy"
+                class="fila-diaria">
+                <td class="text-center">
+                  <strong>{{ item.nombre_dia }}</strong>
+                  <span *ngIf="item.es_hoy" class="badge bg-warning ms-2">Hoy</span>
+                </td>
+                <td class="text-left">{{ item.fecha }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                <td class="text-end">{{ formatCurrency(item.premio) }}</td>
+                <td class="text-end">{{ formatCurrency(item.interes_moroso || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(item.capital_moroso || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(item.descuento_moroso || 0) }}</td>
+                <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+              </tr>
+
+              <!-- Filas de resumen -->
+              <tr class="table-secondary fw-bold">
+                <td colspan="2" class="text-center">SEMANAL TOTAL</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[0]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[0]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[0]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[0]?.total || 0) }}</td>
+              </tr>
+              <tr class="table-info fw-bold">
+                <td colspan="2" class="text-center">SEMANAL EJECUTADO</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[1]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[1]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[1]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[1]?.total || 0) }}</td>
+              </tr>
+              <tr class="table-warning fw-bold">
+                <td colspan="2" class="text-center">SEMANAL PENDIENTE</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[2]?.interes || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[2]?.capital || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[2]?.premio || 0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(0) }}</td>
+                <td class="text-end">{{ formatCurrency(resumenSemanal[2]?.total || 0) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Resumen en Cards -->
+        <div class="row mt-4">
+          <div class="col-md-4">
+            <div class="card border-primary">
+              <div class="card-body text-center">
+                <h6 class="card-title text-primary">Total Semanal</h6>
+                <h4 class="text-primary">{{ formatCurrency(getResumenTotal()) }}</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-success">
+              <div class="card-body text-center">
+                <h6 class="card-title text-success">Ejecutado</h6>
+                <h4 class="text-success">{{ formatCurrency(getResumenEjecutado()) }}</h4>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-warning">
+              <div class="card-body text-center">
+                <h6 class="card-title text-warning">Pendiente</h6>
+                <h4 class="text-warning">{{ formatCurrency(getResumenPendiente()) }}</h4>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando no hay datos -->
+      <div *ngIf="!loading && vencimientosSemanales.length === 0" class="text-center py-5">
+        <i class="bi bi-calendar-x display-1 text-muted"></i>
+        <h5 class="text-muted mt-3">No hay datos disponibles</h5>
+        <p class="text-muted">Seleccione una fecha y haga clic en "Generar Reporte"</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>

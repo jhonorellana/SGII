@@ -13,6 +13,7 @@ use App\Http\Controllers\API\InversionController;
 use App\Http\Controllers\API\AmortizacionController;
 use App\Http\Controllers\API\AmortizacionGeneracionController;
 use App\Http\Controllers\API\VencimientosMensualesController;
+use App\Http\Controllers\API\VencimientosSemanalesController;
 use App\Http\Controllers\API\OtroValorController;
 use App\Http\Controllers\API\PatrimonioController;
 use App\Http\Controllers\API\FlujoCapitalController;
@@ -79,6 +80,11 @@ Route::delete('amortizaciones/eliminar/{id_inversion}', [AmortizacionGeneracionC
 Route::get('reportes/vencimientos-mensuales', [VencimientosMensualesController::class, 'getVencimientosMensuales']);
 Route::get('reportes/vencimientos-mensuales/exportar/excel', [VencimientosMensualesController::class, 'exportarExcel']);
 Route::get('reportes/vencimientos-mensuales/exportar/pdf', [VencimientosMensualesController::class, 'exportarPDF']);
+
+// Rutas de Reportes de Vencimientos Semanales (temporalmente sin autenticación para pruebas)
+Route::get('reportes/vencimientos-semanales', [VencimientosSemanalesController::class, 'getVencimientosSemanales']);
+Route::get('reportes/vencimientos-semanales/exportar/excel', [VencimientosSemanalesController::class, 'exportarExcel']);
+Route::get('reportes/vencimientos-semanales/exportar/pdf', [VencimientosSemanalesController::class, 'exportarPDF']);
 
 // Rutas de Reportes de Patrimonio Consolidado (temporalmente sin autenticación para pruebas)
 Route::get('reportes/patrimonio/consolidado', [PatrimonioController::class, 'getPatrimonioConsolidado']);
