@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AuthService } from '../../core/auth.service';
 
 export interface MenuItem {
   title: string;
@@ -21,39 +20,18 @@ export interface MenuItem {
 export class SidebarComponent implements OnInit {
   isCollapsed = false;
   currentPath = '';
-  currentUser: any = null;
   expandedMenuItems: Set<string> = new Set();
 
   menuItems: MenuItem[] = [
     {
-      title: 'Dashboard',
-      icon: 'bi-speedometer2',
-      path: '/dashboard'
-    },
-    {
-      title: 'Catálogos',
-      icon: 'bi-tags',
-      path: '/catalogos'
-    },
-    {
-      title: 'Datos Maestros',
-      icon: 'bi-database',
-      path: '',
+      title: 'Inversiones',
+      icon: 'bi-currency-dollar',
+      path: '/inversiones',
       children: [
         {
-          title: 'Personas',
-          icon: 'bi-people',
-          path: '/personas'
-        },
-        {
-          title: 'Grupos Familiares',
-          icon: 'bi-house-heart',
-          path: '/grupos-familiares'
-        },
-        {
-          title: 'Emisores',
-          icon: 'bi-building',
-          path: '/emisores'
+          title: 'Gestión de Inversiones',
+          icon: 'bi-list-check',
+          path: '/inversiones'
         },
         {
           title: 'Instrumentos',
@@ -64,18 +42,6 @@ export class SidebarComponent implements OnInit {
           title: 'Otros Valores',
           icon: 'bi-wallet2',
           path: '/otros-valores'
-        }
-      ]
-    },
-    {
-      title: 'Inversiones',
-      icon: 'bi-currency-dollar',
-      path: '/inversiones',
-      children: [
-        {
-          title: 'Gestión de Inversiones',
-          icon: 'bi-list-check',
-          path: '/inversiones'
         },
         {
           title: 'Amortizaciones',
@@ -132,6 +98,33 @@ export class SidebarComponent implements OnInit {
       ]
     },
     {
+      title: 'Datos Maestros',
+      icon: 'bi-database',
+      path: '',
+      children: [
+        {
+          title: 'Catálogos',
+          icon: 'bi-tags',
+          path: '/catalogos'
+        },
+        {
+          title: 'Personas',
+          icon: 'bi-people',
+          path: '/personas'
+        },
+        {
+          title: 'Grupos Familiares',
+          icon: 'bi-house-heart',
+          path: '/grupos-familiares'
+        },
+        {
+          title: 'Emisores',
+          icon: 'bi-building',
+          path: '/emisores'
+        }
+      ]
+    },
+    {
       title: 'Administración',
       icon: 'bi-gear',
       path: '/administracion',
@@ -151,13 +144,10 @@ export class SidebarComponent implements OnInit {
   ];
 
   constructor(
-    private router: Router,
-    private authService: AuthService
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.currentUser = this.authService.getCurrentUser();
-
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
@@ -185,15 +175,5 @@ export class SidebarComponent implements OnInit {
   isExpanded(item: MenuItem): boolean {
     if (!item.children) return false;
     return this.expandedMenuItems.has(item.title) || item.children.some(child => this.isActive(child.path));
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
-
-  getInitials(name: string): string {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   }
 }

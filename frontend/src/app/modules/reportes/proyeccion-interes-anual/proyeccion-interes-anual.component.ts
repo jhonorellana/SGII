@@ -40,48 +40,34 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
     private recuperacionAnualService: RecuperacionAnualService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef
-  ) {
-    console.log('Constructor ejecutado');
-  }
+  ) {}
 
   ngOnInit(): void {
-    console.log('ngOnInit ejecutado');
     this.loadDatos();
   }
 
   ngAfterViewInit(): void {
-    console.log('ngAfterViewInit ejecutado');
     this.tryInitChart();
   }
 
   tryInitChart(): void {
-    console.log('tryInitChart() ejecutado');
-    console.log('chartCanvas:', this.chartCanvas);
-    console.log('datos.length:', this.datos.length);
-
     if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
-      console.log('Canvas no disponible en tryInitChart');
       return;
     }
 
     if (!this.datos || this.datos.length === 0) {
-      console.log('Datos no disponibles en tryInitChart');
       return;
     }
 
-    console.log('Ambas condiciones cumplidas, llamando initChart');
     this.initChart();
   }
 
   loadDatos(): void {
-    console.log('loadDatos() ejecutado');
     this.loading = true;
     this.recuperacionAnualService.getRecuperacionAnual(1).subscribe({
       next: (data) => {
-        console.log('Datos recibidos:', data);
         this.datos = data;
         this.loading = false;
-        console.log('Datos asignados, length:', this.datos.length);
 
         // Esperar a que Angular pinte el canvas antes de crear el gráfico
         this.cdr.detectChanges();
@@ -102,10 +88,6 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
   }
 
   initChart(): void {
-    console.log('initChart() ejecutado');
-    console.log('datos:', this.datos);
-    console.log('chartCanvas:', this.chartCanvas);
-
     if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
       console.error('Canvas no disponible');
       return;
@@ -114,12 +96,6 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
     const canvas = this.chartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
 
-    console.log('Canvas:', canvas);
-    console.log('Context 2D:', ctx);
-    console.log('Canvas height:', canvas.height);
-    console.log('Canvas width:', canvas.width);
-    console.log('Canvas style height:', canvas.style.height);
-
     if (!ctx) {
       console.error('No se pudo obtener contexto 2D del canvas');
       return;
@@ -127,9 +103,6 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
 
     const labels = this.datos.map(item => item.anio);
     const interesData = this.datos.map(item => item.interes);
-
-    console.log('Labels:', labels);
-    console.log('InteresData:', interesData);
 
     // Generar colores diferentes para cada barra
     const colors = this.generateColors(labels.length);
@@ -240,33 +213,18 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit {
       }
     };
 
-    console.log('ChartData:', this.chartData);
-    console.log('ChartOptions:', this.chartOptions);
-
     if (this.chart) {
       this.chart.destroy();
     }
 
     try {
-      console.log('Intentando crear Chart con ctx, data, options...');
       this.chart = new Chart(ctx, {
         type: 'bar',
         data: this.chartData,
         options: this.chartOptions
       });
-
-      console.log('Chart creado exitosamente:', this.chart);
-      console.log('Chart instance:', this.chart);
-      console.log('Chart canvas:', this.chart.canvas);
-
-      setTimeout(() => {
-        console.log('Chart height:', this.chart.height);
-        console.log('Chart width:', this.chart.width);
-        console.log('Chart chartArea:', this.chart.chartArea);
-      }, 100);
     } catch (error) {
       console.error('Error al crear el chart:', error);
-      console.error('Error details:', JSON.stringify(error));
     }
   }
 

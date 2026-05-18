@@ -81,10 +81,8 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     try {
-      console.log('Inicializando componente de generación de amortizaciones...');
       this.cargarInversiones();
       this.setupFormListeners();
-      console.log('Componente inicializado correctamente');
     } catch (error) {
       console.error('Error en ngOnInit:', error);
       this.messageService.add({
@@ -271,31 +269,6 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         frecuencia_pago: parseInt(frecuenciaSugerida)
       });
 
-      console.log('Frecuencia sugerida aplicada:', frecuenciaSugerida, 'para tipo:', this.parametrosInversion.tipo_instrumento);
-
-      // Mostrar información importante en consola para depuración
-      console.log('Datos importantes para generación (desde tabla instrumento):', {
-        idInversion: this.parametrosInversion.id_inversion,
-        metodoAmortizacion: this.generacionForm.value.tipo_amortizacion === 'A' ? 'Alemán' : 'Francés',
-        valorNominal: this.parametrosInversion.valor_nominal,
-        // Fechas desde instrumento
-        fechaEmision: this.parametrosInversion.fecha_emision + ' (instrumento)',
-        fechaVencimiento: this.parametrosInversion.fecha_vencimiento + ' (instrumento)',
-        // Datos financieros
-        tasaInteres: this.parametrosInversion.tasa_interes,
-        capitalInvertido: this.parametrosInversion.capital_invertido,
-        valorInteres: this.parametrosInversion.valor_interes + ' (instrumento)',
-        // Configuración
-        frecuenciaPago: frecuenciaSugerida,
-        tipoInstrumento: this.parametrosInversion.tipo_instrumento + ' (catalogo_valor.descripcion)',
-        // Fechas de recuperación desde instrumento
-        fechasRecuperacionRaw: this.parametrosInversion.fechas_recuperacion + ' (instrumento)',
-        fechasRecuperacionProcesadas: this.getFechasRecuperacionFormateadas(),
-        cantidadFechasRecuperacion: this.getFechasRecuperacionCount(),
-        // Cálculos
-        plazoMeses: this.calcularPlazoMeses()
-      });
-
     } catch (error) {
       console.error('Error al actualizar valores por defecto:', error);
     }
@@ -316,8 +289,6 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Iniciando previsualización con parámetros:', this.generacionForm.value);
-
     this.loading = true;
     const params = this.generacionForm.value as GeneracionParams;
 
@@ -328,18 +299,12 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
       frecuencia_pago: Number(params.frecuencia_pago)
     };
 
-    console.log('Parámetros corregidos para enviar:', paramsToSend);
-
     const sub = this.generacionService.previsualizar(paramsToSend).subscribe({
       next: (response: ApiResponse<TablaAmortizacion>) => {
-        console.log('Respuesta del servidor:', response);
-
         this.tablaPrevisualizacion = response.data || null;
         this.cuotasAmortizacion = response.data?.cuotas || [];
         this.showPreview = true;
         this.loading = false;
-
-        console.log('Tabla previsualización:', this.tablaPrevisualizacion);
 
         this.messageService.add({
           severity: 'success',
@@ -349,7 +314,6 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
       },
       error: (error: any) => {
         console.error('Error en previsualización:', error);
-        console.error('Error completo:', error);
 
         // Intentar extraer más información del error
         let errorMessage = 'No se pudo generar la previsualización';
@@ -360,8 +324,6 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
         } else if (error.status) {
           errorMessage += ': Status ' + error.status;
         }
-
-        console.log('Mensaje de error final:', errorMessage);
 
         this.messageService.add({
           severity: 'error',

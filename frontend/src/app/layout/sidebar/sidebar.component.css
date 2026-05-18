@@ -31,6 +31,20 @@
   gap: 10px;
   font-size: 1.5rem;
   font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+
+.logo:hover {
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.05);
+}
+
+.logo.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 4px solid var(--primary-light);
 }
 
 .logo i {
@@ -230,6 +244,11 @@
 .sidebar.collapsed .sidebar-footer {
   opacity: 0;
   visibility: hidden;
+}
+
+.sidebar.collapsed .logo {
+  justify-content: center;
+  padding: 5px;
 }
 
 .sidebar.collapsed .menu-link {

@@ -161,7 +161,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
             fecha_vencimiento: this.formatDate(inv.instrumento.fecha_vencimiento)
           } : inv.instrumento
         }));
-        console.log('Datos transformados:', this.inversiones);
         this.inversionesFiltradas = [...this.inversiones];
         this.totalRecords = this.inversiones.length;
       },
@@ -264,7 +263,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
 
   viewInstrumento(inversion: any): void {
     this.selectedInstrumento = inversion.instrumento;
-    console.log('Instrumento seleccionado:', this.selectedInstrumento);
     this.displayInstrumentoDialog = true;
   }
 
@@ -343,8 +341,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     // Llamar al servicio para actualizar la inversión
     this.inversionService.update(this.selectedInversion.id_inversion, inversionActualizada).subscribe({
       next: (response) => {
-        console.log('Inversión actualizada:', response);
-
         // 2. Actualizar los registros en amortizacion
         this.actualizarAmortizaciones(fechaVenta);
       },
@@ -360,12 +356,9 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   }
 
   actualizarAmortizaciones(fechaVenta: string): void {
-    console.log(`Actualizando amortizaciones con fecha_pago >= ${fechaVenta} para inversión ${this.selectedInversion.id_inversion}`);
-
     // Llamar al servicio de amortizaciones para desactivar registros
     this.amortizacionService.desactivarPorFechaInversion(this.selectedInversion.id_inversion, fechaVenta).subscribe({
       next: (response) => {
-        console.log('Amortizaciones actualizadas:', response);
         this.mostrarExitoVenta();
       },
       error: (error) => {
@@ -520,19 +513,15 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   }
 
   onFechaFilterChange(field: string, value: string): void {
-    console.log('onFechaFilterChange - field:', field, 'value:', value);
-
     if (!value || value === '') {
       // Limpiar filtro
       this.table.filter('', field, 'equals');
-      console.log('Limpiando filtro');
       return;
     }
 
     // Si el valor tiene 10 caracteres (YYYY-MM-DD completo), usar equals
     // Si tiene menos de 10 caracteres, usar contains
     const useEquals = value.length === 10;
-    console.log('useEquals:', useEquals);
 
     // Usar el sistema de filtros de PrimeNG
     if (useEquals) {
