@@ -54,10 +54,12 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
   mostrarModalDetalle = false;
   detalleSeleccionado: VencimientoSemanal | null = null;
   detalleItems: any[] = [];
+  detalleItemsLunes: any[] = [];
   loadingDetalle = false;
   fechasIncluidas: string[] = [];
   esLunes = false;
   totalConsolidado = 0;
+  totalLunes = 0;
 
   // Configuración del gráfico
   public barChartOptions: any = {
@@ -563,19 +565,23 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     this.mostrarModalDetalle = true;
     this.fechasIncluidas = [];
     this.esLunes = false;
+    this.detalleItemsLunes = [];
 
     this.vencimientosService.getDetalleVencimientosSemanales(item.fecha).subscribe({
       next: (response) => {
         this.loadingDetalle = false;
         this.detalleItems = response.data || [];
+        this.detalleItemsLunes = response.data_lunes || [];
         this.fechasIncluidas = response.fechas_incluidas || [];
         this.esLunes = response.es_lunes || false;
 
         // Si es lunes, calcular el total consolidado de todas las fechas
         if (this.esLunes) {
           this.totalConsolidado = this.detalleItems.reduce((sum, item) => sum + item.total, 0);
+          this.totalLunes = this.detalleItemsLunes.reduce((sum, item) => sum + item.total, 0);
         } else {
           this.totalConsolidado = item.total;
+          this.totalLunes = 0;
         }
       },
       error: () => {
@@ -594,14 +600,16 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     this.mostrarModalDetalle = false;
     this.detalleSeleccionado = null;
     this.detalleItems = [];
+    this.detalleItemsLunes = [];
     this.fechasIncluidas = [];
     this.esLunes = false;
     this.totalConsolidado = 0;
+    this.totalLunes = 0;
   }
 
   // Método para exportar el detalle a Excel
   exportarDetalle(): void {
-    if (this.detalleItems.length === 0) {
+    if (this.detalleItems.length === 0 && this.detalleItemsLunes.length === 0) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
@@ -628,7 +636,51 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       'Total'
     ];
 
-    // Datos del detalle
+    // Si es lunes, crear hoja para lunes
+    if (this.esLunes && this.detalleItemsLunes.length > 0) {
+      const datosLunes = this.detalleItemsLunes.map(item => [
+        item.propietario,
+        item.emisor,
+        item.tipo_inversion,
+        item.cantidad_instrumentos,
+        item.interes,
+        item.capital,
+        item.premio,
+        item.interes_riesgo,
+        item.capital_riesgo,
+        item.premio_riesgo,
+        item.total
+      ]);
+
+      const wsDataLunes = [
+        ['Vencimientos del Lunes'],
+        ['Total lunes: ' + this.formatCurrency(this.totalLunes)],
+        [],
+        headers,
+        ...datosLunes
+      ];
+
+      const wsLunes = XLSX.utils.aoa_to_sheet(wsDataLunes);
+      wsLunes['!cols'] = [
+        {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
+        {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}
+      ];
+
+      // Formatear columnas numéricas
+      const rangeLunes = XLSX.utils.decode_range(wsLunes['!ref'] || 'A1');
+      for (let row = 4; row <= rangeLunes.e.r; row++) {
+        for (let col = rangeLunes.s.c + 4; col <= rangeLunes.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
+          if (wsLunes[cellAddress]) {
+            wsLunes[cellAddress].z = '#,##0.00';
+          }
+        }
+      }
+
+      XLSX.utils.book_append_sheet(wb, wsLunes, 'Vencimientos Lunes');
+    }
+
+    // Datos del detalle consolidado
     const datosDetalle = this.detalleItems.map(item => [
       item.propietario,
       item.emisor,
@@ -654,18 +706,6 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     }
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Formato de encabezados
-    const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({r: 0, c: col});
-      if (ws[cellAddress]) {
-        ws[cellAddress].s = {
-          font: {bold: true, color: {rgb: "FFFFFFFF"}},
-          fill: {fgColor: {rgb: "FF4472C4"}}
-        };
-      }
-    }
 
     // Ancho de columnas
     ws['!cols'] = [
@@ -694,7 +734,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       }
     }
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Detalle Vencimientos');
+    // Nombre de la hoja consolidado
+    const nombreHoja = this.esLunes ? 'Vencimientos Consolidados' : 'Vencimientos';
+    XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
 
     // Descargar archivo
     const fecha = new Date().toISOString().split('T')[0];
@@ -707,6 +749,84 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       severity: 'success',
       summary: 'Exportación',
       detail: 'Archivo Excel del detalle descargado correctamente'
+    });
+  }
+
+  // Método para exportar solo el detalle del lunes
+  exportarDetalleLunes(): void {
+    if (this.detalleItemsLunes.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'No hay datos del lunes para exportar'
+      });
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const headers = [
+      'Propietario',
+      'Emisor',
+      'Tipo Inversión',
+      '# Instrumentos',
+      'Interés',
+      'Capital',
+      'Premio',
+      'Int. Riesgo',
+      'Cap. Riesgo',
+      'Prem. Riesgo',
+      'Total'
+    ];
+
+    const datosLunes = this.detalleItemsLunes.map(item => [
+      item.propietario,
+      item.emisor,
+      item.tipo_inversion,
+      item.cantidad_instrumentos,
+      item.interes,
+      item.capital,
+      item.premio,
+      item.interes_riesgo,
+      item.capital_riesgo,
+      item.premio_riesgo,
+      item.total
+    ]);
+
+    const wsData = [
+      ['Vencimientos del Lunes'],
+      ['Total: ' + this.formatCurrency(this.totalLunes)],
+      [],
+      headers,
+      ...datosLunes
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!cols'] = [
+      {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
+      {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}
+    ];
+
+    // Formatear columnas numéricas
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let row = 4; row <= range.e.r; row++) {
+      for (let col = range.s.c + 4; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
+        if (ws[cellAddress]) {
+          ws[cellAddress].z = '#,##0.00';
+        }
+      }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Vencimientos Lunes');
+
+    const fecha = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `vencimientos-lunes-${fecha}.xlsx`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Exportación',
+      detail: 'Archivo Excel del lunes descargado correctamente'
     });
   }
 }

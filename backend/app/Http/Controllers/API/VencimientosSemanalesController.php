@@ -331,9 +331,11 @@ class VencimientosSemanalesController extends Controller
         try {
             $fechaCarbon = Carbon::parse($fecha);
             $fechasABuscar = [];
+            $esLunes = false;
 
             // Si es lunes, incluir sábado y domingo (bancos no operan fines de semana)
             if ($fechaCarbon->dayOfWeek === Carbon::MONDAY) {
+                $esLunes = true;
                 // Sábado (2 días antes del lunes)
                 $sabado = $fechaCarbon->copy()->subDays(2);
                 $fechasABuscar[] = $sabado->format('Y-m-d');
@@ -349,88 +351,102 @@ class VencimientosSemanalesController extends Controller
                 $fechasABuscar[] = $fechaCarbon->format('Y-m-d');
             }
 
-            // Obtener detalle por fecha agrupado por Propietario + Emisor + Tipo de Inversión
-            // Esto refleja cómo las entidades financieras realmente realizan los pagos consolidados
-            $query = Amortizacion::select([
-                'persona.id_persona',
-                \DB::raw("CONCAT(persona.nombres, ' ', persona.apellidos) as propietario"),
-                'emisor.id_emisor',
-                'emisor.nombre as emisor',
-                'catalogo_valor.id_catalogo_valor as id_tipo_inversion',
-                'catalogo_valor.nombre as tipo_inversion',
-                \DB::raw('COUNT(*) as cantidad_instrumentos'),
-                \DB::raw('
-                    SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) as interes
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as capital
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada IN (1,0) THEN descuento ELSE 0 END) as premio
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada = 2 THEN interes ELSE 0 END) as interes_riesgo
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada = 2 THEN capital ELSE 0 END) as capital_riesgo
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada = 2 THEN descuento ELSE 0 END) as premio_riesgo
-                '),
-                \DB::raw('
-                    SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) +
-                    SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as total
-                ')
-            ])
-            ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
-            ->join('persona', 'inversion.id_propietario', '=', 'persona.id_persona')
-            ->join('instrumento', 'inversion.id_instrumento', '=', 'instrumento.id_instrumento')
-            ->join('emisor', 'instrumento.id_emisor', '=', 'emisor.id_emisor')
-            ->join('catalogo_valor', 'instrumento.id_tipo_inversion', '=', 'catalogo_valor.id_catalogo_valor')
-            ->whereIn('fecha_pago', $fechasABuscar)
-            ->where(function($query) {
-                // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
-                $query->where('amortizacion.activo', 1)
-                      ->orWhereNull('inversion.fecha_venta');
-            })
-            ->where('amortizacion.eliminado', 0)
-            ->where('inversion.eliminado', 0)
-            ->where('instrumento.activo', 1)
-            ->where('emisor.activo', 1)
-            ->groupBy('persona.id_persona', 'persona.nombres', 'persona.apellidos', 'emisor.id_emisor', 'emisor.nombre', 'catalogo_valor.id_catalogo_valor', 'catalogo_valor.nombre')
-            ->orderBy('persona.nombres')
-            ->orderBy('persona.apellidos')
-            ->orderBy('emisor.nombre')
-            ->orderBy('catalogo_valor.nombre');
+            // Función para obtener detalle agrupado
+            $obtenerDetalle = function($fechas) {
+                $query = Amortizacion::select([
+                    'persona.id_persona',
+                    \DB::raw("CONCAT(persona.nombres, ' ', persona.apellidos) as propietario"),
+                    'emisor.id_emisor',
+                    'emisor.nombre as emisor',
+                    'catalogo_valor.id_catalogo_valor as id_tipo_inversion',
+                    'catalogo_valor.nombre as tipo_inversion',
+                    \DB::raw('COUNT(*) as cantidad_instrumentos'),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) as interes
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as capital
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada IN (1,0) THEN descuento ELSE 0 END) as premio
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada = 2 THEN interes ELSE 0 END) as interes_riesgo
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada = 2 THEN capital ELSE 0 END) as capital_riesgo
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada = 2 THEN descuento ELSE 0 END) as premio_riesgo
+                    '),
+                    \DB::raw('
+                        SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) +
+                        SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as total
+                    ')
+                ])
+                ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
+                ->join('persona', 'inversion.id_propietario', '=', 'persona.id_persona')
+                ->join('instrumento', 'inversion.id_instrumento', '=', 'instrumento.id_instrumento')
+                ->join('emisor', 'instrumento.id_emisor', '=', 'emisor.id_emisor')
+                ->join('catalogo_valor', 'instrumento.id_tipo_inversion', '=', 'catalogo_valor.id_catalogo_valor')
+                ->whereIn('fecha_pago', $fechas)
+                ->where(function($query) {
+                    // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
+                    $query->where('amortizacion.activo', 1)
+                          ->orWhereNull('inversion.fecha_venta');
+                })
+                ->where('amortizacion.eliminado', 0)
+                ->where('inversion.eliminado', 0)
+                ->where('instrumento.activo', 1)
+                ->where('emisor.activo', 1)
+                ->groupBy('persona.id_persona', 'persona.nombres', 'persona.apellidos', 'emisor.id_emisor', 'emisor.nombre', 'catalogo_valor.id_catalogo_valor', 'catalogo_valor.nombre')
+                ->orderBy('persona.nombres')
+                ->orderBy('persona.apellidos')
+                ->orderBy('emisor.nombre')
+                ->orderBy('catalogo_valor.nombre');
 
-            $results = $query->get();
+                $results = $query->get();
 
-            // Formatear resultados
-            $detalle = [];
-            foreach ($results as $row) {
-                $detalle[] = [
-                    'id_persona' => $row->id_persona,
-                    'propietario' => $row->propietario,
-                    'id_emisor' => $row->id_emisor,
-                    'emisor' => $row->emisor,
-                    'id_tipo_inversion' => $row->id_tipo_inversion,
-                    'tipo_inversion' => $row->tipo_inversion,
-                    'cantidad_instrumentos' => $row->cantidad_instrumentos,
-                    'interes' => round((float) $row->interes, 2),
-                    'capital' => round((float) $row->capital, 2),
-                    'premio' => round((float) $row->premio, 2),
-                    'interes_riesgo' => round((float) $row->interes_riesgo, 2),
-                    'capital_riesgo' => round((float) $row->capital_riesgo, 2),
-                    'premio_riesgo' => round((float) $row->premio_riesgo, 2),
-                    'total' => round((float) $row->total, 2)
-                ];
+                // Formatear resultados
+                $detalle = [];
+                foreach ($results as $row) {
+                    $detalle[] = [
+                        'id_persona' => $row->id_persona,
+                        'propietario' => $row->propietario,
+                        'id_emisor' => $row->id_emisor,
+                        'emisor' => $row->emisor,
+                        'id_tipo_inversion' => $row->id_tipo_inversion,
+                        'tipo_inversion' => $row->tipo_inversion,
+                        'cantidad_instrumentos' => $row->cantidad_instrumentos,
+                        'interes' => round((float) $row->interes, 2),
+                        'capital' => round((float) $row->capital, 2),
+                        'premio' => round((float) $row->premio, 2),
+                        'interes_riesgo' => round((float) $row->interes_riesgo, 2),
+                        'capital_riesgo' => round((float) $row->capital_riesgo, 2),
+                        'premio_riesgo' => round((float) $row->premio_riesgo, 2),
+                        'total' => round((float) $row->total, 2)
+                    ];
+                }
+
+                return $detalle;
+            };
+
+            // Obtener detalle consolidado (todas las fechas)
+            $detalleConsolidado = $obtenerDetalle($fechasABuscar);
+
+            // Si es lunes, también obtener detalle solo del lunes
+            $detalleLunes = [];
+            if ($esLunes) {
+                $fechaLunes = $fechaCarbon->format('Y-m-d');
+                $detalleLunes = $obtenerDetalle([$fechaLunes]);
             }
 
             return response()->json([
                 'success' => true,
-                'data' => $detalle,
+                'data' => $detalleConsolidado,
+                'data_lunes' => $detalleLunes,
                 'fechas_incluidas' => $fechasABuscar,
-                'es_lunes' => $fechaCarbon->dayOfWeek === Carbon::MONDAY
+                'es_lunes' => $esLunes
             ]);
 
         } catch (\Exception $e) {
