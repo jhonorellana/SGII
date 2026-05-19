@@ -60,7 +60,9 @@ class FlujoCapitalController extends Controller
                     'interes_moroso' => (float) $row->interes_moroso,
                     'capital_moroso' => (float) $row->capital_moroso,
                     'descuento_moroso' => (float) $row->descuento_moroso,
-                    'total' => (float) $row->total
+                    'total' => (float) $row->total,
+                    'id_propietario' => isset($row->id_propietario) ? (int) $row->id_propietario : null,
+                    'id_emisor' => isset($row->id_emisor) ? (int) $row->id_emisor : null
                 ];
 
                 // Guardar la fila de totales para separarla
@@ -75,7 +77,9 @@ class FlujoCapitalController extends Controller
                         'interes_moroso' => (float) $row->interes_moroso,
                         'capital_moroso' => (float) $row->capital_moroso,
                         'descuento_moroso' => (float) $row->descuento_moroso,
-                        'total' => (float) $row->total
+                        'total' => (float) $row->total,
+                        'id_propietario' => null,
+                        'id_emisor' => null
                     ];
                 }
             }
