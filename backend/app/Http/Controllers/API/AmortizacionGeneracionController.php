@@ -204,7 +204,7 @@ class AmortizacionGeneracionController extends Controller
                 'interes' => $interesParaGuardar,
                 'capital' => $cuota['capital_retorno'], // Usar capital_retorno que incluye interés acumulado previo
                 'descuento' => $cuota['premio'],
-                'total' => 0.00, // Sistema anterior siempre usa 0.00
+                'total' => $interesParaGuardar + $cuota['capital_retorno'] + $cuota['premio'], // Calcular total como suma de interes + capital + descuento
                 'int_parcial' => $cuota['interes_parcial'],
                 'retencion' => 0,
                 'id_estado_amortizacion' => 1, // Pendiente

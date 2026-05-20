@@ -70,6 +70,11 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   selectedInversion: any = null;
   fechaVenta: string = '';
 
+  // Propiedades para modal de amortización
+  displayAmortizacionDialog: boolean = false;
+  amortizaciones: any[] = [];
+  loadingAmortizacion: boolean = false;
+
   inversion: Inversion = {
     id_grupo_familiar: 0,
     id_propietario: 0,
@@ -264,6 +269,29 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   viewInstrumento(inversion: any): void {
     this.selectedInstrumento = inversion.instrumento;
     this.displayInstrumentoDialog = true;
+  }
+
+  viewAmortizacion(inversion: any): void {
+    this.selectedInversion = inversion;
+    this.loadingAmortizacion = true;
+    this.displayAmortizacionDialog = true;
+    this.amortizaciones = [];
+
+    this.amortizacionService.getByInversion(inversion.id_inversion).subscribe({
+      next: (data) => {
+        this.loadingAmortizacion = false;
+        this.amortizaciones = data;
+      },
+      error: (error) => {
+        this.loadingAmortizacion = false;
+        console.error('Error al cargar amortizaciones:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar la tabla de amortización'
+        });
+      }
+    });
   }
 
   openVentaModal(inversion: any): void {

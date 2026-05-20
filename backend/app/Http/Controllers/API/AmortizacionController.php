@@ -53,7 +53,7 @@ class AmortizacionController extends Controller
             'interes' => $request->interes,
             'capital' => $request->capital,
             'descuento' => $request->descuento,
-            'total' => $request->total,
+            'total' => $request->total ?? (($request->interes ?? 0) + ($request->capital ?? 0) + ($request->descuento ?? 0)), // Calcular total si no se proporciona
             'int_parcial' => $request->int_parcial,
             'retencion' => $request->retencion,
             'id_estado_amortizacion' => $request->id_estado_amortizacion,
@@ -118,7 +118,7 @@ class AmortizacionController extends Controller
             'interes' => $request->interes,
             'capital' => $request->capital,
             'descuento' => $request->descuento,
-            'total' => $request->total,
+            'total' => $request->total ?? (($request->interes ?? 0) + ($request->capital ?? 0) + ($request->descuento ?? 0)), // Calcular total si no se proporciona
             'int_parcial' => $request->int_parcial,
             'retencion' => $request->retencion,
             'id_estado_amortizacion' => $request->id_estado_amortizacion,
@@ -157,9 +157,8 @@ class AmortizacionController extends Controller
     {
         $amortizaciones = Amortizacion::with(['estadoAmortizacion'])
             ->where('id_inversion', $idInversion)
-            ->where('activo', true)
             ->where('eliminado', false)
-            ->orderBy('numero_cuota', 'asc')
+            ->orderBy('fecha_pago', 'asc')
             ->get();
 
         return response()->json($amortizaciones, Response::HTTP_OK);
