@@ -1,0 +1,205 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Cuentas Bancarias</h2>
+    <button class="btn btn-primary" (click)="openNew()">
+      <i class="bi bi-plus-circle"></i> Nueva Cuenta Bancaria
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2">Cargando cuentas bancarias...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Cuentas Bancarias List con PrimeNG Table -->
+  <div *ngIf="!loading && !error">
+    <p-table #dt [value]="cuentasBancarias" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['persona.nombres','persona.apellidos','banco.nombre','numero_cuenta']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll"
+             [totalRecords]="totalRecords"
+             showCurrentPageReport="true"
+             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="filterGlobal($event)"
+                   placeholder="Buscar cuenta bancaria..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id_cuenta_bancaria">ID <p-sortIcon field="id_cuenta_bancaria"></p-sortIcon></th>
+          <th pSortableColumn="persona.nombres">Persona <p-sortIcon field="persona.nombres"></p-sortIcon></th>
+          <th pSortableColumn="banco.nombre">Banco <p-sortIcon field="banco.nombre"></p-sortIcon></th>
+          <th pSortableColumn="tipoCuenta.nombre">Tipo Cuenta <p-sortIcon field="tipoCuenta.nombre"></p-sortIcon></th>
+          <th pSortableColumn="numero_cuenta">Número Cuenta <p-sortIcon field="numero_cuenta"></p-sortIcon></th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>
+            <p-dropdown [options]="personas" optionLabel="nombres" optionValue="id_persona"
+                       (onChange)="dt.filter($event.value, 'id_persona', 'equals')"
+                       [showClear]="true" placeholder="Todas las personas"
+                       [filter]="true" filterBy="nombres" styleClass="w-100">
+            </p-dropdown>
+          </th>
+          <th>
+            <p-dropdown [options]="bancos" optionLabel="nombre" optionValue="id_catalogo_valor"
+                       (onChange)="dt.filter($event.value, 'id_banco', 'equals')"
+                       [showClear]="true" placeholder="Todos los bancos"
+                       [filter]="true" filterBy="nombre" styleClass="w-100">
+            </p-dropdown>
+          </th>
+          <th>
+            <p-dropdown [options]="tiposCuenta" optionLabel="nombre" optionValue="id_catalogo_valor"
+                       (onChange)="dt.filter($event.value, 'id_tipo_cuenta', 'equals')"
+                       [showClear]="true" placeholder="Todos los tipos"
+                       [filter]="true" filterBy="nombre" styleClass="w-100">
+            </p-dropdown>
+          </th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'numero_cuenta', 'contains')" class="w-100" placeholder="Filtrar número"/></th>
+          <th></th>
+          <th></th>
+        </tr>
+      </ng-template>
+
+      <!-- Filas de datos -->
+      <ng-template pTemplate="body" let-cuentaBancaria>
+        <tr>
+          <td>{{ cuentaBancaria.id_cuenta_bancaria }}</td>
+          <td>
+            <span *ngIf="cuentaBancaria.persona">
+              <strong>{{ cuentaBancaria.persona.nombres }}</strong> {{ cuentaBancaria.persona.apellidos }}
+            </span>
+            <span *ngIf="!cuentaBancaria.persona" class="text-muted">-</span>
+          </td>
+          <td>
+            <span *ngIf="cuentaBancaria.banco">{{ cuentaBancaria.banco.nombre }}</span>
+            <span *ngIf="!cuentaBancaria.banco" class="text-muted">-</span>
+          </td>
+          <td>
+            <span *ngIf="cuentaBancaria.tipoCuenta">{{ cuentaBancaria.tipoCuenta.nombre }}</span>
+            <span *ngIf="!cuentaBancaria.tipoCuenta" class="text-muted">-</span>
+          </td>
+          <td>{{ cuentaBancaria.numero_cuenta || '-' }}</td>
+          <td>
+            <p-tag [value]="cuentaBancaria.activo ? 'Activo' : 'Inactivo'"
+                   [severity]="cuentaBancaria.activo ? 'success' : 'danger'"></p-tag>
+          </td>
+          <td>
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" (click)="openEdit(cuentaBancaria)">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(cuentaBancaria)">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Empty state -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="mb-0 text-muted">No hay cuentas bancarias registradas</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Modal para crear/editar -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Cuenta Bancaria' : 'Nueva Cuenta Bancaria'"
+            [style]="{width: '50vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true">
+    <div *ngIf="formError" class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+    </div>
+
+    <form [formGroup]="cuentaBancariaForm" (ngSubmit)="save()">
+      <div class="mb-3">
+        <label for="id_persona" class="form-label">Persona <span class="text-danger">*</span></label>
+        <p-dropdown id="id_persona" [options]="personas" optionLabel="nombres" optionValue="id_persona"
+                   formControlName="id_persona" [showClear]="true" placeholder="Seleccione una persona"
+                   [filter]="true" filterBy="nombres" [style]="{'width': '100%'}" appendTo="body"
+                   [class.is-invalid]="cuentaBancariaForm.get('id_persona')?.invalid && cuentaBancariaForm.get('id_persona')?.touched">
+        </p-dropdown>
+        <div class="invalid-feedback d-block" *ngIf="cuentaBancariaForm.get('id_persona')?.invalid && cuentaBancariaForm.get('id_persona')?.touched">
+          La persona es obligatoria
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_banco" class="form-label">Banco <span class="text-danger">*</span></label>
+        <p-dropdown id="id_banco" [options]="bancos" optionLabel="nombre" optionValue="id_catalogo_valor"
+                   formControlName="id_banco" [showClear]="true" placeholder="Seleccione un banco"
+                   [filter]="true" filterBy="nombre" [style]="{'width': '100%'}" appendTo="body"
+                   [class.is-invalid]="cuentaBancariaForm.get('id_banco')?.invalid && cuentaBancariaForm.get('id_banco')?.touched">
+        </p-dropdown>
+        <div class="invalid-feedback d-block" *ngIf="cuentaBancariaForm.get('id_banco')?.invalid && cuentaBancariaForm.get('id_banco')?.touched">
+          El banco es obligatorio
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="id_tipo_cuenta" class="form-label">Tipo Cuenta</label>
+        <p-dropdown id="id_tipo_cuenta" [options]="tiposCuenta" optionLabel="nombre" optionValue="id_catalogo_valor"
+                   formControlName="id_tipo_cuenta" [showClear]="true" placeholder="Seleccione un tipo"
+                   [filter]="true" filterBy="nombre" [style]="{'width': '100%'}" appendTo="body">
+        </p-dropdown>
+      </div>
+
+      <div class="mb-3">
+        <label for="numero_cuenta" class="form-label">Número Cuenta</label>
+        <input type="text" class="form-control" id="numero_cuenta" formControlName="numero_cuenta"
+               [class.is-invalid]="cuentaBancariaForm.get('numero_cuenta')?.invalid && cuentaBancariaForm.get('numero_cuenta')?.touched"
+               maxlength="20">
+        <div class="invalid-feedback" *ngIf="cuentaBancariaForm.get('numero_cuenta')?.invalid && cuentaBancariaForm.get('numero_cuenta')?.touched">
+          El número de cuenta no puede exceder 20 caracteres
+        </div>
+      </div>
+
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="activo" formControlName="activo">
+        <label class="form-check-label" for="activo">Activo</label>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <app-modal-actions
+          [cancelText]="'Cancelar'"
+          [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+          [loading]="formLoading"
+          (onCancel)="displayDialog = false"
+          (onSave)="save()">
+        </app-modal-actions>
+      </div>
+    </form>
+  </p-dialog>
+</div>

@@ -128,6 +128,11 @@ export class SidebarComponent implements OnInit {
           title: 'Emisores',
           icon: 'bi-building',
           path: '/emisores'
+        },
+        {
+          title: 'Cuentas Bancarias',
+          icon: 'bi-bank',
+          path: '/cuentas-bancarias'
         }
       ]
     },

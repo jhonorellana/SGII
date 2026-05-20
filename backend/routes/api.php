@@ -18,6 +18,7 @@ use App\Http\Controllers\API\OtroValorController;
 use App\Http\Controllers\API\PatrimonioController;
 use App\Http\Controllers\API\FlujoCapitalController;
 use App\Http\Controllers\API\RecuperacionAnualController;
+use App\Http\Controllers\API\CuentaBancariaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,9 @@ Route::apiResource('otros-valores', OtroValorController::class);
 
 // Rutas de Personas (temporalmente sin autenticación para pruebas)
 Route::apiResource('personas', PersonaController::class);
+
+// Rutas de Cuentas Bancarias (temporalmente sin autenticación para pruebas)
+Route::apiResource('cuentas-bancarias', CuentaBancariaController::class);
 
 // Rutas de Grupos Familiares (temporalmente sin autenticación para pruebas)
 Route::apiResource('grupos-familiares', GrupoFamiliarController::class);
