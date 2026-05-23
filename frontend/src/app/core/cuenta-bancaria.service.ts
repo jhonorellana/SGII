@@ -14,7 +14,7 @@ export interface CuentaBancaria {
   fecha_actualizacion?: string;
   persona?: any;
   banco?: any;
-  tipoCuenta?: any;
+  tipo_cuenta?: any;
 }
 
 export interface CuentaBancariaRequest {

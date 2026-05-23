@@ -82,7 +82,13 @@
             </p-dropdown>
           </th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'numero_cuenta', 'contains')" class="w-100" placeholder="Filtrar número"/></th>
-          <th></th>
+          <th>
+            <select (change)="dt.filter($any($event.target).value === '' ? null : $any($event.target).value === 'true', 'activo', 'equals')" class="form-select form-select-sm">
+              <option value="">Todos</option>
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </th>
           <th></th>
         </tr>
       </ng-template>
@@ -102,8 +108,8 @@
             <span *ngIf="!cuentaBancaria.banco" class="text-muted">-</span>
           </td>
           <td>
-            <span *ngIf="cuentaBancaria.tipoCuenta">{{ cuentaBancaria.tipoCuenta.nombre }}</span>
-            <span *ngIf="!cuentaBancaria.tipoCuenta" class="text-muted">-</span>
+            <span *ngIf="cuentaBancaria.tipo_cuenta">{{ cuentaBancaria.tipo_cuenta.nombre }}</span>
+            <span *ngIf="!cuentaBancaria.tipo_cuenta" class="text-muted">-</span>
           </td>
           <td>{{ cuentaBancaria.numero_cuenta || '-' }}</td>
           <td>
