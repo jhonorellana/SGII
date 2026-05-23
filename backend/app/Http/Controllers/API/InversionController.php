@@ -4,10 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inversion;
+use App\Events\InversionCreada;
 use App\Http\Resources\InversionResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class InversionController extends Controller
 {
@@ -66,44 +68,59 @@ class InversionController extends Controller
             return response()->json(['errors' => $validator->errors()], Response::HTTP_BAD_REQUEST);
         }
 
-        $inversion = Inversion::create([
-            'id_grupo_familiar' => $request->id_grupo_familiar,
-            'id_instrumento' => $request->id_instrumento,
-            'id_propietario' => $request->id_propietario,
-            'id_aportante' => $request->id_aportante,
-            'liquidacion' => $request->liquidacion,
-            'id_estado_inversion' => $request->id_estado_inversion,
-            'fecha_compra' => $request->fecha_compra,
-            'fecha_venta' => $request->fecha_venta,
-            'valor_nominal' => $request->valor_nominal,
-            'monto_a_negociar' => $request->monto_a_negociar,
-            'capital_invertido' => $request->capital_invertido,
-            'tasa_interes' => $request->tasa_interes,
-            'rendimiento_nominal' => $request->rendimiento_nominal,
-            'rendimiento_efectivo' => $request->rendimiento_efectivo,
-            'valor_efectivo' => $request->valor_efectivo,
-            'valor_sin_comision' => $request->valor_sin_comision,
-            'valor_con_interes' => $request->valor_con_interes,
-            'interes_acumulado_previo' => $request->interes_acumulado_previo,
-            'interes_mensual' => $request->interes_mensual,
-            'interes_primer_mes' => $request->interes_primer_mes,
-            'total_comisiones' => $request->total_comisiones,
-            'tasa_mensual_real' => $request->tasa_mensual_real,
-            'fecha_primer_pago' => $request->fecha_primer_pago,
-            'precio_compra' => $request->precio_compra,
-            'precio_neto_compra' => $request->precio_neto_compra,
-            'comision_bolsa' => $request->comision_bolsa,
-            'comision_casa_valores' => $request->comision_casa_valores,
-            'retencion_fuente' => $request->retencion_fuente,
-            'observacion' => $request->observacion,
-            'expirado' => $request->has('expirado') ? $request->expirado : false,
-            'activo' => $request->has('activo') ? $request->activo : true,
-            'eliminado' => false,
-            'fecha_creacion' => now(),
-            'fecha_actualizacion' => now()
-        ]);
+        DB::beginTransaction();
+        try {
+            $inversion = Inversion::create([
+                'id_grupo_familiar' => $request->id_grupo_familiar,
+                'id_instrumento' => $request->id_instrumento,
+                'id_propietario' => $request->id_propietario,
+                'id_aportante' => $request->id_aportante,
+                'liquidacion' => $request->liquidacion,
+                'id_estado_inversion' => $request->id_estado_inversion,
+                'fecha_compra' => $request->fecha_compra,
+                'fecha_venta' => $request->fecha_venta,
+                'valor_nominal' => $request->valor_nominal,
+                'monto_a_negociar' => $request->monto_a_negociar,
+                'capital_invertido' => $request->capital_invertido,
+                'tasa_interes' => $request->tasa_interes,
+                'rendimiento_nominal' => $request->rendimiento_nominal,
+                'rendimiento_efectivo' => $request->rendimiento_efectivo,
+                'valor_efectivo' => $request->valor_efectivo,
+                'valor_sin_comision' => $request->valor_sin_comision,
+                'valor_con_interes' => $request->valor_con_interes,
+                'interes_acumulado_previo' => $request->interes_acumulado_previo,
+                'interes_mensual' => $request->interes_mensual,
+                'interes_primer_mes' => $request->interes_primer_mes,
+                'total_comisiones' => $request->total_comisiones,
+                'tasa_mensual_real' => $request->tasa_mensual_real,
+                'fecha_primer_pago' => $request->fecha_primer_pago,
+                'precio_compra' => $request->precio_compra,
+                'precio_neto_compra' => $request->precio_neto_compra,
+                'comision_bolsa' => $request->comision_bolsa,
+                'comision_casa_valores' => $request->comision_casa_valores,
+                'retencion_fuente' => $request->retencion_fuente,
+                'observacion' => $request->observacion,
+                'expirado' => $request->has('expirado') ? $request->expirado : false,
+                'activo' => $request->has('activo') ? $request->activo : true,
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
 
-        return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_CREATED);
+            // Disparar evento para crear movimiento contable automáticamente
+            event(new InversionCreada($inversion));
+
+            DB::commit();
+
+            return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_CREATED);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear inversión: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
@@ -209,13 +226,17 @@ class InversionController extends Controller
 
     /**
      * Remove the specified resource from storage (soft delete).
+     * No elimina movimientos históricos para mantener trazabilidad contable.
      */
     public function destroy($id)
     {
         $inversion = Inversion::find($id);
 
         if (!$inversion) {
-            return response()->json(['message' => 'Inversión no encontrada'], Response::HTTP_NOT_FOUND);
+            return response()->json([
+                'success' => false,
+                'message' => 'Inversión no encontrada'
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $inversion->update([
@@ -224,6 +245,12 @@ class InversionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json(['message' => 'Inversión desactivada correctamente'], Response::HTTP_OK);
+        // NOTA: No eliminamos los movimientos históricos para mantener trazabilidad contable
+        // Los movimientos permanecen en movimiento_capital con activo=true o false según corresponda
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Inversión desactivada correctamente'
+        ], Response::HTTP_OK);
     }
 }

@@ -1,0 +1,585 @@
+import { Component, OnInit, ViewChild, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
+import { TableModule, Table } from 'primeng/table';
+import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { TagModule } from 'primeng/tag';
+import { DialogModule } from 'primeng/dialog';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { CalendarModule } from 'primeng/calendar';
+import { CheckboxModule } from 'primeng/checkbox';
+import { TooltipModule } from 'primeng/tooltip';
+import { CardModule } from 'primeng/card';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { MovimientoCapitalService, MovimientoCapital } from '../../../core/movimiento-capital.service';
+import { CatalogoService } from '../../../core/catalogo.service';
+import { InversionService, Inversion } from '../../../core/inversion.service';
+import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-bancaria.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
+
+interface CatalogoValor {
+  id_catalogo_valor: number;
+  nombre: string;
+  codigo: string;
+}
+
+@Component({
+  selector: 'app-movimiento-capital-list',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    TableModule,
+    InputTextModule,
+    InputTextareaModule,
+    DropdownModule,
+    ButtonModule,
+    TagModule,
+    DialogModule,
+    ToastModule,
+    ConfirmDialogModule,
+    CalendarModule,
+    CheckboxModule,
+    TooltipModule,
+    CardModule,
+    ModalActionsComponent
+  ],
+  templateUrl: './movimiento-capital-list.component.html',
+  styleUrl: './movimiento-capital-list.component.css',
+  providers: [ConfirmationService, MessageService]
+})
+export class MovimientoCapitalListComponent implements OnInit {
+  movimientos: MovimientoCapital[] = [];
+  tiposMovimiento: CatalogoValor[] = [];
+  inversiones: Inversion[] = [];
+  ventasInversion: any[] = [];
+  cuentasBancarias: CuentaBancaria[] = [];
+  cuentasBancariasConLabel: any[] = [];
+  loading = false;
+  error = '';
+  @ViewChild('dt') dt: Table | undefined;
+  totalRecords: number = 0;
+
+  // Summary card data
+  totalIngresos: number = 0;
+  totalEgresos: number = 0;
+  saldoEsperado: number = 0;
+  pendientesConciliacion: number = 0;
+
+  // Filters
+  filters = {
+    fecha_desde: null as Date | null,
+    fecha_hasta: null as Date | null,
+    id_tipo_movimiento: null as number | null,
+    id_inversion: null as number | null,
+    id_cuenta_bancaria: null as number | null,
+    conciliado: null as boolean | null
+  };
+
+  // Modal properties
+  displayDialog: boolean = false;
+  isEdit: boolean = false;
+  movimientoId: number | null = null;
+  movimientoForm: FormGroup;
+  formLoading: boolean = false;
+  formError: string = '';
+
+  constructor(
+    private movimientoService: MovimientoCapitalService,
+    private catalogoService: CatalogoService,
+    private inversionService: InversionService,
+    private cuentaBancariaService: CuentaBancariaService,
+    private fb: FormBuilder,
+    private confirmationService: ConfirmationService,
+    private messageService: MessageService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.movimientoForm = this.createForm();
+  }
+
+  ngOnInit(): void {
+    this.loadMovimientos();
+    this.loadTiposMovimiento();
+    this.loadInversiones();
+    this.loadVentasInversion();
+    this.loadCuentasBancarias();
+  }
+
+  createForm(): FormGroup {
+    return this.fb.group({
+      fecha_movimiento: [null, Validators.required],
+      id_tipo_movimiento: [null, Validators.required],
+      signo: ['+', Validators.required],
+      monto: [null, Validators.nullValidator],
+      id_inversion: [null],
+      id_venta_inversion: [null],
+      id_cuenta_bancaria: [null],
+      descripcion: ['', Validators.maxLength(100)],
+      conciliado: [false],
+      fecha_conciliacion: [null]
+    });
+  }
+
+  loadMovimientos(): void {
+    this.loading = true;
+    this.error = '';
+
+    const filters: any = {};
+    if (this.filters.fecha_desde) filters.fecha_desde = this.formatDate(this.filters.fecha_desde);
+    if (this.filters.fecha_hasta) filters.fecha_hasta = this.formatDate(this.filters.fecha_hasta);
+    if (this.filters.id_tipo_movimiento) filters.id_tipo_movimiento = this.filters.id_tipo_movimiento;
+    if (this.filters.id_inversion) filters.id_inversion = this.filters.id_inversion;
+    if (this.filters.id_cuenta_bancaria) filters.id_cuenta_bancaria = this.filters.id_cuenta_bancaria;
+    if (this.filters.conciliado !== null) filters.conciliado = this.filters.conciliado;
+
+    this.movimientoService.getAll(filters).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.movimientos = response.data;
+          this.totalRecords = response.data.length;
+          this.calculateSummary();
+          this.calculateSaldoAcumulado();
+        } else {
+          this.error = response.message || 'Error al cargar movimientos';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Error al cargar movimientos: ' + err.message;
+        this.loading = false;
+      }
+    });
+  }
+
+  loadTiposMovimiento(): void {
+    this.catalogoService.getValoresByCatalogo(14).subscribe({
+      next: (response) => {
+        if (Array.isArray(response)) {
+          this.tiposMovimiento = [...response];
+        } else if (response && response.data) {
+          this.tiposMovimiento = [...response.data];
+        } else {
+          this.tiposMovimiento = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar tipos de movimiento:', err);
+        this.tiposMovimiento = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadInversiones(): void {
+    this.inversionService.getAll().subscribe({
+      next: (data) => {
+        this.inversiones = data;
+      }
+    });
+  }
+
+  loadVentasInversion(): void {
+    // Cargar ventas de inversión para VENTA_INVERSION
+    // Por ahora lo dejamos vacío, se puede implementar cuando se tenga el servicio
+    this.ventasInversion = [];
+  }
+
+  loadCuentasBancarias(): void {
+    this.cuentaBancariaService.getAll().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.cuentasBancarias = response.data;
+          this.cuentasBancariasConLabel = response.data.map((cuenta: CuentaBancaria) => ({
+            ...cuenta,
+            label: this.getCuentaBancariaLabel(cuenta)
+          }));
+        }
+      }
+    });
+  }
+
+  applyFilters(): void {
+    this.loadMovimientos();
+  }
+
+  clearFilters(): void {
+    this.filters = {
+      fecha_desde: null,
+      fecha_hasta: null,
+      id_tipo_movimiento: null,
+      id_inversion: null,
+      id_cuenta_bancaria: null,
+      conciliado: null
+    };
+    this.loadMovimientos();
+  }
+
+  openCreateDialog(): void {
+    this.isEdit = false;
+    this.movimientoId = null;
+    this.movimientoForm = this.createForm();
+    this.displayDialog = true;
+    this.formError = '';
+  }
+
+  onTipoMovimientoChange(): void {
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return;
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+
+    // Si es COMPRA_INVERSION, habilitar inversión y deshabilitar cuenta bancaria si no aplica
+    if (codigo === 'TPAJ') {
+      this.movimientoForm.get('id_inversion')?.enable();
+      // Cuenta bancaria puede deshabilitarse según lógica de negocio
+    }
+
+    // Si es VENTA_INVERSION, habilitar venta de inversión
+    if (codigo === 'TPIJ') {
+      this.movimientoForm.get('id_inversion')?.enable();
+    }
+
+    // Para movimientos manuales, limpiar monto calculado
+    if (!this.isMontoReadOnly()) {
+      this.movimientoForm.patchValue({ monto: null });
+    }
+  }
+
+  onInversionChange(): void {
+    const inversionId = this.movimientoForm.get('id_inversion')?.value;
+    if (!inversionId) return;
+
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return;
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+
+    // Si es COMPRA_INVERSION, cargar monto desde capital_invertido
+    if (codigo === 'TPAJ') {
+      const inversion = this.inversiones.find((i: Inversion) => i.id_inversion === inversionId);
+      if (inversion && inversion.capital_invertido) {
+        const monto = parseFloat(String(inversion.capital_invertido));
+        this.movimientoForm.patchValue({ monto: isNaN(monto) ? 0 : monto });
+      }
+    }
+
+    // Si es VENTA_INVERSION, cargar monto desde valor_venta_con_comision
+    if (codigo === 'TPIJ') {
+      const venta = this.ventasInversion.find((v: any) => v.id_inversion === inversionId);
+      if (venta && venta.valor_venta_con_comision) {
+        const monto = parseFloat(String(venta.valor_venta_con_comision));
+        this.movimientoForm.patchValue({ monto: isNaN(monto) ? 0 : monto });
+      }
+    }
+  }
+
+  openEditDialog(movimiento: MovimientoCapital): void {
+    this.isEdit = true;
+    this.movimientoId = movimiento.id_movimiento_capital || null;
+    this.movimientoForm = this.createForm();
+
+    // Calcular el monto según el tipo de movimiento
+    const monto = this.getMonto(movimiento);
+
+    this.movimientoForm.patchValue({
+      fecha_movimiento: movimiento.fecha_movimiento ? this.parseDateWithoutTimezone(movimiento.fecha_movimiento) : null,
+      id_tipo_movimiento: movimiento.id_tipo_movimiento,
+      signo: movimiento.signo,
+      monto: monto,
+      id_inversion: movimiento.id_inversion,
+      id_venta_inversion: movimiento.id_venta_inversion,
+      id_cuenta_bancaria: movimiento.id_cuenta_bancaria,
+      descripcion: movimiento.descripcion || '',
+      conciliado: movimiento.conciliado,
+      fecha_conciliacion: movimiento.fecha_conciliacion ? this.parseDateWithoutTimezone(movimiento.fecha_conciliacion) : null
+    });
+
+    // Forzar actualización de UI
+    this.cdr.detectChanges();
+
+    this.displayDialog = true;
+    this.formError = '';
+  }
+
+  save(): void {
+    if (this.movimientoForm.invalid) {
+      this.formError = 'Por favor complete los campos requeridos';
+      return;
+    }
+
+    this.formLoading = true;
+    this.formError = '';
+
+    const movimientoData = {
+      ...this.movimientoForm.value,
+      fecha_movimiento: this.formatDate(this.movimientoForm.value.fecha_movimiento),
+      fecha_conciliacion: this.movimientoForm.value.fecha_conciliacion ? this.formatDate(this.movimientoForm.value.fecha_conciliacion) : null
+    };
+
+    if (this.isEdit && this.movimientoId) {
+      this.movimientoService.update(this.movimientoId, movimientoData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Movimiento actualizado correctamente' });
+            this.displayDialog = false;
+            this.loadMovimientos();
+          } else {
+            this.formError = response.message || 'Error al actualizar movimiento';
+          }
+          this.formLoading = false;
+        },
+        error: (err) => {
+          this.formError = 'Error al actualizar movimiento: ' + err.message;
+          this.formLoading = false;
+        }
+      });
+    } else {
+      this.movimientoService.create(movimientoData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Movimiento creado correctamente' });
+            this.displayDialog = false;
+            this.loadMovimientos();
+          } else {
+            this.formError = response.message || 'Error al crear movimiento';
+          }
+          this.formLoading = false;
+        },
+        error: (err) => {
+          this.formError = 'Error al crear movimiento: ' + err.message;
+          this.formLoading = false;
+        }
+      });
+    }
+  }
+
+  deleteMovimiento(movimiento: MovimientoCapital): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de eliminar el movimiento del ${movimiento.fecha_movimiento}?`,
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        if (movimiento.id_movimiento_capital) {
+          this.movimientoService.delete(movimiento.id_movimiento_capital).subscribe({
+            next: (response) => {
+              if (response.success) {
+                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Movimiento eliminado correctamente' });
+                this.loadMovimientos();
+              } else {
+                this.messageService.add({ severity: 'error', summary: 'Error', detail: response.message || 'Error al eliminar movimiento' });
+              }
+            },
+            error: (err) => {
+              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar movimiento: ' + err.message });
+            }
+          });
+        }
+      }
+    });
+  }
+
+  formatDate(date: Date | string | null): string | null {
+    if (!date) return null;
+    if (typeof date === 'string') {
+      // Si es string, extraer solo la parte YYYY-MM-DD
+      return date.split('T')[0];
+    }
+    // Si es Date, formatear sin conversión de timezone
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  getSignoClass(signo: string): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+    return signo === '+' ? 'success' : 'danger';
+  }
+
+  getConciliadoClass(conciliado: boolean): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+    return conciliado ? 'success' : 'warning';
+  }
+
+  formatDateShort(dateString: string): string {
+    if (!dateString) return '-';
+    // Extraer solo la fecha YYYY-MM-DD sin conversión de timezone
+    const datePart = dateString.split('T')[0];
+    return datePart;
+  }
+
+  parseDateWithoutTimezone(dateString: string): Date {
+    if (!dateString) return new Date();
+    // Extraer YYYY-MM-DD y crear fecha local sin conversión de timezone
+    const datePart = dateString.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    // Crear fecha usando hora local (mes es 0-indexed en JavaScript)
+    return new Date(year, month - 1, day);
+  }
+
+  getMonto(movimiento: MovimientoCapital): number {
+    const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
+
+    if (tipoCodigo === 'TPAJ' && movimiento.inversion) {
+      // COMPRA_INVERSION: usar capital_invertido
+      const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
+      return isNaN(monto) ? 0 : monto;
+    }
+
+    if (tipoCodigo === 'TPIJ' && movimiento.ventaInversion) {
+      // VENTA_INVERSION: usar valor_venta_con_comision
+      const monto = parseFloat(String(movimiento.ventaInversion.valor_venta_con_comision || 0));
+      return isNaN(monto) ? 0 : monto;
+    }
+
+    // Otros tipos: usar monto del movimiento
+    const monto = parseFloat(String(movimiento.monto || 0));
+    return isNaN(monto) ? 0 : monto;
+  }
+
+  getSignoLabel(signo: string): string {
+    return signo === '+' ? 'Ingreso' : 'Egreso';
+  }
+
+  getInversionLabel(movimiento: MovimientoCapital): string {
+    if (!movimiento.inversion) return '-';
+    const inv = movimiento.inversion;
+    const instrumento = inv.instrumento?.nombre || inv.instrumento?.codigo || '';
+    return `#${inv.id_inversion} - ${instrumento}`;
+  }
+
+  getCuentaBancariaLabel(cuenta: CuentaBancaria): string {
+    if (!cuenta) return '';
+    const nombres = cuenta.persona?.nombres || '';
+    const apellidos = cuenta.persona?.apellidos || '';
+    const nombreCompleto = `${nombres} ${apellidos}`.trim();
+    const banco = cuenta.banco?.nombre || cuenta.banco?.codigo || '';
+    return nombreCompleto ? `${nombreCompleto} - ${banco}` : banco;
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    if (value === null || value === undefined || isNaN(value)) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  calculateSummary(): void {
+    this.totalIngresos = 0;
+    this.totalEgresos = 0;
+    this.pendientesConciliacion = 0;
+
+    this.movimientos.forEach(mov => {
+      const monto = this.getMonto(mov);
+      if (mov.signo === '+') {
+        this.totalIngresos += monto;
+      } else {
+        this.totalEgresos += monto;
+      }
+      if (!mov.conciliado) {
+        this.pendientesConciliacion++;
+      }
+    });
+
+    this.saldoEsperado = this.totalIngresos - this.totalEgresos;
+  }
+
+  calculateSaldoAcumulado(): void {
+    let saldo = 0;
+    // Ordenar por fecha y ID
+    const sorted = [...this.movimientos].sort((a, b) => {
+      const dateA = new Date(a.fecha_movimiento).getTime();
+      const dateB = new Date(b.fecha_movimiento).getTime();
+      if (dateA !== dateB) {
+        return dateA - dateB;
+      }
+      return (a.id_movimiento_capital || 0) - (b.id_movimiento_capital || 0);
+    });
+
+    sorted.forEach(mov => {
+      const monto = this.getMonto(mov);
+      if (mov.signo === '+') {
+        saldo += monto;
+      } else {
+        saldo -= monto;
+      }
+      mov.saldo_acumulado = saldo;
+    });
+  }
+
+  exportToExcel(): void {
+    // TODO: Implementar exportación a Excel
+    console.log('Exportar a Excel');
+  }
+
+  exportToPDF(): void {
+    // TODO: Implementar exportación a PDF
+    console.log('Exportar a PDF');
+  }
+
+  onGlobalFilter(event: Event): void {
+    if (this.dt) {
+      this.dt.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    }
+  }
+
+  isMontoReadOnly(): boolean {
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    console.log('isMontoReadOnly - tipoMovimientoId:', tipoMovimientoId);
+
+    if (!tipoMovimientoId) {
+      console.log('isMontoReadOnly - retornando false (no hay tipo)');
+      return false;
+    }
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+    console.log('isMontoReadOnly - codigo:', codigo);
+
+    // COMPRA_INVERSION (TPAJ) y VENTA_INVERSION (TPIJ) tienen monto calculado
+    const result = codigo === 'TPAJ' || codigo === 'TPIJ';
+    console.log('isMontoReadOnly - result:', result);
+    return result;
+  }
+
+  getTipoMovimientoNombre(): string {
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return '-';
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    return tipoMovimiento?.nombre || '-';
+  }
+
+  getMontoOrigen(): string {
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return '';
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+
+    if (codigo === 'TPAJ') return 'la inversión';
+    if (codigo === 'TPIJ') return 'la venta de inversión';
+    return '';
+  }
+
+  isCuentaBancariaNotApplicable(): boolean {
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return false;
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+
+    // Ajustar según lógica de negocio
+    return false;
+  }
+}

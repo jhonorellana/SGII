@@ -1,0 +1,84 @@
+.venta-inversion-container {
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.filters {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 15px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.text-center {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.modal-content {
+  padding: 10px 0;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #fcc;
+}
+
+.form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}

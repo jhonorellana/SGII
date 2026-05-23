@@ -21,6 +21,8 @@ import { RecuperacionAnualComponent } from './modules/reportes/recuperacion-anua
 import { ProyeccionInteresAnualComponent } from './modules/reportes/proyeccion-interes-anual/proyeccion-interes-anual.component';
 import { OtrosValoresListComponent } from './modules/otros-valores/otros-valores-list/otros-valores-list.component';
 import { CuentaBancariaListComponent } from './modules/cuentas-bancarias/cuenta-bancaria-list/cuenta-bancaria-list.component';
+import { MovimientoCapitalListComponent } from './modules/movimientos-capital/movimiento-capital-list/movimiento-capital-list.component';
+import { VentaInversionListComponent } from './modules/ventas-inversion/venta-inversion-list/venta-inversion-list.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -52,6 +54,8 @@ export const routes: Routes = [
       { path: 'reportes/proyeccion-interes-anual', component: ProyeccionInteresAnualComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },
+      { path: 'movimientos-capital', component: MovimientoCapitalListComponent },
+      { path: 'ventas-inversion', component: VentaInversionListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

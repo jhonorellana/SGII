@@ -111,6 +111,11 @@ class Inversion extends Model
         return $this->hasMany(VentaInversion::class, 'id_inversion');
     }
 
+    public function movimientosCapital()
+    {
+        return $this->hasMany(MovimientoCapital::class, 'id_inversion');
+    }
+
     public function documentos()
     {
         return $this->hasMany(DocumentoInversion::class, 'id_inversion');

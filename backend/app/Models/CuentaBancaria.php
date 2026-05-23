@@ -43,4 +43,9 @@ class CuentaBancaria extends Model
     {
         return $this->belongsTo(CatalogoValor::class, 'id_tipo_cuenta');
     }
+
+    public function movimientosCapital()
+    {
+        return $this->hasMany(MovimientoCapital::class, 'id_cuenta_bancaria');
+    }
 }

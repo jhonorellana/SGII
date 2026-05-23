@@ -58,6 +58,23 @@ export class SidebarComponent implements OnInit {
       ]
     },
     {
+      title: 'Contabilidad',
+      icon: 'bi-calculator',
+      path: '/contabilidad',
+      children: [
+        {
+          title: 'Movimientos de Capital',
+          icon: 'bi-cash-coin',
+          path: '/movimientos-capital'
+        },
+        {
+          title: 'Ventas de Inversiones',
+          icon: 'bi-currency-exchange',
+          path: '/ventas-inversion'
+        }
+      ]
+    },
+    {
       title: 'Reportes',
       icon: 'bi-file-earmark-bar-graph',
       path: '/reportes',

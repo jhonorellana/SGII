@@ -19,6 +19,8 @@ use App\Http\Controllers\API\PatrimonioController;
 use App\Http\Controllers\API\FlujoCapitalController;
 use App\Http\Controllers\API\RecuperacionAnualController;
 use App\Http\Controllers\API\CuentaBancariaController;
+use App\Http\Controllers\API\MovimientoCapitalController;
+use App\Http\Controllers\API\VentaInversionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +58,17 @@ Route::apiResource('personas', PersonaController::class);
 
 // Rutas de Cuentas Bancarias (temporalmente sin autenticación para pruebas)
 Route::apiResource('cuentas-bancarias', CuentaBancariaController::class);
+
+// Rutas de Movimientos de Capital (temporalmente sin autenticación para pruebas)
+Route::apiResource('movimientos-capital', MovimientoCapitalController::class);
+Route::get('movimientos-capital/saldo-esperado', [MovimientoCapitalController::class, 'getSaldoEsperado']);
+Route::get('movimientos-capital/estado-cuenta', [MovimientoCapitalController::class, 'getEstadoCuenta']);
+Route::get('movimientos-capital/discrepancias', [MovimientoCapitalController::class, 'getDiscrepancias']);
+Route::get('movimientos-capital/reporte-cuenta', [MovimientoCapitalController::class, 'getReportePorCuenta']);
+
+// Rutas de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
+Route::apiResource('ventas-inversion', VentaInversionController::class);
+Route::post('ventas-inversion/calcular-utilidad', [VentaInversionController::class, 'calcularUtilidad']);
 
 // Rutas de Grupos Familiares (temporalmente sin autenticación para pruebas)
 Route::apiResource('grupos-familiares', GrupoFamiliarController::class);
