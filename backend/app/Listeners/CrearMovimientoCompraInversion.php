@@ -23,14 +23,16 @@ class CrearMovimientoCompraInversion
     {
         $inversion = $event->inversion;
 
-        // Buscar tipo de movimiento COMPRA_INVERSION
-        $tipoCompraInversion = CatalogoValor::where('codigo', 'TPAJ')->first(); // COMPRA_INVERSION
+        // Buscar tipo de movimiento COMPRA_INVERSION (id_catalogo_valor = 181)
+        $tipoCompraInversion = CatalogoValor::where('id_catalogo_valor', 181)->first();
 
         if ($tipoCompraInversion) {
+            $tipoNegativo = CatalogoValor::where('codigo', 'NEGATIVO')->first();
+
             MovimientoCapital::create([
                 'fecha_movimiento' => $inversion->fecha_compra,
                 'id_tipo_movimiento' => $tipoCompraInversion->id_catalogo_valor,
-                'signo' => '-', // Signo negativo para compras
+                'id_signo' => $tipoNegativo ? $tipoNegativo->id_catalogo_valor : 191, // NEGATIVO
                 'monto' => null, // No se duplica, el valor está en inversion.capital_invertido
                 'id_inversion' => $inversion->id_inversion,
                 'descripcion' => 'Compra de inversión',

@@ -15,7 +15,7 @@ class MovimientoCapital extends Model
         'id_movimiento_capital',
         'fecha_movimiento',
         'id_tipo_movimiento',
-        'signo',
+        'id_signo',
         'monto',
         'id_inversion',
         'id_venta_inversion',
@@ -61,6 +61,6 @@ class MovimientoCapital extends Model
 
     public function signoCatalogo()
     {
-        return $this->belongsTo(CatalogoValor::class, 'signo');
+        return $this->belongsTo(CatalogoValor::class, 'id_signo');
     }
 }

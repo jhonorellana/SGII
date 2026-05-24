@@ -23,14 +23,16 @@ class CrearMovimientoVentaInversion
     {
         $ventaInversion = $event->ventaInversion;
 
-        // Buscar tipo de movimiento VENTA_INVERSION
-        $tipoVentaInversion = CatalogoValor::where('codigo', 'TPIJ')->first(); // VENTA_INVERSION
+        // Buscar tipo de movimiento VENTA_INVERSION (id_catalogo_valor = 182)
+        $tipoVentaInversion = CatalogoValor::where('id_catalogo_valor', 182)->first();
 
         if ($tipoVentaInversion) {
+            $tipoPositivo = CatalogoValor::where('codigo', 'POSITIVO')->first();
+
             MovimientoCapital::create([
                 'fecha_movimiento' => $ventaInversion->fecha_venta,
                 'id_tipo_movimiento' => $tipoVentaInversion->id_catalogo_valor,
-                'signo' => '+', // Signo positivo para ventas
+                'id_signo' => $tipoPositivo ? $tipoPositivo->id_catalogo_valor : 190, // POSITIVO
                 'monto' => null, // No se duplica, el valor está en venta_inversion.valor_venta_con_comision
                 'id_venta_inversion' => $ventaInversion->id_venta_inversion,
                 'id_inversion' => $ventaInversion->id_inversion,

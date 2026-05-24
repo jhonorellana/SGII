@@ -12,21 +12,21 @@ use App\Models\VentaInversion;
 
 echo "Actualizando montos de movimientos de capital..." . PHP_EOL;
 
-// Obtener código para COMPRA_INVERSION
-$tipoCompra = CatalogoValor::where('codigo', 'TPAJ')->first();
+// Obtener tipo de movimiento COMPRA_INVERSION (id_catalogo_valor = 181)
+$tipoCompra = CatalogoValor::where('id_catalogo_valor', 181)->first();
 if (!$tipoCompra) {
-    echo "ERROR: No se encontró el tipo de movimiento COMPRA_INVERSION (TPAJ)" . PHP_EOL;
+    echo "ERROR: No se encontró el tipo de movimiento COMPRA_INVERSION (id=181)" . PHP_EOL;
     exit(1);
 }
 
-// Obtener código para VENTA_INVERSION
-$tipoVenta = CatalogoValor::where('codigo', 'TPIJ')->first();
+// Obtener tipo de movimiento VENTA_INVERSION (id_catalogo_valor = 182)
+$tipoVenta = CatalogoValor::where('id_catalogo_valor', 182)->first();
 if (!$tipoVenta) {
-    echo "ERROR: No se encontró el tipo de movimiento VENTA_INVERSION (TPIJ)" . PHP_EOL;
+    echo "ERROR: No se encontró el tipo de movimiento VENTA_INVERSION (id=182)" . PHP_EOL;
     exit(1);
 }
 
-// Actualizar movimientos de compra (TPAJ)
+// Actualizar movimientos de compra (id=181)
 $comprasActualizadas = 0;
 $compras = MovimientoCapital::where('id_tipo_movimiento', $tipoCompra->id_catalogo_valor)
     ->whereNull('monto')
@@ -46,7 +46,7 @@ foreach ($compras as $movimiento) {
     }
 }
 
-// Actualizar movimientos de venta (TPIJ)
+// Actualizar movimientos de venta (id=182)
 $ventasActualizadas = 0;
 $ventas = MovimientoCapital::where('id_tipo_movimiento', $tipoVenta->id_catalogo_valor)
     ->whereNull('monto')

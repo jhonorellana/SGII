@@ -259,13 +259,13 @@ export class MovimientoCapitalListComponent implements OnInit {
     const codigo = tipoMovimiento?.codigo;
 
     // Si es COMPRA_INVERSION, habilitar inversión y deshabilitar cuenta bancaria si no aplica
-    if (codigo === 'TPAJ') {
+    if (codigo === 'COM_INV') {
       this.movimientoForm.get('id_inversion')?.enable();
       // Cuenta bancaria puede deshabilitarse según lógica de negocio
     }
 
     // Si es VENTA_INVERSION, habilitar venta de inversión
-    if (codigo === 'TPIJ') {
+    if (codigo === 'VEN_INV') {
       this.movimientoForm.get('id_inversion')?.enable();
     }
 
@@ -286,7 +286,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     const codigo = tipoMovimiento?.codigo;
 
     // Si es COMPRA_INVERSION, cargar monto desde capital_invertido
-    if (codigo === 'TPAJ') {
+    if (codigo === 'COM_INV') {
       const inversion = this.inversiones.find((i: Inversion) => i.id_inversion === inversionId);
       if (inversion && inversion.capital_invertido) {
         const monto = parseFloat(String(inversion.capital_invertido));
@@ -295,7 +295,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     }
 
     // Si es VENTA_INVERSION, cargar monto desde valor_venta_con_comision
-    if (codigo === 'TPIJ') {
+    if (codigo === 'VEN_INV') {
       const venta = this.ventasInversion.find((v: any) => v.id_inversion === inversionId);
       if (venta && venta.valor_venta_con_comision) {
         const monto = parseFloat(String(venta.valor_venta_con_comision));
@@ -445,13 +445,13 @@ export class MovimientoCapitalListComponent implements OnInit {
   getMonto(movimiento: MovimientoCapital): number {
     const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
 
-    if (tipoCodigo === 'TPAJ' && movimiento.inversion) {
+    if (tipoCodigo === 'COM_INV' && movimiento.inversion) {
       // COMPRA_INVERSION: usar capital_invertido
       const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
       return isNaN(monto) ? 0 : monto;
     }
 
-    if (tipoCodigo === 'TPIJ' && movimiento.ventaInversion) {
+    if (tipoCodigo === 'VEN_INV' && movimiento.ventaInversion) {
       // VENTA_INVERSION: usar valor_venta_con_comision
       const monto = parseFloat(String(movimiento.ventaInversion.valor_venta_con_comision || 0));
       return isNaN(monto) ? 0 : monto;
@@ -561,21 +561,16 @@ export class MovimientoCapitalListComponent implements OnInit {
 
   isMontoReadOnly(): boolean {
     const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
-    console.log('isMontoReadOnly - tipoMovimientoId:', tipoMovimientoId);
 
     if (!tipoMovimientoId) {
-      console.log('isMontoReadOnly - retornando false (no hay tipo)');
       return false;
     }
 
     const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
     const codigo = tipoMovimiento?.codigo;
-    console.log('isMontoReadOnly - codigo:', codigo);
 
-    // COMPRA_INVERSION (TPAJ) y VENTA_INVERSION (TPIJ) tienen monto calculado
-    const result = codigo === 'TPAJ' || codigo === 'TPIJ';
-    console.log('isMontoReadOnly - result:', result);
-    return result;
+    // COMPRA_INVERSION (COM_INV) y VENTA_INVERSION (VEN_INV) tienen monto calculado
+    return codigo === 'COM_INV' || codigo === 'VEN_INV';
   }
 
   getTipoMovimientoNombre(): string {
@@ -593,8 +588,8 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
     const codigo = tipoMovimiento?.codigo;
 
-    if (codigo === 'TPAJ') return 'la inversión';
-    if (codigo === 'TPIJ') return 'la venta de inversión';
+    if (codigo === 'COM_INV') return 'la inversión';
+    if (codigo === 'VEN_INV') return 'la venta de inversión';
     return '';
   }
 

@@ -56,7 +56,7 @@ class MovimientoCapitalController extends Controller
         $validator = Validator::make($request->all(), [
             'fecha_movimiento' => 'required|date',
             'id_tipo_movimiento' => 'required|exists:catalogo_valor,id_catalogo_valor',
-            'signo' => 'required|in:+,-',
+            'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
             'id_venta_inversion' => 'nullable|exists:venta_inversion,id_venta_inversion',
@@ -76,7 +76,7 @@ class MovimientoCapitalController extends Controller
         $movimiento = MovimientoCapital::create([
             'fecha_movimiento' => $request->fecha_movimiento,
             'id_tipo_movimiento' => $request->id_tipo_movimiento,
-            'signo' => $request->signo,
+            'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
             'id_venta_inversion' => $request->id_venta_inversion,
@@ -134,7 +134,7 @@ class MovimientoCapitalController extends Controller
         $validator = Validator::make($request->all(), [
             'fecha_movimiento' => 'required|date',
             'id_tipo_movimiento' => 'required|exists:catalogo_valor,id_catalogo_valor',
-            'signo' => 'required|in:+,-',
+            'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
             'id_venta_inversion' => 'nullable|exists:venta_inversion,id_venta_inversion',
@@ -154,7 +154,7 @@ class MovimientoCapitalController extends Controller
         $movimiento->update([
             'fecha_movimiento' => $request->fecha_movimiento,
             'id_tipo_movimiento' => $request->id_tipo_movimiento,
-            'signo' => $request->signo,
+            'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
             'id_venta_inversion' => $request->id_venta_inversion,
@@ -221,12 +221,12 @@ class MovimientoCapitalController extends Controller
             $monto = 0;
 
             // Determinar el monto según el tipo de movimiento
-            if ($movimiento->id_tipo_movimiento == 181) { // COMPRA_INVERSION
+            if ($movimiento->id_tipo_movimiento == 181) { // COMPRA_INVERSION (COM_INV)
                 // El valor viene de inversion.capital_invertido
                 if ($movimiento->inversion) {
                     $monto = $movimiento->inversion->capital_invertido;
                 }
-            } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION
+            } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION (VEN_INV)
                 // El valor viene de venta_inversion.valor_venta_con_comision
                 if ($movimiento->ventaInversion) {
                     $monto = $movimiento->ventaInversion->valor_venta_con_comision;
@@ -281,12 +281,12 @@ class MovimientoCapitalController extends Controller
             $liquidacion = null;
 
             // Determinar el monto y liquidación según el tipo
-            if ($movimiento->id_tipo_movimiento == 181) { // COMPRA_INVERSION
+            if ($movimiento->id_tipo_movimiento == 181) { // COMPRA_INVERSION (COM_INV)
                 if ($movimiento->inversion) {
                     $monto = $movimiento->inversion->capital_invertido;
                     $liquidacion = $movimiento->inversion->liquidacion;
                 }
-            } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION
+            } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION (VEN_INV)
                 if ($movimiento->ventaInversion) {
                     $monto = $movimiento->ventaInversion->valor_venta_con_comision;
                     $liquidacion = $movimiento->ventaInversion->liquidacion_venta;

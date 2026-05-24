@@ -500,10 +500,13 @@ class VentaInversionController extends Controller
             }
 
             // Crear movimiento de capital único
+            $tipoVentaInversion = CatalogoValor::where('id_catalogo_valor', 182)->first();
+            $tipoPositivo = CatalogoValor::where('codigo', 'POSITIVO')->first();
+
             $movimiento = MovimientoCapital::create([
                 'fecha_movimiento' => $request->fecha_venta,
-                'id_tipo_movimiento' => 182, // VENTA_INVERSION (según catálogo 14)
-                'signo' => 190, // POSITIVO (según catálogo 15)
+                'id_tipo_movimiento' => $tipoVentaInversion ? $tipoVentaInversion->id_catalogo_valor : 182, // VENTA_INVERSION
+                'id_signo' => $tipoPositivo ? $tipoPositivo->id_catalogo_valor : 190, // POSITIVO
                 'monto' => $data['valor_neto_recibido'],
                 'id_inversion' => null, // NULL para ventas agrupadas
                 'id_venta_inversion' => $venta->id_venta_inversion,

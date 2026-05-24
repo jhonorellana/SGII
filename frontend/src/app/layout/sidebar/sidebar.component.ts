@@ -54,6 +54,16 @@ export class SidebarComponent implements OnInit {
           title: 'Generación de Tablas',
           icon: 'bi-table',
           path: '/amortizaciones/generacion'
+        },
+        {
+          title: 'Ventas de Inversiones',
+          icon: 'bi-currency-exchange',
+          path: '/ventas-inversion'
+        },
+        {
+          title: 'Venta Notas Credito',
+          icon: 'bi-layers',
+          path: '/venta-agrupada'
         }
       ]
     },
@@ -66,16 +76,6 @@ export class SidebarComponent implements OnInit {
           title: 'Movimientos de Capital',
           icon: 'bi-cash-coin',
           path: '/movimientos-capital'
-        },
-        {
-          title: 'Ventas de Inversiones',
-          icon: 'bi-currency-exchange',
-          path: '/ventas-inversion'
-        },
-        {
-          title: 'Venta Agrupada',
-          icon: 'bi-layers',
-          path: '/venta-agrupada'
         }
       ]
     },
