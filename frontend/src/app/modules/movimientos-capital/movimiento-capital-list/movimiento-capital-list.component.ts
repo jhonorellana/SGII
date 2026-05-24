@@ -20,6 +20,7 @@ import { MovimientoCapitalService, MovimientoCapital } from '../../../core/movim
 import { CatalogoService } from '../../../core/catalogo.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-bancaria.service';
+import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 
 interface CatalogoValor {
@@ -56,9 +57,10 @@ interface CatalogoValor {
 })
 export class MovimientoCapitalListComponent implements OnInit {
   movimientos: MovimientoCapital[] = [];
-  tiposMovimiento: CatalogoValor[] = [];
-  signos: CatalogoValor[] = [];
-  inversiones: Inversion[] = [];
+  tiposMovimiento: any[] = [];
+  signos: any[] = [];
+  personas: any[] = [];
+  inversiones: any[] = [];
   ventasInversion: any[] = [];
   cuentasBancarias: CuentaBancaria[] = [];
   cuentasBancariasConLabel: any[] = [];
@@ -72,13 +74,16 @@ export class MovimientoCapitalListComponent implements OnInit {
   totalEgresos: number = 0;
   saldoEsperado: number = 0;
   pendientesConciliacion: number = 0;
+  saldosPorPersona: { [key: number]: { nombre: string; saldo: number } } = {};
 
   // Filters
   filters = {
     fecha_desde: null as Date | null,
     fecha_hasta: null as Date | null,
     id_tipo_movimiento: null as number | null,
+    id_persona: null as number | null,
     id_inversion: null as number | null,
+    id_signo: null as number | null,
     id_cuenta_bancaria: null as number | null,
     conciliado: null as boolean | null
   };
@@ -96,6 +101,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     private catalogoService: CatalogoService,
     private inversionService: InversionService,
     private cuentaBancariaService: CuentaBancariaService,
+    private personaService: PersonaService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
@@ -108,6 +114,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.loadMovimientos();
     this.loadTiposMovimiento();
     this.loadSignos();
+    this.loadPersonas();
     this.loadInversiones();
     this.loadVentasInversion();
     this.loadCuentasBancarias();
@@ -117,6 +124,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     return this.fb.group({
       fecha_movimiento: [null, Validators.required],
       id_tipo_movimiento: [null, Validators.required],
+      id_persona: [null, Validators.required],
       id_signo: [null, Validators.required],
       monto: [null, Validators.nullValidator],
       id_inversion: [null],
@@ -136,7 +144,9 @@ export class MovimientoCapitalListComponent implements OnInit {
     if (this.filters.fecha_desde) filters.fecha_desde = this.formatDate(this.filters.fecha_desde);
     if (this.filters.fecha_hasta) filters.fecha_hasta = this.formatDate(this.filters.fecha_hasta);
     if (this.filters.id_tipo_movimiento) filters.id_tipo_movimiento = this.filters.id_tipo_movimiento;
+    if (this.filters.id_persona) filters.id_persona = this.filters.id_persona;
     if (this.filters.id_inversion) filters.id_inversion = this.filters.id_inversion;
+    if (this.filters.id_signo) filters.id_signo = this.filters.id_signo;
     if (this.filters.id_cuenta_bancaria) filters.id_cuenta_bancaria = this.filters.id_cuenta_bancaria;
     if (this.filters.conciliado !== null) filters.conciliado = this.filters.conciliado;
 
@@ -163,17 +173,24 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.catalogoService.getValoresByCatalogo(14).subscribe({
       next: (response) => {
         if (Array.isArray(response)) {
-          this.tiposMovimiento = [...response];
+          // Agregar opción "Todos" al inicio
+          this.tiposMovimiento = [
+            { id_catalogo_valor: undefined, nombre: 'Todos' },
+            ...response
+          ];
         } else if (response && response.data) {
-          this.tiposMovimiento = [...response.data];
+          this.tiposMovimiento = [
+            { id_catalogo_valor: undefined, nombre: 'Todos' },
+            ...response.data
+          ];
         } else {
-          this.tiposMovimiento = [];
+          this.tiposMovimiento = [{ id_catalogo_valor: undefined, nombre: 'Todos' }];
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar tipos de movimiento:', err);
-        this.tiposMovimiento = [];
+        this.tiposMovimiento = [{ id_catalogo_valor: undefined, nombre: 'Todos' }];
         this.cdr.detectChanges();
       }
     });
@@ -183,18 +200,48 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.catalogoService.getValoresByCatalogo(15).subscribe({
       next: (response) => {
         if (Array.isArray(response)) {
-          this.signos = [...response];
+          // Agregar opción "Todos" al inicio
+          this.signos = [
+            { id_catalogo_valor: undefined, nombre: 'Todos', codigo: 'TODOS' },
+            ...response
+          ];
         } else if (response && response.data) {
-          this.signos = [...response.data];
+          this.signos = [
+            { id_catalogo_valor: undefined, nombre: 'Todos', codigo: 'TODOS' },
+            ...response.data
+          ];
         } else {
-          this.signos = [];
+          this.signos = [{ id_catalogo_valor: undefined, nombre: 'Todos', codigo: 'TODOS' }];
         }
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al cargar signos:', err);
-        this.signos = [];
+        this.signos = [{ id_catalogo_valor: undefined, nombre: 'Todos', codigo: 'TODOS' }];
         this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadPersonas(): void {
+    this.personaService.getAll().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Agregar opción "Todas" al inicio
+          this.personas = [
+            { id_persona: undefined, nombre: 'Todas' },
+            ...response.data.map((p: any) => ({
+              ...p,
+              nombre: `${p.nombres} ${p.apellidos}`.trim()
+            }))
+          ];
+        } else {
+          this.personas = [{ id_persona: undefined, nombre: 'Todas' }];
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar personas:', err);
+        this.personas = [{ id_persona: undefined, nombre: 'Todas' }];
       }
     });
   }
@@ -202,7 +249,18 @@ export class MovimientoCapitalListComponent implements OnInit {
   loadInversiones(): void {
     this.inversionService.getAll().subscribe({
       next: (data) => {
-        this.inversiones = data;
+        // Agregar opción "Todas" al inicio
+        this.inversiones = [
+          { id_inversion: undefined, label: 'Todas' },
+          ...data.map((inv: any) => {
+            const instrumento = inv.instrumento?.nombre || inv.instrumento?.codigo || '';
+            const liquidacion = inv.liquidacion || 'Sin liquidación';
+            return {
+              id_inversion: inv.id_inversion,
+              label: `#${inv.id_inversion} - ${liquidacion} - ${instrumento}`
+            };
+          })
+        ];
       }
     });
   }
@@ -236,7 +294,9 @@ export class MovimientoCapitalListComponent implements OnInit {
       fecha_desde: null,
       fecha_hasta: null,
       id_tipo_movimiento: null,
+      id_persona: null,
       id_inversion: null,
+      id_signo: null,
       id_cuenta_bancaria: null,
       conciliado: null
     };
@@ -315,6 +375,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.movimientoForm.patchValue({
       fecha_movimiento: movimiento.fecha_movimiento ? this.parseDateWithoutTimezone(movimiento.fecha_movimiento) : null,
       id_tipo_movimiento: movimiento.id_tipo_movimiento,
+      id_persona: movimiento.id_persona,
       id_signo: movimiento.id_signo,
       monto: monto,
       id_inversion: movimiento.id_inversion,
@@ -462,12 +523,30 @@ export class MovimientoCapitalListComponent implements OnInit {
     return isNaN(monto) ? 0 : monto;
   }
 
-  getSignoLabel(id_signo: number): string {
+  getSignoLabel(id_signo: number, movimiento?: MovimientoCapital): string {
+    // Usar signo_catalogo (snake_case como lo envía Laravel) o signoCatalogo
+    if (movimiento && movimiento.signo_catalogo) {
+      return movimiento.signo_catalogo.nombre || '-';
+    }
+    if (movimiento && movimiento.signoCatalogo) {
+      return movimiento.signoCatalogo.nombre || '-';
+    }
+    // Fallback: buscar en el array local
     const signo = this.signos.find(s => s.id_catalogo_valor === id_signo);
     return signo ? signo.nombre : '-';
   }
 
-  getSignoClass(id_signo: number): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+  getSignoClass(id_signo: number, movimiento?: MovimientoCapital): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+    // Usar signo_catalogo (snake_case como lo envía Laravel) o signoCatalogo
+    if (movimiento && movimiento.signo_catalogo) {
+      const signo = movimiento.signo_catalogo;
+      return signo && signo.codigo === 'POSITIVO' ? 'success' : 'danger';
+    }
+    if (movimiento && movimiento.signoCatalogo) {
+      const signo = movimiento.signoCatalogo;
+      return signo && signo.codigo === 'POSITIVO' ? 'success' : 'danger';
+    }
+    // Fallback: buscar en el array local
     const signo = this.signos.find(s => s.id_catalogo_valor === id_signo);
     return signo && signo.codigo === 'POSITIVO' ? 'success' : 'danger';
   }
@@ -476,7 +555,21 @@ export class MovimientoCapitalListComponent implements OnInit {
     if (!movimiento.inversion) return '-';
     const inv = movimiento.inversion;
     const instrumento = inv.instrumento?.nombre || inv.instrumento?.codigo || '';
-    return `#${inv.id_inversion} - ${instrumento}`;
+    const liquidacion = inv.liquidacion || 'Sin liquidación';
+    return `#${inv.id_inversion} - ${liquidacion} - ${instrumento}`;
+  }
+
+  getPersonaNombre(movimiento: MovimientoCapital): string {
+    if (!movimiento.persona) return '-';
+    // Si el backend envía el atributo 'nombre' (appended), usarlo
+    if (movimiento.persona.nombre) {
+      return movimiento.persona.nombre;
+    }
+    // Si no, concatenar nombres y apellidos
+    const nombres = movimiento.persona.nombres || '';
+    const apellidos = movimiento.persona.apellidos || '';
+    const nombreCompleto = `${nombres} ${apellidos}`.trim();
+    return nombreCompleto || '-';
   }
 
   getCuentaBancariaLabel(cuenta: CuentaBancaria): string {
@@ -505,7 +598,9 @@ export class MovimientoCapitalListComponent implements OnInit {
 
     this.movimientos.forEach(mov => {
       const monto = this.getMonto(mov);
-      const signo = this.signos.find(s => s.id_catalogo_valor === mov.id_signo);
+      // Usar signo_catalogo (snake_case como lo envía Laravel)
+      const signo = mov.signo_catalogo || mov.signoCatalogo;
+
       if (signo && signo.codigo === 'POSITIVO') {
         this.totalIngresos += monto;
       } else {
@@ -520,9 +615,59 @@ export class MovimientoCapitalListComponent implements OnInit {
   }
 
   calculateSaldoAcumulado(): void {
-    let saldo = 0;
-    // Ordenar por fecha y ID
-    const sorted = [...this.movimientos].sort((a, b) => {
+    // Reset saldos por persona
+    this.saldosPorPersona = {};
+
+    // Agrupar movimientos por persona
+    const movimientosPorPersona: { [key: number]: MovimientoCapital[] } = {};
+
+    this.movimientos.forEach(mov => {
+      const idPersona = mov.persona?.id_persona || mov.id_persona || 0; // 0 para movimientos sin persona
+      if (!movimientosPorPersona[idPersona]) {
+        movimientosPorPersona[idPersona] = [];
+      }
+      movimientosPorPersona[idPersona].push(mov);
+    });
+
+    // Calcular saldo acumulado por persona
+    Object.keys(movimientosPorPersona).forEach(idPersonaStr => {
+      const idPersona = parseInt(idPersonaStr);
+      const movimientosPersona = movimientosPorPersona[idPersona];
+
+      // Ordenar por fecha y ID
+      const sorted = [...movimientosPersona].sort((a, b) => {
+        const dateA = new Date(a.fecha_movimiento).getTime();
+        const dateB = new Date(b.fecha_movimiento).getTime();
+        if (dateA !== dateB) {
+          return dateA - dateB;
+        }
+        return (a.id_movimiento_capital || 0) - (b.id_movimiento_capital || 0);
+      });
+
+      let saldoPersona = 0;
+      const nombrePersona = this.getPersonaNombre(sorted[0]);
+
+      sorted.forEach(mov => {
+        const monto = this.getMonto(mov);
+        // Usar signo_catalogo (snake_case como lo envía Laravel)
+        const signo = mov.signo_catalogo || mov.signoCatalogo;
+        if (signo && signo.codigo === 'POSITIVO') {
+          saldoPersona += monto;
+        } else {
+          saldoPersona -= monto;
+        }
+        mov.saldo_acumulado = saldoPersona;
+      });
+
+      this.saldosPorPersona[idPersona] = {
+        nombre: nombrePersona,
+        saldo: saldoPersona
+      };
+    });
+
+    // Calcular saldo general (todos los movimientos ordenados cronológicamente)
+    let saldoGeneral = 0;
+    const sortedAll = [...this.movimientos].sort((a, b) => {
       const dateA = new Date(a.fecha_movimiento).getTime();
       const dateB = new Date(b.fecha_movimiento).getTime();
       if (dateA !== dateB) {
@@ -531,16 +676,22 @@ export class MovimientoCapitalListComponent implements OnInit {
       return (a.id_movimiento_capital || 0) - (b.id_movimiento_capital || 0);
     });
 
-    sorted.forEach(mov => {
+    sortedAll.forEach(mov => {
       const monto = this.getMonto(mov);
-      const signo = this.signos.find(s => s.id_catalogo_valor === mov.id_signo);
+      // Usar signo_catalogo (snake_case como lo envía Laravel)
+      const signo = mov.signo_catalogo || mov.signoCatalogo;
       if (signo && signo.codigo === 'POSITIVO') {
-        saldo += monto;
+        saldoGeneral += monto;
       } else {
-        saldo -= monto;
+        saldoGeneral -= monto;
       }
-      mov.saldo_acumulado = saldo;
     });
+
+    // Guardar saldo general con ID especial
+    this.saldosPorPersona[0] = {
+      nombre: 'Total General',
+      saldo: saldoGeneral
+    };
   }
 
   exportToExcel(): void {
@@ -551,6 +702,10 @@ export class MovimientoCapitalListComponent implements OnInit {
   exportToPDF(): void {
     // TODO: Implementar exportación a PDF
     console.log('Exportar a PDF');
+  }
+
+  hasSaldosPorPersona(): boolean {
+    return this.saldosPorPersona && Object.keys(this.saldosPorPersona).length > 0;
   }
 
   onGlobalFilter(event: Event): void {

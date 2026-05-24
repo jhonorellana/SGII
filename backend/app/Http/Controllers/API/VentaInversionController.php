@@ -28,7 +28,7 @@ class VentaInversionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = VentaInversion::with(['inversion', 'instrumento', 'tipoVenta', 'detalles.inversion'])
+        $query = VentaInversion::with(['inversion', 'instrumento', 'tipoVenta', 'persona', 'detalles.inversion'])
             ->where('eliminado', false);
 
         // Filtros
@@ -398,6 +398,7 @@ class VentaInversionController extends Controller
         $validator = Validator::make($request->all(), [
             'inversiones' => 'required|array|min:1',
             'inversiones.*' => 'exists:inversion,id_inversion',
+            'id_persona' => 'required|exists:persona,id_persona',
             'porcentaje_venta' => 'nullable|numeric|min:0|max:100',
             'valor_total_recibido' => 'nullable|numeric|min:0',
             'fecha_venta' => 'required|date',
@@ -414,6 +415,17 @@ class VentaInversionController extends Controller
                 'message' => 'Error de validación',
                 'errors' => $validator->errors()
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Validar que todas las inversiones pertenezcan a la misma persona
+        $inversiones = Inversion::whereIn('id_inversion', $request->inversiones)->get();
+        foreach ($inversiones as $inv) {
+            if ($inv->id_persona != $request->id_persona) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Todas las inversiones deben pertenecer a la misma persona'
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
         }
 
         // Validar que se proporcione porcentaje_venta o valor_total_recibido
@@ -447,6 +459,7 @@ class VentaInversionController extends Controller
                 'id_inversion' => null, // NULL para ventas agrupadas
                 'id_instrumento' => Inversion::find($request->inversiones[0])->id_instrumento ?? null,
                 'id_tipo_venta' => null,
+                'id_persona' => $request->id_persona,
                 'porcentaje_vendido' => $request->porcentaje_venta ?? 0,
                 'fecha_venta' => $request->fecha_venta,
                 'liquidacion_venta' => $request->liquidacion_venta,
@@ -506,6 +519,7 @@ class VentaInversionController extends Controller
             $movimiento = MovimientoCapital::create([
                 'fecha_movimiento' => $request->fecha_venta,
                 'id_tipo_movimiento' => $tipoVentaInversion ? $tipoVentaInversion->id_catalogo_valor : 182, // VENTA_INVERSION
+                'id_persona' => $request->id_persona,
                 'id_signo' => $tipoPositivo ? $tipoPositivo->id_catalogo_valor : 190, // POSITIVO
                 'monto' => $data['valor_neto_recibido'],
                 'id_inversion' => null, // NULL para ventas agrupadas
@@ -526,8 +540,8 @@ class VentaInversionController extends Controller
                 'success' => true,
                 'message' => 'Venta agrupada registrada exitosamente',
                 'data' => [
-                    'venta' => $venta->load(['detalles.inversion']),
-                    'movimiento_capital' => $movimiento,
+                    'venta' => $venta->load(['detalles.inversion', 'persona']),
+                    'movimiento_capital' => $movimiento->load('persona'),
                     'resumen' => [
                         'inversiones_count' => $resumenCompra['inversiones_count'],
                         'valor_nominal_total' => $resumenCompra['valor_nominal_total'],

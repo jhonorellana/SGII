@@ -21,6 +21,14 @@ class Persona extends Model
         'fecha_actualizacion'
     ];
 
+    protected $appends = ['nombre'];
+
+    // Accessor para nombre completo
+    public function getNombreAttribute()
+    {
+        return trim($this->nombres . ' ' . $this->apellidos);
+    }
+
     // Relaciones
     public function usuario()
     {

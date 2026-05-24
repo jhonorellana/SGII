@@ -15,6 +15,7 @@ class MovimientoCapital extends Model
         'id_movimiento_capital',
         'fecha_movimiento',
         'id_tipo_movimiento',
+        'id_persona',
         'id_signo',
         'monto',
         'id_inversion',
@@ -39,6 +40,11 @@ class MovimientoCapital extends Model
     ];
 
     // Relaciones
+    public function persona()
+    {
+        return $this->belongsTo(Persona::class, 'id_persona');
+    }
+
     public function inversion()
     {
         return $this->belongsTo(Inversion::class, 'id_inversion');

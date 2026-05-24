@@ -11,11 +11,16 @@
 
 .summary-card {
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.summary-card ::ng-deep .p-card {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .summary-card ::ng-deep .p-card-body {
-  padding: 20px;
+  padding: 10px;
 }
 
 .card-content {
@@ -23,14 +28,14 @@
 }
 
 .card-label {
-  font-size: 14px;
+  font-size: 0.7rem;
   color: #666;
-  margin-bottom: 10px;
+  margin-bottom: 4px;
   font-weight: 500;
 }
 
 .card-value {
-  font-size: 24px;
+  font-size: 1rem;
   font-weight: bold;
   color: #333;
 }
@@ -41,6 +46,10 @@
 
 .card-value.negative {
   color: #ef4444;
+}
+
+.card-value.zero {
+  color: #6c757d;
 }
 
 .summary-card.ingresos .card-value {
@@ -59,20 +68,47 @@
   color: #f59e0b;
 }
 
+.pendientes-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.pendientes-badge.warning {
+  background: #fef3c7;
+  color: #f59e0b;
+  border: 1px solid #fcd34d;
+}
+
+.pendientes-badge.success {
+  background: #d1fae5;
+  color: #22c55e;
+  border: 1px solid #6ee7b7;
+}
+
 /* Table styling similar to catalog list */
 ::ng-deep .p-datatable .p-datatable-thead > tr > th {
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.5px;
-  padding: 0.35rem 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
 }
 
+::ng-deep .p-datatable .p-datatable-thead > tr:nth-child(2) > th {
+  padding: 0.25rem 0.5rem !important;
+}
+
 ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
   vertical-align: middle;
-  padding: 0.25rem 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
   font-size: 0.85rem;
   border-bottom: 1px solid #dee2e6;
 }
@@ -106,13 +142,44 @@
 
 /* Paginator styling */
 ::ng-deep .p-paginator {
-  padding: 0.5rem 1rem !important;
+  padding: 0.35rem 0.75rem !important;
   font-size: 0.85rem;
 }
 
 ::ng-deep .p-paginator .p-paginator-current {
   font-size: 0.85rem;
   color: #6c757d;
+}
+
+/* Filter inputs and dropdowns */
+::ng-deep .p-inputtext {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.85rem;
+}
+
+::ng-deep .p-dropdown .p-dropdown-label {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.85rem;
+}
+
+::ng-deep .p-dropdown .p-dropdown-trigger {
+  width: 1.75rem;
+}
+
+::ng-deep .p-dropdown-item {
+  padding: 0.35rem 0.6rem !important;
+  font-size: 0.85rem;
+}
+
+/* Reduce spacing between sections */
+.summary-cards {
+  margin-top: 12px;
+  margin-bottom: 24px;
+}
+
+.saldos-por-persona h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
 }
 
 .text-center {
@@ -129,6 +196,16 @@
 .text-danger {
   color: #ef4444;
   font-weight: 500;
+}
+
+.text-right {
+  text-align: right;
+}
+
+/* Column width for investment dropdown */
+::ng-deep .p-datatable .p-datatable-thead > tr > th:nth-child(5),
+::ng-deep .p-datatable .p-datatable-tbody > tr > td:nth-child(5) {
+  min-width: 250px;
 }
 
 /* Modal */
@@ -288,4 +365,71 @@
 
 .text-muted {
   color: #6c757d;
+}
+
+/* Saldos por Persona */
+.saldos-por-persona {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  margin-top: 24px;
+  position: relative;
+  z-index: 0;
+}
+
+.saldos-por-persona h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.saldos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.saldo-persona-card {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.saldo-persona-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.saldo-persona-card.positive {
+  border-left: 3px solid #22c55e;
+}
+
+.saldo-persona-card.negative {
+  border-left: 3px solid #ef4444;
+}
+
+.saldo-persona-label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.saldo-persona-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.saldo-persona-card.positive .saldo-persona-value {
+  color: #22c55e;
+}
+
+.saldo-persona-card.negative .saldo-persona-value {
+  color: #ef4444;
 }

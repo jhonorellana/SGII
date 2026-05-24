@@ -6,6 +6,7 @@ export interface MovimientoCapital {
   id_movimiento_capital?: number;
   fecha_movimiento: string;
   id_tipo_movimiento: number;
+  id_persona?: number;
   id_signo: number;
   monto?: number;
   id_inversion?: number;
@@ -20,9 +21,12 @@ export interface MovimientoCapital {
   fecha_actualizacion?: string;
   tipoMovimiento?: any;
   tipo_movimiento?: any;
+  persona?: any;
   inversion?: any;
   ventaInversion?: any;
   cuentaBancaria?: any;
+  signoCatalogo?: any;
+  signo_catalogo?: any;
   saldo_acumulado?: number;
 }
 
@@ -77,7 +81,9 @@ export class MovimientoCapitalService {
     fecha_desde?: string;
     fecha_hasta?: string;
     id_tipo_movimiento?: number;
+    id_persona?: number;
     id_inversion?: number;
+    id_signo?: number;
     id_cuenta_bancaria?: number;
     conciliado?: boolean;
   }): Observable<ApiResponse<MovimientoCapital[]>> {
@@ -88,7 +94,9 @@ export class MovimientoCapitalService {
       if (filters.fecha_desde) params.push(`fecha_desde=${filters.fecha_desde}`);
       if (filters.fecha_hasta) params.push(`fecha_hasta=${filters.fecha_hasta}`);
       if (filters.id_tipo_movimiento) params.push(`id_tipo_movimiento=${filters.id_tipo_movimiento}`);
+      if (filters.id_persona) params.push(`id_persona=${filters.id_persona}`);
       if (filters.id_inversion) params.push(`id_inversion=${filters.id_inversion}`);
+      if (filters.id_signo) params.push(`id_signo=${filters.id_signo}`);
       if (filters.id_cuenta_bancaria) params.push(`id_cuenta_bancaria=${filters.id_cuenta_bancaria}`);
       if (filters.conciliado !== undefined) params.push(`conciliado=${filters.conciliado}`);
     }

@@ -16,6 +16,7 @@ class VentaInversion extends Model
         'id_inversion',
         'id_instrumento',
         'id_tipo_venta',
+        'id_persona',
         'porcentaje_vendido',
         'fecha_venta',
         'liquidacion_venta',
@@ -66,6 +67,11 @@ class VentaInversion extends Model
     ];
 
     // Relaciones
+    public function persona()
+    {
+        return $this->belongsTo(Persona::class, 'id_persona');
+    }
+
     public function inversion()
     {
         return $this->belongsTo(Inversion::class, 'id_inversion');

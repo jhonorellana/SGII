@@ -35,6 +35,7 @@
       <tr>
         <th>Fecha Venta</th>
         <th>Liquidación</th>
+        <th>Persona</th>
         <th>Inversión</th>
         <th>Precio Venta</th>
         <th>Valor con Comisión</th>
@@ -47,7 +48,11 @@
       <tr>
         <td>{{ venta.fecha_venta }}</td>
         <td>{{ venta.liquidacion_venta || '-' }}</td>
-        <td>{{ venta.id_inversion }}</td>
+        <td>{{ venta.persona?.nombre || (venta.persona?.nombres + ' ' + venta.persona?.apellidos) || '-' }}</td>
+        <td>
+          <span *ngIf="venta.id_inversion">#{{ venta.id_inversion }}</span>
+          <span *ngIf="!venta.id_inversion" class="text-muted">Venta agrupada ({{ venta.detalles?.length || 0 }} inv.)</span>
+        </td>
         <td>{{ venta.precio_venta || '-' }}</td>
         <td>{{ venta.valor_venta_con_comision || '-' }}</td>
         <td>
@@ -62,7 +67,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="text-center">No hay ventas registradas</td>
+        <td colspan="9" class="text-center">No hay ventas registradas</td>
       </tr>
     </ng-template>
   </p-table>
@@ -71,7 +76,7 @@
   <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Venta' : 'Nueva Venta'" [modal]="true" [style]="{width: '800px'}">
     <div class="modal-content">
       <div class="error-message" *ngIf="formError">{{ formError }}</div>
-      
+
       <form [formGroup]="ventaForm">
         <div class="form-row">
           <div class="form-field">
@@ -83,7 +88,7 @@
             <p-dropdown formControlName="id_tipo_venta" [options]="tiposVenta" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione"></p-dropdown>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Fecha Venta *</label>
@@ -94,7 +99,7 @@
             <p-inputText formControlName="liquidacion_venta"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Precio Venta *</label>
@@ -105,7 +110,7 @@
             <p-inputText formControlName="precio_neto_venta" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Interés Previo</label>
@@ -116,7 +121,7 @@
             <p-inputText formControlName="valor_venta_sin_comision" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Comisión Operador</label>
@@ -127,7 +132,7 @@
             <p-inputText formControlName="comision_bolsa" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Valor con Comisión</label>
@@ -138,7 +143,7 @@
             <p-inputText formControlName="utilidad_sin_comision" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Utilidad con Comisión</label>
@@ -149,7 +154,7 @@
             <p-inputText formControlName="ganancia_perdida" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Rendimiento Total</label>
@@ -160,7 +165,7 @@
             <p-inputText formControlName="dias_transcurridos" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>ROI (%)</label>
@@ -171,7 +176,7 @@
             <p-inputText formControlName="ganancia_anual" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-row">
           <div class="form-field">
             <label>Comisiones Santa Fe</label>
@@ -182,17 +187,17 @@
             <p-inputText formControlName="retenciones" type="number"></p-inputText>
           </div>
         </div>
-        
+
         <div class="form-field">
           <label>Observación</label>
           <p-inputText formControlName="observacion"></p-inputText>
         </div>
       </form>
     </div>
-    
+
     <ng-template pTemplate="footer">
-      <app-modal-actions 
-        [cancelText]="'Cancelar'" 
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
         [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
         [loading]="formLoading"
         [disabled]="ventaForm.invalid"

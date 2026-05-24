@@ -29,9 +29,18 @@ class CrearMovimientoCompraInversion
         if ($tipoCompraInversion) {
             $tipoNegativo = CatalogoValor::where('codigo', 'NEGATIVO')->first();
 
+            // Obtener la persona dueña de la inversión
+            $idPersona = null;
+            if ($inversion->id_persona) {
+                $idPersona = $inversion->id_persona;
+            } elseif ($inversion->cuentaBancaria && $inversion->cuentaBancaria->id_persona) {
+                $idPersona = $inversion->cuentaBancaria->id_persona;
+            }
+
             MovimientoCapital::create([
                 'fecha_movimiento' => $inversion->fecha_compra,
                 'id_tipo_movimiento' => $tipoCompraInversion->id_catalogo_valor,
+                'id_persona' => $idPersona,
                 'id_signo' => $tipoNegativo ? $tipoNegativo->id_catalogo_valor : 191, // NEGATIVO
                 'monto' => null, // No se duplica, el valor está en inversion.capital_invertido
                 'id_inversion' => $inversion->id_inversion,

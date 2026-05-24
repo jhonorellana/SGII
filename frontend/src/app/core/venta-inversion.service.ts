@@ -73,6 +73,7 @@ export interface CalculoUtilidadResponse {
 
 export interface VentaAgrupadaRequest {
   inversiones: number[];
+  id_persona: number;
   porcentaje_venta?: number;
   valor_total_recibido?: number;
   fecha_venta: string;

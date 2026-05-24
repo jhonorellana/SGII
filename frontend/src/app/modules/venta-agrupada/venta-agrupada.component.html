@@ -142,6 +142,20 @@
 
   <form [formGroup]="ventaForm">
     <div class="form-grid">
+      <!-- Row 0: Persona (must be selected first) -->
+      <div class="form-field full-width">
+        <label>Titular / Persona *</label>
+        <p-dropdown
+          formControlName="id_persona"
+          [options]="personas"
+          optionLabel="nombre"
+          optionValue="id_persona"
+          placeholder="Seleccione el titular"
+          [showClear]="true">
+        </p-dropdown>
+        <small class="text-muted">Solo se mostrarán inversiones de esta persona</small>
+      </div>
+
       <!-- Row 1: Porcentaje de Venta + Liquidación -->
       <div class="form-field">
         <label>Porcentaje de Venta (%)</label>

@@ -17,7 +17,7 @@ class MovimientoCapitalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento'])
+        $query = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento', 'persona', 'signoCatalogo'])
             ->where('eliminado', false);
 
         // Filtros
@@ -29,6 +29,12 @@ class MovimientoCapitalController extends Controller
         }
         if ($request->has('id_tipo_movimiento') && $request->id_tipo_movimiento) {
             $query->where('id_tipo_movimiento', $request->id_tipo_movimiento);
+        }
+        if ($request->has('id_persona') && $request->id_persona) {
+            $query->where('id_persona', $request->id_persona);
+        }
+        if ($request->has('id_signo') && $request->id_signo) {
+            $query->where('id_signo', $request->id_signo);
         }
         if ($request->has('id_cuenta_bancaria') && $request->id_cuenta_bancaria) {
             $query->where('id_cuenta_bancaria', $request->id_cuenta_bancaria);
@@ -56,6 +62,7 @@ class MovimientoCapitalController extends Controller
         $validator = Validator::make($request->all(), [
             'fecha_movimiento' => 'required|date',
             'id_tipo_movimiento' => 'required|exists:catalogo_valor,id_catalogo_valor',
+            'id_persona' => 'required|exists:persona,id_persona',
             'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
@@ -76,6 +83,7 @@ class MovimientoCapitalController extends Controller
         $movimiento = MovimientoCapital::create([
             'fecha_movimiento' => $request->fecha_movimiento,
             'id_tipo_movimiento' => $request->id_tipo_movimiento,
+            'id_persona' => $request->id_persona,
             'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
@@ -93,7 +101,7 @@ class MovimientoCapitalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Movimiento creado exitosamente',
-            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento'])
+            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
         ], Response::HTTP_CREATED);
     }
 
@@ -102,7 +110,7 @@ class MovimientoCapitalController extends Controller
      */
     public function show($id)
     {
-        $movimiento = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento'])->find($id);
+        $movimiento = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])->find($id);
 
         if (!$movimiento) {
             return response()->json([
@@ -134,6 +142,7 @@ class MovimientoCapitalController extends Controller
         $validator = Validator::make($request->all(), [
             'fecha_movimiento' => 'required|date',
             'id_tipo_movimiento' => 'required|exists:catalogo_valor,id_catalogo_valor',
+            'id_persona' => 'required|exists:persona,id_persona',
             'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
@@ -154,6 +163,7 @@ class MovimientoCapitalController extends Controller
         $movimiento->update([
             'fecha_movimiento' => $request->fecha_movimiento,
             'id_tipo_movimiento' => $request->id_tipo_movimiento,
+            'id_persona' => $request->id_persona,
             'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
@@ -168,7 +178,7 @@ class MovimientoCapitalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Movimiento actualizado exitosamente',
-            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento'])
+            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
         ], Response::HTTP_OK);
     }
 
