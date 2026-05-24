@@ -71,6 +71,11 @@ export class SidebarComponent implements OnInit {
           title: 'Ventas de Inversiones',
           icon: 'bi-currency-exchange',
           path: '/ventas-inversion'
+        },
+        {
+          title: 'Venta Agrupada',
+          icon: 'bi-layers',
+          path: '/venta-agrupada'
         }
       ]
     },

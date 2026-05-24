@@ -1,0 +1,525 @@
+.venta-agrupada-container {
+  padding: 15px;
+}
+
+/* Compact Card Styles */
+:host ::ng-deep .compact-card .p-card {
+  margin-bottom: 10px;
+}
+
+:host ::ng-deep .compact-card .p-card-body {
+  padding: 12px 15px;
+}
+
+:host ::ng-deep .compact-card .p-card-header {
+  padding: 10px 15px;
+}
+
+:host ::ng-deep .compact-card .p-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Resumen Horizontal Layout */
+.resumen-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.resumen-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+}
+
+.resumen-stat label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.resumen-action {
+  margin-left: auto;
+}
+
+/* Table spacing */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+:host ::ng-deep .p-datatable .p-paginator {
+  padding: 6px 10px;
+}
+
+/* Search box alignment */
+:host ::ng-deep .p-datatable .p-datatable-caption {
+  padding: 8px 10px;
+}
+
+:host ::ng-deep .p-input-icon-left {
+  width: 250px;
+}
+
+:host ::ng-deep .p-input-icon-left input {
+  font-size: 13px;
+  padding: 6px 10px 6px 30px;
+}
+
+/* Filter inputs */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr:nth-child(2) > th input {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
+/* Form Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-field label strong {
+  color: #22c55e;
+}
+
+/* Modal Footer Spacing */
+:host ::ng-deep .p-dialog-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 20px;
+}
+
+/* Modal Financial Summary */
+.modal-financial-summary {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #22c55e;
+}
+
+.summary-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.summary-value.text-success {
+  color: #22c55e;
+}
+
+.summary-value.text-danger {
+  color: #ef4444;
+}
+
+/* KPI Utilidad Estimada - Destacado */
+.summary-item.kpi-utilidad {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 140px;
+}
+
+.kpi-label {
+  font-size: 10px;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.kpi-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.kpi-value.positive {
+  color: #15803d;
+}
+
+.kpi-value.negative {
+  color: #b91c1c;
+}
+
+.kpi-icon {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.kpi-amount {
+  font-family: 'Courier New', monospace;
+}
+
+/* Resaltar el KPI cuando es positivo */
+.summary-item.kpi-utilidad .kpi-value.positive {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #86efac;
+  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.1);
+}
+
+/* Resaltar el KPI cuando es negativo */
+.summary-item.kpi-utilidad .kpi-value.negative {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #fca5a5;
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Calculated Values */
+.calculated-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  padding: 10px 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+}
+
+/* Numeric Field Alignment */
+:host ::ng-deep .p-inputnumber,
+:host ::ng-deep .p-calendar,
+:host ::ng-deep .p-dropdown,
+:host ::ng-deep input.p-inputtext {
+  min-height: 42px;
+}
+
+:host ::ng-deep .p-inputnumber input {
+  height: 42px;
+}
+
+:host ::ng-deep .p-calendar input {
+  height: 42px;
+}
+
+:host ::ng-deep .p-dropdown {
+  height: 42px;
+}
+
+/* Textarea Full Width - Altura Reducida */
+:host ::ng-deep textarea.p-inputtextarea {
+  width: 100%;
+  min-height: 70px;
+  max-height: 90px;
+  resize: vertical;
+}
+
+/* Previsualización */
+.previsualizacion-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.resumen-general {
+  background: #f8f9fa;
+  padding: 12px 15px;
+  border-radius: 6px;
+}
+
+.resumen-general h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.resumen-item label {
+  font-size: 11px;
+  color: #666;
+  font-weight: 500;
+}
+
+.resumen-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.resumen-value.highlight {
+  color: #22c55e;
+  font-size: 16px;
+}
+
+.distribucion h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.text-success {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.text-danger {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+/* Bootstrap utility classes */
+.d-flex {
+  display: flex !important;
+}
+
+.justify-content-end {
+  justify-content: flex-end !important;
+}
+
+.justify-content-between {
+  justify-content: space-between !important;
+}
+
+.align-items-center {
+  align-items: center !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
+
+.w-100 {
+  width: 100% !important;
+}
+
+.text-center {
+  text-align: center !important;
+}
+
+.py-4 {
+  padding-top: 1.5rem !important;
+  padding-bottom: 1.5rem !important;
+}
+
+.mt-2 {
+  margin-top: 0.5rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .resumen-horizontal {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .resumen-action {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .resumen-action .p-button {
+    width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+
+/* Cuenta Bancaria Dropdown Styles */
+.cuenta-bancaria-selected,
+.cuenta-bancaria-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.cuenta-nombre {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.cuenta-numero {
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+  color: #555;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.cuenta-banco {
+  color: #666;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.cuenta-separador {
+  color: #999;
+  font-weight: 400;
+  margin: 0 2px;
+}
+
+/* Dropdown Panel Positioning and Height */
+:host ::ng-deep .p-dropdown-panel {
+  max-height: 250px !important;
+  overflow-y: auto !important;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+:host ::ng-deep .p-dropdown-items-wrapper {
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+:host ::ng-deep .p-dropdown-items {
+  padding: 4px 0;
+}
+
+/* Filter Input Styles */
+:host ::ng-deep .p-dropdown-filter-container {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+:host ::ng-deep .p-dropdown-filter {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+  width: 100%;
+}
+
+:host ::ng-deep .p-dropdown-filter:focus {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
+}
+
+/* Dropdown Items */
+:host ::ng-deep .p-dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-radius: 4px;
+  margin: 2px 8px;
+}
+
+:host ::ng-deep .p-dropdown-item:hover {
+  background-color: #f0f0f0;
+}
+
+:host ::ng-deep .p-dropdown-item.p-highlight {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+:host ::ng-deep .p-dropdown-item.p-highlight:hover {
+  background-color: #c8e6c9;
+}
+
+/* Empty Message */
+:host ::ng-deep .p-dropdown-empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+/* Modal Overflow Handling */
+:host ::ng-deep .p-dialog-content {
+  overflow: visible !important;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  overflow-y: auto !important;
+  max-height: calc(90vh - 200px);
+}

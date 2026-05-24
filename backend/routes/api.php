@@ -21,6 +21,7 @@ use App\Http\Controllers\API\RecuperacionAnualController;
 use App\Http\Controllers\API\CuentaBancariaController;
 use App\Http\Controllers\API\MovimientoCapitalController;
 use App\Http\Controllers\API\VentaInversionController;
+use App\Http\Controllers\API\VentaInversionDetalleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -69,6 +70,13 @@ Route::get('movimientos-capital/reporte-cuenta', [MovimientoCapitalController::c
 // Rutas de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
 Route::apiResource('ventas-inversion', VentaInversionController::class);
 Route::post('ventas-inversion/calcular-utilidad', [VentaInversionController::class, 'calcularUtilidad']);
+Route::post('ventas-inversion/venta-agrupada', [VentaInversionController::class, 'storeVentaAgrupada']);
+Route::post('ventas-inversion/calcular-resumen-compra', [VentaInversionController::class, 'calcularResumenCompra']);
+Route::post('ventas-inversion/previsualizar-venta-agrupada', [VentaInversionController::class, 'previsualizarVentaAgrupada']);
+
+// Rutas de Detalles de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
+Route::apiResource('ventas-inversion-detalles', VentaInversionDetalleController::class);
+Route::get('ventas-inversion-detalles/venta/{id_venta_inversion}', [VentaInversionDetalleController::class, 'getByVenta']);
 
 // Rutas de Grupos Familiares (temporalmente sin autenticación para pruebas)
 Route::apiResource('grupos-familiares', GrupoFamiliarController::class);

@@ -57,6 +57,7 @@ interface CatalogoValor {
 export class MovimientoCapitalListComponent implements OnInit {
   movimientos: MovimientoCapital[] = [];
   tiposMovimiento: CatalogoValor[] = [];
+  signos: CatalogoValor[] = [];
   inversiones: Inversion[] = [];
   ventasInversion: any[] = [];
   cuentasBancarias: CuentaBancaria[] = [];
@@ -106,6 +107,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   ngOnInit(): void {
     this.loadMovimientos();
     this.loadTiposMovimiento();
+    this.loadSignos();
     this.loadInversiones();
     this.loadVentasInversion();
     this.loadCuentasBancarias();
@@ -115,7 +117,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     return this.fb.group({
       fecha_movimiento: [null, Validators.required],
       id_tipo_movimiento: [null, Validators.required],
-      signo: ['+', Validators.required],
+      id_signo: [null, Validators.required],
       monto: [null, Validators.nullValidator],
       id_inversion: [null],
       id_venta_inversion: [null],
@@ -172,6 +174,26 @@ export class MovimientoCapitalListComponent implements OnInit {
       error: (err) => {
         console.error('Error al cargar tipos de movimiento:', err);
         this.tiposMovimiento = [];
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  loadSignos(): void {
+    this.catalogoService.getValoresByCatalogo(15).subscribe({
+      next: (response) => {
+        if (Array.isArray(response)) {
+          this.signos = [...response];
+        } else if (response && response.data) {
+          this.signos = [...response.data];
+        } else {
+          this.signos = [];
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar signos:', err);
+        this.signos = [];
         this.cdr.detectChanges();
       }
     });
@@ -293,7 +315,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.movimientoForm.patchValue({
       fecha_movimiento: movimiento.fecha_movimiento ? this.parseDateWithoutTimezone(movimiento.fecha_movimiento) : null,
       id_tipo_movimiento: movimiento.id_tipo_movimiento,
-      signo: movimiento.signo,
+      id_signo: movimiento.id_signo,
       monto: monto,
       id_inversion: movimiento.id_inversion,
       id_venta_inversion: movimiento.id_venta_inversion,
@@ -400,10 +422,6 @@ export class MovimientoCapitalListComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  getSignoClass(signo: string): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
-    return signo === '+' ? 'success' : 'danger';
-  }
-
   getConciliadoClass(conciliado: boolean): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
     return conciliado ? 'success' : 'warning';
   }
@@ -444,8 +462,14 @@ export class MovimientoCapitalListComponent implements OnInit {
     return isNaN(monto) ? 0 : monto;
   }
 
-  getSignoLabel(signo: string): string {
-    return signo === '+' ? 'Ingreso' : 'Egreso';
+  getSignoLabel(id_signo: number): string {
+    const signo = this.signos.find(s => s.id_catalogo_valor === id_signo);
+    return signo ? signo.nombre : '-';
+  }
+
+  getSignoClass(id_signo: number): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+    const signo = this.signos.find(s => s.id_catalogo_valor === id_signo);
+    return signo && signo.codigo === 'POSITIVO' ? 'success' : 'danger';
   }
 
   getInversionLabel(movimiento: MovimientoCapital): string {
@@ -481,7 +505,8 @@ export class MovimientoCapitalListComponent implements OnInit {
 
     this.movimientos.forEach(mov => {
       const monto = this.getMonto(mov);
-      if (mov.signo === '+') {
+      const signo = this.signos.find(s => s.id_catalogo_valor === mov.id_signo);
+      if (signo && signo.codigo === 'POSITIVO') {
         this.totalIngresos += monto;
       } else {
         this.totalEgresos += monto;
@@ -508,7 +533,8 @@ export class MovimientoCapitalListComponent implements OnInit {
 
     sorted.forEach(mov => {
       const monto = this.getMonto(mov);
-      if (mov.signo === '+') {
+      const signo = this.signos.find(s => s.id_catalogo_valor === mov.id_signo);
+      if (signo && signo.codigo === 'POSITIVO') {
         saldo += monto;
       } else {
         saldo -= monto;

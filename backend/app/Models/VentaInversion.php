@@ -85,4 +85,9 @@ class VentaInversion extends Model
     {
         return $this->hasMany(MovimientoCapital::class, 'id_venta_inversion');
     }
+
+    public function detalles()
+    {
+        return $this->hasMany(VentaInversionDetalle::class, 'id_venta_inversion');
+    }
 }

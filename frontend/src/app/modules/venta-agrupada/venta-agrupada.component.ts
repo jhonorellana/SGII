@@ -1,0 +1,416 @@
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { TableModule } from 'primeng/table';
+import { CheckboxModule } from 'primeng/checkbox';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { CalendarModule } from 'primeng/calendar';
+import { DropdownModule } from 'primeng/dropdown';
+import { InputTextareaModule } from 'primeng/inputtextarea';
+import { CardModule } from 'primeng/card';
+import { TagModule } from 'primeng/tag';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { InversionService, Inversion } from '../../core/inversion.service';
+import { VentaInversionService, VentaAgrupadaRequest } from '../../core/venta-inversion.service';
+import { CuentaBancariaService, CuentaBancaria } from '../../core/cuenta-bancaria.service';
+import { ModalActionsComponent } from '../../core/modal-actions';
+import { Table } from 'primeng/table';
+
+@Component({
+  selector: 'app-venta-agrupada',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    TableModule,
+    CheckboxModule,
+    ButtonModule,
+    DialogModule,
+    InputNumberModule,
+    CalendarModule,
+    DropdownModule,
+    InputTextareaModule,
+    CardModule,
+    TagModule,
+    ProgressBarModule,
+    ToastModule,
+    ModalActionsComponent
+  ],
+  providers: [MessageService],
+  templateUrl: './venta-agrupada.component.html',
+  styleUrl: './venta-agrupada.component.css'
+})
+export class VentaAgrupadaComponent implements OnInit {
+  inversiones: Inversion[] = [];
+  inversionesSeleccionadas: number[] = [];
+  cuentasBancarias: CuentaBancaria[] = [];
+  cuentasBancariasConLabel: any[] = [];
+
+  loading = false;
+  loadingCalculo = false;
+  displayDialog = false;
+  displayPrevisualizar = false;
+
+  ventaForm: FormGroup;
+  previsualizacion: any = null;
+  @ViewChild('dt') table!: Table;
+
+  constructor(
+    private fb: FormBuilder,
+    private inversionService: InversionService,
+    private ventaService: VentaInversionService,
+    private cuentaBancariaService: CuentaBancariaService,
+    private messageService: MessageService,
+    private cdr: ChangeDetectorRef
+  ) {
+    this.ventaForm = this.createForm();
+  }
+
+  ngOnInit(): void {
+    this.loadInversiones();
+    this.loadCuentasBancarias();
+
+    // Suscribirse a cambios en el formulario para actualizar cálculos
+    this.ventaForm.get('porcentaje_venta')?.valueChanges.subscribe(() => {
+      this.updateCalculos();
+    });
+    this.ventaForm.get('comision_operador')?.valueChanges.subscribe(() => {
+      this.updateCalculos();
+    });
+    this.ventaForm.get('comision_bolsa')?.valueChanges.subscribe(() => {
+      this.updateCalculos();
+    });
+  }
+
+  createForm(): FormGroup {
+    return this.fb.group({
+      porcentaje_venta: [100, [Validators.min(0), Validators.max(100)]],
+      valor_total_recibido: [{value: null, disabled: true}, [Validators.min(0)]],
+      fecha_venta: [new Date(), Validators.required],
+      liquidacion_venta: [''],
+      comision_operador: [0, [Validators.min(0)]],
+      comision_bolsa: [0, [Validators.min(0)]],
+      id_cuenta_bancaria: [null],
+      observacion: ['']
+    });
+  }
+
+  // Getters para cálculos financieros
+  get inversionesSeleccionadasArray(): Inversion[] {
+    return this.inversiones.filter(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
+  }
+
+  parseNumber(value: any): number {
+    if (value === null || value === undefined || value === '') return 0;
+    const num = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.-]/g, '')) : value;
+    return isNaN(num) ? 0 : num;
+  }
+
+  get valorNominalTotalModal(): number {
+    return this.inversionesSeleccionadasArray.reduce((sum, i) => sum + this.parseNumber(i.valor_nominal), 0);
+  }
+
+  get capitalInvertidoTotalModal(): number {
+    return this.inversionesSeleccionadasArray.reduce((sum, i) => sum + this.parseNumber(i.capital_invertido), 0);
+  }
+
+  get valorEfectivo(): number {
+    const porcentaje = this.ventaForm.get('porcentaje_venta')?.value || 0;
+    return this.valorNominalTotalModal * (porcentaje / 100);
+  }
+
+  get valorTotalRecibido(): number {
+    const comisionOperador = this.ventaForm.get('comision_operador')?.value || 0;
+    const comisionBolsa = this.ventaForm.get('comision_bolsa')?.value || 0;
+    return this.valorEfectivo - comisionOperador - comisionBolsa;
+  }
+
+  get utilidadEstimada(): number {
+    return this.valorTotalRecibido - this.capitalInvertidoTotalModal;
+  }
+
+  // Actualizar valor_total_recibido cuando cambian los campos relevantes
+  updateCalculos(): void {
+    const valorTotalRecibido = this.valorTotalRecibido;
+    this.ventaForm.patchValue({ valor_total_recibido: valorTotalRecibido }, { emitEvent: false });
+  }
+
+  loadInversiones(): void {
+    this.loading = true;
+    this.inversionService.getActivasParaVenta().subscribe({
+      next: (data) => {
+        this.inversiones = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar inversiones:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudieron cargar las inversiones'
+        });
+        this.loading = false;
+      }
+    });
+  }
+
+  loadCuentasBancarias(): void {
+    this.cuentaBancariaService.getAll().subscribe({
+      next: (response) => {
+        this.cuentasBancarias = response.data || [];
+        this.cuentasBancariasConLabel = this.cuentasBancarias.map((c: CuentaBancaria) => {
+          const nombres = c.persona?.nombres || '';
+          const apellidos = c.persona?.apellidos || '';
+          const nombreCompleto = nombres && apellidos ? `${nombres} ${apellidos}` : (nombres || apellidos || 'Desconocido');
+          const nombreBanco = c.banco?.nombre || 'Banco';
+          const numeroCuentaFormateado = this.formatNumeroCuenta(c.numero_cuenta || '');
+          const label = `${nombreCompleto} - ${numeroCuentaFormateado} - ${nombreBanco}`;
+          return {
+            id_cuenta_bancaria: c.id_cuenta_bancaria,
+            label: label,
+            nombrePersona: nombreCompleto,
+            nombreBanco: nombreBanco,
+            numeroCuenta: numeroCuentaFormateado
+          };
+        });
+      }
+    });
+  }
+
+  formatNumeroCuenta(numero: string): string {
+    if (!numero) return '';
+    // Eliminar espacios existentes
+    const cleanNumero = numero.replace(/\s/g, '');
+    // Formatear: 105 682 8691 (grupos de 3 dígitos desde la derecha)
+    if (cleanNumero.length <= 3) return cleanNumero;
+    const grupos = [];
+    let i = cleanNumero.length;
+    while (i > 0) {
+      grupos.unshift(cleanNumero.substring(Math.max(0, i - 3), i));
+      i -= 3;
+    }
+    return grupos.join(' ');
+  }
+
+  onInversionSeleccionada(id_inversion: number, checked: boolean): void {
+    if (checked) {
+      this.inversionesSeleccionadas.push(id_inversion);
+    } else {
+      this.inversionesSeleccionadas = this.inversionesSeleccionadas.filter(id => id !== id_inversion);
+    }
+    this.cdr.detectChanges();
+    // Actualizar cálculos si el modal está abierto
+    if (this.displayDialog) {
+      this.updateCalculos();
+    }
+  }
+
+  onSeleccionarTodas(checked: boolean): void {
+    if (checked) {
+      this.inversionesSeleccionadas = this.inversiones.map(i => i.id_inversion!);
+    } else {
+      this.inversionesSeleccionadas = [];
+    }
+    this.cdr.detectChanges();
+    // Actualizar cálculos si el modal está abierto
+    if (this.displayDialog) {
+      this.updateCalculos();
+    }
+  }
+
+  abrirDialogoVenta(): void {
+    if (this.inversionesSeleccionadas.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Debe seleccionar al menos una inversión'
+      });
+      return;
+    }
+    this.displayDialog = true;
+    // Actualizar cálculos al abrir el modal
+    this.updateCalculos();
+  }
+
+  previsualizarVenta(): void {
+    if (this.ventaForm.invalid) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Complete los campos requeridos'
+      });
+      return;
+    }
+
+    const formValue = this.ventaForm.value;
+
+    // Validar que se proporcione porcentaje de venta
+    if (!formValue.porcentaje_venta) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Debe ingresar porcentaje de venta'
+      });
+      return;
+    }
+
+    this.loadingCalculo = true;
+
+    this.ventaService.previsualizarVentaAgrupada({
+      inversiones: this.inversionesSeleccionadas,
+      porcentaje_venta: formValue.porcentaje_venta,
+      valor_total_recibido: this.valorTotalRecibido, // Usar valor calculado
+      comision_operador: formValue.comision_operador,
+      comision_bolsa: formValue.comision_bolsa
+    }).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.previsualizacion = response.data;
+          this.displayPrevisualizar = true;
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: response.message || 'Error al previsualizar venta'
+          });
+        }
+        this.loadingCalculo = false;
+      },
+      error: (err) => {
+        console.error('Error al previsualizar venta:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al previsualizar venta'
+        });
+        this.loadingCalculo = false;
+      }
+    });
+  }
+
+  confirmarVenta(): void {
+    const formValue = this.ventaForm.value;
+
+    const request: VentaAgrupadaRequest = {
+      inversiones: this.inversionesSeleccionadas,
+      porcentaje_venta: formValue.porcentaje_venta,
+      valor_total_recibido: this.valorTotalRecibido, // Usar valor calculado
+      fecha_venta: this.formatDate(formValue.fecha_venta),
+      liquidacion_venta: formValue.liquidacion_venta,
+      comision_operador: formValue.comision_operador,
+      comision_bolsa: formValue.comision_bolsa,
+      id_cuenta_bancaria: formValue.id_cuenta_bancaria,
+      observacion: formValue.observacion
+    };
+
+    this.loadingCalculo = true;
+
+    this.ventaService.crearVentaAgrupada(request).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Venta agrupada registrada exitosamente'
+          });
+          this.displayDialog = false;
+          this.displayPrevisualizar = false;
+          this.ventaForm.reset();
+          this.inversionesSeleccionadas = [];
+          this.loadInversiones(); // Recargar inversiones
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: response.message || 'Error al registrar venta'
+          });
+        }
+        this.loadingCalculo = false;
+      },
+      error: (err) => {
+        console.error('Error al registrar venta:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al registrar venta'
+        });
+        this.loadingCalculo = false;
+      }
+    });
+  }
+
+  cancelarVenta(): void {
+    this.displayDialog = false;
+    this.displayPrevisualizar = false;
+    this.ventaForm.reset();
+  }
+
+  formatDate(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  formatDateDisplay(dateString: string): string {
+    if (!dateString) return '-';
+    // Extraer solo la parte de la fecha (YYYY-MM-DD) sin timezone
+    const datePart = dateString.split('T')[0];
+    if (!datePart) return '-';
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  formatCurrency(value: number): string {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '$0.00';
+    }
+    return new Intl.NumberFormat('es-EC', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  }
+
+  formatPercent(value: number): string {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '0.00%';
+    }
+    return `${value.toFixed(2)}%`;
+  }
+
+  get inversionesSeleccionadasCount(): number {
+    return this.inversionesSeleccionadas.length;
+  }
+
+  get valorNominalTotal(): number {
+    return this.inversiones
+      .filter(i => this.inversionesSeleccionadas.includes(i.id_inversion!))
+      .reduce((sum, i) => {
+        const valor = typeof i.valor_nominal === 'string'
+          ? parseFloat(i.valor_nominal)
+          : (i.valor_nominal || 0);
+        return sum + (isNaN(valor) ? 0 : valor);
+      }, 0);
+  }
+
+  get valorCompraTotal(): number {
+    return this.inversiones
+      .filter(i => this.inversionesSeleccionadas.includes(i.id_inversion!))
+      .reduce((sum, i) => {
+        const valor = typeof i.capital_invertido === 'string'
+          ? parseFloat(i.capital_invertido)
+          : (i.capital_invertido || 0);
+        return sum + (isNaN(valor) ? 0 : valor);
+      }, 0);
+  }
+
+  get todasInversionesSeleccionadas(): boolean {
+    return this.inversiones.length > 0 &&
+           this.inversiones.every(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
+  }
+}

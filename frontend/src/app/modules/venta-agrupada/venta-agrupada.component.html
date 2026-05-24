@@ -1,0 +1,360 @@
+<div class="venta-agrupada-container">
+  <p-toast></p-toast>
+
+  <!-- Resumen de Selección Compacto -->
+  <p-card styleClass="compact-card">
+    <div class="resumen-horizontal">
+      <div class="resumen-stat">
+        <label>Inversiones seleccionadas</label>
+        <span class="stat-value">{{ inversionesSeleccionadasCount }}</span>
+      </div>
+      <div class="resumen-stat">
+        <label>Valor nominal total</label>
+        <span class="stat-value">{{ formatCurrency(valorNominalTotal) }}</span>
+      </div>
+      <div class="resumen-stat">
+        <label>Valor compra total</label>
+        <span class="stat-value">{{ formatCurrency(valorCompraTotal) }}</span>
+      </div>
+      <div class="resumen-action">
+        <p-button
+          label="Realizar Venta"
+          [disabled]="inversionesSeleccionadasCount === 0"
+          (onClick)="abrirDialogoVenta()"
+          styleClass="p-button-success">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- Tabla de inversiones -->
+  <p-card header="Inversiones Disponibles" styleClass="compact-card">
+    <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             [loading]="loading"
+             responsiveLayout="scroll"
+             showCurrentPageReport="true"
+             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+
+      <!-- Header con buscador global -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-end align-items-center">
+          <span class="p-input-icon-left">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+                   placeholder="Buscar nota de crédito..." class="w-100"/>
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columnas -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 50px;">
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="todasInversionesSeleccionadas"
+              (onChange)="onSeleccionarTodas($event.checked)">
+            </p-checkbox>
+          </th>
+          <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
+          <th pSortableColumn="instrumento.nombre">Instrumento <p-sortIcon field="instrumento.nombre"></p-sortIcon></th>
+          <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
+          <th pSortableColumn="valor_nominal">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+          <th pSortableColumn="capital_invertido">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+          <th pSortableColumn="porcentaje_compra">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.nombre', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" class="w-100" placeholder="Filtrar valor nominal"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" class="w-100" placeholder="Filtrar valor compra"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" class="w-100" placeholder="Filtrar % compra"/></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-inversion>
+        <tr>
+          <td>
+            <p-checkbox
+              [binary]="true"
+              [ngModel]="inversionesSeleccionadas.includes(inversion.id_inversion!)"
+              (onChange)="onInversionSeleccionada(inversion.id_inversion!, $event.checked)">
+            </p-checkbox>
+          </td>
+          <td>{{ inversion.id_inversion }}</td>
+          <td>{{ inversion.instrumento?.nombre || '-' }}</td>
+          <td>{{ formatDateDisplay(inversion.fecha_compra) }}</td>
+          <td>{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
+          <td>{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
+          <td>{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
+        </tr>
+      </ng-template>
+
+      <!-- Mensaje cuando no hay datos -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-4">
+            <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+            <p class="mt-2">No se encontraron inversiones</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
+
+<!-- Modal de Venta -->
+<p-dialog
+  header="Venta Agrupada de Notas de Crédito"
+  [(visible)]="displayDialog"
+  [style]="{width: '950px', 'max-width': '95vw'}"
+  [modal]="true"
+  [baseZIndex]="10000">
+
+  <!-- Resumen Financiero Compacto -->
+  <div class="modal-financial-summary">
+    <div class="summary-item">
+      <span class="summary-label">Inversiones:</span>
+      <span class="summary-value">{{ inversionesSeleccionadasCount }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Nominal:</span>
+      <span class="summary-value">{{ formatCurrency(valorNominalTotalModal) }}</span>
+    </div>
+    <div class="summary-item">
+      <span class="summary-label">Capital invertido:</span>
+      <span class="summary-value">{{ formatCurrency(capitalInvertidoTotalModal) }}</span>
+    </div>
+    <div class="summary-item kpi-utilidad">
+      <span class="kpi-label">Utilidad estimada</span>
+      <div class="kpi-value" [ngClass]="utilidadEstimada >= 0 ? 'positive' : 'negative'">
+        <span class="kpi-icon">{{ utilidadEstimada >= 0 ? '▲' : '▼' }}</span>
+        <span class="kpi-amount">{{ formatCurrency(utilidadEstimada) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="ventaForm">
+    <div class="form-grid">
+      <!-- Row 1: Porcentaje de Venta + Liquidación -->
+      <div class="form-field">
+        <label>Porcentaje de Venta (%)</label>
+        <p-inputNumber
+          formControlName="porcentaje_venta"
+          [min]="0"
+          [max]="100"
+          [showButtons]="true"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          placeholder="100.00">
+        </p-inputNumber>
+      </div>
+
+      <div class="form-field">
+        <label>Liquidación</label>
+        <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345">
+      </div>
+
+      <!-- Row 2: Valor Efectivo + Valor Total Recibido -->
+      <div class="form-field">
+        <label>Valor Efectivo</label>
+        <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
+      </div>
+
+      <div class="form-field">
+        <label>Valor Total Recibido</label>
+        <div class="calculated-value">{{ formatCurrency(valorTotalRecibido) }}</div>
+      </div>
+
+      <!-- Row 3: Fecha Venta + Cuenta Bancaria -->
+      <div class="form-field">
+        <label>Fecha Venta *</label>
+        <p-calendar
+          formControlName="fecha_venta"
+          [showIcon]="true"
+          [dateFormat]="'dd/mm/yy'">
+        </p-calendar>
+      </div>
+
+      <div class="form-field">
+        <label>Cuenta Bancaria</label>
+        <p-dropdown
+          formControlName="id_cuenta_bancaria"
+          [options]="cuentasBancariasConLabel"
+          optionLabel="label"
+          optionValue="id_cuenta_bancaria"
+          [filter]="true"
+          filterBy="label,nombrePersona,nombreBanco,numeroCuenta"
+          [showClear]="true"
+          [appendTo]="'body'"
+          placeholder="Seleccione cuenta bancaria">
+          <ng-template pTemplate="selectedItem" let-selectedItem>
+            <div class="cuenta-bancaria-selected">
+              <span class="cuenta-nombre">{{ selectedItem.nombrePersona }}</span>
+              <span class="cuenta-separador">—</span>
+              <span class="cuenta-numero">{{ selectedItem.numeroCuenta }}</span>
+              <span class="cuenta-separador">—</span>
+              <span class="cuenta-banco">{{ selectedItem.nombreBanco }}</span>
+            </div>
+          </ng-template>
+          <ng-template let-option pTemplate="item">
+            <div class="cuenta-bancaria-option">
+              <span class="cuenta-nombre">{{ option.nombrePersona }}</span>
+              <span class="cuenta-separador">—</span>
+              <span class="cuenta-numero">{{ option.numeroCuenta }}</span>
+              <span class="cuenta-separador">—</span>
+              <span class="cuenta-banco">{{ option.nombreBanco }}</span>
+            </div>
+          </ng-template>
+        </p-dropdown>
+      </div>
+
+      <!-- Row 4: Comisión Operador + Comisión Bolsa -->
+      <div class="form-field">
+        <label>Comisión Operador</label>
+        <p-inputNumber
+          formControlName="comision_operador"
+          [min]="0"
+          [showButtons]="true"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          mode="currency"
+          currency="USD"
+          placeholder="$0.00">
+        </p-inputNumber>
+      </div>
+
+      <div class="form-field">
+        <label>Comisión Bolsa</label>
+        <p-inputNumber
+          formControlName="comision_bolsa"
+          [min]="0"
+          [showButtons]="true"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          mode="currency"
+          currency="USD"
+          placeholder="$0.00">
+        </p-inputNumber>
+      </div>
+
+      <!-- Row 5: Observación (full width, altura reducida) -->
+      <div class="form-field full-width">
+        <label>Observación</label>
+        <textarea pInputTextarea formControlName="observacion" rows="2" placeholder="Observaciones..."></textarea>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <app-modal-actions
+      [cancelText]="'Cancelar'"
+      [saveText]="'Previsualizar'"
+      [loading]="loadingCalculo"
+      [disabled]="ventaForm.invalid"
+      (onCancel)="cancelarVenta()"
+      (onSave)="previsualizarVenta()">
+    </app-modal-actions>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal de Previsualización -->
+<p-dialog
+  header="Previsualización de Venta"
+  [(visible)]="displayPrevisualizar"
+  [style]="{width: '1100px', 'max-width': '95vw'}"
+  [modal]="true"
+  [baseZIndex]="10000">
+
+  <div *ngIf="previsualizacion" class="previsualizacion-container">
+    <!-- Resumen General -->
+    <div class="resumen-general">
+      <h3>Resumen General</h3>
+      <div class="resumen-grid">
+        <div class="resumen-item">
+          <label>Valor Nominal Total:</label>
+          <span class="resumen-value">{{ formatCurrency(previsualizacion?.resumen_compra?.valor_nominal_total || 0) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Valor Compra Total:</label>
+          <span class="resumen-value">{{ formatCurrency(previsualizacion?.resumen_compra?.valor_compra_total || 0) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Valor Venta Total:</label>
+          <span class="resumen-value">{{ formatCurrency(previsualizacion?.valor_venta_total || 0) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Comisiones:</label>
+          <span class="resumen-value">{{ formatCurrency(previsualizacion?.total_comisiones || 0) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Valor Neto Recibido:</label>
+          <span class="resumen-value highlight">{{ formatCurrency(previsualizacion?.valor_neto_recibido || 0) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Utilidad Total:</label>
+          <span class="resumen-value" [ngClass]="(previsualizacion?.utilidad_total || 0) >= 0 ? 'text-success' : 'text-danger'">
+            {{ formatCurrency(previsualizacion?.utilidad_total || 0) }}
+          </span>
+        </div>
+        <div class="resumen-item">
+          <label>ROI Total:</label>
+          <span class="resumen-value">{{ formatPercent(previsualizacion?.roi_total || 0) }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribución por Inversión -->
+    <div class="distribucion">
+      <h3>Distribución por Inversión</h3>
+      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="5">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>ID Inversión</th>
+            <th>Valor Nominal</th>
+            <th>Valor Compra</th>
+            <th>% Compra</th>
+            <th>Valor Venta Asignado</th>
+            <th>% Venta</th>
+            <th>Utilidad</th>
+            <th>Rendimiento</th>
+            <th>Proporción</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-detalle>
+          <tr>
+            <td>{{ detalle.id_inversion }}</td>
+            <td>{{ formatCurrency(detalle.valor_nominal || 0) }}</td>
+            <td>{{ formatCurrency(detalle.valor_compra || 0) }}</td>
+            <td>{{ formatPercent(detalle.porcentaje_compra || 0) }}</td>
+            <td>{{ formatCurrency(detalle.valor_venta_asignado || 0) }}</td>
+            <td>{{ formatPercent(detalle.porcentaje_venta || 0) }}</td>
+            <td [ngClass]="(detalle.utilidad || 0) >= 0 ? 'text-success' : 'text-danger'">
+              {{ formatCurrency(detalle.utilidad || 0) }}
+            </td>
+            <td>{{ formatPercent(detalle.rendimiento || 0) }}</td>
+            <td>{{ (detalle.proporcion || 0).toFixed(2) }}%</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <app-modal-actions
+      [cancelText]="'Cancelar'"
+      [saveText]="'Confirmar Venta'"
+      [loading]="loadingCalculo"
+      (onCancel)="cancelarVenta()"
+      (onSave)="confirmarVenta()">
+    </app-modal-actions>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>

@@ -294,3 +294,36 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+
+CREATE TABLE venta_inversion_detalle (
+  id_venta_inversion_detalle INT NOT NULL AUTO_INCREMENT,
+  id_venta_inversion INT NOT NULL,
+  id_inversion INT NOT NULL,
+
+  valor_nominal DECIMAL(18,2) NOT NULL,
+  valor_compra DECIMAL(18,2) NOT NULL,
+  porcentaje_compra DECIMAL(18,8) DEFAULT NULL,
+
+  valor_venta_asignado DECIMAL(18,2) NOT NULL,
+  porcentaje_venta DECIMAL(18,8) DEFAULT NULL,
+
+  utilidad DECIMAL(18,2) DEFAULT 0.00,
+  rendimiento DECIMAL(18,8) DEFAULT 0.00000000,
+
+  fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (id_venta_inversion_detalle),
+
+  KEY idx_venta_detalle_venta (id_venta_inversion),
+  KEY idx_venta_detalle_inversion (id_inversion),
+
+  CONSTRAINT fk_venta_detalle_venta
+    FOREIGN KEY (id_venta_inversion)
+    REFERENCES venta_inversion(id_venta_inversion),
+
+  CONSTRAINT fk_venta_detalle_inversion
+    FOREIGN KEY (id_inversion)
+    REFERENCES inversion(id_inversion)
+);

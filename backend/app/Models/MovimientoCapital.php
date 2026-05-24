@@ -59,10 +59,8 @@ class MovimientoCapital extends Model
         return $this->belongsTo(CatalogoValor::class, 'id_tipo_movimiento');
     }
 
-    public function signo()
+    public function signoCatalogo()
     {
-        // El signo es un campo char(1) con '+' o '-'
-        // No es una relación a catálogo_valor
-        return null;
+        return $this->belongsTo(CatalogoValor::class, 'signo');
     }
 }

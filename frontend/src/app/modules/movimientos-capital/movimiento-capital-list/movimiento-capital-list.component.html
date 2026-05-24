@@ -65,7 +65,7 @@
         <td>{{ movimiento.descripcion || '-' }}</td>
         <td>{{ getInversionLabel(movimiento) }}</td>
         <td>
-          <p-tag [value]="getSignoLabel(movimiento.signo)" [severity]="getSignoClass(movimiento.signo)"></p-tag>
+          <p-tag [value]="getSignoLabel(movimiento.id_signo)" [severity]="getSignoClass(movimiento.id_signo)"></p-tag>
         </td>
         <td>{{ formatCurrency(getMonto(movimiento)) }}</td>
         <td [ngClass]="movimiento.saldo_acumulado >= 0 ? 'text-success' : 'text-danger'">{{ formatCurrency(movimiento.saldo_acumulado) }}</td>
@@ -164,7 +164,7 @@
           <!-- Fila 3 -->
           <div class="form-field">
             <label>Signo *</label>
-            <p-dropdown formControlName="signo" [options]="[{label: 'Positivo (+)', value: '+'}, {label: 'Negativo (-)', value: '-'}]" optionLabel="label" optionValue="value" placeholder="Seleccione"></p-dropdown>
+            <p-dropdown formControlName="id_signo" [options]="signos" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione"></p-dropdown>
           </div>
 
           <div class="form-field">

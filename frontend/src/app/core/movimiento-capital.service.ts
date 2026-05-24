@@ -6,7 +6,7 @@ export interface MovimientoCapital {
   id_movimiento_capital?: number;
   fecha_movimiento: string;
   id_tipo_movimiento: number;
-  signo: '+' | '-';
+  id_signo: number;
   monto?: number;
   id_inversion?: number;
   id_venta_inversion?: number;
