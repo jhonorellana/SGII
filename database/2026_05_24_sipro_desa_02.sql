@@ -1509,6 +1509,7 @@ CREATE TABLE `venta_inversion` (
   `id_inversion` int(11) DEFAULT NULL,
   `id_instrumento` int(11) DEFAULT NULL,
   `id_tipo_venta` int(11) DEFAULT NULL,
+  `id_propietario` int(11) DEFAULT NULL,
   `porcentaje_vendido` decimal(8,2) DEFAULT 0.00,
   `fecha_venta` date NOT NULL,
   `liquidacion_venta` varchar(50) DEFAULT NULL,

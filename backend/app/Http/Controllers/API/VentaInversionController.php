@@ -552,8 +552,24 @@ class VentaInversionController extends Controller
                 }
             }
 
-            // NOTA: Las ventas agrupadas de Notas de Crédito no crean movimiento de capital
-            // ya que no representan una transacción bancaria, solo una operación comercial
+            // STEP 6: Crear movimiento de capital contable para la venta agrupada
+            MovimientoCapital::create([
+                'id_tipo_movimiento' => 182,
+                'id_persona' => $request->id_persona,
+                'id_inversion' => null, // NULL para ventas agrupadas
+                'id_venta_inversion' => $venta->id_venta_inversion,
+                'id_cuenta_bancaria' => null, // NULL ya que no está vinculado a cuenta bancaria
+                'id_signo' => 190, // Movimiento positivo
+                'monto' => $data['valor_neto_recibido'],
+                'fecha_movimiento' => $request->fecha_venta,
+                'descripcion' => 'Venta Nota de Crédito',
+                'conciliado' => 0,
+                'fecha_conciliacion' => null,
+                'activo' => 1,
+                'eliminado' => 0,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
 
             DB::commit();
 
