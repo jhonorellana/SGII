@@ -4,19 +4,24 @@
   <!-- Resumen de Selección Compacto -->
   <p-card styleClass="compact-card">
     <div class="resumen-horizontal">
-      <div class="resumen-stat">
-        <label>Inversiones seleccionadas</label>
-        <span class="stat-value">{{ inversionesSeleccionadasCount }}</span>
-      </div>
-      <div class="resumen-stat">
-        <label>Valor nominal total</label>
-        <span class="stat-value">{{ formatCurrency(valorNominalTotal) }}</span>
-      </div>
-      <div class="resumen-stat">
-        <label>Valor compra total</label>
-        <span class="stat-value">{{ formatCurrency(valorCompraTotal) }}</span>
+      <div class="resumen-stats">
+        <div class="resumen-stat">
+          <label>Inversiones seleccionadas</label>
+          <span class="stat-value">{{ inversionesSeleccionadasCount }}</span>
+        </div>
+        <div class="resumen-stat">
+          <label>Valor nominal total</label>
+          <span class="stat-value">{{ formatCurrency(valorNominalTotal) }}</span>
+        </div>
+        <div class="resumen-stat">
+          <label>Valor compra total</label>
+          <span class="stat-value">{{ formatCurrency(valorCompraTotal) }}</span>
+        </div>
       </div>
       <div class="resumen-action">
+        <span *ngIf="inversionesSeleccionadasCount === 0" class="empty-state-hint">
+          Seleccione una o más notas de crédito para habilitar la venta agrupada.
+        </span>
         <p-button
           label="Realizar Venta"
           [disabled]="inversionesSeleccionadasCount === 0"
@@ -27,8 +32,11 @@
     </div>
   </p-card>
 
+  <!-- Espaciador -->
+  <div class="card-spacer"></div>
+
   <!-- Tabla de inversiones -->
-  <p-card header="Inversiones Disponibles" styleClass="compact-card">
+  <p-card header="Inversiones Disponibles" styleClass="compact-card inversiones-card">
     <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
@@ -118,7 +126,8 @@
   [(visible)]="displayDialog"
   [style]="{width: '950px', 'max-width': '95vw'}"
   [modal]="true"
-  [baseZIndex]="10000">
+  [baseZIndex]="10000"
+  styleClass="venta-agrupada-modal">
 
   <!-- Resumen Financiero Compacto -->
   <div class="modal-financial-summary">
@@ -145,8 +154,8 @@
 
   <form [formGroup]="ventaForm">
     <div class="form-grid">
-      <!-- Row 0: Persona -->
-      <div class="form-field full-width">
+      <!-- TOP ROW: Titular / Persona + Valor Total Recibido -->
+      <div class="form-field half-width">
         <label>Titular / Persona (Propietario) *</label>
         <p-dropdown
           formControlName="id_persona"
@@ -154,13 +163,27 @@
           optionLabel="nombre"
           optionValue="id_persona"
           placeholder="Seleccione el titular"
-          [showClear]="true">
+          [showClear]="true"
+          styleClass="wide-dropdown">
         </p-dropdown>
-        <small class="text-muted">Debe coincidir con el propietario de las inversiones seleccionadas</small>
       </div>
 
-      <!-- Row 1: Porcentaje de Venta + Liquidación -->
-      <div class="form-field">
+      <div class="form-field half-width">
+        <label>Valor Total Recibido</label>
+        <div class="calculated-value highlight">{{ formatCurrency(valorTotalRecibido) }}</div>
+      </div>
+
+      <!-- SECOND ROW: Fecha Venta + Porcentaje de Venta -->
+      <div class="form-field half-width">
+        <label>Fecha Venta *</label>
+        <p-calendar
+          formControlName="fecha_venta"
+          [showIcon]="true"
+          [dateFormat]="'dd/mm/yy'">
+        </p-calendar>
+      </div>
+
+      <div class="form-field half-width">
         <label>Porcentaje de Venta (%)</label>
         <p-inputNumber
           formControlName="porcentaje_venta"
@@ -173,34 +196,19 @@
         </p-inputNumber>
       </div>
 
-      <div class="form-field">
+      <!-- THIRD ROW: Liquidación + Valor Efectivo -->
+      <div class="form-field half-width">
         <label>Liquidación</label>
         <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345">
       </div>
 
-      <!-- Row 1: Valor Efectivo + Valor Total Recibido -->
-      <div class="form-field">
+      <div class="form-field half-width">
         <label>Valor Efectivo</label>
         <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
       </div>
 
-      <div class="form-field">
-        <label>Valor Total Recibido</label>
-        <div class="calculated-value">{{ formatCurrency(valorTotalRecibido) }}</div>
-      </div>
-
-      <!-- Row 2: Fecha Venta -->
-      <div class="form-field full-width">
-        <label>Fecha Venta *</label>
-        <p-calendar
-          formControlName="fecha_venta"
-          [showIcon]="true"
-          [dateFormat]="'dd/mm/yy'">
-        </p-calendar>
-      </div>
-
-      <!-- Row 3: Comisión Operador + Comisión Bolsa -->
-      <div class="form-field">
+      <!-- FOURTH ROW: Comisión Operador + Comisión Bolsa -->
+      <div class="form-field half-width">
         <label>Comisión Operador</label>
         <p-inputNumber
           formControlName="comision_operador"
@@ -214,7 +222,7 @@
         </p-inputNumber>
       </div>
 
-      <div class="form-field">
+      <div class="form-field half-width">
         <label>Comisión Bolsa</label>
         <p-inputNumber
           formControlName="comision_bolsa"
@@ -254,7 +262,8 @@
   [(visible)]="displayPrevisualizar"
   [style]="{width: '1100px', 'max-width': '95vw'}"
   [modal]="true"
-  [baseZIndex]="10000">
+  [baseZIndex]="10000"
+  styleClass="venta-agrupada-modal">
 
   <div *ngIf="previsualizacion" class="previsualizacion-container">
     <!-- Advertencia de Reasignación -->
