@@ -56,6 +56,7 @@ class InversionResource extends JsonResource
             ] : null,
             'instrumento' => $this->instrumento ? [
                 'id_instrumento' => $this->instrumento->id_instrumento,
+                'id_tipo_inversion' => $this->instrumento->id_tipo_inversion,
                 'nombre' => $this->instrumento->nombre,
                 'codigo_titulo' => $this->instrumento->codigo_titulo,
                 'codigo_titulo_vector' => $this->instrumento->codigo_titulo_vector,
@@ -82,12 +83,14 @@ class InversionResource extends JsonResource
                 'nombres' => $this->propietario->nombres,
                 'apellidos' => $this->propietario->apellidos,
                 'identificacion' => $this->propietario->identificacion,
+                'nombre' => $this->propietario->nombre,
             ] : null,
             'aportante' => $this->aportante ? [
                 'id_persona' => $this->aportante->id_persona,
                 'nombres' => $this->aportante->nombres,
                 'apellidos' => $this->aportante->apellidos,
                 'identificacion' => $this->aportante->identificacion,
+                'nombre' => $this->aportante->nombre,
             ] : null,
             'estadoInversion' => $this->estadoInversion ? [
                 'id_catalogo_valor' => $this->estadoInversion->id_catalogo_valor,

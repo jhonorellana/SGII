@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\VentaInversion;
 use App\Models\VentaInversionDetalle;
 use App\Models\Inversion;
+use App\Models\InversionPropietarioReasignacionLog;
 use App\Models\MovimientoCapital;
 use App\Events\VentaInversionRegistrada;
 use App\Services\VentaAgrupadaCalculator;
@@ -405,7 +406,6 @@ class VentaInversionController extends Controller
             'liquidacion_venta' => 'nullable|string|max:50',
             'comision_operador' => 'nullable|numeric|min:0',
             'comision_bolsa' => 'nullable|numeric|min:0',
-            'id_cuenta_bancaria' => 'nullable|exists:cuenta_bancaria,id_cuenta_bancaria',
             'observacion' => 'nullable|string'
         ]);
 
@@ -417,14 +417,23 @@ class VentaInversionController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // Validar que todas las inversiones pertenezcan a la misma persona
-        $inversiones = Inversion::whereIn('id_inversion', $request->inversiones)->get();
+        // Mapear id_persona a id_propietario para consistencia con la base de datos
+        $request->merge(['id_propietario' => $request->id_persona]);
+
+        // Detectar inversiones con propietarios diferentes al seleccionado
+        $inversiones = Inversion::whereIn('id_inversion', $request->inversiones)
+            ->with('propietario')
+            ->get();
+
+        $inversionesReasignar = [];
         foreach ($inversiones as $inv) {
-            if ($inv->id_persona != $request->id_persona) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Todas las inversiones deben pertenecer a la misma persona'
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+            if ($inv->id_propietario != $request->id_persona) {
+                $inversionesReasignar[] = [
+                    'id_inversion' => $inv->id_inversion,
+                    'id_propietario_anterior' => $inv->id_propietario,
+                    'id_propietario_nuevo' => $request->id_persona,
+                    'propietario_anterior_nombre' => $inv->propietario ? $inv->propietario->nombre : 'Desconocido'
+                ];
             }
         }
 
@@ -444,7 +453,8 @@ class VentaInversionController extends Controller
                 $request->porcentaje_venta ?? 0,
                 $request->valor_total_recibido ?? 0,
                 $request->comision_operador ?? 0,
-                $request->comision_bolsa ?? 0
+                $request->comision_bolsa ?? 0,
+                $request->id_persona
             );
 
             if (!$distribucion['success']) {
@@ -454,12 +464,35 @@ class VentaInversionController extends Controller
             $data = $distribucion['data'];
             $resumenCompra = $data['resumen_compra'];
 
-            // Crear venta principal
+            // STEP 1 & 2: Reasignar propietarios si es necesario y crear logs
+            $usuarioReasignacion = auth()->user()->name ?? 'sistema';
+            foreach ($inversionesReasignar as $reasignacion) {
+                // Insertar log de reasignación
+                InversionPropietarioReasignacionLog::create([
+                    'id_inversion' => $reasignacion['id_inversion'],
+                    'id_venta_inversion' => null, // Se actualizará después de crear la venta
+                    'id_propietario_anterior' => $reasignacion['id_propietario_anterior'],
+                    'id_propietario_nuevo' => $reasignacion['id_propietario_nuevo'],
+                    'motivo' => 'Reasignación automática por venta agrupada de notas de crédito',
+                    'observacion' => 'Reasignación previa a confirmación de venta agrupada',
+                    'usuario_reasignacion' => $usuarioReasignacion,
+                    'fecha_reasignacion' => now()
+                ]);
+
+                // STEP 3: Actualizar propietario de la inversión
+                Inversion::where('id_inversion', $reasignacion['id_inversion'])
+                    ->update([
+                        'id_propietario' => $reasignacion['id_propietario_nuevo'],
+                        'fecha_actualizacion' => now()
+                    ]);
+            }
+
+            // STEP 4: Crear venta principal
             $venta = VentaInversion::create([
                 'id_inversion' => null, // NULL para ventas agrupadas
                 'id_instrumento' => Inversion::find($request->inversiones[0])->id_instrumento ?? null,
                 'id_tipo_venta' => null,
-                'id_persona' => $request->id_persona,
+                'id_propietario' => $request->id_persona,
                 'porcentaje_vendido' => $request->porcentaje_venta ?? 0,
                 'fecha_venta' => $request->fecha_venta,
                 'liquidacion_venta' => $request->liquidacion_venta,
@@ -486,7 +519,14 @@ class VentaInversionController extends Controller
                 'fecha_actualizacion' => now()
             ]);
 
-            // Crear detalles para cada inversión
+            // Actualizar logs de reasignación con el ID de venta
+            if (!empty($inversionesReasignar)) {
+                InversionPropietarioReasignacionLog::whereIn('id_inversion', array_column($inversionesReasignar, 'id_inversion'))
+                    ->whereNull('id_venta_inversion')
+                    ->update(['id_venta_inversion' => $venta->id_venta_inversion]);
+            }
+
+            // STEP 5: Crear detalles para cada inversión
             foreach ($data['detalles_distribucion'] as $detalle) {
                 VentaInversionDetalle::create([
                     'id_venta_inversion' => $venta->id_venta_inversion,
@@ -512,27 +552,8 @@ class VentaInversionController extends Controller
                 }
             }
 
-            // Crear movimiento de capital único
-            $tipoVentaInversion = CatalogoValor::where('id_catalogo_valor', 182)->first();
-            $tipoPositivo = CatalogoValor::where('codigo', 'POSITIVO')->first();
-
-            $movimiento = MovimientoCapital::create([
-                'fecha_movimiento' => $request->fecha_venta,
-                'id_tipo_movimiento' => $tipoVentaInversion ? $tipoVentaInversion->id_catalogo_valor : 182, // VENTA_INVERSION
-                'id_persona' => $request->id_persona,
-                'id_signo' => $tipoPositivo ? $tipoPositivo->id_catalogo_valor : 190, // POSITIVO
-                'monto' => $data['valor_neto_recibido'],
-                'id_inversion' => null, // NULL para ventas agrupadas
-                'id_venta_inversion' => $venta->id_venta_inversion,
-                'id_cuenta_bancaria' => $request->id_cuenta_bancaria,
-                'descripcion' => 'Venta agrupada de notas de crédito',
-                'conciliado' => false,
-                'fecha_conciliacion' => null,
-                'activo' => true,
-                'eliminado' => false,
-                'fecha_creacion' => now(),
-                'fecha_actualizacion' => now()
-            ]);
+            // NOTA: Las ventas agrupadas de Notas de Crédito no crean movimiento de capital
+            // ya que no representan una transacción bancaria, solo una operación comercial
 
             DB::commit();
 
@@ -541,7 +562,6 @@ class VentaInversionController extends Controller
                 'message' => 'Venta agrupada registrada exitosamente',
                 'data' => [
                     'venta' => $venta->load(['detalles.inversion', 'persona']),
-                    'movimiento_capital' => $movimiento->load('persona'),
                     'resumen' => [
                         'inversiones_count' => $resumenCompra['inversiones_count'],
                         'valor_nominal_total' => $resumenCompra['valor_nominal_total'],
@@ -595,6 +615,7 @@ class VentaInversionController extends Controller
         $validator = Validator::make($request->all(), [
             'inversiones' => 'required|array|min:1',
             'inversiones.*' => 'exists:inversion,id_inversion',
+            'id_persona' => 'nullable|exists:persona,id_persona',
             'porcentaje_venta' => 'nullable|numeric|min:0|max:100',
             'valor_total_recibido' => 'nullable|numeric|min:0',
             'comision_operador' => 'nullable|numeric|min:0',
@@ -614,7 +635,8 @@ class VentaInversionController extends Controller
             $request->porcentaje_venta,
             $request->valor_total_recibido,
             $request->comision_operador ?? 0,
-            $request->comision_bolsa ?? 0
+            $request->comision_bolsa ?? 0,
+            $request->id_persona
         );
 
         return response()->json($resultado, $resultado['success'] ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);

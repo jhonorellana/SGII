@@ -218,7 +218,12 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.personaService.getAll().subscribe({
       next: (data: any) => {
         const personasArray = Array.isArray(data) ? data : (data as any).data || [];
-        this.propietarios = personasArray.filter((p: any) => p.activo === true || p.activo === 1);
+        this.propietarios = personasArray
+          .filter((p: any) => p.activo === true || p.activo === 1)
+          .map((p: any) => ({
+            ...p,
+            nombre: `${p.nombres} ${p.apellidos}`.trim()
+          }));
       },
       error: (error: any) => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar propietarios' });
@@ -230,7 +235,12 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.personaService.getAll().subscribe({
       next: (data: any) => {
         const personasArray = Array.isArray(data) ? data : (data as any).data || [];
-        this.aportantes = personasArray.filter((p: any) => p.activo === true || p.activo === 1);
+        this.aportantes = personasArray
+          .filter((p: any) => p.activo === true || p.activo === 1)
+          .map((p: any) => ({
+            ...p,
+            nombre: `${p.nombres} ${p.apellidos}`.trim()
+          }));
       },
       error: (error: any) => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar aportantes' });

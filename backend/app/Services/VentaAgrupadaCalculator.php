@@ -9,11 +9,12 @@ class VentaAgrupadaCalculator
     /**
      * Calcular resumen de compra para un conjunto de inversiones
      */
-    public function calcularResumenCompra(array $idsInversiones): array
+    public function calcularResumenCompra(array $idsInversiones, ?int $idPersonaSeleccionada = null): array
     {
         $inversiones = Inversion::whereIn('id_inversion', $idsInversiones)
             ->where('activo', true)
             ->where('eliminado', false)
+            ->with('propietario')
             ->get();
 
         if ($inversiones->count() === 0) {
@@ -27,6 +28,7 @@ class VentaAgrupadaCalculator
         $valorCompraTotal = 0;
         $porcentajeCompraPromedio = 0;
         $detalles = [];
+        $inversionesReasignar = [];
 
         foreach ($inversiones as $inversion) {
             $valorNominal = $inversion->valor_nominal ?? 0;
@@ -36,14 +38,28 @@ class VentaAgrupadaCalculator
             $valorNominalTotal += $valorNominal;
             $valorCompraTotal += $valorCompra;
 
-            $detalles[] = [
+            $detalle = [
                 'id_inversion' => $inversion->id_inversion,
                 'valor_nominal' => $valorNominal,
                 'valor_compra' => $valorCompra,
                 'porcentaje_compra' => $porcentajeCompra,
                 'fecha_compra' => $inversion->fecha_compra,
-                'instrumento' => $inversion->instrumento->nombre ?? '-'
+                'instrumento' => $inversion->instrumento->nombre ?? '-',
+                'propietario_nombre' => $inversion->propietario ? $inversion->propietario->nombre : '-',
+                'id_propietario' => $inversion->id_propietario
             ];
+
+            // Detectar si necesita reasignación
+            if ($idPersonaSeleccionada && $inversion->id_propietario != $idPersonaSeleccionada) {
+                $detalle['requiere_reasignacion'] = true;
+                $detalle['id_propietario_anterior'] = $inversion->id_propietario;
+                $detalle['id_propietario_nuevo'] = $idPersonaSeleccionada;
+                $inversionesReasignar[] = $detalle;
+            } else {
+                $detalle['requiere_reasignacion'] = false;
+            }
+
+            $detalles[] = $detalle;
         }
 
         if ($valorNominalTotal > 0) {
@@ -57,7 +73,8 @@ class VentaAgrupadaCalculator
                 'valor_nominal_total' => $valorNominalTotal,
                 'valor_compra_total' => $valorCompraTotal,
                 'porcentaje_compra_promedio' => $porcentajeCompraPromedio,
-                'detalles' => $detalles
+                'detalles' => $detalles,
+                'inversiones_reasignar' => $inversionesReasignar
             ]
         ];
     }
@@ -65,9 +82,9 @@ class VentaAgrupadaCalculator
     /**
      * Calcular distribución de venta para un conjunto de inversiones
      */
-    public function calcularDistribucionVenta(array $idsInversiones, float $porcentajeVenta, float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0): array
+    public function calcularDistribucionVenta(array $idsInversiones, float $porcentajeVenta, float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
     {
-        $resumenCompra = $this->calcularResumenCompra($idsInversiones);
+        $resumenCompra = $this->calcularResumenCompra($idsInversiones, $idPersonaSeleccionada);
 
         if (!$resumenCompra['success']) {
             return $resumenCompra;
@@ -100,8 +117,8 @@ class VentaAgrupadaCalculator
         // Distribuir proporcionalmente
         $detallesDistribucion = [];
         foreach ($data['detalles'] as $detalle) {
-            $proporcion = $valorCompraTotal > 0 
-                ? ($detalle['valor_compra'] / $valorCompraTotal) 
+            $proporcion = $valorCompraTotal > 0
+                ? ($detalle['valor_compra'] / $valorCompraTotal)
                 : 0;
 
             // Valor de venta asignado
@@ -111,8 +128,8 @@ class VentaAgrupadaCalculator
             $utilidadIndividual = $valorVentaAsignado - $detalle['valor_compra'];
 
             // Rendimiento individual (ROI)
-            $rendimientoIndividual = $detalle['valor_compra'] > 0 
-                ? ($utilidadIndividual / $detalle['valor_compra']) * 100 
+            $rendimientoIndividual = $detalle['valor_compra'] > 0
+                ? ($utilidadIndividual / $detalle['valor_compra']) * 100
                 : 0;
 
             // Porcentaje de venta individual
@@ -122,6 +139,7 @@ class VentaAgrupadaCalculator
 
             $detallesDistribucion[] = [
                 'id_inversion' => $detalle['id_inversion'],
+                'propietario_nombre' => $detalle['propietario_nombre'],
                 'valor_nominal' => $detalle['valor_nominal'],
                 'valor_compra' => $detalle['valor_compra'],
                 'porcentaje_compra' => $detalle['porcentaje_compra'],
@@ -129,7 +147,10 @@ class VentaAgrupadaCalculator
                 'porcentaje_venta' => $porcentajeVentaIndividual,
                 'utilidad' => $utilidadIndividual,
                 'rendimiento' => $rendimientoIndividual,
-                'proporcion' => $proporcion * 100
+                'proporcion' => $proporcion * 100,
+                'requiere_reasignacion' => $detalle['requiere_reasignacion'] ?? false,
+                'id_propietario_anterior' => $detalle['id_propietario_anterior'] ?? null,
+                'id_propietario_nuevo' => $detalle['id_propietario_nuevo'] ?? null
             ];
         }
 
@@ -144,7 +165,8 @@ class VentaAgrupadaCalculator
                 'valor_neto_recibido' => $valorNetoRecibido,
                 'utilidad_total' => $utilidadTotal,
                 'roi_total' => $roiTotal,
-                'detalles_distribucion' => $detallesDistribucion
+                'detalles_distribucion' => $detallesDistribucion,
+                'inversiones_reasignar' => $data['inversiones_reasignar'] ?? []
             ]
         ];
     }
@@ -152,7 +174,7 @@ class VentaAgrupadaCalculator
     /**
      * Previsualizar venta agrupada
      */
-    public function previsualizarVenta(array $idsInversiones, ?float $porcentajeVenta, ?float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0): array
+    public function previsualizarVenta(array $idsInversiones, ?float $porcentajeVenta, ?float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
     {
         // Validar que se proporcione porcentaje_venta o valor_total_recibido
         if (!$porcentajeVenta && !$valorTotalRecibido) {
@@ -162,7 +184,7 @@ class VentaAgrupadaCalculator
             ];
         }
 
-        return $this->calcularDistribucionVenta($idsInversiones, $porcentajeVenta ?? 0, $valorTotalRecibido ?? 0, $comisionOperador, $comisionBolsa);
+        return $this->calcularDistribucionVenta($idsInversiones, $porcentajeVenta ?? 0, $valorTotalRecibido ?? 0, $comisionOperador, $comisionBolsa, $idPersonaSeleccionada);
     }
 
     /**

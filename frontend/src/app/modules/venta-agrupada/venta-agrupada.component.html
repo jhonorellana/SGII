@@ -31,7 +31,7 @@
   <p-card header="Inversiones Disponibles" styleClass="compact-card">
     <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
-             [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra']"
+             [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
              [tableStyle]="{'min-width': '80rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
              [loading]="loading"
@@ -57,10 +57,11 @@
           <th style="width: 50px;">
             <p-checkbox
               [binary]="true"
-              [ngModel]="todasInversionesSeleccionadas"
+              [(ngModel)]="todasInversionesSeleccionadas"
               (onChange)="onSeleccionarTodas($event.checked)">
             </p-checkbox>
           </th>
+          <th>Persona</th>
           <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
           <th pSortableColumn="instrumento.nombre">Instrumento <p-sortIcon field="instrumento.nombre"></p-sortIcon></th>
           <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
@@ -70,6 +71,7 @@
         </tr>
         <tr>
           <th></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietario.nombre', 'contains')" class="w-100" placeholder="Filtrar persona"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.nombre', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
@@ -83,11 +85,12 @@
           <td>
             <p-checkbox
               [binary]="true"
-              [ngModel]="inversionesSeleccionadas.includes(inversion.id_inversion!)"
+              [(ngModel)]="inversionSeleccionadaMap[inversion.id_inversion!]"
               (onChange)="onInversionSeleccionada(inversion.id_inversion!, $event.checked)">
             </p-checkbox>
           </td>
-          <td>{{ inversion.id_inversion }}</td>
+          <td>{{ inversion.propietario?.nombre || (inversion.propietario?.nombres + ' ' + inversion.propietario?.apellidos) || '-' }}</td>
+          <td>{{ inversion.id_inversion }} - {{ inversion.liquidacion || '-' }}</td>
           <td>{{ inversion.instrumento?.nombre || '-' }}</td>
           <td>{{ formatDateDisplay(inversion.fecha_compra) }}</td>
           <td>{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
@@ -99,9 +102,9 @@
       <!-- Mensaje cuando no hay datos -->
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center py-4">
+          <td colspan="8" class="text-center py-4">
             <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
-            <p class="mt-2">No se encontraron inversiones</p>
+            <p class="mt-2">No se encontraron inversiones de tipo Notas de Crédito</p>
           </td>
         </tr>
       </ng-template>
@@ -142,9 +145,9 @@
 
   <form [formGroup]="ventaForm">
     <div class="form-grid">
-      <!-- Row 0: Persona (must be selected first) -->
+      <!-- Row 0: Persona -->
       <div class="form-field full-width">
-        <label>Titular / Persona *</label>
+        <label>Titular / Persona (Propietario) *</label>
         <p-dropdown
           formControlName="id_persona"
           [options]="personas"
@@ -153,7 +156,7 @@
           placeholder="Seleccione el titular"
           [showClear]="true">
         </p-dropdown>
-        <small class="text-muted">Solo se mostrarán inversiones de esta persona</small>
+        <small class="text-muted">Debe coincidir con el propietario de las inversiones seleccionadas</small>
       </div>
 
       <!-- Row 1: Porcentaje de Venta + Liquidación -->
@@ -175,7 +178,7 @@
         <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345">
       </div>
 
-      <!-- Row 2: Valor Efectivo + Valor Total Recibido -->
+      <!-- Row 1: Valor Efectivo + Valor Total Recibido -->
       <div class="form-field">
         <label>Valor Efectivo</label>
         <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
@@ -186,8 +189,8 @@
         <div class="calculated-value">{{ formatCurrency(valorTotalRecibido) }}</div>
       </div>
 
-      <!-- Row 3: Fecha Venta + Cuenta Bancaria -->
-      <div class="form-field">
+      <!-- Row 2: Fecha Venta -->
+      <div class="form-field full-width">
         <label>Fecha Venta *</label>
         <p-calendar
           formControlName="fecha_venta"
@@ -196,40 +199,7 @@
         </p-calendar>
       </div>
 
-      <div class="form-field">
-        <label>Cuenta Bancaria</label>
-        <p-dropdown
-          formControlName="id_cuenta_bancaria"
-          [options]="cuentasBancariasConLabel"
-          optionLabel="label"
-          optionValue="id_cuenta_bancaria"
-          [filter]="true"
-          filterBy="label,nombrePersona,nombreBanco,numeroCuenta"
-          [showClear]="true"
-          [appendTo]="'body'"
-          placeholder="Seleccione cuenta bancaria">
-          <ng-template pTemplate="selectedItem" let-selectedItem>
-            <div class="cuenta-bancaria-selected">
-              <span class="cuenta-nombre">{{ selectedItem.nombrePersona }}</span>
-              <span class="cuenta-separador">—</span>
-              <span class="cuenta-numero">{{ selectedItem.numeroCuenta }}</span>
-              <span class="cuenta-separador">—</span>
-              <span class="cuenta-banco">{{ selectedItem.nombreBanco }}</span>
-            </div>
-          </ng-template>
-          <ng-template let-option pTemplate="item">
-            <div class="cuenta-bancaria-option">
-              <span class="cuenta-nombre">{{ option.nombrePersona }}</span>
-              <span class="cuenta-separador">—</span>
-              <span class="cuenta-numero">{{ option.numeroCuenta }}</span>
-              <span class="cuenta-separador">—</span>
-              <span class="cuenta-banco">{{ option.nombreBanco }}</span>
-            </div>
-          </ng-template>
-        </p-dropdown>
-      </div>
-
-      <!-- Row 4: Comisión Operador + Comisión Bolsa -->
+      <!-- Row 3: Comisión Operador + Comisión Bolsa -->
       <div class="form-field">
         <label>Comisión Operador</label>
         <p-inputNumber
@@ -287,6 +257,16 @@
   [baseZIndex]="10000">
 
   <div *ngIf="previsualizacion" class="previsualizacion-container">
+    <!-- Advertencia de Reasignación -->
+    <div *ngIf="previsualizacion.inversiones_reasignar && previsualizacion.inversiones_reasignar.length > 0" class="reasignacion-warning">
+      <div class="warning-icon">⚠️</div>
+      <div class="warning-content">
+        <h4>Reasignación de Propietario</h4>
+        <p>Algunas inversiones seleccionadas actualmente pertenecen a un propietario diferente. Antes de confirmar la venta, el sistema reasignará todas las inversiones seleccionadas al propietario seleccionado en el formulario.</p>
+        <p class="warning-detail">Esta reasignación será registrada en el log de auditoría para trazabilidad.</p>
+      </div>
+    </div>
+
     <!-- Resumen General -->
     <div class="resumen-general">
       <h3>Resumen General</h3>
@@ -319,7 +299,9 @@
         </div>
         <div class="resumen-item">
           <label>ROI Total:</label>
-          <span class="resumen-value">{{ formatPercent(previsualizacion?.roi_total || 0) }}</span>
+          <span class="resumen-value" [ngClass]="(previsualizacion?.roi_total || 0) >= 0 ? 'text-success' : 'text-danger'">
+            {{ formatPercent(previsualizacion?.roi_total || 0) }}
+          </span>
         </div>
       </div>
     </div>
@@ -331,29 +313,36 @@
         <ng-template pTemplate="header">
           <tr>
             <th>ID Inversión</th>
-            <th>Valor Nominal</th>
-            <th>Valor Compra</th>
-            <th>% Compra</th>
-            <th>Valor Venta Asignado</th>
-            <th>% Venta</th>
-            <th>Utilidad</th>
-            <th>Rendimiento</th>
-            <th>Proporción</th>
+            <th>Propietario</th>
+            <th class="text-right">Valor Nominal</th>
+            <th class="text-right">Valor Compra</th>
+            <th class="text-right">% Compra</th>
+            <th class="text-right">Valor Venta Asignado</th>
+            <th class="text-right">% Venta</th>
+            <th class="text-right">Utilidad</th>
+            <th class="text-right">Rendimiento</th>
+            <th class="text-right">Proporción</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-detalle>
-          <tr>
+          <tr [ngClass]="{'row-reasignar': detalle.requiere_reasignacion}">
             <td>{{ detalle.id_inversion }}</td>
-            <td>{{ formatCurrency(detalle.valor_nominal || 0) }}</td>
-            <td>{{ formatCurrency(detalle.valor_compra || 0) }}</td>
-            <td>{{ formatPercent(detalle.porcentaje_compra || 0) }}</td>
-            <td>{{ formatCurrency(detalle.valor_venta_asignado || 0) }}</td>
-            <td>{{ formatPercent(detalle.porcentaje_venta || 0) }}</td>
-            <td [ngClass]="(detalle.utilidad || 0) >= 0 ? 'text-success' : 'text-danger'">
+            <td>
+              {{ detalle.propietario_nombre }}
+              <span *ngIf="detalle.requiere_reasignacion" class="reasignacion-badge">
+                {{ getNombrePersona(detalle.id_propietario_anterior) }} → {{ getNombrePersona(detalle.id_propietario_nuevo) }}
+              </span>
+            </td>
+            <td class="text-right">{{ formatCurrency(detalle.valor_nominal || 0) }}</td>
+            <td class="text-right">{{ formatCurrency(detalle.valor_compra || 0) }}</td>
+            <td class="text-right">{{ formatPercent(detalle.porcentaje_compra || 0) }}</td>
+            <td class="text-right">{{ formatCurrency(detalle.valor_venta_asignado || 0) }}</td>
+            <td class="text-right">{{ formatPercent(detalle.porcentaje_venta || 0) }}</td>
+            <td class="text-right" [ngClass]="(detalle.utilidad || 0) >= 0 ? 'text-success' : 'text-danger'">
               {{ formatCurrency(detalle.utilidad || 0) }}
             </td>
-            <td>{{ formatPercent(detalle.rendimiento || 0) }}</td>
-            <td>{{ (detalle.proporcion || 0).toFixed(2) }}%</td>
+            <td class="text-right">{{ formatPercent(detalle.rendimiento || 0) }}</td>
+            <td class="text-right">{{ (detalle.proporcion || 0).toFixed(2) }}%</td>
           </tr>
         </ng-template>
       </p-table>

@@ -1599,3 +1599,44 @@ UNLOCK TABLES;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-05-24 17:26:09
+
+
+CREATE TABLE inversion_propietario_reasignacion_log (
+    id_reasignacion_log INT(11) NOT NULL AUTO_INCREMENT,
+
+    id_inversion INT(11) NOT NULL,
+    id_venta_inversion INT(11) DEFAULT NULL,
+
+    id_propietario_anterior INT(11) NOT NULL,
+    id_propietario_nuevo INT(11) NOT NULL,
+
+    motivo VARCHAR(255) DEFAULT NULL,
+    observacion VARCHAR(500) DEFAULT NULL,
+
+    usuario_reasignacion VARCHAR(100) DEFAULT NULL,
+
+    fecha_reasignacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_reasignacion_log),
+
+    KEY idx_reasignacion_inversion (id_inversion),
+    KEY idx_reasignacion_venta (id_venta_inversion),
+    KEY idx_reasignacion_propietario_anterior (id_propietario_anterior),
+    KEY idx_reasignacion_propietario_nuevo (id_propietario_nuevo),
+
+    CONSTRAINT fk_reasignacion_inversion
+        FOREIGN KEY (id_inversion)
+        REFERENCES inversion(id_inversion),
+
+    CONSTRAINT fk_reasignacion_venta
+        FOREIGN KEY (id_venta_inversion)
+        REFERENCES venta_inversion(id_venta_inversion),
+
+    CONSTRAINT fk_reasignacion_propietario_anterior
+        FOREIGN KEY (id_propietario_anterior)
+        REFERENCES persona(id_persona),
+
+    CONSTRAINT fk_reasignacion_propietario_nuevo
+        FOREIGN KEY (id_propietario_nuevo)
+        REFERENCES persona(id_persona)
+);

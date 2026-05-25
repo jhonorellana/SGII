@@ -16,7 +16,6 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { InversionService, Inversion } from '../../core/inversion.service';
 import { VentaInversionService, VentaAgrupadaRequest } from '../../core/venta-inversion.service';
-import { CuentaBancariaService, CuentaBancaria } from '../../core/cuenta-bancaria.service';
 import { PersonaService } from '../../core/persona.service';
 import { ModalActionsComponent } from '../../core/modal-actions';
 import { Table } from 'primeng/table';
@@ -49,9 +48,8 @@ import { Table } from 'primeng/table';
 export class VentaAgrupadaComponent implements OnInit {
   inversiones: Inversion[] = [];
   inversionesSeleccionadas: number[] = [];
+  inversionSeleccionadaMap: { [key: number]: boolean } = {};
   personas: any[] = [];
-  cuentasBancarias: CuentaBancaria[] = [];
-  cuentasBancariasConLabel: any[] = [];
 
   loading = false;
   loadingCalculo = false;
@@ -66,7 +64,6 @@ export class VentaAgrupadaComponent implements OnInit {
     private fb: FormBuilder,
     private inversionService: InversionService,
     private ventaService: VentaInversionService,
-    private cuentaBancariaService: CuentaBancariaService,
     private personaService: PersonaService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef
@@ -77,13 +74,8 @@ export class VentaAgrupadaComponent implements OnInit {
   ngOnInit(): void {
     this.loadPersonas();
     this.loadInversiones();
-    this.loadCuentasBancarias();
 
     // Suscribirse a cambios en el formulario para actualizar cálculos
-    this.ventaForm.get('id_persona')?.valueChanges.subscribe(() => {
-      this.inversionesSeleccionadas = [];
-      this.updateCalculos();
-    });
     this.ventaForm.get('porcentaje_venta')?.valueChanges.subscribe(() => {
       this.updateCalculos();
     });
@@ -104,7 +96,6 @@ export class VentaAgrupadaComponent implements OnInit {
       liquidacion_venta: [''],
       comision_operador: [0, [Validators.min(0)]],
       comision_bolsa: [0, [Validators.min(0)]],
-      id_cuenta_bancaria: [null],
       observacion: ['']
     });
   }
@@ -153,29 +144,21 @@ export class VentaAgrupadaComponent implements OnInit {
     this.loading = true;
     const idPersona = this.ventaForm.get('id_persona')?.value;
 
-    console.log('=== DEBUG loadInversiones ===');
-    console.log('idPersona seleccionado:', idPersona);
-
     if (idPersona) {
       // Cargar solo inversiones de la persona seleccionada
       this.inversionService.getAll().subscribe({
         next: (data) => {
-          console.log('Todas las inversiones recibidas:', data);
-          console.log('Total inversiones:', data.length);
-
-          this.inversiones = data.filter((inv: Inversion) => {
-            console.log('Inversión:', {
-              id: inv.id_inversion,
-              id_propietario: inv.id_propietario,
-              propietario: inv.propietario,
-              fecha_venta: inv.fecha_venta,
-              match: inv.id_propietario === idPersona && inv.fecha_venta === null
-            });
-            return inv.id_propietario === idPersona && inv.fecha_venta === null;
+          this.inversiones = data.filter((inv: Inversion) =>
+            inv.id_propietario === idPersona &&
+            inv.fecha_venta === null &&
+            inv.instrumento?.id_tipo_inversion === 91 // Solo Notas de Crédito
+          );
+          // Inicializar el mapa de selección
+          this.inversiones.forEach(i => {
+            this.inversionSeleccionadaMap[i.id_inversion!] = false;
           });
-
-          console.log('Inversiones filtradas:', this.inversiones.length);
-          console.log('Inversiones filtradas:', this.inversiones);
+          // Limpiar selecciones anteriores
+          this.inversionesSeleccionadas = [];
           this.loading = false;
         },
         error: (err) => {
@@ -189,32 +172,32 @@ export class VentaAgrupadaComponent implements OnInit {
         }
       });
     } else {
-      this.inversiones = [];
-      this.loading = false;
+      // Cargar todas las inversiones disponibles (no vendidas) de tipo Notas de Crédito
+      this.inversionService.getAll().subscribe({
+        next: (data) => {
+          this.inversiones = data.filter((inv: Inversion) =>
+            inv.fecha_venta === null &&
+            inv.instrumento?.id_tipo_inversion === 91 // Solo Notas de Crédito
+          );
+          // Inicializar el mapa de selección
+          this.inversiones.forEach(i => {
+            this.inversionSeleccionadaMap[i.id_inversion!] = false;
+          });
+          // Limpiar selecciones anteriores
+          this.inversionesSeleccionadas = [];
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('Error al cargar inversiones:', err);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudieron cargar las inversiones'
+          });
+          this.loading = false;
+        }
+      });
     }
-  }
-
-  loadCuentasBancarias(): void {
-    this.cuentaBancariaService.getAll().subscribe({
-      next: (response) => {
-        this.cuentasBancarias = response.data || [];
-        this.cuentasBancariasConLabel = this.cuentasBancarias.map((c: CuentaBancaria) => {
-          const nombres = c.persona?.nombres || '';
-          const apellidos = c.persona?.apellidos || '';
-          const nombreCompleto = nombres && apellidos ? `${nombres} ${apellidos}` : (nombres || apellidos || 'Desconocido');
-          const nombreBanco = c.banco?.nombre || 'Banco';
-          const numeroCuentaFormateado = this.formatNumeroCuenta(c.numero_cuenta || '');
-          const label = `${nombreCompleto} - ${numeroCuentaFormateado} - ${nombreBanco}`;
-          return {
-            id_cuenta_bancaria: c.id_cuenta_bancaria,
-            label: label,
-            nombrePersona: nombreCompleto,
-            nombreBanco: nombreBanco,
-            numeroCuenta: numeroCuentaFormateado
-          };
-        });
-      }
-    });
   }
 
   loadPersonas(): void {
@@ -252,29 +235,33 @@ export class VentaAgrupadaComponent implements OnInit {
   }
 
   onInversionSeleccionada(id_inversion: number, checked: boolean): void {
-    if (checked) {
-      this.inversionesSeleccionadas.push(id_inversion);
-    } else {
-      this.inversionesSeleccionadas = this.inversionesSeleccionadas.filter(id => id !== id_inversion);
-    }
+    // Actualizar el mapa
+    this.inversionSeleccionadaMap[id_inversion] = checked;
+
+    // Reconstruir el array a partir del mapa
+    this.inversionesSeleccionadas = this.inversiones
+      .filter(i => this.inversionSeleccionadaMap[i.id_inversion!])
+      .map(i => i.id_inversion!);
+
     this.cdr.detectChanges();
-    // Actualizar cálculos si el modal está abierto
-    if (this.displayDialog) {
-      this.updateCalculos();
-    }
+    // Actualizar cálculos siempre
+    this.updateCalculos();
   }
 
   onSeleccionarTodas(checked: boolean): void {
-    if (checked) {
-      this.inversionesSeleccionadas = this.inversiones.map(i => i.id_inversion!);
-    } else {
-      this.inversionesSeleccionadas = [];
-    }
+    // Actualizar el mapa para todas las inversiones
+    this.inversiones.forEach(i => {
+      this.inversionSeleccionadaMap[i.id_inversion!] = checked;
+    });
+
+    // Reconstruir el array a partir del mapa
+    this.inversionesSeleccionadas = this.inversiones
+      .filter(i => this.inversionSeleccionadaMap[i.id_inversion!])
+      .map(i => i.id_inversion!);
+
     this.cdr.detectChanges();
-    // Actualizar cálculos si el modal está abierto
-    if (this.displayDialog) {
-      this.updateCalculos();
-    }
+    // Actualizar cálculos siempre
+    this.updateCalculos();
   }
 
   abrirDialogoVenta(): void {
@@ -286,7 +273,16 @@ export class VentaAgrupadaComponent implements OnInit {
       });
       return;
     }
+
+    // Pre-llenar el campo de persona con el propietario de las inversiones seleccionadas
+    const primeraInversion = this.inversionesSeleccionadasArray[0];
+    if (primeraInversion && primeraInversion.id_propietario) {
+      this.ventaForm.patchValue({ id_persona: primeraInversion.id_propietario });
+    }
+
     this.displayDialog = true;
+    // Forzar detección de cambios
+    this.cdr.detectChanges();
     // Actualizar cálculos al abrir el modal
     this.updateCalculos();
   }
@@ -317,6 +313,7 @@ export class VentaAgrupadaComponent implements OnInit {
 
     this.ventaService.previsualizarVentaAgrupada({
       inversiones: this.inversionesSeleccionadas,
+      id_persona: formValue.id_persona,
       porcentaje_venta: formValue.porcentaje_venta,
       valor_total_recibido: this.valorTotalRecibido, // Usar valor calculado
       comision_operador: formValue.comision_operador,
@@ -359,7 +356,6 @@ export class VentaAgrupadaComponent implements OnInit {
       liquidacion_venta: formValue.liquidacion_venta,
       comision_operador: formValue.comision_operador,
       comision_bolsa: formValue.comision_bolsa,
-      id_cuenta_bancaria: formValue.id_cuenta_bancaria,
       observacion: formValue.observacion
     };
 
@@ -403,6 +399,12 @@ export class VentaAgrupadaComponent implements OnInit {
     this.displayDialog = false;
     this.displayPrevisualizar = false;
     this.ventaForm.reset();
+  }
+
+  getNombrePersona(idPersona: number | null): string {
+    if (!idPersona) return '-';
+    const persona = this.personas.find(p => p.id_persona === idPersona);
+    return persona ? persona.nombre : '-';
   }
 
   formatDate(date: Date): string {

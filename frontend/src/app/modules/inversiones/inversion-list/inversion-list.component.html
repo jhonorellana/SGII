@@ -58,10 +58,10 @@
       <tr>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'equals')" class="w-100" placeholder="Filtrar ID"/></th>
         <th>
-          <p-dropdown [options]="propietarios" optionLabel="nombres" optionValue="id_persona"
+          <p-dropdown [options]="propietarios" optionLabel="nombre" optionValue="id_persona"
                      (onChange)="dt.filter($event.value, 'id_propietario', 'equals')"
                      [showClear]="true" placeholder="Todos"
-                     [filter]="true" filterBy="nombres" styleClass="w-100">
+                     [filter]="true" filterBy="nombre" styleClass="w-100">
           </p-dropdown>
         </th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.emisor.nombre', 'contains')" class="w-100" placeholder="Filtrar emisor"/></th>
@@ -87,7 +87,7 @@
       <tr>
         <td>{{ inversion.id_inversion }}</td>
         <td>
-          <span *ngIf="inversion.propietario">{{ inversion.propietario.nombres }}</span>
+          <span *ngIf="inversion.propietario">{{ inversion.propietario.nombre || (inversion.propietario.nombres + ' ' + inversion.propietario.apellidos) }}</span>
           <span *ngIf="!inversion.propietario" class="text-muted">-</span>
         </td>
         <td>
@@ -161,13 +161,13 @@
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_propietario">Propietario <span class="text-danger">*</span></label>
-              <p-dropdown id="id_propietario" [(ngModel)]="inversion.id_propietario" [options]="propietarios" optionLabel="nombres" optionValue="id_persona"
-                placeholder="Seleccione Propietario" [style]="{'width': '100%'}" [filter]="true" filterBy="nombres" required></p-dropdown>
+              <p-dropdown id="id_propietario" [(ngModel)]="inversion.id_propietario" [options]="propietarios" optionLabel="nombre" optionValue="id_persona"
+                placeholder="Seleccione Propietario" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre" required></p-dropdown>
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_aportante">Aportante</label>
-              <p-dropdown id="id_aportante" [(ngModel)]="inversion.id_aportante" [options]="aportantes" optionLabel="nombres" optionValue="id_persona"
-                placeholder="Seleccione Aportante" [style]="{'width': '100%'}" [filter]="true" filterBy="nombres"></p-dropdown>
+              <p-dropdown id="id_aportante" [(ngModel)]="inversion.id_aportante" [options]="aportantes" optionLabel="nombre" optionValue="id_persona"
+                placeholder="Seleccione Aportante" [style]="{'width': '100%'}" [filter]="true" filterBy="nombre"></p-dropdown>
             </div>
             <div class="col-md-6 mb-3">
               <label for="id_estado_inversion">Estado Inversión <span class="text-danger">*</span></label>
@@ -417,7 +417,7 @@
         </div>
         <div class="col-md-6 mb-3">
           <label class="form-label fw-bold">Propietario:</label>
-          <p>{{ selectedInversion.propietario?.nombres || '-' }}</p>
+          <p>{{ selectedInversion.propietario?.nombre || (selectedInversion.propietario?.nombres + ' ' + selectedInversion.propietario?.apellidos) || '-' }}</p>
         </div>
       </div>
 
@@ -516,7 +516,7 @@
             <strong>ID Inversión:</strong> {{ selectedInversion.id_inversion }}
           </div>
           <div class="col-md-3">
-            <strong>Propietario:</strong> {{ selectedInversion.propietario?.nombres || '-' }}
+            <strong>Propietario:</strong> {{ selectedInversion.propietario?.nombre || (selectedInversion.propietario?.nombres + ' ' + selectedInversion.propietario?.apellidos) || '-' }}
           </div>
           <div class="col-md-3">
             <strong>Instrumento:</strong> {{ selectedInversion.instrumento?.nombre || '-' }}

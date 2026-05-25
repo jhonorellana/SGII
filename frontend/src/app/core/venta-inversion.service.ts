@@ -80,7 +80,6 @@ export interface VentaAgrupadaRequest {
   liquidacion_venta?: string;
   comision_operador?: number;
   comision_bolsa?: number;
-  id_cuenta_bancaria?: number;
   observacion?: string;
 }
 
@@ -116,6 +115,7 @@ export interface PrevisualizarVentaResponse {
     roi_total: number;
     detalles_distribucion: Array<{
       id_inversion: number;
+      propietario_nombre: string;
       valor_nominal: number;
       valor_compra: number;
       porcentaje_compra: number;
@@ -124,6 +124,15 @@ export interface PrevisualizarVentaResponse {
       utilidad: number;
       rendimiento: number;
       proporcion: number;
+      requiere_reasignacion: boolean;
+      id_propietario_anterior?: number;
+      id_propietario_nuevo?: number;
+    }>;
+    inversiones_reasignar: Array<{
+      id_inversion: number;
+      propietario_nombre: string;
+      id_propietario_anterior: number;
+      id_propietario_nuevo: number;
     }>;
   };
   message?: string;
@@ -205,6 +214,7 @@ export class VentaInversionService {
 
   previsualizarVentaAgrupada(request: {
     inversiones: number[];
+    id_persona?: number;
     porcentaje_venta?: number;
     valor_total_recibido?: number;
     comision_operador?: number;
