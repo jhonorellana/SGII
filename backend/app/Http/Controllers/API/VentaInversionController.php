@@ -467,6 +467,10 @@ class VentaInversionController extends Controller
             // STEP 1 & 2: Reasignar propietarios si es necesario y crear logs
             $usuarioReasignacion = auth()->user()->name ?? 'sistema';
             foreach ($inversionesReasignar as $reasignacion) {
+                // Obtener capital_invertido de la inversión
+                $inversion = Inversion::find($reasignacion['id_inversion']);
+                $capitalInvertido = $inversion ? $inversion->capital_invertido : 0;
+
                 // Insertar log de reasignación
                 InversionPropietarioReasignacionLog::create([
                     'id_inversion' => $reasignacion['id_inversion'],
@@ -477,6 +481,44 @@ class VentaInversionController extends Controller
                     'observacion' => 'Reasignación previa a confirmación de venta agrupada',
                     'usuario_reasignacion' => $usuarioReasignacion,
                     'fecha_reasignacion' => now()
+                ]);
+
+                // STEP 2.1: Crear movimiento positivo para el nuevo propietario (recibe nota de crédito)
+                MovimientoCapital::create([
+                    'id_tipo_movimiento' => 183,
+                    'id_persona' => $reasignacion['id_propietario_nuevo'],
+                    'id_inversion' => $reasignacion['id_inversion'],
+                    'id_venta_inversion' => null, // Se actualizará después de crear la venta
+                    'id_cuenta_bancaria' => null,
+                    'id_signo' => 190, // Positivo
+                    'monto' => $capitalInvertido,
+                    'fecha_movimiento' => now(),
+                    'descripcion' => 'Persona recibe nota de crédito',
+                    'conciliado' => 1,
+                    'fecha_conciliacion' => now(),
+                    'activo' => 1,
+                    'eliminado' => 0,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
+                ]);
+
+                // STEP 2.2: Crear movimiento negativo para el propietario anterior (entrega nota de crédito)
+                MovimientoCapital::create([
+                    'id_tipo_movimiento' => 184,
+                    'id_persona' => $reasignacion['id_propietario_anterior'],
+                    'id_inversion' => $reasignacion['id_inversion'],
+                    'id_venta_inversion' => null, // Se actualizará después de crear la venta
+                    'id_cuenta_bancaria' => null,
+                    'id_signo' => 191, // Negativo
+                    'monto' => $capitalInvertido,
+                    'fecha_movimiento' => now(),
+                    'descripcion' => 'Persona entrega nota de crédito',
+                    'conciliado' => 1,
+                    'fecha_conciliacion' => now(),
+                    'activo' => 1,
+                    'eliminado' => 0,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
                 ]);
 
                 // STEP 3: Actualizar propietario de la inversión
@@ -523,6 +565,12 @@ class VentaInversionController extends Controller
             if (!empty($inversionesReasignar)) {
                 InversionPropietarioReasignacionLog::whereIn('id_inversion', array_column($inversionesReasignar, 'id_inversion'))
                     ->whereNull('id_venta_inversion')
+                    ->update(['id_venta_inversion' => $venta->id_venta_inversion]);
+
+                // Actualizar movimientos de capital de reasignación con el ID de venta
+                MovimientoCapital::whereIn('id_inversion', array_column($inversionesReasignar, 'id_inversion'))
+                    ->whereNull('id_venta_inversion')
+                    ->whereIn('id_tipo_movimiento', [183, 184]) // Solo movimientos de reasignación
                     ->update(['id_venta_inversion' => $venta->id_venta_inversion]);
             }
 

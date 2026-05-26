@@ -1641,3 +1641,7 @@ CREATE TABLE inversion_propietario_reasignacion_log (
         FOREIGN KEY (id_propietario_nuevo)
         REFERENCES persona(id_persona)
 );
+
+
+
+truncate table inversion_propietario_reasignacion_log;
