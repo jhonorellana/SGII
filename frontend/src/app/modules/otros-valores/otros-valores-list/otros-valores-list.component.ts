@@ -22,6 +22,7 @@ import { OtroValorService, OtroValor, CreateOtroValorRequest, UpdateOtroValorReq
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
+import { MovimientoCapitalService, MovimientoCapital } from '../../../core/movimiento-capital.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -94,6 +95,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     private grupoFamiliarService: GrupoFamiliarService,
     private personaService: PersonaService,
     private authService: AuthService,
+    private movimientoCapitalService: MovimientoCapitalService,
     private route: ActivatedRoute,
     private router: Router,
     private confirmationService: ConfirmationService,
@@ -106,7 +108,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadCurrentUser();
     this.loadInitialData();
-    this.loadValores();
+    this.loadValores().then(() => {
+      this.actualizarSaldosPorPersona().then(() => {
+        this.loadValores();
+      });
+    });
   }
 
   loadCurrentUser(): void {
@@ -174,36 +180,40 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     }
   }
 
-  loadValores(): void {
-    this.loading = true;
-    this.error = '';
+  loadValores(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.loading = true;
+      this.error = '';
 
-    const params: any = {};
-    if (this.idGrupoFilter) params.id_grupo_familiar = this.idGrupoFilter;
-    if (this.idPropietarioFilter) params.id_propietario = this.idPropietarioFilter;
-    if (this.idTipoFilter) params.id_tipo_otro_valor = this.idTipoFilter;
-    if (this.soloVigentesFilter) params.vigentes = true;
+      const params: any = {};
+      if (this.idGrupoFilter) params.id_grupo_familiar = this.idGrupoFilter;
+      if (this.idPropietarioFilter) params.id_propietario = this.idPropietarioFilter;
+      if (this.idTipoFilter) params.id_tipo_otro_valor = this.idTipoFilter;
+      if (this.soloVigentesFilter) params.vigentes = true;
 
-    this.otroValorService.getOtrosValores(params).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.valores = response.data || [];
-          this.filteredValores = [...this.valores];
-          this.totalRecords = this.valores.length;
-          this.calcularResumen();
-        } else {
-          this.error = response.message || 'Error al cargar los valores';
+      this.otroValorService.getOtrosValores(params).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.valores = response.data || [];
+            this.filteredValores = [...this.valores];
+            this.totalRecords = this.valores.length;
+            this.calcularResumen();
+          } else {
+            this.error = response.message || 'Error al cargar los valores';
+            this.totalRecords = 0;
+          }
+          this.loading = false;
+          resolve();
+        },
+        error: (err) => {
+          this.error = err.error?.message || 'Error de conexión al servidor';
+          this.valores = [];
+          this.filteredValores = [];
           this.totalRecords = 0;
+          this.loading = false;
+          reject(err);
         }
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err.error?.message || 'Error de conexión al servidor';
-        this.valores = [];
-        this.filteredValores = [];
-        this.totalRecords = 0;
-        this.loading = false;
-      }
+      });
     });
   }
 
@@ -291,7 +301,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
             detail: 'Valor creado exitosamente'
           });
           this.hideDialog();
-          this.loadValores();
+          this.loadValores().then(() => {
+            this.actualizarSaldosPorPersona().then(() => {
+              this.loadValores();
+            });
+          });
         } else {
           this.formError = response.message || 'Error al crear el valor';
         }
@@ -318,7 +332,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
             detail: 'Valor actualizado exitosamente'
           });
           this.hideDialog();
-          this.loadValores();
+          this.loadValores().then(() => {
+            this.actualizarSaldosPorPersona().then(() => {
+              this.loadValores();
+            });
+          });
         } else {
           this.formError = response.message || 'Error al actualizar el valor';
         }
@@ -349,7 +367,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
                 summary: 'Éxito',
                 detail: 'Valor eliminado exitosamente'
               });
-              this.loadValores();
+              this.loadValores().then(() => {
+                this.actualizarSaldosPorPersona().then(() => {
+                  this.loadValores();
+                });
+              });
             } else {
               this.messageService.add({
                 severity: 'error',
@@ -385,7 +407,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
                 summary: 'Éxito',
                 detail: `Valor ${action}do exitosamente`
               });
-              this.loadValores();
+              this.loadValores().then(() => {
+                this.actualizarSaldosPorPersona().then(() => {
+                  this.loadValores();
+                });
+              });
             } else {
               this.messageService.add({
                 severity: 'error',
@@ -460,7 +486,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    this.loadValores();
+    this.loadValores().then(() => {
+      this.actualizarSaldosPorPersona().then(() => {
+        this.loadValores();
+      });
+    });
   }
 
   clearFilters(): void {
@@ -468,7 +498,11 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     this.idPropietarioFilter = null;
     this.idTipoFilter = null;
     this.soloVigentesFilter = false;
-    this.loadValores();
+    this.loadValores().then(() => {
+      this.actualizarSaldosPorPersona().then(() => {
+        this.loadValores();
+      });
+    });
   }
 
   trackByValorId(index: number, valor: OtroValor): number {
@@ -563,5 +597,116 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
       summary: 'Éxito',
       detail: 'Archivo PDF exportado correctamente'
     });
+  }
+
+  async actualizarSaldosPorPersona(): Promise<void> {
+    try {
+      // Obtener todos los movimientos de capital
+      const response = await this.movimientoCapitalService.getAll().toPromise();
+
+      if (!response || !response.success || !response.data) {
+        console.error('Error al obtener movimientos de capital');
+        return;
+      }
+
+      const movimientos: MovimientoCapital[] = response.data;
+
+      // Calcular saldos por persona
+      const saldosPorPersona = this.calcularSaldosPorPersona(movimientos);
+
+      // Mapeo de id_persona a id_tipo_otro_valor
+      const mapeoPersonaTipo: { [key: number]: number } = {
+        5: 142,  // Argentina
+        2: 143,  // Cristian
+        3: 144,  // Cristian
+        1: 145   // Cristian
+      };
+
+      // Actualizar cada registro de otro_valor
+      for (const [idPersona, saldo] of Object.entries(saldosPorPersona)) {
+        const idPersonaNum = parseInt(idPersona);
+        const idTipoOtroValor = mapeoPersonaTipo[idPersonaNum];
+
+        if (idTipoOtroValor) {
+          // Buscar el registro de otro_valor con este id_tipo_otro_valor
+          const valorActualizar = this.valores.find(v => v.id_tipo_otro_valor === idTipoOtroValor);
+
+          if (valorActualizar) {
+            // Actualizar el valor
+            await this.otroValorService.updateOtroValor(valorActualizar.id_otro_valor, {
+              valor: saldo
+            }).toPromise();
+          }
+        }
+      }
+
+      console.log('Saldos por persona actualizados correctamente');
+    } catch (error) {
+      console.error('Error al actualizar saldos por persona:', error);
+    }
+  }
+
+  private calcularSaldosPorPersona(movimientos: MovimientoCapital[]): { [key: number]: number } {
+    const saldosPorPersona: { [key: number]: number } = {};
+
+    // Agrupar movimientos por persona
+    const movimientosPorPersona: { [key: number]: MovimientoCapital[] } = {};
+
+    movimientos.forEach(mov => {
+      const idPersona = mov.persona?.id_persona || mov.id_persona || 0;
+      if (!movimientosPorPersona[idPersona]) {
+        movimientosPorPersona[idPersona] = [];
+      }
+      movimientosPorPersona[idPersona].push(mov);
+    });
+
+    // Calcular saldo acumulado por persona
+    Object.keys(movimientosPorPersona).forEach(idPersonaStr => {
+      const idPersona = parseInt(idPersonaStr);
+      const movimientosPersona = movimientosPorPersona[idPersona];
+
+      // Ordenar por fecha y ID
+      const sorted = [...movimientosPersona].sort((a, b) => {
+        const dateA = new Date(a.fecha_movimiento).getTime();
+        const dateB = new Date(b.fecha_movimiento).getTime();
+        if (dateA !== dateB) {
+          return dateA - dateB;
+        }
+        return (a.id_movimiento_capital || 0) - (b.id_movimiento_capital || 0);
+      });
+
+      let saldoPersona = 0;
+
+      sorted.forEach(mov => {
+        const monto = this.getMonto(mov);
+        const signo = mov.signo_catalogo || mov.signoCatalogo;
+        if (signo && signo.codigo === 'POSITIVO') {
+          saldoPersona += monto;
+        } else {
+          saldoPersona -= monto;
+        }
+      });
+
+      saldosPorPersona[idPersona] = saldoPersona;
+    });
+
+    return saldosPorPersona;
+  }
+
+  private getMonto(movimiento: MovimientoCapital): number {
+    const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
+
+    if (tipoCodigo === 'COM_INV' && movimiento.inversion) {
+      const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
+      return isNaN(monto) ? 0 : monto;
+    }
+
+    if (tipoCodigo === 'VEN_INV' && movimiento.ventaInversion) {
+      const monto = parseFloat(String(movimiento.ventaInversion.valor_venta_con_comision || 0));
+      return isNaN(monto) ? 0 : monto;
+    }
+
+    const monto = parseFloat(String(movimiento.monto || 0));
+    return isNaN(monto) ? 0 : monto;
   }
 }
