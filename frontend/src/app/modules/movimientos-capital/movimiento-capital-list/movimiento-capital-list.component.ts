@@ -115,6 +115,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.setupConciliadoListener();
     this.loadMovimientos();
     this.loadTiposMovimiento();
     this.loadSignos();
@@ -122,6 +123,16 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.loadInversiones();
     this.loadVentasInversion();
     this.loadCuentasBancarias();
+  }
+
+  setupConciliadoListener(): void {
+    this.movimientoForm.get('conciliado')?.valueChanges.subscribe((conciliado: boolean) => {
+      if (conciliado) {
+        this.movimientoForm.patchValue({ fecha_conciliacion: new Date() });
+      } else if (!conciliado) {
+        this.movimientoForm.patchValue({ fecha_conciliacion: null });
+      }
+    });
   }
 
   createForm(): FormGroup {
@@ -371,6 +382,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.isEdit = true;
     this.movimientoId = movimiento.id_movimiento_capital || null;
     this.movimientoForm = this.createForm();
+    this.setupConciliadoListener();
 
     // Calcular el monto según el tipo de movimiento
     const monto = this.getMonto(movimiento);
@@ -386,7 +398,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       id_cuenta_bancaria: movimiento.id_cuenta_bancaria,
       descripcion: movimiento.descripcion || '',
       conciliado: movimiento.conciliado,
-      fecha_conciliacion: movimiento.fecha_conciliacion ? this.parseDateWithoutTimezone(movimiento.fecha_conciliacion) : null
+      fecha_conciliacion: movimiento.fecha_conciliacion ? this.parseDateWithoutTimezone(movimiento.fecha_conciliacion) : (movimiento.conciliado ? new Date() : null)
     });
 
     // Forzar actualización de UI

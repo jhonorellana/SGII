@@ -18,7 +18,7 @@
   </div>
 
   <!-- Table -->
-  <p-table #dt [value]="movimientos" [loading]="loading" [paginator]="true" [rows]="10" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" [sortField]="'id_inversion'" [sortOrder]="-1" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['descripcion', 'tipo_movimiento.nombre', 'persona.nombre', 'inversion.id_inversion', 'cuentaBancaria.persona.nombres']">
+  <p-table #dt [value]="movimientos" [loading]="loading" [paginator]="true" [rows]="10" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['descripcion', 'tipo_movimiento.nombre', 'persona.nombre', 'inversion.id_inversion', 'cuentaBancaria.persona.nombres']">
     <!-- Header con buscador global -->
     <ng-template pTemplate="caption">
       <div class="d-flex justify-content-end align-items-center">
