@@ -76,7 +76,7 @@ export class VentaAgrupadaComponent implements OnInit {
     this.loadInversiones();
 
     // Suscribirse a cambios en el formulario para actualizar cálculos
-    this.ventaForm.get('porcentaje_venta')?.valueChanges.subscribe(() => {
+    this.ventaForm.get('precio')?.valueChanges.subscribe(() => {
       this.updateCalculos();
     });
     this.ventaForm.get('comision_operador')?.valueChanges.subscribe(() => {
@@ -90,7 +90,7 @@ export class VentaAgrupadaComponent implements OnInit {
   createForm(): FormGroup {
     return this.fb.group({
       id_persona: [null, Validators.required],
-      porcentaje_venta: [100, [Validators.min(0), Validators.max(100)]],
+      precio: [100, [Validators.min(0), Validators.max(100)]],
       valor_total_recibido: [{value: null, disabled: true}, [Validators.min(0)]],
       fecha_venta: [new Date(), Validators.required],
       liquidacion_venta: [''],
@@ -120,14 +120,64 @@ export class VentaAgrupadaComponent implements OnInit {
   }
 
   get valorEfectivo(): number {
-    const porcentaje = this.ventaForm.get('porcentaje_venta')?.value || 0;
-    return this.valorNominalTotalModal * (porcentaje / 100);
+    const precio = this.ventaForm.get('precio')?.value || 0;
+    return this.valorNominalTotalModal * (precio / 100);
   }
 
   get valorTotalRecibido(): number {
     const comisionOperador = this.ventaForm.get('comision_operador')?.value || 0;
     const comisionBolsa = this.ventaForm.get('comision_bolsa')?.value || 0;
     return this.valorEfectivo - comisionOperador - comisionBolsa;
+  }
+
+  get precioNeto(): number {
+    if (this.valorNominalTotalModal === 0) return 0;
+    return (this.valorTotalRecibido / this.valorNominalTotalModal) * 100;
+  }
+
+  get utilidadSinComision(): number {
+    return this.valorEfectivo - this.capitalInvertidoTotalModal;
+  }
+
+  get utilidadConComision(): number {
+    return this.valorTotalRecibido - this.capitalInvertidoTotalModal;
+  }
+
+  get gananciaPerdida(): number {
+    return this.valorTotalRecibido - this.capitalInvertidoTotalModal;
+  }
+
+  get rendimientoTotal(): number {
+    if (this.capitalInvertidoTotalModal === 0) return 0;
+    return (this.utilidadConComision / this.capitalInvertidoTotalModal) * 100;
+  }
+
+  get roi(): number {
+    if (this.capitalInvertidoTotalModal === 0) return 0;
+    return (this.utilidadConComision / this.capitalInvertidoTotalModal) * 100;
+  }
+
+  get diasTranscurridos(): number {
+    if (this.inversionesSeleccionadasArray.length === 0) return 0;
+    const fechaVenta = this.ventaForm.get('fecha_venta')?.value;
+    if (!fechaVenta) return 0;
+
+    // Encontrar la fecha de compra más antigua
+    const fechasCompra = this.inversionesSeleccionadasArray
+      .map(i => new Date(i.fecha_compra))
+      .filter(d => !isNaN(d.getTime()));
+
+    if (fechasCompra.length === 0) return 0;
+    const fechaCompraMin = new Date(Math.min(...fechasCompra.map(d => d.getTime())));
+
+    const diffTime = fechaVenta.getTime() - fechaCompraMin.getTime();
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  }
+
+  get gananciaAnual(): number {
+    const dias = this.diasTranscurridos;
+    if (dias === 0) return 0;
+    return (this.roi * 365) / dias;
   }
 
   get utilidadEstimada(): number {
@@ -299,12 +349,39 @@ export class VentaAgrupadaComponent implements OnInit {
 
     const formValue = this.ventaForm.value;
 
-    // Validar que se proporcione porcentaje de venta
-    if (!formValue.porcentaje_venta) {
+    // Validaciones
+    if (this.inversionesSeleccionadas.length === 0) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
-        detail: 'Debe ingresar porcentaje de venta'
+        detail: 'Debe seleccionar al menos una nota de crédito'
+      });
+      return;
+    }
+
+    if (!formValue.precio || formValue.precio <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'El precio debe ser mayor a 0'
+      });
+      return;
+    }
+
+    if (this.valorNominalTotalModal <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'El valor nominal total debe ser mayor a 0'
+      });
+      return;
+    }
+
+    if (this.capitalInvertidoTotalModal <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'El capital invertido total debe ser mayor a 0'
       });
       return;
     }
@@ -314,8 +391,8 @@ export class VentaAgrupadaComponent implements OnInit {
     this.ventaService.previsualizarVentaAgrupada({
       inversiones: this.inversionesSeleccionadas,
       id_persona: formValue.id_persona,
-      porcentaje_venta: formValue.porcentaje_venta,
-      valor_total_recibido: this.valorTotalRecibido, // Usar valor calculado
+      precio: formValue.precio,
+      valor_total_recibido: this.valorTotalRecibido,
       comision_operador: formValue.comision_operador,
       comision_bolsa: formValue.comision_bolsa
     }).subscribe({
@@ -347,11 +424,30 @@ export class VentaAgrupadaComponent implements OnInit {
   confirmarVenta(): void {
     const formValue = this.ventaForm.value;
 
+    // Validaciones adicionales
+    if (this.diasTranscurridos <= 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Los días transcurridos deben ser mayores a 0'
+      });
+      return;
+    }
+
     const request: VentaAgrupadaRequest = {
       inversiones: this.inversionesSeleccionadas,
       id_persona: formValue.id_persona,
-      porcentaje_venta: formValue.porcentaje_venta,
-      valor_total_recibido: this.valorTotalRecibido, // Usar valor calculado
+      precio: formValue.precio,
+      precio_neto: this.precioNeto,
+      valor_total_recibido: this.valorTotalRecibido,
+      valor_efectivo: this.valorEfectivo,
+      utilidad_sin_comision: this.utilidadSinComision,
+      utilidad_con_comision: this.utilidadConComision,
+      ganancia_perdida: this.gananciaPerdida,
+      rendimiento_total: this.rendimientoTotal,
+      dias_transcurridos: this.diasTranscurridos,
+      roi: this.roi,
+      ganancia_anual: this.gananciaAnual,
       fecha_venta: this.formatDate(formValue.fecha_venta),
       liquidacion_venta: formValue.liquidacion_venta,
       comision_operador: formValue.comision_operador,

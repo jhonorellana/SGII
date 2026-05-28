@@ -143,6 +143,10 @@
       <span class="summary-label">Capital invertido:</span>
       <span class="summary-value">{{ formatCurrency(capitalInvertidoTotalModal) }}</span>
     </div>
+    <div class="summary-item">
+      <span class="summary-label">Días transcurridos:</span>
+      <span class="summary-value">{{ diasTranscurridos }}</span>
+    </div>
     <div class="summary-item kpi-utilidad">
       <span class="kpi-label">Utilidad estimada</span>
       <div class="kpi-value" [ngClass]="utilidadEstimada >= 0 ? 'positive' : 'negative'">
@@ -184,9 +188,9 @@
       </div>
 
       <div class="form-field half-width">
-        <label>Porcentaje de Venta (%)</label>
+        <label>Precio (%)</label>
         <p-inputNumber
-          formControlName="porcentaje_venta"
+          formControlName="precio"
           [min]="0"
           [max]="100"
           [showButtons]="true"
@@ -207,7 +211,18 @@
         <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
       </div>
 
-      <!-- FOURTH ROW: Comisión Operador + Comisión Bolsa -->
+      <!-- FOURTH ROW: Precio Neto + Valor Total Recibido -->
+      <div class="form-field half-width">
+        <label>Precio Neto</label>
+        <div class="calculated-value">{{ formatPercent(precioNeto) }}</div>
+      </div>
+
+      <div class="form-field half-width">
+        <label>Valor Total Recibido</label>
+        <div class="calculated-value highlight">{{ formatCurrency(valorTotalRecibido) }}</div>
+      </div>
+
+      <!-- FIFTH ROW: Comisión Operador + Comisión Bolsa -->
       <div class="form-field half-width">
         <label>Comisión Operador</label>
         <p-inputNumber
@@ -236,7 +251,7 @@
         </p-inputNumber>
       </div>
 
-      <!-- Row 5: Observación (full width, altura reducida) -->
+      <!-- Row 6: Observación (full width, altura reducida) -->
       <div class="form-field full-width">
         <label>Observación</label>
         <textarea pInputTextarea formControlName="observacion" rows="2" placeholder="Observaciones..."></textarea>

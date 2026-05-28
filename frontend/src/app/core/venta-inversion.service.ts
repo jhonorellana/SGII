@@ -74,8 +74,17 @@ export interface CalculoUtilidadResponse {
 export interface VentaAgrupadaRequest {
   inversiones: number[];
   id_persona: number;
-  porcentaje_venta?: number;
+  precio?: number;
+  precio_neto?: number;
   valor_total_recibido?: number;
+  valor_efectivo?: number;
+  utilidad_sin_comision?: number;
+  utilidad_con_comision?: number;
+  ganancia_perdida?: number;
+  rendimiento_total?: number;
+  dias_transcurridos?: number;
+  roi?: number;
+  ganancia_anual?: number;
   fecha_venta: string;
   liquidacion_venta?: string;
   comision_operador?: number;
@@ -215,7 +224,7 @@ export class VentaInversionService {
   previsualizarVentaAgrupada(request: {
     inversiones: number[];
     id_persona?: number;
-    porcentaje_venta?: number;
+    precio?: number;
     valor_total_recibido?: number;
     comision_operador?: number;
     comision_bolsa?: number;

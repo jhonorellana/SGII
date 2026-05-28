@@ -400,8 +400,17 @@ class VentaInversionController extends Controller
             'inversiones' => 'required|array|min:1',
             'inversiones.*' => 'exists:inversion,id_inversion',
             'id_persona' => 'required|exists:persona,id_persona',
-            'porcentaje_venta' => 'nullable|numeric|min:0|max:100',
+            'precio' => 'nullable|numeric|min:0|max:100',
+            'precio_neto' => 'nullable|numeric',
             'valor_total_recibido' => 'nullable|numeric|min:0',
+            'valor_efectivo' => 'nullable|numeric|min:0',
+            'utilidad_sin_comision' => 'nullable|numeric',
+            'utilidad_con_comision' => 'nullable|numeric',
+            'ganancia_perdida' => 'nullable|numeric',
+            'rendimiento_total' => 'nullable|numeric',
+            'dias_transcurridos' => 'nullable|numeric|min:0',
+            'roi' => 'nullable|numeric',
+            'ganancia_anual' => 'nullable|numeric',
             'fecha_venta' => 'required|date',
             'liquidacion_venta' => 'nullable|string|max:50',
             'comision_operador' => 'nullable|numeric|min:0',
@@ -437,11 +446,11 @@ class VentaInversionController extends Controller
             }
         }
 
-        // Validar que se proporcione porcentaje_venta o valor_total_recibido
-        if (!$request->porcentaje_venta && !$request->valor_total_recibido) {
+        // Validar que se proporcione precio
+        if (!$request->precio || $request->precio <= 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Debe proporcionar porcentaje_venta o valor_total_recibido'
+                'message' => 'El precio debe ser mayor a 0'
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -450,7 +459,7 @@ class VentaInversionController extends Controller
             // Usar el servicio de cálculo para obtener la distribución
             $distribucion = $this->ventaCalculator->calcularDistribucionVenta(
                 $request->inversiones,
-                $request->porcentaje_venta ?? 0,
+                $request->precio ?? 0,
                 $request->valor_total_recibido ?? 0,
                 $request->comision_operador ?? 0,
                 $request->comision_bolsa ?? 0,
@@ -530,30 +539,39 @@ class VentaInversionController extends Controller
             }
 
             // STEP 4: Crear venta principal
+            // Calcular comisiones_santa_fe: suma de comisiones operador de las inversiones seleccionadas + comisión operador de la venta
+            $comisionesSantaFe = 0;
+            foreach ($inversiones as $inv) {
+                if (isset($inv->comision_operador)) {
+                    $comisionesSantaFe += $inv->comision_operador;
+                }
+            }
+            $comisionesSantaFe += $request->comision_operador ?? 0;
+
             $venta = VentaInversion::create([
                 'id_inversion' => null, // NULL para ventas agrupadas
-                'id_instrumento' => Inversion::find($request->inversiones[0])->id_instrumento ?? null,
-                'id_tipo_venta' => null,
+                'id_instrumento' => 222, // Notas de Crédito
+                'id_tipo_venta' => 195, // Venta Agrupada
                 'id_propietario' => $request->id_persona,
-                'porcentaje_vendido' => $request->porcentaje_venta ?? 0,
+                'porcentaje_vendido' => 100.00, // Siempre 100 para ventas agrupadas
                 'fecha_venta' => $request->fecha_venta,
                 'liquidacion_venta' => $request->liquidacion_venta,
-                'precio_venta' => 0,
-                'precio_neto_venta' => 0,
-                'interes_previo_venta' => 0,
-                'valor_venta_sin_comision' => $data['valor_venta_total'],
-                'comision_operador' => $data['comision_operador'],
-                'comision_bolsa' => $data['comision_bolsa'],
-                'valor_venta_con_comision' => $data['valor_neto_recibido'],
-                'utilidad_sin_comision' => $data['valor_venta_total'] - $resumenCompra['valor_compra_total'],
-                'utilidad_con_comision' => $data['utilidad_total'],
-                'ganancia_perdida' => $data['utilidad_total'],
-                'rendimiento_total' => $data['roi_total'],
-                'dias_transcurridos' => 0,
-                'roi' => $data['roi_total'],
-                'ganancia_anual' => 0,
-                'comisiones_santa_fe' => 0,
-                'retenciones' => 0,
+                'precio_venta' => $request->precio ?? 0,
+                'precio_neto_venta' => $request->precio_neto ?? 0,
+                'interes_previo_venta' => 0.00,
+                'valor_venta_sin_comision' => $request->valor_efectivo ?? 0,
+                'comision_operador' => $request->comision_operador ?? 0,
+                'comision_bolsa' => $request->comision_bolsa ?? 0,
+                'valor_venta_con_comision' => $request->valor_total_recibido ?? 0,
+                'utilidad_sin_comision' => $request->utilidad_sin_comision ?? 0,
+                'utilidad_con_comision' => $request->utilidad_con_comision ?? 0,
+                'ganancia_perdida' => $request->ganancia_perdida ?? 0,
+                'rendimiento_total' => $request->rendimiento_total ?? 0,
+                'dias_transcurridos' => $request->dias_transcurridos ?? 0,
+                'roi' => $request->roi ?? 0,
+                'ganancia_anual' => $request->ganancia_anual ?? 0,
+                'comisiones_santa_fe' => $comisionesSantaFe,
+                'retenciones' => 0.00,
                 'observacion' => $request->observacion,
                 'activo' => true,
                 'eliminado' => false,
@@ -680,7 +698,7 @@ class VentaInversionController extends Controller
             'inversiones' => 'required|array|min:1',
             'inversiones.*' => 'exists:inversion,id_inversion',
             'id_persona' => 'nullable|exists:persona,id_persona',
-            'porcentaje_venta' => 'nullable|numeric|min:0|max:100',
+            'precio' => 'nullable|numeric|min:0|max:100',
             'valor_total_recibido' => 'nullable|numeric|min:0',
             'comision_operador' => 'nullable|numeric|min:0',
             'comision_bolsa' => 'nullable|numeric|min:0'
@@ -696,7 +714,7 @@ class VentaInversionController extends Controller
 
         $resultado = $this->ventaCalculator->previsualizarVenta(
             $request->inversiones,
-            $request->porcentaje_venta,
+            $request->precio,
             $request->valor_total_recibido,
             $request->comision_operador ?? 0,
             $request->comision_bolsa ?? 0,

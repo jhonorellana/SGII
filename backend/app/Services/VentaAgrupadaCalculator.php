@@ -82,7 +82,7 @@ class VentaAgrupadaCalculator
     /**
      * Calcular distribución de venta para un conjunto de inversiones
      */
-    public function calcularDistribucionVenta(array $idsInversiones, float $porcentajeVenta, float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
+    public function calcularDistribucionVenta(array $idsInversiones, float $precio, float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
     {
         $resumenCompra = $this->calcularResumenCompra($idsInversiones, $idPersonaSeleccionada);
 
@@ -94,10 +94,10 @@ class VentaAgrupadaCalculator
         $valorCompraTotal = $data['valor_compra_total'];
         $valorNominalTotal = $data['valor_nominal_total'];
 
-        // Calcular valor de venta total
+        // Calcular valor de venta total (Valor Efectivo)
         $valorVentaTotal = 0;
-        if ($porcentajeVenta > 0) {
-            $valorVentaTotal = ($valorNominalTotal * $porcentajeVenta / 100);
+        if ($precio > 0) {
+            $valorVentaTotal = ($valorNominalTotal * $precio / 100);
         } elseif ($valorTotalRecibido > 0) {
             $valorVentaTotal = $valorTotalRecibido;
         }
@@ -105,7 +105,7 @@ class VentaAgrupadaCalculator
         // Calcular comisiones
         $totalComisiones = $comisionOperador + $comisionBolsa;
 
-        // Valor neto recibido
+        // Valor neto recibido (Valor Total Recibido)
         $valorNetoRecibido = $valorVentaTotal - $totalComisiones;
 
         // Calcular utilidad total
@@ -174,17 +174,17 @@ class VentaAgrupadaCalculator
     /**
      * Previsualizar venta agrupada
      */
-    public function previsualizarVenta(array $idsInversiones, ?float $porcentajeVenta, ?float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
+    public function previsualizarVenta(array $idsInversiones, ?float $precio, ?float $valorTotalRecibido, float $comisionOperador = 0, float $comisionBolsa = 0, ?int $idPersonaSeleccionada = null): array
     {
-        // Validar que se proporcione porcentaje_venta o valor_total_recibido
-        if (!$porcentajeVenta && !$valorTotalRecibido) {
+        // Validar que se proporcione precio o valor_total_recibido
+        if (!$precio && !$valorTotalRecibido) {
             return [
                 'success' => false,
-                'message' => 'Debe proporcionar porcentaje_venta o valor_total_recibido'
+                'message' => 'Debe proporcionar precio o valor_total_recibido'
             ];
         }
 
-        return $this->calcularDistribucionVenta($idsInversiones, $porcentajeVenta ?? 0, $valorTotalRecibido ?? 0, $comisionOperador, $comisionBolsa, $idPersonaSeleccionada);
+        return $this->calcularDistribucionVenta($idsInversiones, $precio ?? 0, $valorTotalRecibido ?? 0, $comisionOperador, $comisionBolsa, $idPersonaSeleccionada);
     }
 
     /**
