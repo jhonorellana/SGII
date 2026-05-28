@@ -83,7 +83,8 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     capital_invertido: 0,
     retencion_fuente: 0,
     expirado: false,
-    activo: true
+    activo: true,
+    liquidacion: ''
   };
 
   selectedInversiones: Inversion[] = [];
@@ -270,7 +271,8 @@ export class InversionListComponent implements OnInit, AfterViewInit {
       capital_invertido: 0,
       retencion_fuente: 0,
       expirado: false,
-      activo: true
+      activo: true,
+      liquidacion: ''
     };
     this.setFechaActual();
     this.displayDialog = true;
@@ -587,7 +589,9 @@ export class InversionListComponent implements OnInit, AfterViewInit {
           this.loadInversiones();
         },
         error: (error) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar inversión' });
+          console.error('Error al actualizar inversión:', error);
+          const errorMessage = error.error?.message || error.error?.errors?.join(', ') || 'Error al actualizar inversión';
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: errorMessage });
         }
       });
     } else {
@@ -598,7 +602,9 @@ export class InversionListComponent implements OnInit, AfterViewInit {
           this.loadInversiones();
         },
         error: (error) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al crear inversión' });
+          console.error('Error al crear inversión:', error);
+          const errorMessage = error.error?.message || error.error?.errors?.join(', ') || 'Error al crear inversión';
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: errorMessage });
         }
       });
     }

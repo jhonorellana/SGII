@@ -507,8 +507,8 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
 
     if (tipoCodigo === 'COM_INV' && movimiento.inversion) {
-      // COMPRA_INVERSION: usar capital_invertido
-      const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
+      // COMPRA_INVERSION: usar valor_con_interes
+      const monto = parseFloat(String(movimiento.inversion.valor_con_interes || movimiento.inversion.capital_invertido || 0));
       return isNaN(monto) ? 0 : monto;
     }
 

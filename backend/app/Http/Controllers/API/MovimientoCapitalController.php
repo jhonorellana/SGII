@@ -46,7 +46,7 @@ class MovimientoCapitalController extends Controller
             $query->where('conciliado', $request->conciliado);
         }
 
-        $movimientos = $query->orderBy('fecha_movimiento', 'asc')->get();
+        $movimientos = $query->orderBy('id_movimiento_capital', 'desc')->get();
 
         return response()->json([
             'success' => true,

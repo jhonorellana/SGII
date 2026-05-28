@@ -493,7 +493,7 @@ class VentaInversionController extends Controller
                     'id_signo' => 190, // Positivo
                     'monto' => $capitalInvertido,
                     'fecha_movimiento' => now(),
-                    'descripcion' => 'Persona recibe nota de crédito',
+                    'descripcion' => 'Recibe nota de crédito',
                     'conciliado' => 1,
                     'fecha_conciliacion' => now(),
                     'activo' => 1,
@@ -512,7 +512,7 @@ class VentaInversionController extends Controller
                     'id_signo' => 191, // Negativo
                     'monto' => $capitalInvertido,
                     'fecha_movimiento' => now(),
-                    'descripcion' => 'Persona entrega nota de crédito',
+                    'descripcion' => 'Entrega nota de crédito',
                     'conciliado' => 1,
                     'fecha_conciliacion' => now(),
                     'activo' => 1,
