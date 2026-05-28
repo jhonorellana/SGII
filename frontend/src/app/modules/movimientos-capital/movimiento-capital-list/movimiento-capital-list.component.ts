@@ -96,6 +96,10 @@ export class MovimientoCapitalListComponent implements OnInit {
   formLoading: boolean = false;
   formError: string = '';
 
+  // View details modal
+  displayDetailsDialog: boolean = false;
+  selectedMovimiento: MovimientoCapital | null = null;
+
   constructor(
     private movimientoService: MovimientoCapitalService,
     private catalogoService: CatalogoService,
@@ -253,11 +257,10 @@ export class MovimientoCapitalListComponent implements OnInit {
         this.inversiones = [
           { id_inversion: undefined, label: 'Todas' },
           ...data.map((inv: any) => {
-            const instrumento = inv.instrumento?.nombre || inv.instrumento?.codigo || '';
             const liquidacion = inv.liquidacion || 'Sin liquidación';
             return {
               id_inversion: inv.id_inversion,
-              label: `#${inv.id_inversion} - ${liquidacion} - ${instrumento}`
+              label: `#${inv.id_inversion} - ${liquidacion}`
             };
           })
         ];
@@ -391,6 +394,11 @@ export class MovimientoCapitalListComponent implements OnInit {
 
     this.displayDialog = true;
     this.formError = '';
+  }
+
+  viewMovimientoDetails(movimiento: MovimientoCapital): void {
+    this.selectedMovimiento = movimiento;
+    this.displayDetailsDialog = true;
   }
 
   save(): void {
@@ -554,9 +562,8 @@ export class MovimientoCapitalListComponent implements OnInit {
   getInversionLabel(movimiento: MovimientoCapital): string {
     if (!movimiento.inversion) return '-';
     const inv = movimiento.inversion;
-    const instrumento = inv.instrumento?.nombre || inv.instrumento?.codigo || '';
     const liquidacion = inv.liquidacion || 'Sin liquidación';
-    return `#${inv.id_inversion} - ${liquidacion} - ${instrumento}`;
+    return `#${inv.id_inversion} - ${liquidacion}`;
   }
 
   getPersonaNombre(movimiento: MovimientoCapital): string {

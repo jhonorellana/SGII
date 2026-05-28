@@ -433,3 +433,39 @@
 .saldo-persona-card.negative .saldo-persona-value {
   color: #ef4444;
 }
+
+/* Details Dialog */
+.details-content {
+  padding: 10px 0;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.detail-value {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+/* Filter input width adjustments */
+::ng-deep .p-datatable .p-datatable-thead > tr:nth-child(2) > th:nth-child(3) input {
+  min-width: 120px !important;
+  width: 120px !important;
+}

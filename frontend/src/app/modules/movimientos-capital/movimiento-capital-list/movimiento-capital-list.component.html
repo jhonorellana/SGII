@@ -30,6 +30,7 @@
     </ng-template>
     <ng-template pTemplate="header">
       <tr>
+        <th>ID</th>
         <th pSortableColumn="fecha_movimiento">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
         <th>Tipo</th>
         <th>Persona</th>
@@ -42,7 +43,8 @@
         <th>Acciones</th>
       </tr>
       <tr>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_movimiento', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
+        <th></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_movimiento', 'contains')" class="w-100" placeholder="Filtrar fecha" style="min-width: 120px !important;"/></th>
         <th>
           <p-dropdown
             [(ngModel)]="filters.id_tipo_movimiento"
@@ -79,8 +81,8 @@
             optionLabel="label"
             optionValue="id_inversion"
             placeholder="Todas"
-            [style]="{'width':'100%', 'min-width':'250px'}"
-            [panelStyle]="{'max-height':'200px', 'overflow':'auto', 'min-width':'250px'}"
+            [style]="{'width':'100%', 'min-width':'150px'}"
+            [panelStyle]="{'max-height':'200px', 'overflow':'auto', 'min-width':'150px'}"
             appendTo="body"
             (onChange)="applyFilters()"
             [showClear]="true">
@@ -122,7 +124,8 @@
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-movimiento>
-      <tr>
+      <tr (click)="viewMovimientoDetails(movimiento)" style="cursor: pointer;">
+        <td>{{ movimiento.id_movimiento_capital }}</td>
         <td>{{ formatDateShort(movimiento.fecha_movimiento) }}</td>
         <td>{{ movimiento.tipo_movimiento?.nombre || movimiento.tipoMovimiento?.nombre || '-' }}</td>
         <td>{{ getPersonaNombre(movimiento) }}</td>
@@ -136,7 +139,7 @@
         <td>
           <p-tag [value]="movimiento.conciliado ? 'Sí' : 'No'" [severity]="getConciliadoClass(movimiento.conciliado)"></p-tag>
         </td>
-        <td>
+        <td (click)="$event.stopPropagation()">
           <p-button icon="pi pi-pencil" rounded text pTooltip="Editar movimiento" tooltipPosition="top" (onClick)="openEditDialog(movimiento)"></p-button>
           <p-button icon="pi pi-trash" rounded text severity="danger" pTooltip="Eliminar movimiento" tooltipPosition="top" (onClick)="deleteMovimiento(movimiento)"></p-button>
         </td>
@@ -144,7 +147,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="10" class="text-center">No hay movimientos registrados</td>
+        <td colspan="11" class="text-center">No hay movimientos registrados</td>
       </tr>
     </ng-template>
   </p-table>
@@ -288,6 +291,59 @@
         (onCancel)="displayDialog = false"
         (onSave)="save()">
       </app-modal-actions>
+    </ng-template>
+  </p-dialog>
+
+  <!-- View Details Dialog -->
+  <p-dialog [(visible)]="displayDetailsDialog" header="Detalles del Movimiento" [modal]="true" [style]="{width: '600px'}">
+    <div *ngIf="selectedMovimiento" class="details-content">
+      <div class="detail-row">
+        <span class="detail-label">ID:</span>
+        <span class="detail-value">{{ selectedMovimiento.id_movimiento_capital }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Fecha:</span>
+        <span class="detail-value">{{ formatDateShort(selectedMovimiento.fecha_movimiento) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Tipo:</span>
+        <span class="detail-value">{{ selectedMovimiento.tipo_movimiento?.nombre || selectedMovimiento.tipoMovimiento?.nombre || '-' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Persona:</span>
+        <span class="detail-value">{{ getPersonaNombre(selectedMovimiento) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Descripción:</span>
+        <span class="detail-value">{{ selectedMovimiento.descripcion || '-' }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Inversión:</span>
+        <span class="detail-value">{{ getInversionLabel(selectedMovimiento) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Signo:</span>
+        <span class="detail-value">{{ getSignoLabel(selectedMovimiento.id_signo, selectedMovimiento) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Monto:</span>
+        <span class="detail-value">{{ formatCurrency(getMonto(selectedMovimiento)) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Saldo Acumulado:</span>
+        <span class="detail-value" [ngClass]="(selectedMovimiento.saldo_acumulado || 0) >= 0 ? 'text-success' : 'text-danger'">{{ formatCurrency(selectedMovimiento.saldo_acumulado || 0) }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Conciliado:</span>
+        <span class="detail-value">{{ selectedMovimiento.conciliado ? 'Sí' : 'No' }}</span>
+      </div>
+      <div class="detail-row" *ngIf="selectedMovimiento.fecha_conciliacion">
+        <span class="detail-label">Fecha Conciliación:</span>
+        <span class="detail-value">{{ formatDateShort(selectedMovimiento.fecha_conciliacion) }}</span>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <p-button label="Cerrar" (onClick)="displayDetailsDialog = false"></p-button>
     </ng-template>
   </p-dialog>
 </div>
