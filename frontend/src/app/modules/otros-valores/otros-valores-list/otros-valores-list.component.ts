@@ -618,8 +618,8 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
       const mapeoPersonaTipo: { [key: number]: number } = {
         5: 142,  // Argentina
         2: 143,  // Cristian
-        3: 144,  // Cristian
-        1: 145   // Cristian
+        3: 144,  // Isabel
+        1: 145   // Jhon
       };
 
       // Actualizar cada registro de otro_valor
@@ -697,7 +697,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
 
     if (tipoCodigo === 'COM_INV' && movimiento.inversion) {
-      const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
+      const monto = parseFloat(String(movimiento.inversion.valor_con_interes || 0));
       return isNaN(monto) ? 0 : monto;
     }
 
