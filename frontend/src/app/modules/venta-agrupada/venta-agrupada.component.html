@@ -296,33 +296,41 @@
       <h3>Resumen General</h3>
       <div class="resumen-grid">
         <div class="resumen-item">
-          <label>Valor Nominal Total:</label>
+          <label>Nominal</label>
           <span class="resumen-value">{{ formatCurrency(previsualizacion?.resumen_compra?.valor_nominal_total || 0) }}</span>
         </div>
         <div class="resumen-item">
-          <label>Valor Compra Total:</label>
+          <label>Capital Invertido</label>
           <span class="resumen-value">{{ formatCurrency(previsualizacion?.resumen_compra?.valor_compra_total || 0) }}</span>
         </div>
         <div class="resumen-item">
-          <label>Valor Venta Total:</label>
+          <label>Valor Efectivo</label>
           <span class="resumen-value">{{ formatCurrency(previsualizacion?.valor_venta_total || 0) }}</span>
         </div>
         <div class="resumen-item">
-          <label>Comisiones:</label>
+          <label>Comisiones</label>
           <span class="resumen-value">{{ formatCurrency(previsualizacion?.total_comisiones || 0) }}</span>
         </div>
         <div class="resumen-item">
-          <label>Valor Neto Recibido:</label>
+          <label>Precio</label>
+          <span class="resumen-value">{{ (ventaForm.get('precio')?.value || 0).toFixed(2) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Precio Neto</label>
+          <span class="resumen-value">{{ precioNeto.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-item">
+          <label>Valor Neto Recibido</label>
           <span class="resumen-value highlight">{{ formatCurrency(previsualizacion?.valor_neto_recibido || 0) }}</span>
         </div>
         <div class="resumen-item">
-          <label>Utilidad Total:</label>
+          <label>Utilidad Total</label>
           <span class="resumen-value" [ngClass]="(previsualizacion?.utilidad_total || 0) >= 0 ? 'text-success' : 'text-danger'">
             {{ formatCurrency(previsualizacion?.utilidad_total || 0) }}
           </span>
         </div>
         <div class="resumen-item">
-          <label>ROI Total:</label>
+          <label>ROI Total</label>
           <span class="resumen-value" [ngClass]="(previsualizacion?.roi_total || 0) >= 0 ? 'text-success' : 'text-danger'">
             {{ formatPercent(previsualizacion?.roi_total || 0) }}
           </span>
@@ -340,7 +348,6 @@
             <th>Propietario</th>
             <th class="text-right">Valor Nominal</th>
             <th class="text-right">Valor Compra</th>
-            <th class="text-right">% Compra</th>
             <th class="text-right">Valor Venta Asignado</th>
             <th class="text-right">% Venta</th>
             <th class="text-right">Utilidad</th>
@@ -359,7 +366,6 @@
             </td>
             <td class="text-right">{{ formatCurrency(detalle.valor_nominal || 0) }}</td>
             <td class="text-right">{{ formatCurrency(detalle.valor_compra || 0) }}</td>
-            <td class="text-right">{{ formatPercent(detalle.porcentaje_compra || 0) }}</td>
             <td class="text-right">{{ formatCurrency(detalle.valor_venta_asignado || 0) }}</td>
             <td class="text-right">{{ formatPercent(detalle.porcentaje_venta || 0) }}</td>
             <td class="text-right" [ngClass]="(detalle.utilidad || 0) >= 0 ? 'text-success' : 'text-danger'">
