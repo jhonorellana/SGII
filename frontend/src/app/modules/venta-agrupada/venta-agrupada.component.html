@@ -218,7 +218,7 @@
       </div>
 
       <div class="form-field half-width">
-        <label>Liquidación</label>
+        <label>Liquidación *</label>
         <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345" class="form-input">
       </div>
 
@@ -347,7 +347,7 @@
     <!-- Distribución por Inversión -->
     <div class="distribucion">
       <h3>Distribución por Inversión</h3>
-      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="5">
+      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="5" [showCurrentPageReport]="true" [rowsPerPageOptions]="[5, 10, 20, 50]" [currentPageReportTemplate]="'Mostrando {first} a {last} de {totalRecords} registros'" [paginatorDropdownAppendTo]="'body'">
         <ng-template pTemplate="header">
           <tr>
             <th>ID</th>

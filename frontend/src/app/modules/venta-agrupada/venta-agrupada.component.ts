@@ -93,7 +93,7 @@ export class VentaAgrupadaComponent implements OnInit {
       precio: [100, [Validators.min(0), Validators.max(100)]],
       valor_total_recibido: [{value: null, disabled: true}, [Validators.min(0)]],
       fecha_venta: [new Date(), Validators.required],
-      liquidacion_venta: [''],
+      liquidacion_venta: ['', Validators.required],
       comision_operador: [0, [Validators.min(0)]],
       comision_bolsa: [0, [Validators.min(0)]],
       observacion: ['']
