@@ -286,8 +286,14 @@
       <div class="warning-icon">⚠️</div>
       <div class="warning-content">
         <h4>Reasignación de Propietario</h4>
-        <p>Algunas inversiones seleccionadas actualmente pertenecen a un propietario diferente. Antes de confirmar la venta, el sistema reasignará todas las inversiones seleccionadas al propietario seleccionado en el formulario.</p>
-        <p class="warning-detail">Esta reasignación será registrada en el log de auditoría para trazabilidad.</p>
+        <p>Se reasignarán <strong>{{ previsualizacion.inversiones_reasignar.length }}</strong> inversiones al propietario seleccionado. De: <strong>{{ getNombrePropietarioOrigen() }}</strong> → Para: <strong>{{ getNombrePersona(ventaForm.get('id_persona')?.value) }}</strong>. Esta reasignación será registrada en el log de auditoría para trazabilidad.</p>
+
+        <!-- Detalle por propietario -->
+        <div *ngFor="let prop of getReasignacionPorPropietario()">
+          <p class="warning-detail">
+            <strong>{{ prop.nombre }}</strong> ({{ prop.cantidad }} inversiones): Nominal: {{ formatCurrency(prop.nominal_total) }} | Capital: {{ formatCurrency(prop.capital_total) }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -344,10 +350,10 @@
       <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="5">
         <ng-template pTemplate="header">
           <tr>
-            <th>ID Inversión</th>
+            <th>ID</th>
             <th>Propietario</th>
             <th class="text-right">Valor Nominal</th>
-            <th class="text-right">Valor Compra</th>
+            <th class="text-right">Capital Inver.</th>
             <th class="text-right">Valor Venta Asignado</th>
             <th class="text-right">% Venta</th>
             <th class="text-right">Utilidad</th>
@@ -373,6 +379,21 @@
             </td>
             <td class="text-right">{{ formatPercent(detalle.rendimiento || 0) }}</td>
             <td class="text-right">{{ (detalle.proporcion || 0).toFixed(2) }}%</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="footer">
+          <tr class="totals-row">
+            <td><strong>Totales</strong></td>
+            <td></td>
+            <td class="text-right"><strong>{{ formatCurrency(getTotalValorNominal()) }}</strong></td>
+            <td class="text-right"><strong>{{ formatCurrency(getTotalCapitalInvertido()) }}</strong></td>
+            <td class="text-right"><strong>{{ formatCurrency(getTotalValorVenta()) }}</strong></td>
+            <td class="text-right"></td>
+            <td class="text-right" [ngClass]="getTotalUtilidad() >= 0 ? 'text-success' : 'text-danger'">
+              <strong>{{ formatCurrency(getTotalUtilidad()) }}</strong>
+            </td>
+            <td class="text-right"></td>
+            <td class="text-right"><strong>100.00%</strong></td>
           </tr>
         </ng-template>
       </p-table>

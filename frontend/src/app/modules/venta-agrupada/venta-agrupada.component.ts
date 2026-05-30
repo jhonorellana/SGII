@@ -509,6 +509,91 @@ export class VentaAgrupadaComponent implements OnInit {
     return persona ? persona.nombre : '-';
   }
 
+  getNombrePropietarioOrigen(): string {
+    if (!this.previsualizacion?.inversiones_reasignar || this.previsualizacion.inversiones_reasignar.length === 0) {
+      return '-';
+    }
+    // Obtener todos los propietarios únicos que serán reasignados
+    const propietariosUnicos = new Set<number>(
+      this.previsualizacion.inversiones_reasignar
+        .map((inv: any) => inv.id_propietario_anterior)
+        .filter((id: number) => id)
+    );
+
+    // Obtener nombres de los propietarios
+    const nombres = Array.from(propietariosUnicos)
+      .map((id: number) => this.getNombrePersona(id))
+      .filter((nombre: string) => nombre !== '-')
+      .join(', ');
+
+    return nombres || '-';
+  }
+
+  getCapitalReasignar(): number {
+    if (!this.previsualizacion?.inversiones_reasignar || this.previsualizacion.inversiones_reasignar.length === 0) {
+      return 0;
+    }
+    return this.previsualizacion.inversiones_reasignar.reduce((sum: number, inv: any) => {
+      // El campo correcto es valor_compra (viene como string, convertir a número)
+      const capital = this.parseNumber(inv.valor_compra);
+      return sum + capital;
+    }, 0);
+  }
+
+  getReasignacionPorPropietario(): any[] {
+    if (!this.previsualizacion?.inversiones_reasignar || this.previsualizacion.inversiones_reasignar.length === 0) {
+      return [];
+    }
+
+    // Agrupar por propietario origen
+    const agrupado = this.previsualizacion.inversiones_reasignar.reduce((acc: any, inv: any) => {
+      const idPropietario = inv.id_propietario_anterior;
+      if (!acc[idPropietario]) {
+        acc[idPropietario] = {
+          id_propietario: idPropietario,
+          nombre: this.getNombrePersona(idPropietario),
+          capital_total: 0,
+          nominal_total: 0,
+          cantidad: 0
+        };
+      }
+      acc[idPropietario].capital_total += this.parseNumber(inv.valor_compra);
+      acc[idPropietario].nominal_total += this.parseNumber(inv.valor_nominal);
+      acc[idPropietario].cantidad += 1;
+      return acc;
+    }, {});
+
+    return Object.values(agrupado);
+  }
+
+  getTotalValorNominal(): number {
+    if (!this.previsualizacion?.detalles_distribucion) return 0;
+    return this.previsualizacion.detalles_distribucion.reduce((sum: number, det: any) => {
+      return sum + this.parseNumber(det.valor_nominal);
+    }, 0);
+  }
+
+  getTotalCapitalInvertido(): number {
+    if (!this.previsualizacion?.detalles_distribucion) return 0;
+    return this.previsualizacion.detalles_distribucion.reduce((sum: number, det: any) => {
+      return sum + this.parseNumber(det.valor_compra);
+    }, 0);
+  }
+
+  getTotalValorVenta(): number {
+    if (!this.previsualizacion?.detalles_distribucion) return 0;
+    return this.previsualizacion.detalles_distribucion.reduce((sum: number, det: any) => {
+      return sum + this.parseNumber(det.valor_venta_asignado);
+    }, 0);
+  }
+
+  getTotalUtilidad(): number {
+    if (!this.previsualizacion?.detalles_distribucion) return 0;
+    return this.previsualizacion.detalles_distribucion.reduce((sum: number, det: any) => {
+      return sum + this.parseNumber(det.utilidad);
+    }, 0);
+  }
+
   formatDate(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');

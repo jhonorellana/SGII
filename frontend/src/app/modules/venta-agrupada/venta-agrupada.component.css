@@ -709,11 +709,23 @@
   font-style: italic;
   font-size: 12px !important;
   color: #856404 !important;
+  margin: 4px 0;
 }
 
 /* Row highlighting for reassignment */
 :host ::ng-deep .row-reasignar {
   background-color: #fff3cd !important;
+}
+
+/* Totals row styling */
+:host ::ng-deep .totals-row {
+  background-color: #f0f9ff !important;
+  font-weight: 700;
+  border-top: 2px solid #0ea5e9;
+}
+
+:host ::ng-deep .totals-row td {
+  padding: 12px 10px;
 }
 
 /* Reasignación badge */
