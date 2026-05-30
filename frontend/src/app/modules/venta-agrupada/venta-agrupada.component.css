@@ -209,18 +209,20 @@
 .modal-financial-summary {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 12px;
   padding: 12px 16px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-radius: 6px;
   margin-bottom: 20px;
   border-left: 4px solid #22c55e;
+  flex-wrap: wrap;
 }
 
 .summary-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
 }
 
 .summary-label {
@@ -245,40 +247,66 @@
   color: #ef4444;
 }
 
-/* KPI Utilidad Estimada - Destacado */
-.summary-item.kpi-utilidad {
-  padding: 8px 12px;
-  background: #f8f9fa;
+/* KPI Card Styles - Uniform for all KPIs */
+.summary-item.kpi-card {
+  padding: 10px 14px;
+  background: #ffffff;
   border-radius: 6px;
   border: 1px solid #e0e0e0;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  min-width: 140px;
+  min-width: 100px;
+  flex: 1;
+  min-height: 70px;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.kpi-label {
+.summary-item.kpi-card .kpi-label {
   font-size: 10px;
   color: #666;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  text-align: center;
 }
 
-.kpi-value {
+.summary-item.kpi-card .kpi-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* KPI Diferencia - Blue highlight */
+.summary-item.kpi-card.kpi-diferencia {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #93c5fd;
+}
+
+.summary-item.kpi-card.kpi-diferencia .kpi-value {
+  color: #1e40af;
+}
+
+/* KPI Utilidad Estimada - Green highlight */
+.summary-item.kpi-card.kpi-utilidad {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: #86efac;
+}
+
+.summary-item.kpi-card.kpi-utilidad .kpi-value {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.3px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #166534;
 }
 
-.kpi-value.positive {
+.summary-item.kpi-card.kpi-utilidad .kpi-value.positive {
   color: #15803d;
 }
 
-.kpi-value.negative {
+.summary-item.kpi-card.kpi-utilidad .kpi-value.negative {
   color: #b91c1c;
 }
 
@@ -289,24 +317,6 @@
 
 .kpi-amount {
   font-family: 'Courier New', monospace;
-}
-
-/* Resaltar el KPI cuando es positivo */
-.summary-item.kpi-utilidad .kpi-value.positive {
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #86efac;
-  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.1);
-}
-
-/* Resaltar el KPI cuando es negativo */
-.summary-item.kpi-utilidad .kpi-value.negative {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #fca5a5;
-  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.1);
 }
 
 /* Calculated Values */
@@ -336,7 +346,8 @@
 :host ::ng-deep .p-inputnumber,
 :host ::ng-deep .p-calendar,
 :host ::ng-deep .p-dropdown,
-:host ::ng-deep input.p-inputtext {
+:host ::ng-deep input.p-inputtext,
+:host ::ng-deep input.form-input {
   min-height: 42px;
 }
 
@@ -350,6 +361,20 @@
 
 :host ::ng-deep .p-dropdown {
   height: 42px;
+}
+
+:host ::ng-deep input.form-input {
+  height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+:host ::ng-deep input.form-input:focus {
+  border-color: #22c55e;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.1);
 }
 
 /* Textarea Full Width - Altura Reducida */

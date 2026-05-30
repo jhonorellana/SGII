@@ -174,6 +174,10 @@ export class VentaAgrupadaComponent implements OnInit {
     return Math.floor(diffTime / (1000 * 60 * 60 * 24));
   }
 
+  get diferencia(): number {
+    return this.valorNominalTotalModal - this.capitalInvertidoTotalModal;
+  }
+
   get gananciaAnual(): number {
     const dias = this.diasTranscurridos;
     if (dias === 0) return 0;

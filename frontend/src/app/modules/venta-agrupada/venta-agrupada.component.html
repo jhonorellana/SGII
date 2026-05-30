@@ -131,23 +131,27 @@
 
   <!-- Resumen Financiero Compacto -->
   <div class="modal-financial-summary">
-    <div class="summary-item">
-      <span class="summary-label">Inversiones:</span>
-      <span class="summary-value">{{ inversionesSeleccionadasCount }}</span>
+    <div class="summary-item kpi-card">
+      <span class="kpi-label">Cantidad</span>
+      <span class="kpi-value">{{ inversionesSeleccionadasCount }}</span>
     </div>
-    <div class="summary-item">
-      <span class="summary-label">Nominal:</span>
-      <span class="summary-value">{{ formatCurrency(valorNominalTotalModal) }}</span>
+    <div class="summary-item kpi-card">
+      <span class="kpi-label">Días Transc.</span>
+      <span class="kpi-value">{{ diasTranscurridos }}</span>
     </div>
-    <div class="summary-item">
-      <span class="summary-label">Capital invertido:</span>
-      <span class="summary-value">{{ formatCurrency(capitalInvertidoTotalModal) }}</span>
+    <div class="summary-item kpi-card">
+      <span class="kpi-label">Nominal</span>
+      <span class="kpi-value">{{ formatCurrency(valorNominalTotalModal) }}</span>
     </div>
-    <div class="summary-item">
-      <span class="summary-label">Días transcurridos:</span>
-      <span class="summary-value">{{ diasTranscurridos }}</span>
+    <div class="summary-item kpi-card">
+      <span class="kpi-label">Capital Inver.</span>
+      <span class="kpi-value">{{ formatCurrency(capitalInvertidoTotalModal) }}</span>
     </div>
-    <div class="summary-item kpi-utilidad">
+    <div class="summary-item kpi-card kpi-diferencia">
+      <span class="kpi-label">Diferencia</span>
+      <span class="kpi-value">{{ formatCurrency(diferencia) }}</span>
+    </div>
+    <div class="summary-item kpi-card kpi-utilidad">
       <span class="kpi-label">Utilidad estimada</span>
       <div class="kpi-value" [ngClass]="utilidadEstimada >= 0 ? 'positive' : 'negative'">
         <span class="kpi-icon">{{ utilidadEstimada >= 0 ? '▲' : '▼' }}</span>
@@ -158,8 +162,8 @@
 
   <form [formGroup]="ventaForm">
     <div class="form-grid">
-      <!-- TOP ROW: Titular / Persona + Valor Total Recibido -->
-      <div class="form-field half-width">
+      <!-- FIRST ROW: Titular / Persona (Propietario) (ancho completo) -->
+      <div class="form-field full-width">
         <label>Titular / Persona (Propietario) *</label>
         <p-dropdown
           formControlName="id_persona"
@@ -168,8 +172,15 @@
           optionValue="id_persona"
           placeholder="Seleccione el titular"
           [showClear]="true"
+          [appendTo]="'body'"
           styleClass="wide-dropdown">
         </p-dropdown>
+      </div>
+
+      <!-- SECOND ROW: Valor Efectivo + Valor Total Recibido -->
+      <div class="form-field half-width">
+        <label>Valor Efectivo</label>
+        <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
       </div>
 
       <div class="form-field half-width">
@@ -177,16 +188,7 @@
         <div class="calculated-value highlight">{{ formatCurrency(valorTotalRecibido) }}</div>
       </div>
 
-      <!-- SECOND ROW: Fecha Venta + Porcentaje de Venta -->
-      <div class="form-field half-width">
-        <label>Fecha Venta *</label>
-        <p-calendar
-          formControlName="fecha_venta"
-          [showIcon]="true"
-          [dateFormat]="'dd/mm/yy'">
-        </p-calendar>
-      </div>
-
+      <!-- THIRD ROW: Precio(%) + Precio Neto(%) -->
       <div class="form-field half-width">
         <label>Precio (%)</label>
         <p-inputNumber
@@ -200,26 +202,24 @@
         </p-inputNumber>
       </div>
 
-      <!-- THIRD ROW: Liquidación + Valor Efectivo -->
+      <div class="form-field half-width">
+        <label>Precio Neto (%)</label>
+        <div class="calculated-value">{{ precioNeto.toFixed(2) }}</div>
+      </div>
+
+      <!-- FOURTH ROW: Fecha Venta + Liquidación -->
+      <div class="form-field half-width">
+        <label>Fecha Venta *</label>
+        <p-calendar
+          formControlName="fecha_venta"
+          [showIcon]="true"
+          [dateFormat]="'dd/mm/yy'">
+        </p-calendar>
+      </div>
+
       <div class="form-field half-width">
         <label>Liquidación</label>
-        <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345">
-      </div>
-
-      <div class="form-field half-width">
-        <label>Valor Efectivo</label>
-        <div class="calculated-value">{{ formatCurrency(valorEfectivo) }}</div>
-      </div>
-
-      <!-- FOURTH ROW: Precio Neto + Valor Total Recibido -->
-      <div class="form-field half-width">
-        <label>Precio Neto</label>
-        <div class="calculated-value">{{ formatPercent(precioNeto) }}</div>
-      </div>
-
-      <div class="form-field half-width">
-        <label>Valor Total Recibido</label>
-        <div class="calculated-value highlight">{{ formatCurrency(valorTotalRecibido) }}</div>
+        <input pInputText formControlName="liquidacion_venta" placeholder="LIQ-12345" class="form-input">
       </div>
 
       <!-- FIFTH ROW: Comisión Operador + Comisión Bolsa -->
@@ -251,7 +251,7 @@
         </p-inputNumber>
       </div>
 
-      <!-- Row 6: Observación (full width, altura reducida) -->
+      <!-- SIXTH ROW: Observación (ancho completo) -->
       <div class="form-field full-width">
         <label>Observación</label>
         <textarea pInputTextarea formControlName="observacion" rows="2" placeholder="Observaciones..."></textarea>
