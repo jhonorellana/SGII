@@ -328,10 +328,12 @@ export class VentaAgrupadaComponent implements OnInit {
       return;
     }
 
-    // Pre-llenar el campo de persona con el propietario de las inversiones seleccionadas
-    const primeraInversion = this.inversionesSeleccionadasArray[0];
-    if (primeraInversion && primeraInversion.id_propietario) {
-      this.ventaForm.patchValue({ id_persona: primeraInversion.id_propietario });
+    // Pre-llenar el campo de persona solo si está vacío (para mantener el estado del borrador)
+    if (!this.ventaForm.get('id_persona')?.value) {
+      const primeraInversion = this.inversionesSeleccionadasArray[0];
+      if (primeraInversion && primeraInversion.id_propietario) {
+        this.ventaForm.patchValue({ id_persona: primeraInversion.id_propietario });
+      }
     }
 
     this.displayDialog = true;
@@ -498,7 +500,7 @@ export class VentaAgrupadaComponent implements OnInit {
   cancelarVenta(): void {
     this.displayDialog = false;
     this.displayPrevisualizar = false;
-    this.ventaForm.reset();
+    // No resetear el formulario para mantener el estado del borrador
   }
 
   getNombrePersona(idPersona: number | null): string {
