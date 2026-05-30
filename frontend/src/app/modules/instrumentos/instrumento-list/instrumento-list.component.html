@@ -18,7 +18,7 @@
   </div>
 
   <!-- Instrumentos List con PrimeNG Table -->
-  <p-table #dt [value]="instrumentos" [paginator]="true" [rows]="10"
+  <p-table #dt [value]="instrumentos" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
            [rowsPerPageOptions]="[10, 20, 50, 100]"
            [globalFilterFields]="['id_instrumento','nombre','emisor.nombre','tipoInversion.nombre','tasa_referencial','calificacion_riesgo']"
            [tableStyle]="{'min-width': '80rem'}"

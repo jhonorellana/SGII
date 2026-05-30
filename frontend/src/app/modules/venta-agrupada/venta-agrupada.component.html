@@ -37,7 +37,7 @@
 
   <!-- Tabla de inversiones -->
   <p-card header="Inversiones Disponibles" styleClass="compact-card inversiones-card">
-    <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
+    <p-table #dt [value]="inversiones" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
              [tableStyle]="{'min-width': '80rem'}"
@@ -347,7 +347,7 @@
     <!-- Distribución por Inversión -->
     <div class="distribucion">
       <h3>Distribución por Inversión</h3>
-      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="5" [showCurrentPageReport]="true" [rowsPerPageOptions]="[5, 10, 20, 50]" [currentPageReportTemplate]="'Mostrando {first} a {last} de {totalRecords} registros'" [paginatorDropdownAppendTo]="'body'">
+      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="rowsPerPageModal" (onPage)="onPageChangeModal($event)" [showCurrentPageReport]="true" [rowsPerPageOptions]="[5, 10, 20, 50]" [currentPageReportTemplate]="'Mostrando {first} a {last} de {totalRecords} registros'" [paginatorDropdownAppendTo]="'body'">
         <ng-template pTemplate="header">
           <tr>
             <th>ID</th>

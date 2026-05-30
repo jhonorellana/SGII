@@ -70,6 +70,7 @@ export class VentaInversionListComponent implements OnInit {
   ventaForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private ventaService: VentaInversionService,
@@ -77,12 +78,14 @@ export class VentaInversionListComponent implements OnInit {
     private catalogoService: CatalogoService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.ventaForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('ventasInversion', 10);
     this.loadVentas();
     this.loadInversiones();
     this.loadTiposVenta();
@@ -304,5 +307,10 @@ export class VentaInversionListComponent implements OnInit {
   getUtilidadClass(utilidad: number | undefined): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
     if (!utilidad) return 'info';
     return utilidad >= 0 ? 'success' : 'danger';
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('ventasInversion', this.rowsPerPage);
   }
 }

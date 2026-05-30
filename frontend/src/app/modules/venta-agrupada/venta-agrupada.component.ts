@@ -18,6 +18,7 @@ import { InversionService, Inversion } from '../../core/inversion.service';
 import { VentaInversionService, VentaAgrupadaRequest } from '../../core/venta-inversion.service';
 import { PersonaService } from '../../core/persona.service';
 import { ModalActionsComponent } from '../../core/modal-actions';
+import { PaginationService } from '../../core/pagination.service';
 import { Table } from 'primeng/table';
 
 @Component({
@@ -55,6 +56,8 @@ export class VentaAgrupadaComponent implements OnInit {
   loadingCalculo = false;
   displayDialog = false;
   displayPrevisualizar = false;
+  rowsPerPage: number = 10;
+  rowsPerPageModal: number = 10;
 
   ventaForm: FormGroup;
   previsualizacion: any = null;
@@ -66,12 +69,15 @@ export class VentaAgrupadaComponent implements OnInit {
     private ventaService: VentaInversionService,
     private personaService: PersonaService,
     private messageService: MessageService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private paginationService: PaginationService
   ) {
     this.ventaForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('ventaAgrupada', 10);
+    this.rowsPerPageModal = this.paginationService.getRowsPerPage('ventaAgrupadaModal', 10);
     this.loadPersonas();
     this.loadInversiones();
 
@@ -656,5 +662,15 @@ export class VentaAgrupadaComponent implements OnInit {
   get todasInversionesSeleccionadas(): boolean {
     return this.inversiones.length > 0 &&
            this.inversiones.every(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('ventaAgrupada', this.rowsPerPage);
+  }
+
+  onPageChangeModal(event: any): void {
+    this.rowsPerPageModal = event.rows;
+    this.paginationService.setRowsPerPage('ventaAgrupadaModal', this.rowsPerPageModal);
   }
 }

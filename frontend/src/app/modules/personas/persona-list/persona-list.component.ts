@@ -42,17 +42,20 @@ export class PersonaListComponent implements OnInit {
   personaForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private personaService: PersonaService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.personaForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('personas', 10);
     this.loadPersonas();
   }
 
@@ -226,6 +229,11 @@ export class PersonaListComponent implements OnInit {
     } else {
       this.totalRecords = this.personas.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('personas', this.rowsPerPage);
   }
 
   onActivoFilterChange(value: string): void {

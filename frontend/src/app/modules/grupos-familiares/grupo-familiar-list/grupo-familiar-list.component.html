@@ -32,7 +32,7 @@
 
   <!-- Grupos Familiares List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
-    <p-table #dt [value]="filteredGruposFamiliares" [paginator]="true" [rows]="10"
+    <p-table #dt [value]="filteredGruposFamiliares" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['nombre','descripcion']"
              [tableStyle]="{'min-width': '80rem'}"

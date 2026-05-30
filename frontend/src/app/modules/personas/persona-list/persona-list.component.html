@@ -32,7 +32,7 @@
 
   <!-- Personas List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
-    <p-table #dt [value]="filteredPersonas" [paginator]="true" [rows]="10"
+    <p-table #dt [value]="filteredPersonas" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['nombres','apellidos','identificacion','correo','telefono']"
              [tableStyle]="{'min-width': '80rem'}"

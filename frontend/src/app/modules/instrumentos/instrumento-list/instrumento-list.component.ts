@@ -59,6 +59,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
   };
 
   selectedInstrumentos: Instrumento[] = [];
+  rowsPerPage: number = 10;
 
   @ViewChild('dt') table!: Table;
 
@@ -79,10 +80,12 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     private emisorService: EmisorService,
     private catalogoService: CatalogoService,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {}
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('instrumentos', 10);
     this.loadInstrumentos();
     this.loadEmisores();
     this.loadTiposInversion();
@@ -245,6 +248,11 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     } else {
       this.totalRecords = this.instrumentos.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('instrumentos', this.rowsPerPage);
   }
 
   exportToExcel(): void {

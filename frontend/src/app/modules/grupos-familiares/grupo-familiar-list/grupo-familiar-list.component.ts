@@ -63,18 +63,21 @@ export class GrupoFamiliarListComponent implements OnInit {
   grupoFamiliarForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private grupoFamiliarService: GrupoFamiliarService,
     private personaService: PersonaService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.grupoFamiliarForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('gruposFamiliares', 10);
     this.loadGruposFamiliares();
     this.loadPersonas();
   }
@@ -260,6 +263,11 @@ export class GrupoFamiliarListComponent implements OnInit {
     } else {
       this.totalRecords = this.gruposFamiliares.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('gruposFamiliares', this.rowsPerPage);
   }
 
   onActivoFilterChange(value: string): void {

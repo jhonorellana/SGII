@@ -30,7 +30,7 @@
   </div>
 
   <!-- Table -->
-  <p-table #dt [value]="ventas" [loading]="loading" [paginator]="true" [rows]="10" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 25, 50]">
+  <p-table #dt [value]="ventas" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 25, 50]">
     <ng-template pTemplate="header">
       <tr>
         <th>Fecha Venta</th>
