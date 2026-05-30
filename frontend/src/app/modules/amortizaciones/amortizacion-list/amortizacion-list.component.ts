@@ -14,6 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { AmortizacionService, Amortizacion } from '../../../core/amortizacion.service';
 import { InversionService } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -60,6 +61,7 @@ export class AmortizacionListComponent implements OnInit {
   };
 
   selectedAmortizaciones: Amortizacion[] = [];
+  rowsPerPage: number = 10;
 
   cols: any[] = [
     { field: 'id_amortizacion', header: 'ID' },
@@ -80,10 +82,12 @@ export class AmortizacionListComponent implements OnInit {
     private inversionService: InversionService,
     private catalogoService: CatalogoService,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {}
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('amortizaciones', 10);
     this.loadAmortizaciones();
     this.loadInversiones();
     this.loadEstadosAmortizacion();
@@ -236,6 +240,8 @@ export class AmortizacionListComponent implements OnInit {
   }
 
   onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('amortizaciones', this.rowsPerPage);
     // Actualizar totalRecords cuando cambia la página
     if (this.table && this.table.filteredValue) {
       this.totalRecords = this.table.filteredValue.length;

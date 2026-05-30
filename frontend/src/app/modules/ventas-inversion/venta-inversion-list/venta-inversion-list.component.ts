@@ -16,6 +16,7 @@ import { VentaInversionService, VentaInversion } from '../../../core/venta-inver
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 
 interface CatalogoValor {
   id_catalogo_valor: number;

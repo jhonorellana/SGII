@@ -14,6 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';

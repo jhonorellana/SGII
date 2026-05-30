@@ -14,6 +14,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { EmisorService } from '../../../core/emisor.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -64,18 +65,21 @@ export class EmisorListComponent implements OnInit {
   emisorForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private emisorService: EmisorService,
     private catalogoService: CatalogoService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.emisorForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('emisores', 10);
     this.loadEmisores();
     this.loadTiposEmisor();
   }
@@ -272,6 +276,11 @@ export class EmisorListComponent implements OnInit {
     } else {
       this.totalRecords = this.emisores.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('emisores', this.rowsPerPage);
   }
 
   onActivoFilterChange(value: string): void {

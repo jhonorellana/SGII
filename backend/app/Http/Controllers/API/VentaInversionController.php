@@ -491,7 +491,7 @@ class VentaInversionController extends Controller
                     'usuario_reasignacion' => $usuarioReasignacion,
                     'fecha_reasignacion' => now()
                 ]);
-
+/*
                 // STEP 2.1: Crear movimiento positivo para el nuevo propietario (recibe nota de crédito)
                 MovimientoCapital::create([
                     'id_tipo_movimiento' => 183,
@@ -529,7 +529,7 @@ class VentaInversionController extends Controller
                     'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
                 ]);
-
+*/
                 // STEP 3: Actualizar propietario de la inversión
                 Inversion::where('id_inversion', $reasignacion['id_inversion'])
                     ->update([

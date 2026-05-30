@@ -24,7 +24,7 @@
 
   <!-- Cuentas Bancarias List con PrimeNG Table -->
   <div *ngIf="!loading && !error">
-    <p-table #dt [value]="cuentasBancarias" [paginator]="true" [rows]="10"
+    <p-table #dt [value]="cuentasBancarias" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['persona.nombres','persona.apellidos','banco.nombre','numero_cuenta']"
              [tableStyle]="{'min-width': '80rem'}"

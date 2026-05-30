@@ -22,6 +22,7 @@ import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-bancaria.service';
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 
 interface CatalogoValor {
   id_catalogo_valor: number;
@@ -68,6 +69,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   error = '';
   @ViewChild('dt') dt: Table | undefined;
   totalRecords: number = 0;
+  rowsPerPage: number = 10;
 
   // Summary card data
   totalIngresos: number = 0;
@@ -109,12 +111,14 @@ export class MovimientoCapitalListComponent implements OnInit {
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private paginationService: PaginationService
   ) {
     this.movimientoForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('movimientosCapital', 10);
     this.setupConciliadoListener();
     this.loadMovimientos();
     this.loadTiposMovimiento();
@@ -776,5 +780,10 @@ export class MovimientoCapitalListComponent implements OnInit {
 
     // Ajustar según lógica de negocio
     return false;
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('movimientosCapital', this.rowsPerPage);
   }
 }

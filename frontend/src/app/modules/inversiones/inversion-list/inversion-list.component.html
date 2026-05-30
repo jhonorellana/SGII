@@ -18,8 +18,9 @@
   </div>
 
   <!-- Inversiones List con PrimeNG Table -->
-  <p-table #dt [value]="inversiones" [paginator]="true" [rows]="10"
+  <p-table #dt [value]="inversiones" [paginator]="true" [rows]="rowsPerPage"
            [rowsPerPageOptions]="[10, 20, 50, 100]"
+           (onPage)="onPageChange($event)"
            [globalFilterFields]="['id_inversion','propietario.nombres','instrumento.emisor.nombre','instrumento.tipoInversion.nombre','valor_nominal','capital_invertido','fecha_compra','instrumento.fecha_emision','instrumento.fecha_vencimiento','estadoInversion.nombre']"
            [tableStyle]="{'min-width': '80rem'}"
            styleClass="p-datatable-sm p-datatable-gridlines"

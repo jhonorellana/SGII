@@ -23,6 +23,7 @@ import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { AuthService } from '../../../core/auth.service';
 import { MovimientoCapitalService, MovimientoCapital } from '../../../core/movimiento-capital.service';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -63,12 +64,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   loading = false;
   error = '';
   totalRecords: number = 0;
-
-  // Filtros
-  idGrupoFilter: number | null = null;
-  idPropietarioFilter: number | null = null;
-  idTipoFilter: number | null = null;
-  soloVigentesFilter: boolean = false;
+  rowsPerPage: number = 10;
 
   @ViewChild('dt') table: any;
   private routeSub: Subscription;
@@ -99,13 +95,17 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.routeSub = new Subscription();
     this.valorForm = this.createForm();
   }
 
   ngOnInit(): void {
+    // Cargar configuración de paginación desde el servicio
+    this.rowsPerPage = this.paginationService.getRowsPerPage('otrosValores', 10);
+
     this.loadCurrentUser();
     this.loadInitialData();
     this.loadValores().then(() => {
@@ -185,13 +185,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
       this.loading = true;
       this.error = '';
 
-      const params: any = {};
-      if (this.idGrupoFilter) params.id_grupo_familiar = this.idGrupoFilter;
-      if (this.idPropietarioFilter) params.id_propietario = this.idPropietarioFilter;
-      if (this.idTipoFilter) params.id_tipo_otro_valor = this.idTipoFilter;
-      if (this.soloVigentesFilter) params.vigentes = true;
-
-      this.otroValorService.getOtrosValores(params).subscribe({
+      this.otroValorService.getOtrosValores({}).subscribe({
         next: (response) => {
           if (response.success) {
             this.valores = response.data || [];
@@ -462,11 +456,6 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     this.routeSub.unsubscribe();
   }
 
-  onGlobalFilter(event: Event): void {
-    const value = (event.target as HTMLInputElement).value;
-    this.table.filterGlobal(value, 'contains');
-  }
-
   onFilter(event: any): void {
     // Actualizar totalRecords cuando se filtra la tabla
     if (event.filteredValue) {
@@ -478,31 +467,16 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
 
   onActivoFilterChange(value: string): void {
     if (value === '') {
-      this.applyFilters();
+      this.filteredValores = [...this.valores];
     } else {
       const activo = value === '1';
       this.filteredValores = this.valores.filter(item => item.activo === activo);
     }
   }
 
-  applyFilters(): void {
-    this.loadValores().then(() => {
-      this.actualizarSaldosPorPersona().then(() => {
-        this.loadValores();
-      });
-    });
-  }
-
-  clearFilters(): void {
-    this.idGrupoFilter = null;
-    this.idPropietarioFilter = null;
-    this.idTipoFilter = null;
-    this.soloVigentesFilter = false;
-    this.loadValores().then(() => {
-      this.actualizarSaldosPorPersona().then(() => {
-        this.loadValores();
-      });
-    });
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('otrosValores', this.rowsPerPage);
   }
 
   trackByValorId(index: number, valor: OtroValor): number {

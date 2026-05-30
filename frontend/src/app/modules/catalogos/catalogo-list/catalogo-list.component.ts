@@ -12,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CreateCatalogoRequest, UpdateCatalogoRequest } from '../../../core/catalogo.service';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -41,17 +42,20 @@ export class CatalogoListComponent implements OnInit {
   catalogoForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private catalogoService: CatalogoService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.catalogoForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('catalogos', 10);
     this.loadCatalogos();
   }
 
@@ -222,6 +226,11 @@ export class CatalogoListComponent implements OnInit {
     } else {
       this.totalRecords = this.catalogos.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('catalogos', this.rowsPerPage);
   }
 
   onActivoFilterChange(value: string): void {

@@ -15,6 +15,7 @@ import { CuentaBancariaService, CuentaBancaria, CuentaBancariaRequest } from '..
 import { CatalogoService } from '../../../core/catalogo.service';
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 
 interface CatalogoValor {
   id_catalogo_valor: number;
@@ -66,6 +67,7 @@ export class CuentaBancariaListComponent implements OnInit {
   cuentaBancariaForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private cuentaBancariaService: CuentaBancariaService,
@@ -73,12 +75,14 @@ export class CuentaBancariaListComponent implements OnInit {
     private personaService: PersonaService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.cuentaBancariaForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('cuentasBancarias', 10);
     this.loadCuentasBancarias();
     this.loadBancos();
     this.loadTiposCuenta();
@@ -306,5 +310,10 @@ export class CuentaBancariaListComponent implements OnInit {
     if (this.dt) {
       this.dt.filterGlobal((event.target as HTMLInputElement).value, 'contains');
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('cuentasBancarias', this.rowsPerPage);
   }
 }

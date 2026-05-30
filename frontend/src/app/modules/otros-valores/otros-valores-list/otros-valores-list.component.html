@@ -17,74 +17,31 @@
     </div>
   </div>
 
-  <!-- Filtros -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-3">
-          <label for="grupoFilter" class="form-label">Grupo Familiar</label>
-          <p-dropdown
-            id="grupoFilter"
-            [options]="gruposFamiliares"
-            optionLabel="nombre"
-            optionValue="id_grupo_familiar"
-            [(ngModel)]="idGrupoFilter"
-            placeholder="Todos los grupos"
-            [showClear]="true"
-            styleClass="w-100"
-            (onChange)="applyFilters()">
-          </p-dropdown>
+  <!-- Resumen Financiero -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="card bg-success bg-opacity-10 border-success">
+        <div class="card-body">
+          <h6 class="text-success">Activos Corrientes</h6>
+          <div class="display-6 fw-bold text-success">{{ formatValor(totalActivos) }}</div>
         </div>
-
-        <div class="col-md-3">
-          <label for="propietarioFilter" class="form-label">Propietario</label>
-          <p-dropdown
-            id="propietarioFilter"
-            [options]="personas"
-            optionLabel="nombre_completo"
-            optionValue="id"
-            [(ngModel)]="idPropietarioFilter"
-            placeholder="Todos los propietarios"
-            [showClear]="true"
-            styleClass="w-100"
-            (onChange)="applyFilters()">
-          </p-dropdown>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-danger bg-opacity-10 border-danger">
+        <div class="card-body">
+          <h6 class="text-danger">Pasivos Corrientes</h6>
+          <div class="display-6 fw-bold text-danger">{{ formatValor(totalPasivos) }}</div>
         </div>
-
-        <div class="col-md-3">
-          <label for="tipoFilter" class="form-label">Tipo de Valor</label>
-          <p-dropdown
-            id="tipoFilter"
-            [options]="tipos"
-            optionLabel="nombre"
-            optionValue="id_catalogo_valor"
-            [(ngModel)]="idTipoFilter"
-            placeholder="Todos los tipos"
-            [showClear]="true"
-            styleClass="w-100"
-            (onChange)="applyFilters()">
-          </p-dropdown>
-        </div>
-
-        <div class="col-md-2">
-          <label for="vigentesFilter" class="form-label">Solo Vigentes</label>
-          <div class="form-check mt-2">
-            <input
-              class="form-check-input"
-              type="checkbox"
-              id="vigentesFilter"
-              [(ngModel)]="soloVigentesFilter"
-              (change)="applyFilters()">
-            <label class="form-check-label" for="vigentesFilter">
-              Filtrar vigentes
-            </label>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card bg-primary bg-opacity-10 border-primary">
+        <div class="card-body">
+          <h6 class="text-primary">Total Corriente</h6>
+          <div class="display-6 fw-bold" [ngClass]="getTipoClaseCss(patrimonioNeto)">
+            {{ formatValor(patrimonioNeto) }}
           </div>
-        </div>
-
-        <div class="col-md-1 d-flex align-items-end">
-          <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
-            <i class="bi bi-x-circle"></i> Limpiar
-          </button>
         </div>
       </div>
     </div>
@@ -109,28 +66,17 @@
       #dt
       [value]="filteredValores"
       [paginator]="true"
-      [rows]="10"
+      [rows]="rowsPerPage"
       [rowsPerPageOptions]="[10, 20, 50, 100]"
-      [globalFilterFields]="['descripcion', 'grupoFamiliarNombre', 'propietarioNombre', 'tipoNombre']"
+      (onPage)="onPageChange($event)"
       [tableStyle]="{'min-width': '80rem'}"
-      styleClass="p-datatable-sm p-datatable-gridlines"
+      styleClass="p-datatable-sm p-datatable-gridlines hide-global-filter"
       [loading]="loading"
       responsiveLayout="scroll"
       [totalRecords]="totalRecords"
       showCurrentPageReport="true"
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
       currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
-
-      <!-- Header con buscador global -->
-      <ng-template pTemplate="caption">
-        <div class="d-flex justify-content-end align-items-center">
-          <span class="p-input-icon-left">
-            <i class="pi pi-search"></i>
-            <input pInputText type="text" (input)="onGlobalFilter($event)"
-                   placeholder="Buscar valor..." class="w-100"/>
-          </span>
-        </div>
-      </ng-template>
 
       <!-- Columnas -->
       <ng-template pTemplate="header">
@@ -218,36 +164,6 @@
       </ng-template>
 
     </p-table>
-  </div>
-
-  <!-- Resumen Financiero -->
-  <div class="row mt-4">
-    <div class="col-md-4">
-      <div class="card bg-success bg-opacity-10 border-success">
-        <div class="card-body">
-          <h6 class="text-success">Activos Corrientes</h6>
-          <div class="display-6 fw-bold text-success">{{ formatValor(totalActivos) }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-danger bg-opacity-10 border-danger">
-        <div class="card-body">
-          <h6 class="text-danger">Pasivos Corrientes</h6>
-          <div class="display-6 fw-bold text-danger">{{ formatValor(totalPasivos) }}</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card bg-primary bg-opacity-10 border-primary">
-        <div class="card-body">
-          <h6 class="text-primary">Total Corriente</h6>
-          <div class="display-6 fw-bold" [ngClass]="getTipoClaseCss(patrimonioNeto)">
-            {{ formatValor(patrimonioNeto) }}
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Modal Form -->

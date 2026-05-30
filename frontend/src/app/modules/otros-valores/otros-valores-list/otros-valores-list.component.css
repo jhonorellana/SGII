@@ -165,3 +165,16 @@ code {
 ::ng-deep .p-datepicker .p-datepicker-calendar td > span {
   font-size: 0.875rem;
 }
+
+/* Ocultar el buscador global de PrimeNG */
+:host ::ng-deep .hide-global-filter .p-datatable .p-datatable-header {
+  display: none !important;
+}
+
+:host ::ng-deep .hide-global-filter .p-datatable .p-datatable-thead {
+  display: table-header-group !important;
+}
+
+:host ::ng-deep .hide-global-filter .p-datatable .p-datatable-thead tr {
+  display: table-row !important;
+}

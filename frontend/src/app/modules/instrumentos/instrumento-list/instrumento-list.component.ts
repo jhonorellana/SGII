@@ -15,6 +15,7 @@ import { InstrumentoService, Instrumento } from '../../../core/instrumento.servi
 import { CatalogoService } from '../../../core/catalogo.service';
 import { EmisorService } from '../../../core/emisor.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 
 @Component({
   selector: 'app-instrumento-list',

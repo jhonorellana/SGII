@@ -20,6 +20,7 @@ import { InstrumentoService } from '../../../core/instrumento.service';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PaginationService } from '../../../core/pagination.service';
 import { CalendarModule } from 'primeng/calendar';
 
 @Component({
@@ -59,6 +60,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   fechaCompraFilter: string = '';
   fechaEmisionFilter: string = '';
   fechaVencimientoFilter: string = '';
+  rowsPerPage: number = 10;
 
   displayInstrumentoDialog: boolean = false;
   selectedInstrumento: any = null;
@@ -116,10 +118,12 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     private catalogoService: CatalogoService,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private paginationService: PaginationService
   ) {}
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('inversiones', 10);
     this.loadInversiones();
     this.loadGruposFamiliares();
     this.loadInstrumentos();
@@ -641,6 +645,8 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   }
 
   onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('inversiones', this.rowsPerPage);
     // Actualizar totalRecords cuando cambia la página
     if (this.dt && this.dt.filteredValue) {
       this.totalRecords = this.dt.filteredValue.length;

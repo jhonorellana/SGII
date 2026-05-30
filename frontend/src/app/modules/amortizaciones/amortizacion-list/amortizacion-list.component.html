@@ -17,7 +17,7 @@
     </div>
   </div>
 
-  <p-table #table [value]="amortizaciones" [columns]="cols" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]"
+  <p-table #table [value]="amortizaciones" [columns]="cols" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [rowsPerPageOptions]="[10, 25, 50]"
             [globalFilterFields]="['id_amortizacion', 'inversion.id_inversion', 'fecha_pago', 'interes', 'capital', 'total']"
             [(selection)]="selectedAmortizaciones" dataKey="id_amortizacion"
             [totalRecords]="totalRecords"

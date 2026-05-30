@@ -14,6 +14,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { CatalogoService, Catalogo, CatalogoValor } from '../../../core/catalogo.service';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
@@ -46,6 +47,7 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
   valorForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
+  rowsPerPage: number = 10;
 
   constructor(
     private catalogoService: CatalogoService,
@@ -53,13 +55,15 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
     private router: Router,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private paginationService: PaginationService
   ) {
     this.routeSub = new Subscription();
     this.valorForm = this.createForm();
   }
 
   ngOnInit(): void {
+    this.rowsPerPage = this.paginationService.getRowsPerPage('catalogoValores', 10);
     this.routeSub = this.route.params.subscribe(params => {
       if (params['id']) {
         this.catalogoId = +params['id'];
@@ -262,6 +266,11 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
     } else {
       this.totalRecords = this.valores.length;
     }
+  }
+
+  onPageChange(event: any): void {
+    this.rowsPerPage = event.rows;
+    this.paginationService.setRowsPerPage('catalogoValores', this.rowsPerPage);
   }
 
   onActivoFilterChange(value: string): void {
