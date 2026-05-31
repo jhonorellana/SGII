@@ -1,0 +1,318 @@
+Implementación – Funcionalidad de Venta de Inversiones de Renta Fija
+Objetivo
+
+Implementar la funcionalidad que permita registrar ventas totales y parciales de instrumentos de renta fija manteniendo la consistencia de:
+
+Inversiones
+Amortizaciones
+Ventas
+Movimientos de capital
+Reportes financieros
+Cambios de Base de Datos
+
+Los siguientes elementos ya fueron entregados:
+
+Tabla nueva
+inversion_relacion_venta
+Nuevos registros en catalogo_valor
+PARTE_VENDIDA
+PARTE_REMANENTE
+
+No es necesario volver a crear estos scripts.
+
+Pantalla de Venta de Inversiones
+
+Crear una nueva pantalla para registrar ventas.
+
+La pantalla deberá permitir seleccionar un instrumento activo y mostrar:
+
+Información de lectura
+Instrumento
+Emisor
+Propietario
+Valor nominal acumulado
+Capital invertido acumulado
+Rendimiento promedio
+Fecha emisión
+Fecha vencimiento
+Información editable
+Tipo de venta
+Total
+Parcial
+Fecha venta
+Liquidación venta
+Precio venta
+Precio neto venta
+Interés previo
+Comisión operador
+Comisión bolsa
+Comisión Santa Fe
+Retenciones
+Observaciones
+Venta Parcial
+
+La pantalla deberá permitir ingresar:
+
+Opción 1
+
+Porcentaje a vender
+
+Ejemplo:
+
+30%
+
+Opción 2
+
+Valor nominal a vender
+
+Ejemplo:
+
+30000
+
+Cuando uno de los campos sea modificado, el otro deberá calcularse automáticamente.
+
+Escenario 1 – Venta Total
+Instrumento con una sola inversión
+Actualizar inversión
+fecha_venta = fecha ingresada
+estado = VENDIDA_TOTAL
+activo = 0
+Actualizar amortizaciones
+
+Inactivar todas las amortizaciones futuras.
+
+Condición:
+
+fecha_pago >= fecha_venta
+
+Crear registro
+
+Tabla:
+
+venta_inversion
+
+Crear movimiento
+
+Tabla:
+
+movimiento_capital
+
+Monto:
+
+valor_venta_con_comision
+
+Tipo movimiento:
+
+182
+
+Signo:
+
+190 (positivo)
+
+Instrumento con múltiples inversiones
+
+Obtener todas las inversiones activas asociadas al instrumento.
+
+Aplicar exactamente la misma lógica anterior para cada inversión.
+
+Escenario 2 – Venta Parcial
+Instrumento con una sola inversión
+Paso 1
+
+Cerrar inversión original.
+
+Actualizar:
+
+fecha_venta
+estado VENDIDA_TOTAL
+activo = 0
+Paso 2
+
+Inactivar amortizaciones futuras.
+
+Paso 3
+
+Crear inversión derivada correspondiente a la parte vendida.
+
+Características:
+
+estado = VENDIDA_TOTAL
+activo = 0
+sin amortización
+Paso 4
+
+Crear inversión derivada correspondiente a la parte remanente.
+
+Características:
+
+estado = ACTIVA
+activo = 1
+requiere nueva amortización
+Paso 5
+
+Crear nueva tabla de amortización para la inversión remanente.
+
+Paso 6
+
+Crear registro en venta_inversion.
+
+Paso 7
+
+Crear movimiento_capital.
+
+Monto:
+
+valor_venta_con_comision correspondiente únicamente a la parte vendida.
+
+No utilizar los valores completos de la inversión original.
+
+Paso 8
+
+Crear registros en inversion_relacion_venta.
+
+Registro 1:
+
+Tipo relación:
+
+PARTE_VENDIDA
+
+Registro 2:
+
+Tipo relación:
+
+PARTE_REMANENTE
+
+Escenario 2.2 – Instrumento con múltiples inversiones
+Regla de Selección
+
+Ordenar inversiones activas:
+
+Menor rendimiento → Mayor rendimiento
+
+Ejemplo:
+
+Inversión A = 8.50%
+
+Inversión B = 9.25%
+
+Inversión C = 10.00%
+
+La venta deberá comenzar utilizando la inversión A.
+
+Si el monto solicitado no se completa:
+
+Continuar con B.
+
+Luego C.
+
+Hasta completar el valor solicitado.
+
+Recalculo Financiero
+
+Cuando se creen inversiones derivadas se deberá recalcular proporcionalmente:
+
+valor_nominal
+capital_invertido
+valor_efectivo
+interes_previo
+comisiones
+rendimiento
+ROI
+ganancia_anual
+
+La suma de las inversiones derivadas debe coincidir con los valores de la inversión original.
+
+Trazabilidad
+
+Toda venta parcial deberá generar registros en:
+
+inversion_relacion_venta
+
+Objetivo:
+
+Poder reconstruir posteriormente:
+
+inversión original
+inversión vendida
+inversión remanente
+venta realizada
+Procesamiento Transaccional
+
+Toda la operación deberá ejecutarse dentro de una única transacción.
+
+Orden recomendado:
+
+Crear venta_inversion
+Actualizar inversión original
+Inactivar amortizaciones
+Crear inversión vendida
+Crear inversión remanente
+Crear amortización remanente
+Crear relaciones en inversion_relacion_venta
+Crear movimiento_capital
+Commit
+
+Si ocurre cualquier error:
+
+Rollback completo.
+
+
+
+Regla de Negocio – Fecha de Compra en Ventas Parciales
+
+Cuando una venta parcial genere nuevas inversiones derivadas, la inversión remanente deberá conservar la fecha de compra de la inversión original.
+
+Ejemplo:
+
+Inversión original:
+
+Fecha compra: 2026-01-15
+Valor nominal: 100.000
+
+Venta parcial:
+
+Fecha venta: 2027-03-10
+Porcentaje vendido: 30%
+
+Resultado:
+
+Inversión vendida:
+
+Fecha compra: 2026-01-15
+Fecha venta: 2027-03-10
+
+Inversión remanente:
+
+Fecha compra: 2026-01-15
+Sin fecha de venta
+Estado ACTIVA
+
+La fecha de venta no deberá convertirse en una nueva fecha de compra para la inversión remanente.
+
+Objetivo:
+
+Mantener la trazabilidad histórica correcta de la inversión y preservar la coherencia de los cálculos relacionados con:
+
+Días transcurridos
+ROI
+Rendimiento anual
+Ganancia acumulada
+Reportes históricos
+Reportes tributarios
+
+
+Regla de Negocio – Fecha de Creación de las Nuevas Inversiones
+
+Aunque la inversión remanente conserve la fecha de compra original, los campos de auditoría deberán registrar la fecha real en la que fue generada la nueva inversión:
+
+fecha_compra = fecha_compra_original
+
+fecha_creacion = current_timestamp()
+fecha_actualizacion = current_timestamp()
+
+De esa forma mantienes dos conceptos separados:
+
+Fecha Compra → cuándo se adquirió realmente el instrumento.
+Fecha Creación → cuándo el sistema creó el nuevo registro derivado de una venta parcial.
+
+Esa separación suele evitar muchos problemas después en reportes y auditorías.
