@@ -15,45 +15,10 @@
   color: #333;
 }
 
-.filters {
-  background: #f8f9fa;
-  padding: 20px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-}
-
-.filter-row {
-  display: flex;
-  gap: 15px;
-  align-items: flex-end;
-  flex-wrap: wrap;
-}
-
-.filter-field {
-  flex: 1;
-  min-width: 200px;
-}
-
-.filter-field label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
-  color: #555;
-}
-
-.filter-actions {
-  display: flex;
-  gap: 10px;
-}
-
 .text-center {
   text-align: center;
   padding: 20px;
   color: #666;
-}
-
-.modal-content {
-  padding: 10px 0;
 }
 
 .error-message {
@@ -65,20 +30,94 @@
   border: 1px solid #fcc;
 }
 
-.form-row {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 15px;
+/* Form Grid - Bootstrap compatible */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
 }
 
 .form-field {
-  flex: 1;
-  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field.half-width {
+  grid-column: span 1;
+}
+
+.form-field.third-width {
+  grid-column: span 1;
 }
 
 .form-field label {
-  display: block;
-  margin-bottom: 5px;
+  font-size: 14px;
   font-weight: 500;
-  color: #555;
+  color: #333;
+}
+
+.form-field label strong {
+  color: #22c55e;
+}
+
+/* Modal Header Background - Green Gradient */
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header {
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  border-bottom: 2px solid #15803d;
+  padding: 16px 20px;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header-close {
+  color: #ffffff;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header-close:hover {
+  color: #f0fdf4;
+}
+
+/* Modal Footer Spacing */
+:host ::ng-deep .p-dialog-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 20px;
+}
+
+/* Detail Section Styles */
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Totals row styling */
+:host ::ng-deep .totals-row {
+  background-color: #f0f9ff !important;
+  font-weight: 700;
+  border-top: 2px solid #0ea5e9;
+}
+
+:host ::ng-deep .totals-row td {
+  padding: 12px 10px;
 }

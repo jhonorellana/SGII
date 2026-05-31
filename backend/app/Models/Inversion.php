@@ -120,4 +120,39 @@ class Inversion extends Model
     {
         return $this->hasMany(DocumentoInversion::class, 'id_inversion');
     }
+
+    // Relaciones para ventas parciales
+    public function relacionesComoOriginal()
+    {
+        return $this->hasMany(InversionRelacionVenta::class, 'id_inversion_original');
+    }
+
+    public function relacionesComoGenerada()
+    {
+        return $this->hasMany(InversionRelacionVenta::class, 'id_inversion_generada');
+    }
+
+    public function inversionOriginal()
+    {
+        return $this->hasOneThrough(
+            Inversion::class,
+            InversionRelacionVenta::class,
+            'id_inversion_generada',
+            'id_inversion',
+            'id_inversion',
+            'id_inversion_original'
+        );
+    }
+
+    public function inversionesDerivadas()
+    {
+        return $this->hasManyThrough(
+            Inversion::class,
+            InversionRelacionVenta::class,
+            'id_inversion_original',
+            'id_inversion',
+            'id_inversion',
+            'id_inversion_generada'
+        );
+    }
 }

@@ -23,6 +23,7 @@ import { OtrosValoresListComponent } from './modules/otros-valores/otros-valores
 import { CuentaBancariaListComponent } from './modules/cuentas-bancarias/cuenta-bancaria-list/cuenta-bancaria-list.component';
 import { MovimientoCapitalListComponent } from './modules/movimientos-capital/movimiento-capital-list/movimiento-capital-list.component';
 import { VentaInversionListComponent } from './modules/ventas-inversion/venta-inversion-list/venta-inversion-list.component';
+// import { VentaInversionNewComponent } from './modules/ventas-inversion/venta-inversion-new/venta-inversion-new.component';
 import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.component';
 import { AuthGuard } from './core/auth.guard';
 
@@ -57,6 +58,7 @@ export const routes: Routes = [
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },
       { path: 'movimientos-capital', component: MovimientoCapitalListComponent },
       { path: 'ventas-inversion', component: VentaInversionListComponent },
+      // { path: 'ventas-inversion/nueva', component: VentaInversionNewComponent },
       { path: 'venta-agrupada', component: VentaAgrupadaComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]

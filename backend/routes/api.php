@@ -68,11 +68,16 @@ Route::get('movimientos-capital/discrepancias', [MovimientoCapitalController::cl
 Route::get('movimientos-capital/reporte-cuenta', [MovimientoCapitalController::class, 'getReportePorCuenta']);
 
 // Rutas de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
-Route::apiResource('ventas-inversion', VentaInversionController::class);
+// Rutas específicas primero
+Route::get('ventas-inversion/instrumentos-activos', [VentaInversionController::class, 'getInstrumentosActivos']);
+Route::get('ventas-inversion/instrumento/{idInstrumento}/info', [VentaInversionController::class, 'getInfoInstrumento']);
+Route::post('ventas-inversion/registrar-venta', [VentaInversionController::class, 'registrarVentaInversion']);
 Route::post('ventas-inversion/calcular-utilidad', [VentaInversionController::class, 'calcularUtilidad']);
 Route::post('ventas-inversion/venta-agrupada', [VentaInversionController::class, 'storeVentaAgrupada']);
 Route::post('ventas-inversion/calcular-resumen-compra', [VentaInversionController::class, 'calcularResumenCompra']);
 Route::post('ventas-inversion/previsualizar-venta-agrupada', [VentaInversionController::class, 'previsualizarVentaAgrupada']);
+// Rutas RESTful después
+Route::apiResource('ventas-inversion', VentaInversionController::class);
 
 // Rutas de Detalles de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
 Route::apiResource('ventas-inversion-detalles', VentaInversionDetalleController::class);

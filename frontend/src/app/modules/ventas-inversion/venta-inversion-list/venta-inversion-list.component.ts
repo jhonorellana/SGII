@@ -2,21 +2,23 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TableModule, Table } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
 import { DropdownModule } from 'primeng/dropdown';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
-import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { CalendarModule } from 'primeng/calendar';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { VentaInversionService, VentaInversion } from '../../../core/venta-inversion.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
-import { ModalActionsComponent } from '../../../core/modal-actions';
 import { PaginationService } from '../../../core/pagination.service';
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 interface CatalogoValor {
   id_catalogo_valor: number;
@@ -29,17 +31,18 @@ interface CatalogoValor {
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     ReactiveFormsModule,
+    FormsModule,
     TableModule,
     InputTextModule,
     DropdownModule,
     ButtonModule,
     TagModule,
-    DialogModule,
     ToastModule,
     ConfirmDialogModule,
+    DialogModule,
     CalendarModule,
+    TooltipModule,
     ModalActionsComponent
   ],
   templateUrl: './venta-inversion-list.component.html',
@@ -49,28 +52,25 @@ interface CatalogoValor {
 export class VentaInversionListComponent implements OnInit {
   ventas: VentaInversion[] = [];
   inversiones: Inversion[] = [];
+  instrumentos: any[] = [];
   tiposVenta: CatalogoValor[] = [];
   loading = false;
   error = '';
   @ViewChild('dt') dt: Table | undefined;
   totalRecords: number = 0;
 
-  // Filters
-  filters = {
-    id_inversion: null as number | null,
-    id_instrumento: null as number | null,
-    fecha_desde: null as Date | null,
-    fecha_hasta: null as Date | null
-  };
+  // Pagination
+  rowsPerPage: number = 10;
 
   // Modal properties
   displayDialog: boolean = false;
+  displayDetailDialog: boolean = false;
   isEdit: boolean = false;
   ventaId: number | null = null;
   ventaForm: FormGroup;
   formLoading: boolean = false;
   formError: string = '';
-  rowsPerPage: number = 10;
+  selectedVenta: VentaInversion | null = null;
 
   constructor(
     private ventaService: VentaInversionService,
@@ -79,8 +79,10 @@ export class VentaInversionListComponent implements OnInit {
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-    private paginationService: PaginationService
+    private paginationService: PaginationService,
+    private router: Router
   ) {
+    // Crear el formulario en el constructor para que siempre exista en el DOM
     this.ventaForm = this.createForm();
   }
 
@@ -88,15 +90,16 @@ export class VentaInversionListComponent implements OnInit {
     this.rowsPerPage = this.paginationService.getRowsPerPage('ventasInversion', 10);
     this.loadVentas();
     this.loadInversiones();
+    this.loadInstrumentos();
     this.loadTiposVenta();
   }
 
   createForm(): FormGroup {
     return this.fb.group({
-      id_inversion: [null, Validators.required],
-      id_instrumento: [null],
-      id_tipo_venta: [null],
+      id_instrumento: [null, Validators.required],
+      tipo_venta: ['TOTAL', Validators.required],
       porcentaje_vendido: [0],
+      valor_nominal_vendido: [0],
       fecha_venta: [null, Validators.required],
       liquidacion_venta: [''],
       precio_venta: [null, Validators.required],
@@ -105,34 +108,28 @@ export class VentaInversionListComponent implements OnInit {
       valor_venta_sin_comision: [null],
       comision_operador: [null],
       comision_bolsa: [null],
-      valor_venta_con_comision: [null],
-      utilidad_sin_comision: [null],
-      utilidad_con_comision: [null],
-      ganancia_perdida: [null],
-      rendimiento_total: [null],
-      dias_transcurridos: [null],
-      roi: [null],
-      ganancia_anual: [null],
-      comisiones_santa_fe: [null],
       retenciones: [null],
+      valor_venta_con_comision: [null],
       observacion: ['']
     });
+  }
+
+  get f() {
+    return this.ventaForm.controls;
   }
 
   loadVentas(): void {
     this.loading = true;
     this.error = '';
 
-    const filters: any = {};
-    if (this.filters.id_inversion) filters.id_inversion = this.filters.id_inversion;
-    if (this.filters.id_instrumento) filters.id_instrumento = this.filters.id_instrumento;
-    if (this.filters.fecha_desde) filters.fecha_desde = this.formatDate(this.filters.fecha_desde);
-    if (this.filters.fecha_hasta) filters.fecha_hasta = this.formatDate(this.filters.fecha_hasta);
-
-    this.ventaService.getAll(filters).subscribe({
+    this.ventaService.getAll({}).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.ventas = response.data;
+          this.ventas = response.data.map(venta => ({
+            ...venta,
+            inversionDisplay: this.formatInversionDisplay(venta),
+            instrumentoDisplay: this.formatInstrumentoDisplay(venta)
+          }));
           this.totalRecords = response.data.length;
         } else {
           this.error = response.message || 'Error al cargar ventas';
@@ -140,7 +137,7 @@ export class VentaInversionListComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error al cargar ventas: ' + err.message;
+        this.error = 'Error al cargar ventas';
         this.loading = false;
       }
     });
@@ -148,54 +145,183 @@ export class VentaInversionListComponent implements OnInit {
 
   loadInversiones(): void {
     this.inversionService.getAll().subscribe({
-      next: (data) => {
-        this.inversiones = data;
+      next: (inversiones: Inversion[]) => {
+        this.inversiones = inversiones;
+      },
+      error: (err) => {
+        console.error('Error al cargar inversiones:', err);
+      }
+    });
+  }
+
+  loadInstrumentos(): void {
+    this.ventaService.getInstrumentosActivos().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.instrumentos = response.data;
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar instrumentos:', err);
       }
     });
   }
 
   loadTiposVenta(): void {
-    this.catalogoService.getValoresByCatalogo(16).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.tiposVenta = response.data;
+    // Comentado temporalmente - el método correcto debe verificarse en CatalogoService
+    // this.catalogoService.getCatalogo('tipo_venta').subscribe({
+    //   next: (response: any) => {
+    //     if (response.success && response.data) {
+    //       this.tiposVenta = response.data;
+    //     }
+    //   },
+    //   error: (err: any) => {
+    //     console.error('Error al cargar tipos de venta:', err);
+    //   }
+    // });
+  }
+
+  formatDate(date: Date | string | null): string {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  formatCurrency(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '$0.00';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(value);
+  }
+
+  formatPrecioVenta(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '0.00%';
+    // El precio venta representa el porcentaje de negociación
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value / 100);
+  }
+
+  formatInversionDisplay(venta: VentaInversion): string {
+    if (!venta.inversion) {
+      return `ID ${venta.id_inversion || 'N/A'}`;
+    }
+    const inversion = venta.inversion;
+    const liquidacion = inversion.liquidacion || 'N/A';
+    const instrumento = inversion.instrumento?.nombre || inversion.id_instrumento || 'N/A';
+    return `ID ${venta.id_inversion} - Liquidación ${liquidacion} - ${instrumento}`;
+  }
+
+  formatInstrumentoDisplay(venta: VentaInversion): string {
+    if (!venta.instrumento) {
+      return `ID ${venta.id_instrumento || 'N/A'}`;
+    }
+    const instrumento = venta.instrumento;
+    const id = venta.id_instrumento || 'N/A';
+    const nombre = instrumento.nombre || instrumento.descripcion || 'N/A';
+    return `${id} - ${nombre}`;
+  }
+
+  formatPercentage(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '0.00%';
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value / 100);
+  }
+
+  // Métodos para calcular totales de los detalles
+  getTotalValorNominal(): number {
+    if (!this.selectedVenta?.detalles || this.selectedVenta.detalles.length === 0) return 0;
+    return this.selectedVenta.detalles.reduce((sum, d) => {
+      const val = parseFloat(d.valor_nominal as any) || 0;
+      return sum + val;
+    }, 0);
+  }
+
+  getTotalValorCompra(): number {
+    if (!this.selectedVenta?.detalles || this.selectedVenta.detalles.length === 0) return 0;
+    return this.selectedVenta.detalles.reduce((sum, d) => {
+      const val = parseFloat(d.valor_compra as any) || 0;
+      return sum + val;
+    }, 0);
+  }
+
+  getTotalMontoVendido(): number {
+    if (!this.selectedVenta?.detalles || this.selectedVenta.detalles.length === 0) return 0;
+    return this.selectedVenta.detalles.reduce((sum, d) => {
+      const val = parseFloat(d.valor_venta_asignado as any) || 0;
+      return sum + val;
+    }, 0);
+  }
+
+  getTotalUtilidad(): number {
+    if (!this.selectedVenta?.detalles || this.selectedVenta.detalles.length === 0) return 0;
+    return this.selectedVenta.detalles.reduce((sum, d) => {
+      const val = parseFloat(d.utilidad as any) || 0;
+      return sum + val;
+    }, 0);
+  }
+
+  async viewDetail(venta: VentaInversion): Promise<void> {
+    this.selectedVenta = venta;
+
+    // Cargar los detalles de la venta si no están cargados
+    if (!venta.detalles || venta.detalles.length === 0) {
+      try {
+        const response = await this.ventaService.getById(venta.id_venta_inversion!).toPromise();
+        if (response && response.data) {
+          this.selectedVenta = response.data;
         }
+      } catch (error) {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudieron cargar los detalles de la venta'
+        });
+        return;
       }
-    });
+    }
+
+    this.displayDetailDialog = true;
   }
 
-  applyFilters(): void {
-    this.loadVentas();
-  }
-
-  clearFilters(): void {
-    this.filters = {
-      id_inversion: null,
-      id_instrumento: null,
-      fecha_desde: null,
-      fecha_hasta: null
-    };
-    this.loadVentas();
-  }
-
-  openCreateDialog(): void {
+  createVenta(): void {
     this.isEdit = false;
     this.ventaId = null;
-    this.ventaForm = this.createForm();
+    this.ventaForm.reset();
+    // Establecer fecha actual por defecto
+    const today = new Date();
+    this.ventaForm.patchValue({
+      fecha_venta: today
+    });
     this.displayDialog = true;
     this.formError = '';
   }
 
-  openEditDialog(venta: VentaInversion): void {
+  hideDialog(): void {
+    this.displayDialog = false;
+    this.ventaForm.reset();
+    this.formError = '';
+  }
+
+  editVenta(venta: VentaInversion): void {
     this.isEdit = true;
     this.ventaId = venta.id_venta_inversion || null;
-    this.ventaForm = this.createForm();
+    this.ventaForm.reset();
     this.ventaForm.patchValue({
-      id_inversion: venta.id_inversion,
       id_instrumento: venta.id_instrumento,
-      id_tipo_venta: venta.id_tipo_venta,
+      tipo_venta: venta.id_tipo_venta === 1 ? 'TOTAL' : 'PARCIAL',
       porcentaje_vendido: venta.porcentaje_vendido,
-      fecha_venta: venta.fecha_venta ? new Date(venta.fecha_venta) : null,
+      valor_nominal_vendido: 0,
+      fecha_venta: venta.fecha_venta,
       liquidacion_venta: venta.liquidacion_venta,
       precio_venta: venta.precio_venta,
       precio_neto_venta: venta.precio_neto_venta,
@@ -203,16 +329,8 @@ export class VentaInversionListComponent implements OnInit {
       valor_venta_sin_comision: venta.valor_venta_sin_comision,
       comision_operador: venta.comision_operador,
       comision_bolsa: venta.comision_bolsa,
-      valor_venta_con_comision: venta.valor_venta_con_comision,
-      utilidad_sin_comision: venta.utilidad_sin_comision,
-      utilidad_con_comision: venta.utilidad_con_comision,
-      ganancia_perdida: venta.ganancia_perdida,
-      rendimiento_total: venta.rendimiento_total,
-      dias_transcurridos: venta.dias_transcurridos,
-      roi: venta.roi,
-      ganancia_anual: venta.ganancia_anual,
-      comisiones_santa_fe: venta.comisiones_santa_fe,
       retenciones: venta.retenciones,
+      valor_venta_con_comision: venta.valor_venta_con_comision,
       observacion: venta.observacion
     });
     this.displayDialog = true;
@@ -221,24 +339,25 @@ export class VentaInversionListComponent implements OnInit {
 
   save(): void {
     if (this.ventaForm.invalid) {
-      this.formError = 'Por favor complete los campos requeridos';
+      this.markFormAsDirty();
       return;
     }
 
     this.formLoading = true;
     this.formError = '';
 
-    const ventaData = {
-      ...this.ventaForm.value,
-      fecha_venta: this.formatDate(this.ventaForm.value.fecha_venta)
-    };
+    const ventaData = this.ventaForm.value;
 
     if (this.isEdit && this.ventaId) {
       this.ventaService.update(this.ventaId, ventaData).subscribe({
         next: (response) => {
           if (response.success) {
-            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Venta actualizada correctamente' });
-            this.displayDialog = false;
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Venta actualizada correctamente'
+            });
+            this.hideDialog();
             this.loadVentas();
           } else {
             this.formError = response.message || 'Error al actualizar venta';
@@ -246,7 +365,7 @@ export class VentaInversionListComponent implements OnInit {
           this.formLoading = false;
         },
         error: (err) => {
-          this.formError = 'Error al actualizar venta: ' + err.message;
+          this.formError = 'Error al actualizar venta';
           this.formLoading = false;
         }
       });
@@ -254,63 +373,78 @@ export class VentaInversionListComponent implements OnInit {
       this.ventaService.create(ventaData).subscribe({
         next: (response) => {
           if (response.success) {
-            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Venta registrada correctamente' });
-            this.displayDialog = false;
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Venta creada correctamente'
+            });
+            this.hideDialog();
             this.loadVentas();
           } else {
-            this.formError = response.message || 'Error al registrar venta';
+            this.formError = response.message || 'Error al crear venta';
           }
           this.formLoading = false;
         },
         error: (err) => {
-          this.formError = 'Error al registrar venta: ' + err.message;
+          this.formError = 'Error al crear venta';
           this.formLoading = false;
         }
       });
     }
   }
 
+  private markFormAsDirty(): void {
+    Object.keys(this.ventaForm.controls).forEach(key => {
+      this.ventaForm.get(key)?.markAsDirty();
+    });
+  }
+
   deleteVenta(venta: VentaInversion): void {
     this.confirmationService.confirm({
-      message: `¿Está seguro de eliminar la venta del ${venta.fecha_venta}?`,
-      header: 'Confirmar eliminación',
+      message: `¿Está seguro de eliminar la venta ${venta.id_venta_inversion}?`,
+      header: 'Confirmar Eliminación',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
-        if (venta.id_venta_inversion) {
-          this.ventaService.delete(venta.id_venta_inversion).subscribe({
-            next: (response) => {
-              if (response.success) {
-                this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Venta eliminada correctamente' });
-                this.loadVentas();
-              } else {
-                this.messageService.add({ severity: 'error', summary: 'Error', detail: response.message || 'Error al eliminar venta' });
-              }
-            },
-            error: (err) => {
-              this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al eliminar venta: ' + err.message });
+        this.ventaService.delete(venta.id_venta_inversion!).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Éxito',
+                detail: 'Venta eliminada correctamente'
+              });
+              this.loadVentas();
+            } else {
+              this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: response.message || 'Error al eliminar venta'
+              });
             }
-          });
-        }
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Error al eliminar venta'
+            });
+          }
+        });
       }
     });
   }
 
-  formatDate(date: Date | string | null): string | null {
-    if (!date) return null;
-    if (typeof date === 'string') return date;
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }
-
-  getUtilidadClass(utilidad: number | undefined): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
-    if (!utilidad) return 'info';
-    return utilidad >= 0 ? 'success' : 'danger';
-  }
-
   onPageChange(event: any): void {
     this.rowsPerPage = event.rows;
-    this.paginationService.setRowsPerPage('ventasInversion', this.rowsPerPage);
+    this.paginationService.setRowsPerPage('ventasInversion', event.rows);
+  }
+
+  onFilter(event: any): void {
+    // Actualizar totalRecords cuando se filtra la tabla
+    if (event.filteredValue) {
+      this.totalRecords = event.filteredValue.length;
+    } else {
+      this.totalRecords = this.ventas.length;
+    }
   }
 }

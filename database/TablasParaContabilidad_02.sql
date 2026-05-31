@@ -172,7 +172,6 @@ CREATE TABLE `venta_inversion` (
   `dias_transcurridos` decimal(8,2) DEFAULT 0.00,
   `roi` decimal(8,2) DEFAULT 0.00,
   `ganancia_anual` decimal(8,2) DEFAULT 0.00,
-  `comisiones_santa_fe` decimal(8,2) DEFAULT 0.00,
   `retenciones` decimal(8,2) DEFAULT 0.00,
   `observacion` text DEFAULT NULL,
   `activo` tinyint(4) DEFAULT 1,

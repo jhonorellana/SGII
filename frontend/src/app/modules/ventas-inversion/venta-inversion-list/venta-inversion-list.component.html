@@ -1,208 +1,323 @@
 <div class="venta-inversion-container">
-  <p-toast></p-toast>
-  <p-confirmDialog></p-confirmDialog>
-
   <div class="header">
     <h1>Ventas de Inversiones</h1>
-    <p-button label="Nueva Venta" icon="pi pi-plus" (onClick)="openCreateDialog()"></p-button>
+    <button class="btn btn-primary" (click)="createVenta()">
+      <i class="bi bi-plus-circle"></i> Nueva Venta Renta Fija
+    </button>
   </div>
 
-  <!-- Filters -->
-  <div class="filters">
-    <div class="filter-row">
-      <div class="filter-field">
-        <label>Inversión</label>
-        <p-dropdown [(ngModel)]="filters.id_inversion" [options]="inversiones" optionLabel="id_inversion" optionValue="id_inversion" placeholder="Todas"></p-dropdown>
+  <p-table [value]="ventas" [paginator]="true" [rows]="rowsPerPage" [totalRecords]="totalRecords" [loading]="loading" (onPageChange)="onPageChange($event)" [rowsPerPageOptions]="[5,10,25,50]" #dt
+             [globalFilterFields]="['id_venta_inversion','id_inversion','id_instrumento','fecha_venta']"
+             [tableStyle]="{'min-width': '80rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines"
+             responsiveLayout="scroll"
+             showCurrentPageReport="true"
+             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+             (onFilter)="onFilter($event)">
+    <ng-template pTemplate="caption">
+      <div *ngIf="error" class="error-message">
+        <i class="bi bi-exclamation-triangle"></i> {{ error }}
       </div>
-      <div class="filter-field">
-        <label>Fecha Desde</label>
-        <p-calendar [(ngModel)]="filters.fecha_desde" [showIcon]="true" dateFormat="yy-mm-dd"></p-calendar>
-      </div>
-      <div class="filter-field">
-        <label>Fecha Hasta</label>
-        <p-calendar [(ngModel)]="filters.fecha_hasta" [showIcon]="true" dateFormat="yy-mm-dd"></p-calendar>
-      </div>
-      <div class="filter-actions">
-        <p-button label="Filtrar" icon="pi pi-filter" (onClick)="applyFilters()"></p-button>
-        <p-button label="Limpiar" icon="pi pi-times" severity="secondary" (onClick)="clearFilters()"></p-button>
-      </div>
-    </div>
-  </div>
+    </ng-template>
 
-  <!-- Table -->
-  <p-table #dt [value]="ventas" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 25, 50]">
     <ng-template pTemplate="header">
       <tr>
-        <th>Fecha Venta</th>
-        <th>Liquidación</th>
-        <th>Persona</th>
-        <th>Inversión</th>
-        <th>Precio Venta</th>
-        <th>Valor con Comisión</th>
-        <th>Utilidad</th>
-        <th>ROI</th>
+        <th pSortableColumn="id_venta_inversion">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
+        <th pSortableColumn="liquidacion_venta">Liquidación <p-sortIcon field="liquidacion_venta"></p-sortIcon></th>
+        <th pSortableColumn="id_instrumento">Instrumento <p-sortIcon field="id_instrumento"></p-sortIcon></th>
+        <th pSortableColumn="fecha_venta">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
+        <th pSortableColumn="precio_venta">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
+        <th pSortableColumn="valor_venta_con_comision">Valor Venta con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
+        <th>Tipo</th>
         <th>Acciones</th>
       </tr>
+      <tr>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_venta_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'liquidacion_venta', 'contains')" class="w-100" placeholder="Filtrar liquidación"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumentoDisplay', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_venta', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_venta', 'contains')" class="w-100" placeholder="Filtrar precio"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_venta_con_comision', 'contains')" class="w-100" placeholder="Filtrar valor con comisión"/></th>
+        <th></th>
+        <th></th>
+      </tr>
     </ng-template>
+
     <ng-template pTemplate="body" let-venta>
       <tr>
-        <td>{{ venta.fecha_venta }}</td>
+        <td>{{ venta.id_venta_inversion }}</td>
         <td>{{ venta.liquidacion_venta || '-' }}</td>
-        <td>{{ venta.persona?.nombre || (venta.persona?.nombres + ' ' + venta.persona?.apellidos) || '-' }}</td>
+        <td>{{ venta.instrumentoDisplay }}</td>
+        <td>{{ formatDate(venta.fecha_venta) }}</td>
+        <td>{{ formatPrecioVenta(venta.precio_venta) }}</td>
+        <td>{{ formatCurrency(venta.valor_venta_con_comision) }}</td>
         <td>
-          <span *ngIf="venta.id_inversion">#{{ venta.id_inversion }}</span>
-          <span *ngIf="!venta.id_inversion" class="text-muted">Venta agrupada ({{ venta.detalles?.length || 0 }} inv.)</span>
+          <p-tag [value]="venta.tipoVenta?.nombre || (venta.id_tipo_venta === 1 ? 'Total' : 'Parcial')" [severity]="venta.id_tipo_venta === 1 ? 'success' : 'info'"></p-tag>
         </td>
-        <td>{{ venta.precio_venta || '-' }}</td>
-        <td>{{ venta.valor_venta_con_comision || '-' }}</td>
         <td>
-          <p-tag [value]="venta.utilidad_con_comision || 0" [severity]="getUtilidadClass(venta.utilidad_con_comision)"></p-tag>
-        </td>
-        <td>{{ venta.roi ? venta.roi.toFixed(2) + '%' : '-' }}</td>
-        <td>
-          <p-button icon="pi pi-pencil" rounded text (onClick)="openEditDialog(venta)"></p-button>
-          <p-button icon="pi pi-trash" rounded text severity="danger" (onClick)="deleteVenta(venta)"></p-button>
+          <div class="btn-group" role="group">
+            <button class="btn btn-sm btn-outline-info"
+                    (click)="viewDetail(venta)"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="top">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-primary"
+                    (click)="editVenta(venta)"
+                    pTooltip="Editar venta"
+                    tooltipPosition="top">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+                    (click)="deleteVenta(venta)"
+                    pTooltip="Eliminar venta"
+                    tooltipPosition="top">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
         </td>
       </tr>
     </ng-template>
+
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="9" class="text-center">No hay ventas registradas</td>
+        <td colspan="8" class="text-center py-4">
+          <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
+          <p class="mt-2">No hay ventas registradas</p>
+        </td>
       </tr>
     </ng-template>
   </p-table>
 
-  <!-- Modal -->
-  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Venta' : 'Nueva Venta'" [modal]="true" [style]="{width: '800px'}">
-    <div class="modal-content">
-      <div class="error-message" *ngIf="formError">{{ formError }}</div>
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
 
-      <form [formGroup]="ventaForm">
-        <div class="form-row">
-          <div class="form-field">
-            <label>Inversión *</label>
-            <p-dropdown formControlName="id_inversion" [options]="inversiones" optionLabel="id_inversion" optionValue="id_inversion" placeholder="Seleccione"></p-dropdown>
+  <!-- Modal para crear/editar venta -->
+  <p-dialog [header]="isEdit ? 'Editar Venta' : 'Nueva Venta Renta Fija'"
+           [(visible)]="displayDialog"
+           [modal]="true"
+           [style]="{width: '900px'}"
+           [draggable]="false"
+           [resizable]="false"
+           (onHide)="hideDialog()">
+    <form [formGroup]="ventaForm" (ngSubmit)="save()">
+      <!-- Error State -->
+      <div *ngIf="formError" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="formLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">{{ isEdit ? 'Actualizando venta...' : 'Creando venta...' }}</p>
+      </div>
+
+      <!-- Form -->
+      <div *ngIf="!formLoading">
+        <div class="form-grid">
+            <!-- Fila 1: Instrumento y Tipo de Venta -->
+            <div class="form-field half-width">
+              <label for="id_instrumento">Instrumento <span class="text-danger">*</span></label>
+              <select id="id_instrumento" class="form-control" formControlName="id_instrumento" [class.is-invalid]="f['id_instrumento'].invalid && f['id_instrumento'].dirty">
+                <option value="">Seleccione instrumento</option>
+                <option *ngFor="let instrumento of instrumentos" [value]="instrumento.id_instrumento">{{ instrumento.nombre }}</option>
+              </select>
+              <div class="invalid-feedback" *ngIf="f['id_instrumento'].invalid && f['id_instrumento'].dirty">
+                El instrumento es requerido
+              </div>
+            </div>
+            <div class="form-field half-width">
+              <label for="tipo_venta">Tipo de Venta <span class="text-danger">*</span></label>
+              <select id="tipo_venta" class="form-control" formControlName="tipo_venta" [class.is-invalid]="f['tipo_venta'].invalid && f['tipo_venta'].dirty">
+                <option value="TOTAL">Total</option>
+                <option value="PARCIAL">Parcial</option>
+              </select>
+              <div class="invalid-feedback" *ngIf="f['tipo_venta'].invalid && f['tipo_venta'].dirty">
+                El tipo de venta es requerido
+              </div>
+            </div>
+
+            <!-- Fila 2: Fecha Venta y Liquidación -->
+            <div class="form-field half-width">
+              <label for="fecha_venta">Fecha de Venta <span class="text-danger">*</span></label>
+              <input type="date" id="fecha_venta" class="form-control" formControlName="fecha_venta" [class.is-invalid]="f['fecha_venta'].invalid && f['fecha_venta'].dirty">
+              <div class="invalid-feedback" *ngIf="f['fecha_venta'].invalid && f['fecha_venta'].dirty">
+                La fecha de venta es requerida
+              </div>
+            </div>
+            <div class="form-field half-width">
+              <label for="liquidacion_venta">Liquidación de Venta</label>
+              <input type="text" id="liquidacion_venta" class="form-control" formControlName="liquidacion_venta" placeholder="Liquidación">
+            </div>
+
+            <!-- Fila 3: Campos para venta parcial -->
+            <div class="form-field half-width" *ngIf="f['tipo_venta'] && f['tipo_venta'].value === 'PARCIAL'">
+              <label for="porcentaje_vendido">Porcentaje Vendido (%)</label>
+              <input type="number" id="porcentaje_vendido" class="form-control" formControlName="porcentaje_vendido" placeholder="Porcentaje">
+            </div>
+            <div class="form-field half-width" *ngIf="f['tipo_venta'] && f['tipo_venta'].value === 'PARCIAL'">
+              <label for="valor_nominal_vendido">Valor Nominal Vendido</label>
+              <input type="number" id="valor_nominal_vendido" class="form-control" formControlName="valor_nominal_vendido" placeholder="Valor nominal">
+            </div>
+
+            <!-- Fila 4: Precio Venta y Precio Neto -->
+            <div class="form-field half-width">
+              <label for="precio_venta">Precio de Venta <span class="text-danger">*</span></label>
+              <input type="number" id="precio_venta" class="form-control" formControlName="precio_venta" [class.is-invalid]="f['precio_venta'].invalid && f['precio_venta'].dirty" placeholder="Precio">
+              <div class="invalid-feedback" *ngIf="f['precio_venta'].invalid && f['precio_venta'].dirty">
+                El precio de venta es requerido
+              </div>
+            </div>
+            <div class="form-field half-width">
+              <label for="precio_neto_venta">Precio Neto de Venta</label>
+              <input type="number" id="precio_neto_venta" class="form-control" formControlName="precio_neto_venta" placeholder="Precio neto">
+            </div>
+
+            <!-- Fila 5: Interés Previo y Valor sin Comisión -->
+            <div class="form-field half-width">
+              <label for="interes_previo_venta">Interés Previo de Venta</label>
+              <input type="number" id="interes_previo_venta" class="form-control" formControlName="interes_previo_venta" placeholder="Interés previo">
+            </div>
+            <div class="form-field half-width">
+              <label for="valor_venta_sin_comision">Valor Venta sin Comisión</label>
+              <input type="number" id="valor_venta_sin_comision" class="form-control" formControlName="valor_venta_sin_comision" placeholder="Valor sin comisión">
+            </div>
+
+            <!-- Fila 6: Comisiones (2 columnas) -->
+            <div class="form-field half-width">
+              <label for="comision_operador">Comisión Operador</label>
+              <input type="number" id="comision_operador" class="form-control" formControlName="comision_operador" placeholder="Comisión">
+            </div>
+            <div class="form-field half-width">
+              <label for="comision_bolsa">Comisión Bolsa</label>
+              <input type="number" id="comision_bolsa" class="form-control" formControlName="comision_bolsa" placeholder="Comisión">
+            </div>
+
+            <!-- Fila 7: Retenciones y Valor con Comisión -->
+            <div class="form-field half-width">
+              <label for="retenciones">Retenciones</label>
+              <input type="number" id="retenciones" class="form-control" formControlName="retenciones" placeholder="Retenciones">
+            </div>
+            <div class="form-field half-width">
+              <label for="valor_venta_con_comision">Valor Venta con Comisión</label>
+              <input type="number" id="valor_venta_con_comision" class="form-control" formControlName="valor_venta_con_comision" placeholder="Valor con comisión">
+            </div>
+
+            <!-- Fila 8: Observación (ancho completo) -->
+            <div class="form-field full-width">
+              <label for="observacion">Observación</label>
+              <textarea id="observacion" class="form-control" formControlName="observacion" rows="3" placeholder="Observación..."></textarea>
+            </div>
           </div>
-          <div class="form-field">
-            <label>Tipo Venta</label>
-            <p-dropdown formControlName="id_tipo_venta" [options]="tiposVenta" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione"></p-dropdown>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <app-modal-actions
+            [cancelText]="'Cancelar'"
+            [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+            [loading]="formLoading"
+            [disabled]="ventaForm.invalid"
+            (onCancel)="hideDialog()"
+            (onSave)="save()">
+          </app-modal-actions>
+        </div>
+      </div>
+    </form>
+  </p-dialog>
+
+  <!-- Modal de Detalle de Venta -->
+  <p-dialog [(visible)]="displayDetailDialog" [style]="{width: '900px'}" [modal]="true" [closable]="true" header="Detalle de Venta" styleClass="venta-agrupada-modal">
+    <div *ngIf="selectedVenta">
+      <div class="detail-section">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <strong>ID Venta:</strong> {{ selectedVenta.id_venta_inversion }}
+          </div>
+          <div class="col-md-6">
+            <strong>Fecha Venta:</strong> {{ formatDate(selectedVenta.fecha_venta) }}
+          </div>
+          <div class="col-md-6">
+            <strong>Liquidación:</strong> {{ selectedVenta.liquidacion_venta || '-' }}
+          </div>
+          <div class="col-md-6">
+            <strong>Instrumento:</strong> {{ selectedVenta.instrumento?.nombre || '-' }}
+          </div>
+          <div class="col-md-6">
+            <strong>Tipo:</strong> {{ selectedVenta.tipoVenta?.nombre || (selectedVenta.id_tipo_venta === 1 ? 'Total' : 'Parcial') }}
+          </div>
+          <div class="col-md-6">
+            <strong>Precio Venta:</strong> {{ formatPrecioVenta(selectedVenta.precio_venta) }}
+          </div>
+          <div class="col-md-6">
+            <strong>Valor con Comisión:</strong> {{ formatCurrency(selectedVenta.valor_venta_con_comision) }}
+          </div>
+          <div class="col-md-6">
+            <strong>ROI Total:</strong> {{ formatPercentage(selectedVenta.roi) }}
+          </div>
+          <div class="col-md-6">
+            <strong>Rendimiento Total:</strong> {{ formatPercentage(selectedVenta.rendimiento_total) }}
           </div>
         </div>
+      </div>
 
-        <div class="form-row">
-          <div class="form-field">
-            <label>Fecha Venta *</label>
-            <p-calendar formControlName="fecha_venta" [showIcon]="true" dateFormat="yy-mm-dd"></p-calendar>
-          </div>
-          <div class="form-field">
-            <label>Liquidación</label>
-            <p-inputText formControlName="liquidacion_venta"></p-inputText>
-          </div>
-        </div>
+      <div class="detail-section mt-4">
+        <h5>Inversiones Asociadas ({{ selectedVenta.detalles?.length || 0 }})</h5>
+        <p-table [value]="selectedVenta.detalles || []" [paginator]="true" [rows]="5" [showCurrentPageReport]="true"
+                 currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} inversiones"
+                 [rowsPerPageOptions]="[5, 10, 20]">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID - Liquidación</th>
+              <th>Valor Nominal</th>
+              <th>Valor Compra</th>
+              <th>Monto Vendido</th>
+              <th>% Venta</th>
+              <th>Utilidad</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-detalle>
+            <tr>
+              <td>{{ detalle.id_inversion }} - {{ selectedVenta.liquidacion_venta || '-' }}</td>
+              <td class="text-left">{{ formatCurrency(detalle.valor_nominal) }}</td>
+              <td class="text-left">{{ formatCurrency(detalle.valor_compra) }}</td>
+              <td class="text-left">{{ formatCurrency(detalle.valor_venta_asignado) }}</td>
+              <td class="text-left">{{ formatPercentage(detalle.porcentaje_venta) }}</td>
+              <td class="text-left">{{ formatCurrency(detalle.utilidad) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <tr *ngIf="selectedVenta.detalles && selectedVenta.detalles.length > 0">
+              <td colspan="1"><strong>Totales:</strong></td>
+              <td class="text-left"><strong>{{ formatCurrency(getTotalValorNominal()) }}</strong></td>
+              <td class="text-left"><strong>{{ formatCurrency(getTotalValorCompra()) }}</strong></td>
+              <td class="text-left"><strong>{{ formatCurrency(getTotalMontoVendido()) }}</strong></td>
+              <td></td>
+              <td class="text-left"><strong>{{ formatCurrency(getTotalUtilidad()) }}</strong></td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center py-4">
+                No hay inversiones asociadas a esta venta
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
 
-        <div class="form-row">
-          <div class="form-field">
-            <label>Precio Venta *</label>
-            <p-inputText formControlName="precio_venta" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Precio Neto</label>
-            <p-inputText formControlName="precio_neto_venta" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Interés Previo</label>
-            <p-inputText formControlName="interes_previo_venta" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Valor sin Comisión</label>
-            <p-inputText formControlName="valor_venta_sin_comision" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Comisión Operador</label>
-            <p-inputText formControlName="comision_operador" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Comisión Bolsa</label>
-            <p-inputText formControlName="comision_bolsa" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Valor con Comisión</label>
-            <p-inputText formControlName="valor_venta_con_comision" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Utilidad sin Comisión</label>
-            <p-inputText formControlName="utilidad_sin_comision" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Utilidad con Comisión</label>
-            <p-inputText formControlName="utilidad_con_comision" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Ganancia/Pérdida</label>
-            <p-inputText formControlName="ganancia_perdida" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Rendimiento Total</label>
-            <p-inputText formControlName="rendimiento_total" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Días Transcurridos</label>
-            <p-inputText formControlName="dias_transcurridos" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>ROI (%)</label>
-            <p-inputText formControlName="roi" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Ganancia Anual</label>
-            <p-inputText formControlName="ganancia_anual" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Comisiones Santa Fe</label>
-            <p-inputText formControlName="comisiones_santa_fe" type="number"></p-inputText>
-          </div>
-          <div class="form-field">
-            <label>Retenciones</label>
-            <p-inputText formControlName="retenciones" type="number"></p-inputText>
-          </div>
-        </div>
-
-        <div class="form-field">
-          <label>Observación</label>
-          <p-inputText formControlName="observacion"></p-inputText>
-        </div>
-      </form>
+      <div *ngIf="selectedVenta.observacion" class="detail-section mt-4">
+        <h5>Observación</h5>
+        <p>{{ selectedVenta.observacion }}</p>
+      </div>
     </div>
 
     <ng-template pTemplate="footer">
       <app-modal-actions
-        [cancelText]="'Cancelar'"
-        [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
-        [loading]="formLoading"
-        [disabled]="ventaForm.invalid"
-        (onCancel)="displayDialog = false"
-        (onSave)="save()">
+        [cancelText]="'Cerrar'"
+        [showSaveButton]="false"
+        (onCancel)="displayDetailDialog = false">
       </app-modal-actions>
     </ng-template>
   </p-dialog>

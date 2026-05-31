@@ -34,7 +34,6 @@ class VentaInversion extends Model
         'dias_transcurridos',
         'roi',
         'ganancia_anual',
-        'comisiones_santa_fe',
         'retenciones',
         'observacion',
         'activo',
@@ -60,7 +59,6 @@ class VentaInversion extends Model
         'dias_transcurridos' => 'decimal:2',
         'roi' => 'decimal:2',
         'ganancia_anual' => 'decimal:2',
-        'comisiones_santa_fe' => 'decimal:2',
         'retenciones' => 'decimal:2',
         'activo' => 'boolean',
         'eliminado' => 'boolean'
@@ -100,5 +98,11 @@ class VentaInversion extends Model
     public function detalles()
     {
         return $this->hasMany(VentaInversionDetalle::class, 'id_venta_inversion');
+    }
+
+    // Relaciones para ventas parciales
+    public function relacionesVenta()
+    {
+        return $this->hasMany(InversionRelacionVenta::class, 'id_venta_inversion');
     }
 }

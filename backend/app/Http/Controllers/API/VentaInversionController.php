@@ -77,8 +77,7 @@ class VentaInversionController extends Controller
             'dias_transcurridos' => 'nullable|numeric',
             'roi' => 'nullable|numeric',
             'ganancia_anual' => 'nullable|numeric',
-            'comisiones_santa_fe' => 'nullable|numeric',
-            'retenciones' => 'nullable|numeric',
+            'comision_operador' => 'nullable|numeric',
             'observacion' => 'nullable|string'
         ]);
 
@@ -112,8 +111,7 @@ class VentaInversionController extends Controller
                 'dias_transcurridos' => $request->dias_transcurridos ?? 0,
                 'roi' => $request->roi ?? 0,
                 'ganancia_anual' => $request->ganancia_anual ?? 0,
-                'comisiones_santa_fe' => $request->comisiones_santa_fe ?? 0,
-                'retenciones' => $request->retenciones ?? 0,
+                'comision_operador' => $request->comision_operador ?? 0,
                 'observacion' => $request->observacion,
                 'activo' => true,
                 'eliminado' => false,
@@ -205,8 +203,7 @@ class VentaInversionController extends Controller
             'dias_transcurridos' => 'nullable|numeric',
             'roi' => 'nullable|numeric',
             'ganancia_anual' => 'nullable|numeric',
-            'comisiones_santa_fe' => 'nullable|numeric',
-            'retenciones' => 'nullable|numeric',
+            'comision_operador' => 'nullable|numeric',
             'observacion' => 'nullable|string'
         ]);
 
@@ -240,8 +237,7 @@ class VentaInversionController extends Controller
                 'dias_transcurridos' => $request->dias_transcurridos,
                 'roi' => $request->roi,
                 'ganancia_anual' => $request->ganancia_anual,
-                'comisiones_santa_fe' => $request->comisiones_santa_fe,
-                'retenciones' => $request->retenciones,
+                'comision_operador' => $request->comision_operador,
                 'observacion' => $request->observacion,
                 'fecha_actualizacion' => now()
             ]);
@@ -539,7 +535,7 @@ class VentaInversionController extends Controller
             }
 
             // STEP 4: Crear venta principal
-            // Calcular comisiones_santa_fe: suma de comisiones operador de las inversiones seleccionadas + comisión operador de la venta
+            // Calcular comision_operador: suma de comisiones operador de las inversiones seleccionadas + comisión operador de la venta
             $comisionesSantaFe = 0;
             foreach ($inversiones as $inv) {
                 if (isset($inv->comision_operador)) {
@@ -570,7 +566,7 @@ class VentaInversionController extends Controller
                 'dias_transcurridos' => $request->dias_transcurridos ?? 0,
                 'roi' => $request->roi ?? 0,
                 'ganancia_anual' => $request->ganancia_anual ?? 0,
-                'comisiones_santa_fe' => $comisionesSantaFe,
+                'comision_operador' => $comisionesSantaFe,
                 'retenciones' => 0.00,
                 'observacion' => $request->observacion,
                 'activo' => true,
@@ -724,3 +720,5 @@ class VentaInversionController extends Controller
         return response()->json($resultado, $resultado['success'] ? Response::HTTP_OK : Response::HTTP_BAD_REQUEST);
     }
 }
+
+
