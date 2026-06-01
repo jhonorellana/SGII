@@ -123,12 +123,14 @@ class VentaInversionController extends Controller
                 $comisionBolsa = ($request->comision_bolsa ?? 0) * $factor;
                 $retenciones = ($request->retenciones ?? 0) * $factor;
                 $interesPrevioVenta = ($request->interes_previo_venta ?? 0) * $factor;
-                $valorVentaSinComision = ($request->valor_venta_sin_comision ?? 0) * $factor;
-                $valorVentaConComision = ($request->valor_venta_con_comision ?? 0) * $factor;
-                $utilidadSinComision = ($request->utilidad_sin_comision ?? 0) * $factor;
-                $utilidadConComision = ($request->utilidad_con_comision ?? 0) * $factor;
-                $gananciaPerdida = ($request->ganancia_perdida ?? 0) * $factor;
-                $rendimientoTotal = ($request->rendimiento_total ?? 0) * $factor;
+
+                // Calcular valores financieros según las fórmulas de Excel
+                $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
+                $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+
+                $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
+                $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
+                $gananciaPerdida = $utilidadConComision;
 
                 // Calcular días transcurridos
                 $diasTranscurridos = 0;
@@ -138,14 +140,18 @@ class VentaInversionController extends Controller
                     $diasTranscurridos = $fechaCompra->diffInDays($fechaVenta);
                 }
 
-                // Calcular ROI
+                // Obtener interés recibido (de amortizaciones pagadas)
+                $interesRecibido = $inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0;
+                $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
+
+                // Calcular ROI (Tasa de Rentabilidad Porcentual) = Rendimiento Total / Capital Invertido
                 $roi = ($inversion->capital_invertido > 0)
-                    ? ($utilidadConComision / $inversion->capital_invertido) * 100
+                    ? ($rendimientoTotal / $inversion->capital_invertido) * 100
                     : 0;
 
-                // Calcular ganancia anualizada
+                // Calcular ganancia anualizada (% Ganancia Anual estimado) = ROI * 365 / días
                 $gananciaAnual = ($diasTranscurridos > 0)
-                    ? ($utilidadConComision / $diasTranscurridos) * 365
+                    ? ($roi * 365 / $diasTranscurridos)
                     : 0;
 
                 if ($esVentaTotal) {
