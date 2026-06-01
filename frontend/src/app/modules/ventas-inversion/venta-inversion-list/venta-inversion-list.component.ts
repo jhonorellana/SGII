@@ -13,6 +13,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { CalendarModule } from 'primeng/calendar';
 import { TooltipModule } from 'primeng/tooltip';
+import { AutoCompleteModule } from 'primeng/autocomplete';
+import { AccordionModule } from 'primeng/accordion';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { VentaInversionService, VentaInversion } from '../../../core/venta-inversion.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
@@ -43,6 +45,8 @@ interface CatalogoValor {
     DialogModule,
     CalendarModule,
     TooltipModule,
+    AutoCompleteModule,
+    AccordionModule,
     ModalActionsComponent
   ],
   templateUrl: './venta-inversion-list.component.html',
@@ -52,12 +56,31 @@ interface CatalogoValor {
 export class VentaInversionListComponent implements OnInit {
   ventas: VentaInversion[] = [];
   inversiones: Inversion[] = [];
-  instrumentos: any[] = [];
+  posicionesVendibles: any[] = [];
+  posicionesFiltradas: any[] = [];
+  selectedPosicion: any = null;
+  selectedInstrumentoInfo: any = null;
+  selectedPropietarioInfo: any = null;
+  inversionesAsociadas: any[] = [];
+  resumenInversiones: any = null;
+  inversionesAccordionOpen: boolean = false;
   tiposVenta: CatalogoValor[] = [];
   loading = false;
   error = '';
   @ViewChild('dt') dt: Table | undefined;
   totalRecords: number = 0;
+
+  // Selector de posición
+  displaySelectorPosicion: boolean = false;
+  posicionSeleccionada: any = null;
+  loadingPosiciones: boolean = false;
+  filtroGlobalPosicion: string = '';
+  filtroPropietario: string = '';
+  filtroTipoInversion: string = '';
+  filtroEmisor: string = '';
+  propietariosUnicos: string[] = [];
+  tiposInversionUnicos: string[] = [];
+  emisoresUnicos: string[] = [];
 
   // Pagination
   rowsPerPage: number = 10;
@@ -90,7 +113,7 @@ export class VentaInversionListComponent implements OnInit {
     this.rowsPerPage = this.paginationService.getRowsPerPage('ventasInversion', 10);
     this.loadVentas();
     this.loadInversiones();
-    this.loadInstrumentos();
+    this.loadPosicionesVendibles();
     this.loadTiposVenta();
   }
 
@@ -154,17 +177,185 @@ export class VentaInversionListComponent implements OnInit {
     });
   }
 
-  loadInstrumentos(): void {
-    this.ventaService.getInstrumentosActivos().subscribe({
+  loadPosicionesVendibles(): void {
+    this.ventaService.getPosicionesVendibles().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.instrumentos = response.data;
+          this.posicionesVendibles = response.data;
+          this.posicionesFiltradas = [...response.data];
+          this.extraerValoresUnicos();
         }
       },
       error: (err) => {
-        console.error('Error al cargar instrumentos:', err);
+        console.error('Error al cargar posiciones vendibles:', err);
       }
     });
+  }
+
+  extraerValoresUnicos(): void {
+    const propietarios = new Set<string>();
+    const tiposInversion = new Set<string>();
+    const emisores = new Set<string>();
+
+    this.posicionesVendibles.forEach(pos => {
+      if (pos.nombre_propietario) propietarios.add(pos.nombre_propietario);
+      if (pos.nombre_tipo_inversion) tiposInversion.add(pos.nombre_tipo_inversion);
+      if (pos.nombre_emisor) emisores.add(pos.nombre_emisor);
+    });
+
+    this.propietariosUnicos = Array.from(propietarios).sort();
+    this.tiposInversionUnicos = Array.from(tiposInversion).sort();
+    this.emisoresUnicos = Array.from(emisores).sort();
+  }
+
+  abrirSelectorPosicion(): void {
+    this.displaySelectorPosicion = true;
+    this.posicionSeleccionada = null;
+    this.filtroGlobalPosicion = '';
+    this.filtroPropietario = '';
+    this.filtroTipoInversion = '';
+    this.filtroEmisor = '';
+    this.filtrarPosiciones();
+  }
+
+  cerrarSelectorPosicion(): void {
+    this.displaySelectorPosicion = false;
+    this.posicionSeleccionada = null;
+  }
+
+  filtrarPosiciones(): void {
+    this.posicionesFiltradas = this.posicionesVendibles.filter(posicion => {
+      // Filtro global
+      if (this.filtroGlobalPosicion) {
+        const query = this.filtroGlobalPosicion.toLowerCase();
+        const propietario = (posicion.nombre_propietario || '').toLowerCase();
+        const idInstrumento = String(posicion.id_instrumento).toLowerCase();
+        const nombreInstrumento = (posicion.nombre_instrumento || '').toLowerCase();
+        const tipoInversion = (posicion.nombre_tipo_inversion || '').toLowerCase();
+        const emisor = (posicion.nombre_emisor || '').toLowerCase();
+        const fechaVencimiento = (posicion.fecha_vencimiento || '').toLowerCase();
+        const liquidaciones = (posicion.liquidaciones || '').toLowerCase();
+
+        if (!propietario.includes(query) &&
+            !idInstrumento.includes(query) &&
+            !nombreInstrumento.includes(query) &&
+            !tipoInversion.includes(query) &&
+            !emisor.includes(query) &&
+            !fechaVencimiento.includes(query) &&
+            !liquidaciones.includes(query)) {
+          return false;
+        }
+      }
+
+      // Filtro por propietario
+      if (this.filtroPropietario && posicion.nombre_propietario !== this.filtroPropietario) {
+        return false;
+      }
+
+      // Filtro por tipo de inversión
+      if (this.filtroTipoInversion && posicion.nombre_tipo_inversion !== this.filtroTipoInversion) {
+        return false;
+      }
+
+      // Filtro por emisor
+      if (this.filtroEmisor && posicion.nombre_emisor !== this.filtroEmisor) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  limpiarFiltrosPosicion(): void {
+    this.filtroGlobalPosicion = '';
+    this.filtroPropietario = '';
+    this.filtroTipoInversion = '';
+    this.filtroEmisor = '';
+    this.filtrarPosiciones();
+  }
+
+  confirmarSeleccionPosicion(): void {
+    if (this.posicionSeleccionada) {
+      this.selectedPosicion = this.posicionSeleccionada;
+      this.ventaForm.patchValue({
+        id_instrumento: this.posicionSeleccionada.id_instrumento
+      });
+      this.inversionesAccordionOpen = true;
+      this.loadPosicionInfo(this.posicionSeleccionada.id_instrumento, this.posicionSeleccionada.id_propietario);
+      this.cerrarSelectorPosicion();
+    }
+  }
+
+  formatPosicionLabel(posicion: any): string {
+    if (!posicion) return '';
+    return `${posicion.nombre_propietario} | ${posicion.id_instrumento} - ${posicion.nombre_instrumento} | Valor Nominal: ${this.formatCurrency(posicion.valor_nominal_total)}`;
+  }
+
+  onPosicionSelect(event: any): void {
+    const posicion = event.value;
+    if (posicion) {
+      // Actualizar el formulario con el ID del instrumento seleccionado
+      this.ventaForm.patchValue({
+        id_instrumento: posicion.id_instrumento
+      });
+      // Abrir el acordeón automáticamente
+      this.inversionesAccordionOpen = true;
+      // Cargar información relacionada del instrumento y propietario
+      this.loadPosicionInfo(posicion.id_instrumento, posicion.id_propietario);
+    }
+  }
+
+  loadPosicionInfo(idInstrumento: number, idPropietario: number): void {
+    this.ventaService.getInfoPosicion(idInstrumento, idPropietario).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const data = response.data as any;
+          this.selectedInstrumentoInfo = data.instrumento;
+          this.selectedPropietarioInfo = data.propietario;
+          this.inversionesAsociadas = data.instrumento?.inversiones || [];
+          this.resumenInversiones = data.resumen;
+          console.log('Info posición:', response.data);
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar información de la posición:', err);
+        this.selectedInstrumentoInfo = null;
+        this.selectedPropietarioInfo = null;
+        this.inversionesAsociadas = [];
+        this.resumenInversiones = null;
+      }
+    });
+  }
+
+  clearInstrumentoInfo(): void {
+    this.selectedInstrumentoInfo = null;
+    this.selectedPropietarioInfo = null;
+    this.inversionesAsociadas = [];
+    this.resumenInversiones = null;
+  }
+
+  getEstadoClass(codigo: string): string {
+    switch (codigo) {
+      case 'ACTIVA':
+        return 'bg-success';
+      case 'VENDIDA_TOTAL':
+        return 'bg-danger';
+      case 'VENCIDA':
+        return 'bg-warning';
+      case 'CANCELADA':
+        return 'bg-secondary';
+      default:
+        return 'bg-info';
+    }
+  }
+
+  getAccordionHeader(): string {
+    if (!this.resumenInversiones) {
+      return 'Inversiones asociadas';
+    }
+    const cantidad = this.resumenInversiones.cantidad_inversiones || 0;
+    const valorNominal = this.formatCurrency(this.resumenInversiones.valor_nominal_acumulado || 0);
+    return `Inversiones asociadas (${cantidad} inversiones | Valor nominal acumulado: ${valorNominal})`;
   }
 
   loadTiposVenta(): void {
@@ -297,10 +488,14 @@ export class VentaInversionListComponent implements OnInit {
     this.isEdit = false;
     this.ventaId = null;
     this.ventaForm.reset();
+    this.selectedPosicion = null;
+    this.clearInstrumentoInfo();
+    this.inversionesAccordionOpen = false;
     // Establecer fecha actual por defecto
     const today = new Date();
     this.ventaForm.patchValue({
-      fecha_venta: today
+      fecha_venta: today,
+      tipo_venta: 'TOTAL'
     });
     this.displayDialog = true;
     this.formError = '';
@@ -309,6 +504,7 @@ export class VentaInversionListComponent implements OnInit {
   hideDialog(): void {
     this.displayDialog = false;
     this.ventaForm.reset();
+    this.selectedPosicion = null;
     this.formError = '';
   }
 
@@ -316,6 +512,14 @@ export class VentaInversionListComponent implements OnInit {
     this.isEdit = true;
     this.ventaId = venta.id_venta_inversion || null;
     this.ventaForm.reset();
+    this.selectedPosicion = null;
+
+    // Buscar la posición en la lista (si existe)
+    const posicion = this.posicionesVendibles.find(p => p.id_instrumento === venta.id_instrumento);
+    if (posicion) {
+      this.selectedPosicion = posicion;
+    }
+
     this.ventaForm.patchValue({
       id_instrumento: venta.id_instrumento,
       tipo_venta: venta.id_tipo_venta === 1 ? 'TOTAL' : 'PARCIAL',
@@ -338,6 +542,19 @@ export class VentaInversionListComponent implements OnInit {
   }
 
   save(): void {
+    // Validar posición seleccionada
+    if (!this.selectedPosicion) {
+      this.ventaForm.get('id_instrumento')?.markAsDirty();
+      this.ventaForm.get('id_instrumento')?.setErrors({ required: true });
+      return;
+    }
+
+    // Validar que existan inversiones asociadas
+    if (this.inversionesAsociadas.length === 0) {
+      this.formError = 'No existen inversiones activas para este instrumento. No se puede realizar la venta.';
+      return;
+    }
+
     if (this.ventaForm.invalid) {
       this.markFormAsDirty();
       return;
@@ -346,7 +563,11 @@ export class VentaInversionListComponent implements OnInit {
     this.formLoading = true;
     this.formError = '';
 
-    const ventaData = this.ventaForm.value;
+    const ventaData = {
+      ...this.ventaForm.value,
+      id_instrumento: this.selectedPosicion.id_instrumento,
+      id_propietario: this.selectedPosicion.id_propietario
+    };
 
     if (this.isEdit && this.ventaId) {
       this.ventaService.update(this.ventaId, ventaData).subscribe({

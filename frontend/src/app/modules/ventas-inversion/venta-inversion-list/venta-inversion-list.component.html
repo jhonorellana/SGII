@@ -94,13 +94,19 @@
   <p-confirmDialog></p-confirmDialog>
 
   <!-- Modal para crear/editar venta -->
-  <p-dialog [header]="isEdit ? 'Editar Venta' : 'Nueva Venta Renta Fija'"
-           [(visible)]="displayDialog"
+  <p-dialog [(visible)]="displayDialog"
            [modal]="true"
-           [style]="{width: '900px'}"
+           [style]="{width: '1100px'}"
            [draggable]="false"
            [resizable]="false"
+           [closable]="true"
+           styleClass="venta-agrupada-modal"
            (onHide)="hideDialog()">
+    <ng-template pTemplate="header">
+      <div class="modal-header-content">
+        <span class="modal-title">{{ isEdit ? 'Editar Venta' : 'Nueva Venta Renta Fija' }}</span>
+      </div>
+    </ng-template>
     <form [formGroup]="ventaForm" (ngSubmit)="save()">
       <!-- Error State -->
       <div *ngIf="formError" class="alert alert-danger">
@@ -118,15 +124,19 @@
       <!-- Form -->
       <div *ngIf="!formLoading">
         <div class="form-grid">
-            <!-- Fila 1: Instrumento y Tipo de Venta -->
+            <!-- Fila 1: Posición Vendible y Tipo de Venta -->
             <div class="form-field half-width">
-              <label for="id_instrumento">Instrumento <span class="text-danger">*</span></label>
-              <select id="id_instrumento" class="form-control" formControlName="id_instrumento" [class.is-invalid]="f['id_instrumento'].invalid && f['id_instrumento'].dirty">
-                <option value="">Seleccione instrumento</option>
-                <option *ngFor="let instrumento of instrumentos" [value]="instrumento.id_instrumento">{{ instrumento.nombre }}</option>
-              </select>
-              <div class="invalid-feedback" *ngIf="f['id_instrumento'].invalid && f['id_instrumento'].dirty">
-                El instrumento es requerido
+              <label for="id_instrumento">Posición Vendible <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <input type="text" id="id_instrumento" class="form-control"
+                       [value]="selectedPosicion ? formatPosicionLabel(selectedPosicion) : ''"
+                       placeholder="Seleccionar posición vendible..." readonly>
+                <button type="button" class="btn btn-outline-secondary" (click)="abrirSelectorPosicion()">
+                  <i class="bi bi-search"></i> Buscar
+                </button>
+              </div>
+              <div class="invalid-feedback" *ngIf="!selectedPosicion && f['id_instrumento'].invalid && f['id_instrumento'].dirty">
+                La posición vendible es requerida
               </div>
             </div>
             <div class="form-field half-width">
@@ -151,6 +161,75 @@
             <div class="form-field half-width">
               <label for="liquidacion_venta">Liquidación de Venta</label>
               <input type="text" id="liquidacion_venta" class="form-control" formControlName="liquidacion_venta" placeholder="Liquidación">
+            </div>
+
+            <!-- Sección de Inversiones Asociadas (Acordeón) -->
+            <div *ngIf="selectedPosicion" class="inversiones-asociadas-section full-width">
+              <p-accordion [multiple]="true">
+                <p-accordionTab header="{{ getAccordionHeader() }}" [selected]="inversionesAccordionOpen">
+                  <!-- Resumen compacto -->
+                  <div *ngIf="resumenInversiones" class="resumen-compacto">
+                    <span class="resumen-item-text">
+                      <strong>Total inversiones:</strong> {{ resumenInversiones.cantidad_inversiones || 0 }}
+                    </span>
+                    <span class="resumen-separator">|</span>
+                    <span class="resumen-item-text">
+                      <strong>Valor nominal:</strong> {{ formatCurrency(resumenInversiones.valor_nominal_acumulado || 0) }}
+                    </span>
+                    <span class="resumen-separator">|</span>
+                    <span class="resumen-item-text">
+                      <strong>Capital invertido:</strong> {{ formatCurrency(resumenInversiones.capital_invertido_acumulado || 0) }}
+                    </span>
+                    <span class="resumen-separator">|</span>
+                    <span class="resumen-item-text">
+                      <strong>Rendimiento promedio:</strong> {{ formatPercentage(resumenInversiones.rendimiento_promedio || 0) }}
+                    </span>
+                    <span class="resumen-separator" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">|</span>
+                    <span class="resumen-item-text" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">
+                      <strong>Fecha vencimiento:</strong> {{ formatDate(selectedInstrumentoInfo.fecha_vencimiento) }}
+                    </span>
+                  </div>
+
+                  <!-- Mensaje si no hay inversiones -->
+                  <div *ngIf="inversionesAsociadas.length === 0" class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> No existen inversiones activas para este instrumento.
+                  </div>
+
+                  <!-- Tabla de inversiones -->
+                  <div *ngIf="inversionesAsociadas.length > 0" class="table-responsive">
+                    <table class="table table-sm table-bordered inversiones-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Liquidación</th>
+                          <th>Propietario</th>
+                          <th>Valor Nominal</th>
+                          <th>Capital Invertido</th>
+                          <th>Rendimiento</th>
+                          <th>Fecha Compra</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let inv of inversionesAsociadas">
+                          <td>{{ inv.id_inversion }}</td>
+                          <td>{{ inv.liquidacion || '-' }}</td>
+                          <td>{{ inv.propietario?.nombre || '-' }}</td>
+                          <td>{{ formatCurrency(inv.valor_nominal) }}</td>
+                          <td>{{ formatCurrency(inv.capital_invertido) }}</td>
+                          <td>{{ formatPercentage(inv.rendimiento_efectivo) }}</td>
+                          <td>{{ formatDate(inv.fecha_compra) }}</td>
+                          <td>
+                            <span [class]="'badge ' + getEstadoClass(inv.estadoInversion?.codigo)">
+                              {{ inv.estadoInversion?.nombre || '-' }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </p-accordionTab>
+              </p-accordion>
             </div>
 
             <!-- Fila 3: Campos para venta parcial -->
@@ -218,7 +297,7 @@
             [cancelText]="'Cancelar'"
             [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
             [loading]="formLoading"
-            [disabled]="ventaForm.invalid"
+            [disabled]="ventaForm.invalid || inversionesAsociadas.length === 0"
             (onCancel)="hideDialog()"
             (onSave)="save()">
           </app-modal-actions>
@@ -318,6 +397,107 @@
         [cancelText]="'Cerrar'"
         [showSaveButton]="false"
         (onCancel)="displayDetailDialog = false">
+      </app-modal-actions>
+    </ng-template>
+  </p-dialog>
+
+  <!-- Modal de Selección de Posición Vendible -->
+  <p-dialog [(visible)]="displaySelectorPosicion"
+           [modal]="true"
+           [style]="{width: '1200px'}"
+           [draggable]="false"
+           [resizable]="false"
+           [closable]="true"
+           header="Seleccionar Posición Vendible"
+           (onHide)="cerrarSelectorPosicion()">
+    <div class="posicion-selector-container">
+      <!-- Filtros globales -->
+      <div class="posicion-filters mb-3">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <input type="text" pInputText placeholder="Búsqueda global..." [(ngModel)]="filtroGlobalPosicion" (ngModelChange)="filtrarPosiciones()">
+          </div>
+          <div class="col-md-2">
+            <select class="form-control" [(ngModel)]="filtroPropietario" (ngModelChange)="filtrarPosiciones()">
+              <option value="">Todos los propietarios</option>
+              <option *ngFor="let propietario of propietariosUnicos" [value]="propietario">{{ propietario }}</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-control" [(ngModel)]="filtroTipoInversion" (ngModelChange)="filtrarPosiciones()">
+              <option value="">Todos los tipos</option>
+              <option *ngFor="let tipo of tiposInversionUnicos" [value]="tipo">{{ tipo }}</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <select class="form-control" [(ngModel)]="filtroEmisor" (ngModelChange)="filtrarPosiciones()">
+              <option value="">Todos los emisores</option>
+              <option *ngFor="let emisor of emisoresUnicos" [value]="emisor">{{ emisor }}</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-secondary w-100" (click)="limpiarFiltrosPosicion()">
+              <i class="bi bi-x-circle"></i> Limpiar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de posiciones -->
+      <p-table [value]="posicionesFiltradas"
+               [paginator]="true"
+               [rows]="10"
+               [rowsPerPageOptions]="[10, 20, 50]"
+               [scrollable]="true"
+               scrollHeight="400px"
+               [globalFilterFields]="['nombre_propietario', 'nombre_instrumento', 'nombre_emisor', 'nombre_tipo_inversion']"
+               selectionMode="single"
+               [(selection)]="posicionSeleccionada"
+               dataKey="id_instrumento"
+               [loading]="loadingPosiciones">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="nombre_propietario">Propietario <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="nombre_instrumento">Instrumento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="nombre_emisor">Emisor <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="nombre_tipo_inversion">Tipo Inversión <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="fecha_vencimiento">Vencimiento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="valor_nominal_total">Valor Nominal <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="capital_invertido_total">Capital Invertido <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="rendimiento_promedio">Rendimiento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="cantidad_inversiones">Cant. Inversiones <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-posicion>
+          <tr [pSelectableRow]="posicion">
+            <td>{{ posicion.nombre_propietario }}</td>
+            <td>{{ posicion.nombre_instrumento }}</td>
+            <td>{{ posicion.nombre_emisor }}</td>
+            <td>{{ posicion.nombre_tipo_inversion }}</td>
+            <td>{{ formatDate(posicion.fecha_vencimiento) }}</td>
+            <td class="text-right">{{ formatCurrency(posicion.valor_nominal_total) }}</td>
+            <td class="text-right">{{ formatCurrency(posicion.capital_invertido_total) }}</td>
+            <td class="text-right">{{ formatPercentage(posicion.rendimiento_promedio) }}</td>
+            <td class="text-center">{{ posicion.cantidad_inversiones }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="text-center py-4">
+              No se encontraron posiciones vendibles
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="'Seleccionar'"
+        [disabled]="!posicionSeleccionada"
+        (onCancel)="cerrarSelectorPosicion()"
+        (onSave)="confirmarSeleccionPosicion()">
       </app-modal-actions>
     </ng-template>
   </p-dialog>

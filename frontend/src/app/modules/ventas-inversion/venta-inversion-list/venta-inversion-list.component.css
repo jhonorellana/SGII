@@ -86,6 +86,163 @@
   color: #f0fdf4;
 }
 
+/* Custom Modal Header Content */
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* AutoComplete Styles */
+:host ::ng-deep .p-autocomplete {
+  width: 100%;
+}
+
+:host ::ng-deep .p-autocomplete .p-autocomplete-input {
+  width: 100%;
+}
+
+:host ::ng-deep .p-autocomplete .p-autocomplete-panel {
+  max-height: 300px;
+  overflow-y: auto;
+  max-width: 600px;
+}
+
+/* Input Group Styles */
+.input-group {
+  display: flex;
+  width: 100%;
+}
+
+.input-group .form-control {
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+/* Posicion Selector Styles */
+.posicion-selector-container {
+  padding: 16px;
+}
+
+.posicion-filters {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+:host ::ng-deep .p-table .p-datatable-thead > tr > th {
+  background-color: #22c55e;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #166534;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr > td {
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr:hover {
+  background-color: #f0f9ff;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr.p-highlight {
+  background-color: #e8f5e9;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Posicion Item Styles */
+.posicion-item {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.posicion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.posicion-item:last-child {
+  border-bottom: none;
+}
+
+.posicion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.posicion-propietario {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.posicion-id {
+  font-size: 12px;
+  color: #666;
+  background-color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.posicion-body {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.posicion-instrumento {
+  font-weight: 500;
+  color: #495057;
+  font-size: 13px;
+}
+
+.posicion-emisor {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.posicion-footer {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.posicion-valor {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.posicion-cantidad {
+  color: #6c757d;
+}
+
 /* Modal Footer Spacing */
 :host ::ng-deep .p-dialog-footer {
   padding: 16px 20px;
@@ -95,6 +252,144 @@
 
 :host ::ng-deep .p-dialog .p-dialog-content {
   padding: 20px;
+}
+
+/* Inversiones Asociadas Section */
+.inversiones-asociadas-section {
+  margin-top: 24px;
+  margin-bottom: 24px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.inversiones-asociadas-section.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Acordeón Styles */
+:host ::ng-deep .p-accordion .p-accordion-header {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-header .p-accordion-header-link {
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-header:not(.p-disabled).p-highlight {
+  background-color: #e8f5e9;
+  border-color: #22c55e;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-content {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #22c55e;
+}
+
+/* Resumen Compacto */
+.resumen-compacto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.resumen-item-text {
+  color: #495057;
+}
+
+.resumen-separator {
+  color: #6c757d;
+  margin: 0 4px;
+}
+
+.resumen-compacto strong {
+  color: #212529;
+}
+
+.inversiones-table {
+  font-size: 13px;
+  margin-top: 16px;
+  width: 100%;
+  table-layout: auto;
+}
+
+.inversiones-table th {
+  background-color: #22c55e;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #166534;
+  white-space: nowrap;
+}
+
+.inversiones-table td {
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.inversiones-table tbody tr:hover {
+  background-color: #f0f9ff;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bg-success {
+  background-color: #22c55e;
+  color: #ffffff;
+}
+
+.bg-danger {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+.bg-warning {
+  background-color: #ffc107;
+  color: #000000;
+}
+
+.bg-secondary {
+  background-color: #6c757d;
+  color: #ffffff;
+}
+
+.bg-info {
+  background-color: #0dcaf0;
+  color: #000000;
 }
 
 /* Detail Section Styles */

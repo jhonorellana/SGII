@@ -1,0 +1,151 @@
+Suele suceder que ciertos instrumentos de plazo fijo como son Papeles Comerciales, Obligaciones, Titularizaciones y Bonos se puede comprar por partes. 
+Normalmente esos papeles se emiten por varios millones de d�lares. Yo suelo comprar pedazos de estos papeles cuando tengo disponibilidad de dinero y obviamente no puedo comprar por millones.
+En mi base de datos voy registrando cada compra que realizo, para mi cada una de estas compras las registro en la tabla de inversiones, de tal manera que por cada instrumento tengo un registro y asociado a este puedo tener una o varias inversiones.
+Suele suceder tambi�n que para la bolsa de valores o para el estado ecuatoriano en el caso de los bonos tienen un solo registro unificado de mis inversiones.
+Tal vez sea necesario crear una tabla para guardar la relaci�n entre la inversi�n original y las que se crear�n de acuerdo a las necesidades descritas mas adelante.
+Primero necesitamos una pantalla que me permita realizar el mantenimiento de venta de inversiones. La estructura de la tabla es la siguiente:
+CREATE TABLE `venta_inversion` (
+  `id_venta_inversion` int(11) NOT NULL AUTO_INCREMENT,
+  `id_inversion` int(11) DEFAULT NULL,
+  `id_instrumento` int(11) DEFAULT NULL,
+  `id_tipo_venta` int(11) DEFAULT NULL,
+  `id_propietario` int(11) DEFAULT NULL,
+  `porcentaje_vendido` decimal(8,2) DEFAULT 0.00,
+  `fecha_venta` date NOT NULL,
+  `liquidacion_venta` varchar(50) DEFAULT NULL,
+  `precio_venta` decimal(18,8) DEFAULT 0.00000000,
+  `precio_neto_venta` decimal(18,8) DEFAULT 0.00000000,
+  `interes_previo_venta` decimal(18,2) DEFAULT 0.00,
+  `valor_venta_sin_comision` decimal(18,2) DEFAULT 0.00,
+  `comision_operador` decimal(18,2) DEFAULT 0.00,
+  `comision_bolsa` decimal(18,2) DEFAULT 0.00,
+  `valor_venta_con_comision` decimal(18,2) DEFAULT 0.00,
+  `utilidad_sin_comision` decimal(18,2) DEFAULT 0.00,
+  `utilidad_con_comision` decimal(18,2) DEFAULT 0.00,
+  `ganancia_perdida` decimal(18,2) DEFAULT 0.00,
+  `rendimiento_total` decimal(18,8) DEFAULT 0.00000000,
+  `dias_transcurridos` decimal(8,2) DEFAULT 0.00,
+  `roi` decimal(18,8) DEFAULT 0.00000000,
+  `ganancia_anual` decimal(18,8) DEFAULT 0.00000000,
+  `retenciones` decimal(18,2) DEFAULT 0.00,
+  `observacion` text DEFAULT NULL,
+  `activo` tinyint(4) DEFAULT 1,
+  `eliminado` tinyint(4) DEFAULT 0,
+  `fecha_creacion` datetime NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_venta_inversion`),
+  KEY `fk_venta_inversion_tipo` (`id_tipo_venta`),
+  KEY `fk_venta_inversion_instrumento` (`id_instrumento`),
+  KEY `fk_venta_inversion_inversion` (`id_inversion`),
+  CONSTRAINT `fk_venta_inversion_instrumento` FOREIGN KEY (`id_instrumento`) REFERENCES `instrumento` (`id_instrumento`),
+  CONSTRAINT `fk_venta_inversion_inversion` FOREIGN KEY (`id_inversion`) REFERENCES `inversion` (`id_inversion`),
+  CONSTRAINT `fk_venta_inversion_tipo` FOREIGN KEY (`id_tipo_venta`) REFERENCES `catalogo_valor` (`id_catalogo_valor`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+Al momento de la venta pueden darse varios escenarios:
+1. Venta de todo el acumulado en un instrumento.
+2. Venta parcial del valor acumulado por instrumento.
+Cada uno de estos dos a su vez puede presentar varios casos, vamos a analizarlos cada uno.
+1 Escenario - Venta de todo el acumulado en un instrumento.
+Aqu� pueden darse los siguientes casos:
+1.1 El instrumento tuvo �nicamente una inversi�n asociada.
+En estos casos se debe proceder de la siguiente manera:
+1. En el registro de la inversi�n se actualiza el campo fecha_venta coloc�ndole la fecha de la inversi�n digitada en el sistema
+2. Al registro de la inversi�n se le coloca en estado vendida total.
+3. Se inactivan las amortizaciones relacionadas con la inversi�n cuya fecha de vencimiento es mayor que la fecha_venta
+4. En la tabla venta_inversion se debe insertar un registro con la informaci�n recolectada en la pantalla para registro de ventas de inversion
+5. En la tabla movimiento_capital se debe insertar un registro del siguiente tipo:
+INSERT INTO movimiento_capital
+(`id_movimiento_capital`,
+`id_tipo_movimiento`,
+`id_persona`,
+`id_inversion`,
+`id_venta_inversion`,
+`id_cuenta_bancaria`,
+`id_signo`,
+`monto`,
+`fecha_movimiento`,
+`descripcion`,
+`conciliado`,
+`fecha_conciliacion`,
+`activo`,
+`eliminado`,
+`fecha_creacion`,
+`fecha_actualizacion`)
+VALUES
+(<{id_movimiento_capital: }>, #id propio de la tabla
+<{id_tipo_movimiento: }>, #182
+<{id_persona: }>, #propietario de la inversi�n vendida
+<{id_inversion: }>, #id de la inversion vendida
+<{id_venta_inversion: }>, #id de la venta inversion
+<{id_cuenta_bancaria: }>, #null
+<{id_signo: }>, #190 positivo
+<{monto: }>, #valor de la venta: valor_venta_con_comision
+<{fecha_movimiento: }>, #Fecha de venta ingresada por el usuario en pantalla
+<{descripcion: }>, #Venta de <tipo inversi�n tomada del instrumento>
+<{conciliado: 0}>, #0
+<{fecha_conciliacion: }>, #null
+<{activo: 1}>,  #1
+<{eliminado: 0}>, #0
+<{fecha_creacion: current_timestamp()}>,
+<{fecha_actualizacion: current_timestamp()}>);
+
+1.2 El instrumento tuvo varias inversiones asociadas.
+Para todas las inversiones asociadas al instrumento se debe aplicar lo detallado en el item 1.1
+
+2 Escenario - Venta parcial del valor acumulado por instrumento.
+
+La pantalla de venta de inversiones debe permitir ingresar el porcentaje del valor nominal que se quiere vender o el valor nominal a vender. Si se coloca el porcentaje debe calcularse el valor nominal y si se coloca el valor nominal se debe calcular el porcentaje.
+Tal vez debemos tener una tabla que permita almacenar la relaci�n entre la inversi�n original y las nuevas tablas
+Pueden darse los siguientes casos:
+
+2.1 El instrumento tuvo �nicamente una inversi�n asociada.
+1. Se debe colocar la inversi�n original como vendida cumpliendo los siguientes pasos:
+a. En el registro de la inversi�n se actualiza el campo fecha_venta coloc�ndole la fecha de la inversi�n digitada en el sistema
+b. Al registro de la inversi�n se le coloca en estado vendida total.
+c. Se inactivan las amortizaciones relacionadas con la inversi�n cuya fecha de vencimiento es mayor que la fecha_venta
+2. Se debe crear dos inversiones utilizando el porcentaje se deber�n llenar los respectivos campos financieros. 
+a. La una que representa la parte vendida de la inversi�n, no necesita tener tabla de amortizaci�n. 
+b. En la tabla venta_inversion se debe insertar un registro con la informaci�n recolectada en la pantalla para registro de ventas de inversion
+c. En la tabla movimiento_capital se debe insertar un registro del siguiente tipo:
+INSERT INTO movimiento_capital
+(`id_movimiento_capital`,
+`id_tipo_movimiento`,
+`id_persona`,
+`id_inversion`,
+`id_venta_inversion`,
+`id_cuenta_bancaria`,
+`id_signo`,
+`monto`,
+`fecha_movimiento`,
+`descripcion`,
+`conciliado`,
+`fecha_conciliacion`,
+`activo`,
+`eliminado`,
+`fecha_creacion`,
+`fecha_actualizacion`)
+VALUES
+(<{id_movimiento_capital: }>, #id propio de la tabla
+<{id_tipo_movimiento: }>, #182
+<{id_persona: }>, #propietario de la inversi�n vendida
+<{id_inversion: }>, #id de la inversion vendida
+<{id_venta_inversion: }>, #id de la venta inversion
+<{id_cuenta_bancaria: }>, #null
+<{id_signo: }>, #190 positivo
+<{monto: }>, #valor de la venta: valor_venta_con_comision
+<{fecha_movimiento: }>, #Fecha de venta ingresada por el usuario en pantalla
+<{descripcion: }>, #Venta de <tipo inversi�n tomada del instrumento>
+<{conciliado: 0}>, #0
+<{fecha_conciliacion: }>, #null
+<{activo: 1}>,  #1
+<{eliminado: 0}>, #0
+<{fecha_creacion: current_timestamp()}>,
+<{fecha_actualizacion: current_timestamp()}>);
+
+d. La otra que representa la parte sobrante de la inversi�n. Esta inversi�n si requiere tabla de amortizaci�n. Los datos financieros se deben llenar calculando los valores de acuerdo al porcentaje sobrante de la inversi�n.
+2.2 El instrumento tuvo varias inversiones asociadas.
+1. Se escogen de menor a mayor por rendimiento. 
+2. Se escoge la de menor rendimiento y se ejecuta la venta de acuerdo a los lineamientos previamente establecidos en los puntos 1.1 y 1.2. Si despu�s de la venta todav�a queda una parte del la inversi�n original por vender, se intenta hacer lo mismo con la siguiente.
+
+Siempre se debe almacenar en la tabla venta_inversion_detalle la relación entre la venta y las inversiones vendidas.

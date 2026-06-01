@@ -57,8 +57,8 @@ class VentaInversionController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'id_inversion' => 'required|exists:inversion,id_inversion',
-            'id_instrumento' => 'nullable|exists:instrumento,id_instrumento',
+            'id_instrumento' => 'required|exists:instrumento,id_instrumento',
+            'id_propietario' => 'nullable|exists:persona,id_persona',
             'id_tipo_venta' => 'nullable|exists:catalogo_valor,id_catalogo_valor',
             'porcentaje_vendido' => 'nullable|numeric',
             'fecha_venta' => 'required|date',
@@ -77,7 +77,6 @@ class VentaInversionController extends Controller
             'dias_transcurridos' => 'nullable|numeric',
             'roi' => 'nullable|numeric',
             'ganancia_anual' => 'nullable|numeric',
-            'comision_operador' => 'nullable|numeric',
             'observacion' => 'nullable|string'
         ]);
 
@@ -90,53 +89,124 @@ class VentaInversionController extends Controller
 
         DB::beginTransaction();
         try {
-            $venta = VentaInversion::create([
-                'id_inversion' => $request->id_inversion,
-                'id_instrumento' => $request->id_instrumento,
-                'id_tipo_venta' => $request->id_tipo_venta,
-                'porcentaje_vendido' => $request->porcentaje_vendido ?? 0,
-                'fecha_venta' => $request->fecha_venta,
-                'liquidacion_venta' => $request->liquidacion_venta,
-                'precio_venta' => $request->precio_venta ?? 0,
-                'precio_neto_venta' => $request->precio_neto_venta ?? 0,
-                'interes_previo_venta' => $request->interes_previo_venta ?? 0,
-                'valor_venta_sin_comision' => $request->valor_venta_sin_comision ?? 0,
-                'comision_operador' => $request->comision_operador ?? 0,
-                'comision_bolsa' => $request->comision_bolsa ?? 0,
-                'valor_venta_con_comision' => $request->valor_venta_con_comision ?? 0,
-                'utilidad_sin_comision' => $request->utilidad_sin_comision ?? 0,
-                'utilidad_con_comision' => $request->utilidad_con_comision ?? 0,
-                'ganancia_perdida' => $request->ganancia_perdida ?? 0,
-                'rendimiento_total' => $request->rendimiento_total ?? 0,
-                'dias_transcurridos' => $request->dias_transcurridos ?? 0,
-                'roi' => $request->roi ?? 0,
-                'ganancia_anual' => $request->ganancia_anual ?? 0,
-                'comision_operador' => $request->comision_operador ?? 0,
-                'observacion' => $request->observacion,
-                'activo' => true,
-                'eliminado' => false,
-                'fecha_creacion' => now(),
-                'fecha_actualizacion' => now()
-            ]);
+            // Obtener inversiones asociadas al instrumento y propietario
+            $query = Inversion::where('id_instrumento', $request->id_instrumento)
+                ->where('activo', true)
+                ->with('propietario', 'amortizaciones');
 
-            // Actualizar estado de la inversión
-            $inversion = Inversion::find($request->id_inversion);
-            if ($inversion) {
-                $inversion->update([
+            // Si se especifica propietario, filtrar por él
+            if ($request->has('id_propietario') && $request->id_propietario) {
+                $query->where('id_propietario', $request->id_propietario);
+            }
+
+            $inversiones = $query->get();
+
+            if ($inversiones->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontraron inversiones activas para el instrumento especificado'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            // Determinar tipo de venta (total o parcial)
+            $esVentaTotal = !$request->porcentaje_vendido || $request->porcentaje_vendido >= 100;
+
+            // Procesar cada inversión
+            foreach ($inversiones as $inversion) {
+                if ($esVentaTotal) {
+                    // VENTA TOTAL
+                    // Paso 1: Actualizar estado de la inversión
+                    $inversion->update([
+                        'fecha_venta' => $request->fecha_venta,
+                        'id_estado_inversion' => $this->getEstadoVendidaTotal(),
+                        'activo' => false,
+                        'fecha_actualizacion' => now()
+                    ]);
+
+                    // Paso 2: Inactivar amortizaciones futuras
+                    \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
+                        ->where('fecha_pago', '>=', $request->fecha_venta)
+                        ->update([
+                            'activo' => false,
+                            'fecha_actualizacion' => now()
+                        ]);
+                }
+
+                // Paso 3: Crear registro en venta_inversion
+                $venta = VentaInversion::create([
+                    'id_inversion' => $inversion->id_inversion,
+                    'id_instrumento' => $request->id_instrumento,
+                    'id_tipo_venta' => $request->id_tipo_venta,
+                    'id_propietario' => $inversion->id_propietario,
+                    'porcentaje_vendido' => $request->porcentaje_vendido ?? 100,
                     'fecha_venta' => $request->fecha_venta,
+                    'liquidacion_venta' => $request->liquidacion_venta,
+                    'precio_venta' => $request->precio_venta ?? 0,
+                    'precio_neto_venta' => $request->precio_neto_venta ?? 0,
+                    'interes_previo_venta' => $request->interes_previo_venta ?? 0,
+                    'valor_venta_sin_comision' => $request->valor_venta_sin_comision ?? 0,
+                    'comision_operador' => $request->comision_operador ?? 0,
+                    'comision_bolsa' => $request->comision_bolsa ?? 0,
+                    'valor_venta_con_comision' => $request->valor_venta_con_comision ?? 0,
+                    'utilidad_sin_comision' => $request->utilidad_sin_comision ?? 0,
+                    'utilidad_con_comision' => $request->utilidad_con_comision ?? 0,
+                    'ganancia_perdida' => $request->ganancia_perdida ?? 0,
+                    'rendimiento_total' => $request->rendimiento_total ?? 0,
+                    'dias_transcurridos' => $request->dias_transcurridos ?? 0,
+                    'roi' => $request->roi ?? 0,
+                    'ganancia_anual' => $request->ganancia_anual ?? 0,
+                    'retenciones' => 0,
+                    'observacion' => $request->observacion,
+                    'activo' => true,
+                    'eliminado' => false,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
+                ]);
+
+                // Paso 4: Crear detalle en venta_inversion_detalle
+                VentaInversionDetalle::create([
+                    'id_venta_inversion' => $venta->id_venta_inversion,
+                    'id_inversion' => $inversion->id_inversion,
+                    'valor_nominal' => $inversion->valor_nominal,
+                    'valor_compra' => $inversion->capital_invertido,
+                    'porcentaje_compra' => 100,
+                    'valor_venta_asignado' => $request->valor_venta_con_comision ?? 0,
+                    'porcentaje_venta' => $request->porcentaje_vendido ?? 100,
+                    'utilidad' => $request->utilidad_con_comision ?? 0,
+                    'rendimiento' => $request->rendimiento_total ?? 0,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
+                ]);
+
+                // Paso 5: Crear movimiento_capital
+                MovimientoCapital::create([
+                    'id_tipo_movimiento' => 182,
+                    'id_persona' => $inversion->id_propietario,
+                    'id_inversion' => $inversion->id_inversion,
+                    'id_venta_inversion' => $venta->id_venta_inversion,
+                    'id_cuenta_bancaria' => null,
+                    'id_signo' => 190, // Positivo
+                    'monto' => $request->valor_venta_con_comision ?? 0,
+                    'fecha_movimiento' => $request->fecha_venta,
+                    'descripcion' => 'Venta de ' . ($inversion->instrumento->nombre ?? 'inversión'),
+                    'conciliado' => 0,
+                    'fecha_conciliacion' => null,
+                    'activo' => true,
+                    'eliminado' => false,
+                    'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
                 ]);
             }
-
-            // Disparar evento para crear movimiento contable automáticamente
-            event(new VentaInversionRegistrada($venta));
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Venta registrada exitosamente',
-                'data' => $venta->load(['inversion', 'instrumento', 'tipoVenta'])
+                'data' => [
+                    'cantidad_inversiones' => $inversiones->count(),
+                    'inversiones_procesadas' => $inversiones->pluck('id_inversion')
+                ]
             ], Response::HTTP_CREATED);
 
         } catch (\Exception $e) {
@@ -146,6 +216,562 @@ class VentaInversionController extends Controller
                 'message' => 'Error al registrar venta: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Obtener el ID del estado VENDIDA_TOTAL del catálogo
+     */
+    private function getEstadoVendidaTotal()
+    {
+        $estado = \App\Models\CatalogoValor::where('codigo', 'VENDIDA_TOTAL')->first();
+        return $estado ? $estado->id_catalogo_valor : null;
+    }
+
+    /**
+     * Obtener instrumentos activos para venta
+     */
+    /**
+     * Obtener posiciones vendibles (Instrumento + Propietario)
+     * Consulta la vista vw_posiciones_vendibles que combina información de
+     * Instrumento, Inversión y Propietario
+     */
+    public function getPosicionesVendibles()
+    {
+        $posiciones = \DB::table('vw_posiciones_vendibles')
+            ->orderBy('nombre_propietario')
+            ->orderBy('nombre_instrumento')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $posiciones
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Obtener información detallada de un instrumento y propietario específicos
+     * Incluye las inversiones activas asociadas a ese instrumento y propietario
+     */
+    public function getInfoPosicion($idInstrumento, $idPropietario)
+    {
+        $instrumento = \App\Models\Instrumento::with([
+            'emisor',
+            'tipoInversion',
+            'inversiones' => function($query) use ($idPropietario) {
+                $query->where('activo', true)
+                      ->where('id_propietario', $idPropietario)
+                      ->with('propietario', 'estadoInversion');
+            }
+        ])->find($idInstrumento);
+
+        if (!$instrumento) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Instrumento no encontrado'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $inversiones = $instrumento->inversiones;
+        $valorNominalTotal = $inversiones->sum('valor_nominal');
+        $capitalInvertidoTotal = $inversiones->sum('capital_invertido');
+        $rendimientoPromedio = $inversiones->avg('rendimiento_efectivo');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'instrumento' => $instrumento,
+                'propietario' => $inversiones->first()->propietario ?? null,
+                'resumen' => [
+                    'valor_nominal_acumulado' => $valorNominalTotal,
+                    'capital_invertido_acumulado' => $capitalInvertidoTotal,
+                    'rendimiento_promedio' => $rendimientoPromedio,
+                    'cantidad_inversiones' => $inversiones->count()
+                ]
+            ]
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Obtener instrumentos activos
+     * @deprecated - Usar getPosicionesVendibles en su lugar
+     */
+    public function getInstrumentosActivos()
+    {
+        $instrumentos = \App\Models\Instrumento::with(['emisor', 'tipoInversion'])
+            ->where('activo', true)
+            ->orderBy('nombre')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $instrumentos
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Obtener información de instrumento activo para venta
+     */
+    public function getInfoInstrumento($idInstrumento)
+    {
+        $instrumento = \App\Models\Instrumento::with([
+            'emisor',
+            'tipoInversion',
+            'inversiones' => function($query) {
+                $query->where('activo', true)
+                      ->with('propietario', 'estadoInversion');
+            }
+        ])->find($idInstrumento);
+
+        if (!$instrumento) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Instrumento no encontrado'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Calcular resumen de inversiones
+        $inversiones = $instrumento->inversiones;
+        $valorNominalTotal = $inversiones->sum('valor_nominal');
+        $capitalInvertidoTotal = $inversiones->sum('capital_invertido');
+        $rendimientoPromedio = $inversiones->avg('rendimiento_efectivo');
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'instrumento' => $instrumento,
+                'resumen' => [
+                    'valor_nominal_acumulado' => $valorNominalTotal,
+                    'capital_invertido_acumulado' => $capitalInvertidoTotal,
+                    'rendimiento_promedio' => $rendimientoPromedio,
+                    'cantidad_inversiones' => $inversiones->count()
+                ]
+            ]
+        ], Response::HTTP_OK);
+    }
+
+    /**
+     * Registrar venta de inversión de renta fija (método específico para pantalla de venta)
+     */
+    public function registrarVentaInversion(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'id_instrumento' => 'required|exists:instrumento,id_instrumento',
+            'tipo_venta' => 'required|in:TOTAL,PARCIAL',
+            'fecha_venta' => 'required|date',
+            'liquidacion_venta' => 'nullable|string|max:50',
+            'precio_venta' => 'nullable|numeric',
+            'precio_neto_venta' => 'nullable|numeric',
+            'interes_previo' => 'nullable|numeric',
+            'comision_operador' => 'nullable|numeric',
+            'comision_bolsa' => 'nullable|numeric',
+            'retenciones' => 'nullable|numeric',
+            'observacion' => 'nullable|string',
+            // Para venta parcial
+            'porcentaje_vender' => 'nullable|numeric|min:0|max:100',
+            'valor_nominal_vender' => 'nullable|numeric|min:0'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $validator->errors()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        DB::beginTransaction();
+        try {
+            $instrumento = \App\Models\Instrumento::find($request->id_instrumento);
+            if (!$instrumento) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Instrumento no encontrado'
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            // Obtener inversiones activas del instrumento
+            $inversiones = Inversion::where('id_instrumento', $request->id_instrumento)
+                ->where('activo', true)
+                ->with('propietario', 'amortizaciones')
+                ->get();
+
+            if ($inversiones->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay inversiones activas para este instrumento'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $esVentaTotal = $request->tipo_venta === 'TOTAL';
+
+            if ($esVentaTotal) {
+                // VENTA TOTAL - Aplicar lógica a todas las inversiones
+                foreach ($inversiones as $inversion) {
+                    $this->procesarVentaTotal($inversion, $request);
+                }
+            } else {
+                // VENTA PARCIAL - Implementar lógica de selección por rendimiento
+                $resultado = $this->procesarVentaParcial($inversiones, $request);
+                if (!$resultado['success']) {
+                    return response()->json($resultado, Response::HTTP_BAD_REQUEST);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Venta registrada exitosamente'
+            ], Response::HTTP_CREATED);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar venta: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Procesar venta total de una inversión
+     */
+    private function procesarVentaTotal($inversion, $request)
+    {
+        // Paso 1: Actualizar estado de la inversión
+        $inversion->update([
+            'fecha_venta' => $request->fecha_venta,
+            'id_estado_inversion' => $this->getEstadoVendidaTotal(),
+            'activo' => false,
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 2: Inactivar amortizaciones futuras
+        \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
+            ->where('fecha_pago', '>=', $request->fecha_venta)
+            ->update([
+                'activo' => false,
+                'fecha_actualizacion' => now()
+            ]);
+
+        // Paso 3: Crear registro en venta_inversion
+        $venta = VentaInversion::create([
+            'id_inversion' => $inversion->id_inversion,
+            'id_instrumento' => $request->id_instrumento,
+            'id_tipo_venta' => $this->getTipoVentaTotal(),
+            'id_propietario' => $inversion->id_propietario,
+            'porcentaje_vendido' => 100,
+            'fecha_venta' => $request->fecha_venta,
+            'liquidacion_venta' => $request->liquidacion_venta,
+            'precio_venta' => $request->precio_venta ?? 0,
+            'precio_neto_venta' => $request->precio_neto_venta ?? 0,
+            'interes_previo_venta' => $request->interes_previo ?? 0,
+            'valor_venta_sin_comision' => 0, // Se debe calcular
+            'comision_operador' => $request->comision_operador ?? 0,
+            'comision_bolsa' => $request->comision_bolsa ?? 0,
+            'valor_venta_con_comision' => 0, // Se debe calcular
+            'utilidad_sin_comision' => 0,
+            'utilidad_con_comision' => 0,
+            'ganancia_perdida' => 0,
+            'rendimiento_total' => 0,
+            'dias_transcurridos' => 0,
+            'roi' => 0,
+            'ganancia_anual' => 0,
+            'retenciones' => $request->retenciones ?? 0,
+            'observacion' => $request->observacion,
+            'activo' => true,
+            'eliminado' => false,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 4: Crear detalle
+        VentaInversionDetalle::create([
+            'id_venta_inversion' => $venta->id_venta_inversion,
+            'id_inversion' => $inversion->id_inversion,
+            'valor_nominal' => $inversion->valor_nominal,
+            'valor_compra' => $inversion->capital_invertido,
+            'porcentaje_compra' => 100,
+            'valor_venta_asignado' => $inversion->valor_nominal, // Se debe calcular
+            'porcentaje_venta' => 100,
+            'utilidad' => 0,
+            'rendimiento' => 0,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 5: Crear movimiento_capital
+        $instrumento = \App\Models\Instrumento::find($inversion->id_instrumento);
+        MovimientoCapital::create([
+            'id_tipo_movimiento' => 182,
+            'id_persona' => $inversion->id_propietario,
+            'id_inversion' => $inversion->id_inversion,
+            'id_venta_inversion' => $venta->id_venta_inversion,
+            'id_cuenta_bancaria' => null,
+            'id_signo' => 190,
+            'monto' => 0, // Se debe calcular
+            'fecha_movimiento' => $request->fecha_venta,
+            'descripcion' => 'Venta de ' . ($instrumento ? $instrumento->nombre : 'inversión'),
+            'conciliado' => 0,
+            'fecha_conciliacion' => null,
+            'activo' => true,
+            'eliminado' => false,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+    }
+
+    /**
+     * Procesar venta parcial de inversiones
+     */
+    private function procesarVentaParcial($inversiones, $request)
+    {
+        // Ordenar por rendimiento (menor a mayor)
+        $inversionesOrdenadas = $inversiones->sortBy('rendimiento_efectivo');
+
+        // Calcular valor a vender
+        $valorNominalVender = $request->valor_nominal_vender;
+        if ($request->porcentaje_vender) {
+            $valorNominalTotal = $inversionesOrdenadas->sum('valor_nominal');
+            $valorNominalVender = ($valorNominalTotal * $request->porcentaje_vender) / 100;
+        }
+
+        if (!$valorNominalVender || $valorNominalVender <= 0) {
+            return [
+                'success' => false,
+                'message' => 'Debe especificar el valor a vender'
+            ];
+        }
+
+        $valorRestante = $valorNominalVender;
+
+        foreach ($inversionesOrdenadas as $inversion) {
+            if ($valorRestante <= 0) break;
+
+            // Calcular porcentaje de esta inversión a vender
+            $porcentajeVenderInversion = min(100, ($valorRestante / $inversion->valor_nominal) * 100);
+
+            if ($porcentajeVenderInversion >= 100) {
+                // Vender toda esta inversión
+                $this->procesarVentaTotal($inversion, $request);
+                $valorRestante -= $inversion->valor_nominal;
+            } else {
+                // Venta parcial de esta inversión
+                $this->procesarVentaParcialInversion($inversion, $porcentajeVenderInversion, $request);
+                $valorRestante -= ($inversion->valor_nominal * $porcentajeVenderInversion / 100);
+            }
+        }
+
+        return ['success' => true];
+    }
+
+    /**
+     * Procesar venta parcial de una inversión individual
+     */
+    private function procesarVentaParcialInversion($inversion, $porcentajeVender, $request)
+    {
+        // Paso 1: Cerrar inversión original
+        $inversion->update([
+            'fecha_venta' => $request->fecha_venta,
+            'id_estado_inversion' => $this->getEstadoVendidaTotal(),
+            'activo' => false,
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 2: Inactivar amortizaciones futuras
+        \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
+            ->where('fecha_pago', '>=', $request->fecha_venta)
+            ->update([
+                'activo' => false,
+                'fecha_actualizacion' => now()
+            ]);
+
+        // Paso 3: Crear inversión derivada parte vendida
+        $inversionVendida = $this->crearInversionDerivada($inversion, $porcentajeVender, 'VENDIDA_TOTAL', false);
+
+        // Paso 4: Crear inversión derivada parte remanente
+        $porcentajeRemanente = 100 - $porcentajeVender;
+        $inversionRemanente = $this->crearInversionDerivada($inversion, $porcentajeRemanente, 'ACTIVA', true);
+
+        // Paso 5: Crear nueva amortización para inversión remanente
+        $this->crearAmortizacionRemanente($inversion, $inversionRemanente, $porcentajeRemanente);
+
+        // Paso 6: Crear venta
+        $venta = VentaInversion::create([
+            'id_inversion' => $inversionVendida->id_inversion,
+            'id_instrumento' => $request->id_instrumento,
+            'id_tipo_venta' => $this->getTipoVentaParcial(),
+            'id_propietario' => $inversion->id_propietario,
+            'porcentaje_vendido' => $porcentajeVender,
+            'fecha_venta' => $request->fecha_venta,
+            'liquidacion_venta' => $request->liquidacion_venta,
+            'precio_venta' => $request->precio_venta ?? 0,
+            'precio_neto_venta' => $request->precio_neto_venta ?? 0,
+            'interes_previo_venta' => $request->interes_previo ?? 0,
+            'comision_operador' => $request->comision_operador ?? 0,
+            'comision_bolsa' => $request->comision_bolsa ?? 0,
+            'retenciones' => $request->retenciones ?? 0,
+            'observacion' => $request->observacion,
+            'activo' => true,
+            'eliminado' => false,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 7: Crear movimiento_capital (solo de la parte vendida)
+        MovimientoCapital::create([
+            'id_tipo_movimiento' => 182,
+            'id_persona' => $inversion->id_propietario,
+            'id_inversion' => $inversionVendida->id_inversion,
+            'id_venta_inversion' => $venta->id_venta_inversion,
+            'id_cuenta_bancaria' => null,
+            'id_signo' => 190,
+            'monto' => 0, // Se debe calcular
+            'fecha_movimiento' => $request->fecha_venta,
+            'descripcion' => 'Venta parcial de ' . ($inversion->instrumento->nombre ?? 'inversión'),
+            'conciliado' => 0,
+            'fecha_conciliacion' => null,
+            'activo' => true,
+            'eliminado' => false,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+
+        // Paso 8: Crear relaciones en inversion_relacion_venta
+        $tipoParteVendida = \App\Models\CatalogoValor::where('codigo', 'PARTE_VENDIDA')->first();
+        $tipoParteRemanente = \App\Models\CatalogoValor::where('codigo', 'PARTE_REMANENTE')->first();
+
+        if ($tipoParteVendida) {
+            \App\Models\InversionRelacionVenta::create([
+                'id_inversion_original' => $inversion->id_inversion,
+                'id_inversion_generada' => $inversionVendida->id_inversion,
+                'id_venta_inversion' => $venta->id_venta_inversion,
+                'id_tipo_relacion' => $tipoParteVendida->id_catalogo_valor,
+                'porcentaje_asignado' => $porcentajeVender,
+                'valor_nominal_asignado' => $inversionVendida->valor_nominal,
+                'activo' => true,
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
+        }
+
+        if ($tipoParteRemanente) {
+            \App\Models\InversionRelacionVenta::create([
+                'id_inversion_original' => $inversion->id_inversion,
+                'id_inversion_generada' => $inversionRemanente->id_inversion,
+                'id_venta_inversion' => $venta->id_venta_inversion,
+                'id_tipo_relacion' => $tipoParteRemanente->id_catalogo_valor,
+                'porcentaje_asignado' => $porcentajeRemanente,
+                'valor_nominal_asignado' => $inversionRemanente->valor_nominal,
+                'activo' => true,
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
+        }
+    }
+
+    /**
+     * Crear inversión derivada (parte vendida o remanente)
+     */
+    private function crearInversionDerivada($inversionOriginal, $porcentaje, $estado, $requiereAmortizacion)
+    {
+        $datos = [
+            'id_grupo_familiar' => $inversionOriginal->id_grupo_familiar,
+            'id_instrumento' => $inversionOriginal->id_instrumento,
+            'id_propietario' => $inversionOriginal->id_propietario,
+            'id_aportante' => $inversionOriginal->id_aportante,
+            'liquidacion' => $inversionOriginal->liquidacion,
+            'id_estado_inversion' => $this->getEstadoByCodigo($estado),
+            'fecha_compra' => $inversionOriginal->fecha_compra, // Conservar fecha original
+            'fecha_venta' => $estado === 'VENDIDA_TOTAL' ? $inversionOriginal->fecha_venta : null,
+            'valor_nominal' => ($inversionOriginal->valor_nominal * $porcentaje) / 100,
+            'monto_a_negociar' => ($inversionOriginal->monto_a_negociar * $porcentaje) / 100,
+            'capital_invertido' => ($inversionOriginal->capital_invertido * $porcentaje) / 100,
+            'tasa_interes' => $inversionOriginal->tasa_interes,
+            'rendimiento_nominal' => $inversionOriginal->rendimiento_nominal,
+            'rendimiento_efectivo' => $inversionOriginal->rendimiento_efectivo,
+            'valor_efectivo' => ($inversionOriginal->valor_efectivo * $porcentaje) / 100,
+            'valor_sin_comision' => ($inversionOriginal->valor_sin_comision * $porcentaje) / 100,
+            'valor_con_interes' => ($inversionOriginal->valor_con_interes * $porcentaje) / 100,
+            'interes_acumulado_previo' => ($inversionOriginal->interes_acumulado_previo * $porcentaje) / 100,
+            'interes_mensual' => ($inversionOriginal->interes_mensual * $porcentaje) / 100,
+            'interes_primer_mes' => ($inversionOriginal->interes_primer_mes * $porcentaje) / 100,
+            'total_comisiones' => ($inversionOriginal->total_comisiones * $porcentaje) / 100,
+            'tasa_mensual_real' => $inversionOriginal->tasa_mensual_real,
+            'fecha_primer_pago' => $inversionOriginal->fecha_primer_pago,
+            'precio_compra' => $inversionOriginal->precio_compra,
+            'precio_neto_compra' => $inversionOriginal->precio_neto_compra,
+            'comision_bolsa' => ($inversionOriginal->comision_bolsa * $porcentaje) / 100,
+            'comision_casa_valores' => ($inversionOriginal->comision_casa_valores * $porcentaje) / 100,
+            'retencion_fuente' => ($inversionOriginal->retencion_fuente * $porcentaje) / 100,
+            'observacion' => 'Inversión derivada de venta parcial - ' . $estado,
+            'expirado' => $inversionOriginal->expirado,
+            'activo' => $estado === 'ACTIVA',
+            'eliminado' => false,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ];
+
+        return Inversion::create($datos);
+    }
+
+    /**
+     * Crear amortización para inversión remanente
+     */
+    private function crearAmortizacionRemanente($inversionOriginal, $inversionRemanente, $porcentaje)
+    {
+        $amortizacionesOriginales = \App\Models\Amortizacion::where('id_inversion', $inversionOriginal->id_inversion)
+            ->where('activo', true)
+            ->get();
+
+        foreach ($amortizacionesOriginales as $amortizacionOriginal) {
+            \App\Models\Amortizacion::create([
+                'id_inversion' => $inversionRemanente->id_inversion,
+                'numero_cuota' => $amortizacionOriginal->numero_cuota,
+                'fecha_pago' => $amortizacionOriginal->fecha_pago,
+                'interes' => ($amortizacionOriginal->interes * $porcentaje) / 100,
+                'capital' => ($amortizacionOriginal->capital * $porcentaje) / 100,
+                'descuento' => ($amortizacionOriginal->descuento * $porcentaje) / 100,
+                'total' => ($amortizacionOriginal->total * $porcentaje) / 100,
+                'int_parcial' => ($amortizacionOriginal->int_parcial * $porcentaje) / 100,
+                'retencion' => ($amortizacionOriginal->retencion * $porcentaje) / 100,
+                'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
+                'pagada' => false,
+                'activo' => true,
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener ID del estado por código
+     */
+    private function getEstadoByCodigo($codigo)
+    {
+        $estado = \App\Models\CatalogoValor::where('codigo', $codigo)->first();
+        return $estado ? $estado->id_catalogo_valor : null;
+    }
+
+    /**
+     * Obtener ID del tipo de venta TOTAL
+     */
+    private function getTipoVentaTotal()
+    {
+        $tipo = \App\Models\CatalogoValor::where('codigo', 'TOTAL')->first();
+        return $tipo ? $tipo->id_catalogo_valor : null;
+    }
+
+    /**
+     * Obtener ID del tipo de venta PARCIAL
+     */
+    private function getTipoVentaParcial()
+    {
+        $tipo = \App\Models\CatalogoValor::where('codigo', 'PARCIAL')->first();
+        return $tipo ? $tipo->id_catalogo_valor : null;
     }
 
     /**

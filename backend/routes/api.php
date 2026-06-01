@@ -69,6 +69,8 @@ Route::get('movimientos-capital/reporte-cuenta', [MovimientoCapitalController::c
 
 // Rutas de Ventas de Inversiones (temporalmente sin autenticación para pruebas)
 // Rutas específicas primero
+Route::get('ventas-inversion/posiciones-vendibles', [VentaInversionController::class, 'getPosicionesVendibles']);
+Route::get('ventas-inversion/posicion/{idInstrumento}/{idPropietario}/info', [VentaInversionController::class, 'getInfoPosicion']);
 Route::get('ventas-inversion/instrumentos-activos', [VentaInversionController::class, 'getInstrumentosActivos']);
 Route::get('ventas-inversion/instrumento/{idInstrumento}/info', [VentaInversionController::class, 'getInfoInstrumento']);
 Route::post('ventas-inversion/registrar-venta', [VentaInversionController::class, 'registrarVentaInversion']);

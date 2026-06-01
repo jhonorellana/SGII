@@ -308,6 +308,14 @@ export class VentaInversionService {
   }
 
   // Métodos para venta de inversiones de renta fija
+  getPosicionesVendibles(): Observable<ApiResponse<any[]>> {
+    return this.apiService.get<any[]>(`${this.endpoint}/posiciones-vendibles`);
+  }
+
+  getInfoPosicion(idInstrumento: number, idPropietario: number): Observable<ApiResponse<InfoInstrumentoResponse>> {
+    return this.apiService.get<InfoInstrumentoResponse>(`${this.endpoint}/posicion/${idInstrumento}/${idPropietario}/info`);
+  }
+
   getInstrumentosActivos(): Observable<ApiResponse<Instrumento[]>> {
     return this.apiService.get<Instrumento[]>(`${this.endpoint}/instrumentos-activos`);
   }
