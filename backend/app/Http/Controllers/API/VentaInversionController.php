@@ -111,8 +111,43 @@ class VentaInversionController extends Controller
             // Determinar tipo de venta (total o parcial)
             $esVentaTotal = !$request->porcentaje_vendido || $request->porcentaje_vendido >= 100;
 
+            // Calcular total de valor nominal para prorrateo
+            $valorNominalTotal = $inversiones->sum('valor_nominal');
+
             // Procesar cada inversión
             foreach ($inversiones as $inversion) {
+                $factor = $valorNominalTotal > 0 ? ($inversion->valor_nominal / $valorNominalTotal) : 0;
+
+                // Prorratear comisiones y otros valores globales del request
+                $comisionOperador = ($request->comision_operador ?? 0) * $factor;
+                $comisionBolsa = ($request->comision_bolsa ?? 0) * $factor;
+                $retenciones = ($request->retenciones ?? 0) * $factor;
+                $interesPrevioVenta = ($request->interes_previo_venta ?? 0) * $factor;
+                $valorVentaSinComision = ($request->valor_venta_sin_comision ?? 0) * $factor;
+                $valorVentaConComision = ($request->valor_venta_con_comision ?? 0) * $factor;
+                $utilidadSinComision = ($request->utilidad_sin_comision ?? 0) * $factor;
+                $utilidadConComision = ($request->utilidad_con_comision ?? 0) * $factor;
+                $gananciaPerdida = ($request->ganancia_perdida ?? 0) * $factor;
+                $rendimientoTotal = ($request->rendimiento_total ?? 0) * $factor;
+
+                // Calcular días transcurridos
+                $diasTranscurridos = 0;
+                if ($inversion->fecha_compra) {
+                    $fechaCompra = \Carbon\Carbon::parse($inversion->fecha_compra);
+                    $fechaVenta = \Carbon\Carbon::parse($request->fecha_venta);
+                    $diasTranscurridos = $fechaCompra->diffInDays($fechaVenta);
+                }
+
+                // Calcular ROI
+                $roi = ($inversion->capital_invertido > 0)
+                    ? ($utilidadConComision / $inversion->capital_invertido) * 100
+                    : 0;
+
+                // Calcular ganancia anualizada
+                $gananciaAnual = ($diasTranscurridos > 0)
+                    ? ($utilidadConComision / $diasTranscurridos) * 365
+                    : 0;
+
                 if ($esVentaTotal) {
                     // VENTA TOTAL
                     // Paso 1: Actualizar estado de la inversión
@@ -143,19 +178,19 @@ class VentaInversionController extends Controller
                     'liquidacion_venta' => $request->liquidacion_venta,
                     'precio_venta' => $request->precio_venta ?? 0,
                     'precio_neto_venta' => $request->precio_neto_venta ?? 0,
-                    'interes_previo_venta' => $request->interes_previo_venta ?? 0,
-                    'valor_venta_sin_comision' => $request->valor_venta_sin_comision ?? 0,
-                    'comision_operador' => $request->comision_operador ?? 0,
-                    'comision_bolsa' => $request->comision_bolsa ?? 0,
-                    'valor_venta_con_comision' => $request->valor_venta_con_comision ?? 0,
-                    'utilidad_sin_comision' => $request->utilidad_sin_comision ?? 0,
-                    'utilidad_con_comision' => $request->utilidad_con_comision ?? 0,
-                    'ganancia_perdida' => $request->ganancia_perdida ?? 0,
-                    'rendimiento_total' => $request->rendimiento_total ?? 0,
-                    'dias_transcurridos' => $request->dias_transcurridos ?? 0,
-                    'roi' => $request->roi ?? 0,
-                    'ganancia_anual' => $request->ganancia_anual ?? 0,
-                    'retenciones' => 0,
+                    'interes_previo_venta' => $interesPrevioVenta,
+                    'valor_venta_sin_comision' => $valorVentaSinComision,
+                    'comision_operador' => $comisionOperador,
+                    'comision_bolsa' => $comisionBolsa,
+                    'valor_venta_con_comision' => $valorVentaConComision,
+                    'utilidad_sin_comision' => $utilidadSinComision,
+                    'utilidad_con_comision' => $utilidadConComision,
+                    'ganancia_perdida' => $gananciaPerdida,
+                    'rendimiento_total' => $rendimientoTotal,
+                    'dias_transcurridos' => $diasTranscurridos,
+                    'roi' => $roi,
+                    'ganancia_anual' => $gananciaAnual,
+                    'retenciones' => $retenciones,
                     'observacion' => $request->observacion,
                     'activo' => true,
                     'eliminado' => false,
@@ -170,10 +205,10 @@ class VentaInversionController extends Controller
                     'valor_nominal' => $inversion->valor_nominal,
                     'valor_compra' => $inversion->capital_invertido,
                     'porcentaje_compra' => 100,
-                    'valor_venta_asignado' => $request->valor_venta_con_comision ?? 0,
+                    'valor_venta_asignado' => $valorVentaConComision,
                     'porcentaje_venta' => $request->porcentaje_vendido ?? 100,
-                    'utilidad' => $request->utilidad_con_comision ?? 0,
-                    'rendimiento' => $request->rendimiento_total ?? 0,
+                    'utilidad' => $utilidadConComision,
+                    'rendimiento' => $roi,
                     'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
                 ]);
@@ -186,7 +221,7 @@ class VentaInversionController extends Controller
                     'id_venta_inversion' => $venta->id_venta_inversion,
                     'id_cuenta_bancaria' => null,
                     'id_signo' => 190, // Positivo
-                    'monto' => $request->valor_venta_con_comision ?? 0,
+                    'monto' => $valorVentaConComision,
                     'fecha_movimiento' => $request->fecha_venta,
                     'descripcion' => 'Venta de ' . ($inversion->instrumento->nombre ?? 'inversión'),
                     'conciliado' => 0,
@@ -406,8 +441,9 @@ class VentaInversionController extends Controller
 
             if ($esVentaTotal) {
                 // VENTA TOTAL - Aplicar lógica a todas las inversiones
+                $valorNominalVendidoTotal = $inversiones->sum('valor_nominal');
                 foreach ($inversiones as $inversion) {
-                    $this->procesarVentaTotal($inversion, $request);
+                    $this->procesarVentaTotal($inversion, $request, $valorNominalVendidoTotal);
                 }
             } else {
                 // VENTA PARCIAL - Implementar lógica de selección por rendimiento
@@ -436,8 +472,49 @@ class VentaInversionController extends Controller
     /**
      * Procesar venta total de una inversión
      */
-    private function procesarVentaTotal($inversion, $request)
+    private function procesarVentaTotal($inversion, $request, $valorNominalVendidoTotal = null)
     {
+        if (is_null($valorNominalVendidoTotal) || $valorNominalVendidoTotal <= 0) {
+            $valorNominalVendidoTotal = $inversion->valor_nominal;
+        }
+
+        $factor = $inversion->valor_nominal / $valorNominalVendidoTotal;
+
+        // Prorratear comisiones y otros valores globales del request
+        $comisionOperador = ($request->comision_operador ?? 0) * $factor;
+        $comisionBolsa = ($request->comision_bolsa ?? 0) * $factor;
+        $retenciones = ($request->retenciones ?? 0) * $factor;
+        $interesPrevioVenta = ($request->interes_previo ?? 0) * $factor;
+
+        // Calcular valores financieros
+        $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
+        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+
+        $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
+        $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
+
+        // Calcular días transcurridos
+        $diasTranscurridos = 0;
+        if ($inversion->fecha_compra) {
+            $fechaCompra = \Carbon\Carbon::parse($inversion->fecha_compra);
+            $fechaVenta = \Carbon\Carbon::parse($request->fecha_venta);
+            $diasTranscurridos = $fechaCompra->diffInDays($fechaVenta);
+        }
+
+        // Calcular ROI
+        $roi = ($inversion->capital_invertido > 0)
+            ? ($utilidadConComision / $inversion->capital_invertido) * 100
+            : 0;
+
+        // Calcular ganancia anualizada
+        $gananciaAnual = ($diasTranscurridos > 0)
+            ? ($utilidadConComision / $diasTranscurridos) * 365
+            : 0;
+
+        // Obtener interés recibido (de amortizaciones pagadas)
+        $interesRecibido = $inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0;
+        $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
+
         // Paso 1: Actualizar estado de la inversión
         $inversion->update([
             'fecha_venta' => $request->fecha_venta,
@@ -465,19 +542,19 @@ class VentaInversionController extends Controller
             'liquidacion_venta' => $request->liquidacion_venta,
             'precio_venta' => $request->precio_venta ?? 0,
             'precio_neto_venta' => $request->precio_neto_venta ?? 0,
-            'interes_previo_venta' => $request->interes_previo ?? 0,
-            'valor_venta_sin_comision' => 0, // Se debe calcular
-            'comision_operador' => $request->comision_operador ?? 0,
-            'comision_bolsa' => $request->comision_bolsa ?? 0,
-            'valor_venta_con_comision' => 0, // Se debe calcular
-            'utilidad_sin_comision' => 0,
-            'utilidad_con_comision' => 0,
-            'ganancia_perdida' => 0,
-            'rendimiento_total' => 0,
-            'dias_transcurridos' => 0,
-            'roi' => 0,
-            'ganancia_anual' => 0,
-            'retenciones' => $request->retenciones ?? 0,
+            'interes_previo_venta' => $interesPrevioVenta,
+            'valor_venta_sin_comision' => $valorVentaSinComision,
+            'comision_operador' => $comisionOperador,
+            'comision_bolsa' => $comisionBolsa,
+            'valor_venta_con_comision' => $valorVentaConComision,
+            'utilidad_sin_comision' => $utilidadSinComision,
+            'utilidad_con_comision' => $utilidadConComision,
+            'ganancia_perdida' => $utilidadConComision,
+            'rendimiento_total' => $rendimientoTotal,
+            'dias_transcurridos' => $diasTranscurridos,
+            'roi' => $roi,
+            'ganancia_anual' => $gananciaAnual,
+            'retenciones' => $retenciones,
             'observacion' => $request->observacion,
             'activo' => true,
             'eliminado' => false,
@@ -492,10 +569,10 @@ class VentaInversionController extends Controller
             'valor_nominal' => $inversion->valor_nominal,
             'valor_compra' => $inversion->capital_invertido,
             'porcentaje_compra' => 100,
-            'valor_venta_asignado' => $inversion->valor_nominal, // Se debe calcular
+            'valor_venta_asignado' => $valorVentaConComision,
             'porcentaje_venta' => 100,
-            'utilidad' => 0,
-            'rendimiento' => 0,
+            'utilidad' => $utilidadConComision,
+            'rendimiento' => $roi,
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
         ]);
@@ -509,7 +586,7 @@ class VentaInversionController extends Controller
             'id_venta_inversion' => $venta->id_venta_inversion,
             'id_cuenta_bancaria' => null,
             'id_signo' => 190,
-            'monto' => 0, // Se debe calcular
+            'monto' => $valorVentaConComision,
             'fecha_movimiento' => $request->fecha_venta,
             'descripcion' => 'Venta de ' . ($instrumento ? $instrumento->nombre : 'inversión'),
             'conciliado' => 0,
@@ -553,11 +630,11 @@ class VentaInversionController extends Controller
 
             if ($porcentajeVenderInversion >= 100) {
                 // Vender toda esta inversión
-                $this->procesarVentaTotal($inversion, $request);
+                $this->procesarVentaTotal($inversion, $request, $valorNominalVender);
                 $valorRestante -= $inversion->valor_nominal;
             } else {
                 // Venta parcial de esta inversión
-                $this->procesarVentaParcialInversion($inversion, $porcentajeVenderInversion, $request);
+                $this->procesarVentaParcialInversion($inversion, $porcentajeVenderInversion, $request, $valorNominalVender);
                 $valorRestante -= ($inversion->valor_nominal * $porcentajeVenderInversion / 100);
             }
         }
@@ -568,8 +645,26 @@ class VentaInversionController extends Controller
     /**
      * Procesar venta parcial de una inversión individual
      */
-    private function procesarVentaParcialInversion($inversion, $porcentajeVender, $request)
+    private function procesarVentaParcialInversion($inversion, $porcentajeVender, $request, $valorNominalVendidoTotal = null)
     {
+        $nominalVendido = ($inversion->valor_nominal * $porcentajeVender) / 100;
+
+        if (is_null($valorNominalVendidoTotal) || $valorNominalVendidoTotal <= 0) {
+            $valorNominalVendidoTotal = $nominalVendido;
+        }
+
+        $factor = $nominalVendido / $valorNominalVendidoTotal;
+
+        // Prorratear comisiones y otros valores globales del request
+        $comisionOperador = ($request->comision_operador ?? 0) * $factor;
+        $comisionBolsa = ($request->comision_bolsa ?? 0) * $factor;
+        $retenciones = ($request->retenciones ?? 0) * $factor;
+        $interesPrevioVenta = ($request->interes_previo ?? 0) * $factor;
+
+        // Calcular valores financieros
+        $valorVentaSinComision = (($request->precio_venta ?? 0) * $nominalVendido) / 100;
+        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+
         // Paso 1: Cerrar inversión original
         $inversion->update([
             'fecha_venta' => $request->fecha_venta,
@@ -596,6 +691,31 @@ class VentaInversionController extends Controller
         // Paso 5: Crear nueva amortización para inversión remanente
         $this->crearAmortizacionRemanente($inversion, $inversionRemanente, $porcentajeRemanente);
 
+        $utilidadSinComision = $valorVentaSinComision - ($inversionVendida->valor_sin_comision ?? 0);
+        $utilidadConComision = $valorVentaConComision - ($inversionVendida->capital_invertido ?? 0);
+
+        // Calcular días transcurridos
+        $diasTranscurridos = 0;
+        if ($inversionVendida->fecha_compra) {
+            $fechaCompra = \Carbon\Carbon::parse($inversionVendida->fecha_compra);
+            $fechaVenta = \Carbon\Carbon::parse($request->fecha_venta);
+            $diasTranscurridos = $fechaCompra->diffInDays($fechaVenta);
+        }
+
+        // Calcular ROI
+        $roi = ($inversionVendida->capital_invertido > 0)
+            ? ($utilidadConComision / $inversionVendida->capital_invertido) * 100
+            : 0;
+
+        // Calcular ganancia anualizada
+        $gananciaAnual = ($diasTranscurridos > 0)
+            ? ($utilidadConComision / $diasTranscurridos) * 365
+            : 0;
+
+        // Obtener interés recibido (proporcional al porcentaje vendido)
+        $interesRecibido = (($inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0) * $porcentajeVender) / 100;
+        $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
+
         // Paso 6: Crear venta
         $venta = VentaInversion::create([
             'id_inversion' => $inversionVendida->id_inversion,
@@ -607,10 +727,19 @@ class VentaInversionController extends Controller
             'liquidacion_venta' => $request->liquidacion_venta,
             'precio_venta' => $request->precio_venta ?? 0,
             'precio_neto_venta' => $request->precio_neto_venta ?? 0,
-            'interes_previo_venta' => $request->interes_previo ?? 0,
-            'comision_operador' => $request->comision_operador ?? 0,
-            'comision_bolsa' => $request->comision_bolsa ?? 0,
-            'retenciones' => $request->retenciones ?? 0,
+            'interes_previo_venta' => $interesPrevioVenta,
+            'valor_venta_sin_comision' => $valorVentaSinComision,
+            'comision_operador' => $comisionOperador,
+            'comision_bolsa' => $comisionBolsa,
+            'valor_venta_con_comision' => $valorVentaConComision,
+            'utilidad_sin_comision' => $utilidadSinComision,
+            'utilidad_con_comision' => $utilidadConComision,
+            'ganancia_perdida' => $utilidadConComision,
+            'rendimiento_total' => $rendimientoTotal,
+            'dias_transcurridos' => $diasTranscurridos,
+            'roi' => $roi,
+            'ganancia_anual' => $gananciaAnual,
+            'retenciones' => $retenciones,
             'observacion' => $request->observacion,
             'activo' => true,
             'eliminado' => false,
@@ -626,7 +755,7 @@ class VentaInversionController extends Controller
             'id_venta_inversion' => $venta->id_venta_inversion,
             'id_cuenta_bancaria' => null,
             'id_signo' => 190,
-            'monto' => 0, // Se debe calcular
+            'monto' => $valorVentaConComision,
             'fecha_movimiento' => $request->fecha_venta,
             'descripcion' => 'Venta parcial de ' . ($inversion->instrumento->nombre ?? 'inversión'),
             'conciliado' => 0,

@@ -109,3 +109,9 @@ jspm_packages/
 tmp/
 temp/
 documentacion/2026_04_19_sipro_desa.sql
+
+# Testing
+testing/
+
+# Skills / Agents
+.agents/
