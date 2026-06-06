@@ -78,6 +78,7 @@ export class VentaInversionListComponent implements OnInit {
   filtroPropietario: string = '';
   filtroTipoInversion: string = '';
   filtroEmisor: string = '';
+  filtroVencimiento: string = '';
   propietariosUnicos: string[] = [];
   tiposInversionUnicos: string[] = [];
   emisoresUnicos: string[] = [];
@@ -94,6 +95,7 @@ export class VentaInversionListComponent implements OnInit {
   formLoading: boolean = false;
   formError: string = '';
   selectedVenta: VentaInversion | null = null;
+  private isCalculating = false;
 
   constructor(
     private ventaService: VentaInversionService,
@@ -107,6 +109,7 @@ export class VentaInversionListComponent implements OnInit {
   ) {
     // Crear el formulario en el constructor para que siempre exista en el DOM
     this.ventaForm = this.createForm();
+    this.setupFormSubscribers();
   }
 
   ngOnInit(): void {
@@ -121,17 +124,17 @@ export class VentaInversionListComponent implements OnInit {
     return this.fb.group({
       id_instrumento: [null, Validators.required],
       tipo_venta: ['TOTAL', Validators.required],
-      porcentaje_vendido: [0],
-      valor_nominal_vendido: [0],
+      porcentaje_vendido: [100, Validators.required],
+      valor_nominal_vendido: [0, Validators.required],
       fecha_venta: [null, Validators.required],
-      liquidacion_venta: [''],
+      liquidacion_venta: ['', Validators.required],
       precio_venta: [null, Validators.required],
       precio_neto_venta: [null],
-      interes_previo_venta: [null],
+      interes_previo_venta: [0, Validators.required],
       valor_venta_sin_comision: [null],
-      comision_operador: [null],
-      comision_bolsa: [null],
-      retenciones: [null],
+      comision_operador: [0, Validators.required],
+      comision_bolsa: [0, Validators.required],
+      retenciones: [0, Validators.required],
       valor_venta_con_comision: [null],
       observacion: ['']
     });
@@ -215,6 +218,7 @@ export class VentaInversionListComponent implements OnInit {
     this.filtroPropietario = '';
     this.filtroTipoInversion = '';
     this.filtroEmisor = '';
+    this.filtroVencimiento = '';
     this.filtrarPosiciones();
   }
 
@@ -262,6 +266,15 @@ export class VentaInversionListComponent implements OnInit {
         return false;
       }
 
+      // Filtro por vencimiento
+      if (this.filtroVencimiento) {
+        const query = this.filtroVencimiento.toLowerCase();
+        const vencimiento = this.formatDate(posicion.fecha_vencimiento).toLowerCase();
+        if (!vencimiento.includes(query)) {
+          return false;
+        }
+      }
+
       return true;
     });
   }
@@ -271,6 +284,7 @@ export class VentaInversionListComponent implements OnInit {
     this.filtroPropietario = '';
     this.filtroTipoInversion = '';
     this.filtroEmisor = '';
+    this.filtroVencimiento = '';
     this.filtrarPosiciones();
   }
 
@@ -315,6 +329,21 @@ export class VentaInversionListComponent implements OnInit {
           this.inversionesAsociadas = data.instrumento?.inversiones || [];
           this.resumenInversiones = data.resumen;
           console.log('Info posición:', response.data);
+
+          // Trigger calculations after loading position info
+          if (this.ventaForm.get('tipo_venta')?.value === 'TOTAL') {
+            this.ventaForm.patchValue({
+              porcentaje_vendido: 100,
+              valor_nominal_vendido: this.resumenInversiones?.valor_nominal_acumulado || 0
+            }, { emitEvent: false });
+          } else {
+            const pct = this.ventaForm.get('porcentaje_vendido')?.value || 0;
+            const nominalVendido = (this.resumenInversiones?.valor_nominal_acumulado || 0) * (pct / 100);
+            this.ventaForm.patchValue({
+              valor_nominal_vendido: parseFloat(nominalVendido.toFixed(2))
+            }, { emitEvent: false });
+          }
+          this.calculateFormValues();
         }
       },
       error: (err) => {
@@ -494,8 +523,9 @@ export class VentaInversionListComponent implements OnInit {
     // Establecer fecha actual por defecto
     const today = new Date();
     this.ventaForm.patchValue({
-      fecha_venta: today,
-      tipo_venta: 'TOTAL'
+      fecha_venta: this.formatDate(today),
+      tipo_venta: 'TOTAL',
+      retenciones: 0
     });
     this.displayDialog = true;
     this.formError = '';
@@ -515,9 +545,10 @@ export class VentaInversionListComponent implements OnInit {
     this.selectedPosicion = null;
 
     // Buscar la posición en la lista (si existe)
-    const posicion = this.posicionesVendibles.find(p => p.id_instrumento === venta.id_instrumento);
+    const posicion = this.posicionesVendibles.find(p => p.id_instrumento === venta.id_instrumento && p.id_propietario === venta.id_propietario);
     if (posicion) {
       this.selectedPosicion = posicion;
+      this.loadPosicionInfo(posicion.id_instrumento, posicion.id_propietario);
     }
 
     this.ventaForm.patchValue({
@@ -525,15 +556,15 @@ export class VentaInversionListComponent implements OnInit {
       tipo_venta: venta.id_tipo_venta === 1 ? 'TOTAL' : 'PARCIAL',
       porcentaje_vendido: venta.porcentaje_vendido,
       valor_nominal_vendido: 0,
-      fecha_venta: venta.fecha_venta,
+      fecha_venta: this.formatDate(venta.fecha_venta),
       liquidacion_venta: venta.liquidacion_venta,
       precio_venta: venta.precio_venta,
       precio_neto_venta: venta.precio_neto_venta,
-      interes_previo_venta: venta.interes_previo_venta,
+      interes_previo_venta: venta.interes_previo_venta !== null && venta.interes_previo_venta !== undefined ? venta.interes_previo_venta : 0,
       valor_venta_sin_comision: venta.valor_venta_sin_comision,
-      comision_operador: venta.comision_operador,
-      comision_bolsa: venta.comision_bolsa,
-      retenciones: venta.retenciones,
+      comision_operador: venta.comision_operador !== null && venta.comision_operador !== undefined ? venta.comision_operador : 0,
+      comision_bolsa: venta.comision_bolsa !== null && venta.comision_bolsa !== undefined ? venta.comision_bolsa : 0,
+      retenciones: venta.retenciones !== null && venta.retenciones !== undefined ? venta.retenciones : 0,
       valor_venta_con_comision: venta.valor_venta_con_comision,
       observacion: venta.observacion
     });
@@ -653,6 +684,112 @@ export class VentaInversionListComponent implements OnInit {
         });
       }
     });
+  }
+
+  setupFormSubscribers(): void {
+    // 1. Listen to tipo_venta changes
+    this.ventaForm.get('tipo_venta')?.valueChanges.subscribe(tipo => {
+      if (this.isCalculating) return;
+      this.isCalculating = true;
+      try {
+        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        if (tipo === 'TOTAL') {
+          this.ventaForm.patchValue({
+            porcentaje_vendido: 100,
+            valor_nominal_vendido: nominalTotal
+          }, { emitEvent: false });
+        } else {
+          this.ventaForm.patchValue({
+            porcentaje_vendido: 0,
+            valor_nominal_vendido: 0
+          }, { emitEvent: false });
+        }
+      } finally {
+        this.isCalculating = false;
+      }
+      this.calculateFormValues();
+    });
+
+    // 2. Listen to porcentaje_vendido changes (bidirectional sync)
+    this.ventaForm.get('porcentaje_vendido')?.valueChanges.subscribe(pct => {
+      if (this.isCalculating) return;
+      this.isCalculating = true;
+      try {
+        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        const nominalVendido = (nominalTotal * (pct || 0)) / 100;
+        this.ventaForm.patchValue({
+          valor_nominal_vendido: parseFloat(nominalVendido.toFixed(2))
+        }, { emitEvent: false });
+      } finally {
+        this.isCalculating = false;
+      }
+      this.calculateFormValues();
+    });
+
+    // 3. Listen to valor_nominal_vendido changes (bidirectional sync)
+    this.ventaForm.get('valor_nominal_vendido')?.valueChanges.subscribe(nominal => {
+      if (this.isCalculating) return;
+      this.isCalculating = true;
+      try {
+        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        const pct = nominalTotal > 0 ? ((nominal || 0) / nominalTotal) * 100 : 0;
+        this.ventaForm.patchValue({
+          porcentaje_vendido: parseFloat(pct.toFixed(4))
+        }, { emitEvent: false });
+      } finally {
+        this.isCalculating = false;
+      }
+      this.calculateFormValues();
+    });
+
+    // 4. Listen to other fields to recalculate formulas
+    const fieldNames = ['precio_venta', 'interes_previo_venta', 'comision_operador', 'comision_bolsa'];
+    fieldNames.forEach(field => {
+      this.ventaForm.get(field)?.valueChanges.subscribe(() => {
+        this.calculateFormValues();
+      });
+    });
+  }
+
+  calculateFormValues(): void {
+    if (this.isCalculating) return;
+    this.isCalculating = true;
+
+    try {
+      const formVal = this.ventaForm.value;
+      const tipoVenta = formVal.tipo_venta;
+      const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+
+      let valorNominal = 0;
+      if (tipoVenta === 'TOTAL') {
+        valorNominal = nominalTotal;
+      } else {
+        valorNominal = formVal.valor_nominal_vendido || 0;
+      }
+
+      const precioVenta = formVal.precio_venta || 0;
+      const interesPrevio = formVal.interes_previo_venta || 0;
+      const comisionOperador = formVal.comision_operador || 0;
+      const comisionBolsa = formVal.comision_bolsa || 0;
+
+      // 1. Valor Venta sin Comisión (Valor Efectivo) = Valor Nominal * (Precio de Venta / 100)
+      const valorVentaSinComision = valorNominal * (precioVenta / 100);
+
+      // 2. Valor Venta con Comisión = Valor sin Comisión + Interés previo - Comisión Operador - Comisión Bolsa
+      const valorVentaConComision = valorVentaSinComision + interesPrevio - comisionOperador - comisionBolsa;
+
+      // 3. Precio Neto de Venta = (Valor con comisión / Valor Nominal) * 100
+      const precioNetoVenta = valorNominal > 0 ? (valorVentaConComision / valorNominal) * 100 : 0;
+
+      this.ventaForm.patchValue({
+        valor_venta_sin_comision: valorVentaSinComision ? parseFloat(valorVentaSinComision.toFixed(2)) : 0,
+        valor_venta_con_comision: valorVentaConComision ? parseFloat(valorVentaConComision.toFixed(2)) : 0,
+        precio_neto_venta: precioNetoVenta ? parseFloat(precioNetoVenta.toFixed(4)) : 0
+      }, { emitEvent: false });
+
+    } finally {
+      this.isCalculating = false;
+    }
   }
 
   onPageChange(event: any): void {

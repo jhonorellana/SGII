@@ -24,7 +24,7 @@ SELECT
     COUNT(inv.id_inversion) AS cantidad_inversiones,
     SUM(inv.valor_nominal) AS valor_nominal_total,
     SUM(inv.capital_invertido) AS capital_invertido_total,
-    AVG(inv.rendimiento_efectivo) AS rendimiento_promedio,
+    SUM(inv.valor_nominal * inv.rendimiento_nominal) / NULLIF(SUM(inv.valor_nominal), 0) AS rendimiento_promedio,
     
     -- Fechas extremas
     MIN(inv.fecha_compra) AS fecha_compra_minima,

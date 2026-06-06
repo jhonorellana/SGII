@@ -153,83 +153,83 @@
             <!-- Fila 2: Fecha Venta y Liquidación -->
             <div class="form-field half-width">
               <label for="fecha_venta">Fecha de Venta <span class="text-danger">*</span></label>
-              <input type="date" id="fecha_venta" class="form-control" formControlName="fecha_venta" [class.is-invalid]="f['fecha_venta'].invalid && f['fecha_venta'].dirty">
+              <input type="text" id="fecha_venta" class="form-control" formControlName="fecha_venta" [class.is-invalid]="f['fecha_venta'].invalid && f['fecha_venta'].dirty" placeholder="YYYY-MM-DD">
               <div class="invalid-feedback" *ngIf="f['fecha_venta'].invalid && f['fecha_venta'].dirty">
-                La fecha de venta es requerida
+                La fecha de venta es requerida (formato YYYY-MM-DD)
               </div>
             </div>
             <div class="form-field half-width">
-              <label for="liquidacion_venta">Liquidación de Venta</label>
-              <input type="text" id="liquidacion_venta" class="form-control" formControlName="liquidacion_venta" placeholder="Liquidación">
+              <label for="liquidacion_venta">Liquidación de Venta <span class="text-danger">*</span></label>
+              <input type="text" id="liquidacion_venta" class="form-control" formControlName="liquidacion_venta" [class.is-invalid]="f['liquidacion_venta'].invalid && f['liquidacion_venta'].dirty" placeholder="Liquidación">
+              <div class="invalid-feedback" *ngIf="f['liquidacion_venta'].invalid && f['liquidacion_venta'].dirty">
+                La liquidación de venta es requerida
+              </div>
             </div>
 
-            <!-- Sección de Inversiones Asociadas (Acordeón) -->
+            <!-- Sección de Inversiones Asociadas (Siempre Visible) -->
             <div *ngIf="selectedPosicion" class="inversiones-asociadas-section full-width">
-              <p-accordion [multiple]="true">
-                <p-accordionTab header="{{ getAccordionHeader() }}" [selected]="inversionesAccordionOpen">
-                  <!-- Resumen compacto -->
-                  <div *ngIf="resumenInversiones" class="resumen-compacto">
-                    <span class="resumen-item-text">
-                      <strong>Total inversiones:</strong> {{ resumenInversiones.cantidad_inversiones || 0 }}
-                    </span>
-                    <span class="resumen-separator">|</span>
-                    <span class="resumen-item-text">
-                      <strong>Valor nominal:</strong> {{ formatCurrency(resumenInversiones.valor_nominal_acumulado || 0) }}
-                    </span>
-                    <span class="resumen-separator">|</span>
-                    <span class="resumen-item-text">
-                      <strong>Capital invertido:</strong> {{ formatCurrency(resumenInversiones.capital_invertido_acumulado || 0) }}
-                    </span>
-                    <span class="resumen-separator">|</span>
-                    <span class="resumen-item-text">
-                      <strong>Rendimiento promedio:</strong> {{ formatPercentage(resumenInversiones.rendimiento_promedio || 0) }}
-                    </span>
-                    <span class="resumen-separator" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">|</span>
-                    <span class="resumen-item-text" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">
-                      <strong>Fecha vencimiento:</strong> {{ formatDate(selectedInstrumentoInfo.fecha_vencimiento) }}
-                    </span>
-                  </div>
+              <div class="section-title">{{ getAccordionHeader() }}</div>
+              <!-- Resumen compacto -->
+              <div *ngIf="resumenInversiones" class="resumen-compacto">
+                <span class="resumen-item-text">
+                  <strong>Total inversiones:</strong> {{ resumenInversiones.cantidad_inversiones || 0 }}
+                </span>
+                <span class="resumen-separator">|</span>
+                <span class="resumen-item-text">
+                  <strong>Valor nominal:</strong> {{ formatCurrency(resumenInversiones.valor_nominal_acumulado || 0) }}
+                </span>
+                <span class="resumen-separator">|</span>
+                <span class="resumen-item-text">
+                  <strong>Capital invertido:</strong> {{ formatCurrency(resumenInversiones.capital_invertido_acumulado || 0) }}
+                </span>
+                <span class="resumen-separator">|</span>
+                <span class="resumen-item-text">
+                  <strong>Rendimiento promedio:</strong> {{ formatPercentage(resumenInversiones.rendimiento_promedio || 0) }}
+                </span>
+                <span class="resumen-separator" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">|</span>
+                <span class="resumen-item-text" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">
+                  <strong>Fecha vencimiento:</strong> {{ formatDate(selectedInstrumentoInfo.fecha_vencimiento) }}
+                </span>
+              </div>
 
-                  <!-- Mensaje si no hay inversiones -->
-                  <div *ngIf="inversionesAsociadas.length === 0" class="alert alert-warning">
-                    <i class="bi bi-exclamation-triangle"></i> No existen inversiones activas para este instrumento.
-                  </div>
+              <!-- Mensaje si no hay inversiones -->
+              <div *ngIf="inversionesAsociadas.length === 0" class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i> No existen inversiones activas para este instrumento.
+              </div>
 
-                  <!-- Tabla de inversiones -->
-                  <div *ngIf="inversionesAsociadas.length > 0" class="table-responsive">
-                    <table class="table table-sm table-bordered inversiones-table">
-                      <thead>
-                        <tr>
-                          <th>ID</th>
-                          <th>Liquidación</th>
-                          <th>Propietario</th>
-                          <th>Valor Nominal</th>
-                          <th>Capital Invertido</th>
-                          <th>Rendimiento</th>
-                          <th>Fecha Compra</th>
-                          <th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let inv of inversionesAsociadas">
-                          <td>{{ inv.id_inversion }}</td>
-                          <td>{{ inv.liquidacion || '-' }}</td>
-                          <td>{{ inv.propietario?.nombre || '-' }}</td>
-                          <td>{{ formatCurrency(inv.valor_nominal) }}</td>
-                          <td>{{ formatCurrency(inv.capital_invertido) }}</td>
-                          <td>{{ formatPercentage(inv.rendimiento_efectivo) }}</td>
-                          <td>{{ formatDate(inv.fecha_compra) }}</td>
-                          <td>
-                            <span [class]="'badge ' + getEstadoClass(inv.estadoInversion?.codigo)">
-                              {{ inv.estadoInversion?.nombre || '-' }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </p-accordionTab>
-              </p-accordion>
+              <!-- Tabla de inversiones -->
+              <div *ngIf="inversionesAsociadas.length > 0" class="table-responsive">
+                <table class="table table-sm table-bordered inversiones-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Liquidación</th>
+                      <th>Propietario</th>
+                      <th>Valor Nominal</th>
+                      <th>Capital Invertido</th>
+                      <th>Rendimiento</th>
+                      <th>Fecha Compra</th>
+                      <th>Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let inv of inversionesAsociadas">
+                      <td>{{ inv.id_inversion }}</td>
+                      <td>{{ inv.liquidacion || '-' }}</td>
+                      <td>{{ inv.propietario?.nombre || '-' }}</td>
+                      <td>{{ formatCurrency(inv.valor_nominal) }}</td>
+                      <td>{{ formatCurrency(inv.capital_invertido) }}</td>
+                      <td>{{ formatPercentage(inv.rendimiento_nominal) }}</td>
+                      <td>{{ formatDate(inv.fecha_compra) }}</td>
+                      <td>
+                        <span [class]="'badge ' + getEstadoClass(inv.estado_inversion?.codigo || inv.estadoInversion?.codigo)">
+                          {{ inv.estado_inversion?.nombre || inv.estadoInversion?.nombre || '-' }}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <!-- Fila 3: Campos para venta parcial -->
@@ -242,7 +242,7 @@
               <input type="number" id="valor_nominal_vendido" class="form-control" formControlName="valor_nominal_vendido" placeholder="Valor nominal">
             </div>
 
-            <!-- Fila 4: Precio Venta y Precio Neto -->
+            <!-- Fila 4: Precio Venta y Valor Efectivo -->
             <div class="form-field half-width">
               <label for="precio_venta">Precio de Venta <span class="text-danger">*</span></label>
               <input type="number" id="precio_venta" class="form-control" formControlName="precio_venta" [class.is-invalid]="f['precio_venta'].invalid && f['precio_venta'].dirty" placeholder="Precio">
@@ -251,38 +251,50 @@
               </div>
             </div>
             <div class="form-field half-width">
-              <label for="precio_neto_venta">Precio Neto de Venta</label>
-              <input type="number" id="precio_neto_venta" class="form-control" formControlName="precio_neto_venta" placeholder="Precio neto">
+              <label for="valor_venta_sin_comision">Valor Venta sin Comisión (Valor Efectivo)</label>
+              <input type="number" id="valor_venta_sin_comision" class="form-control" formControlName="valor_venta_sin_comision" placeholder="Valor sin comisión" readonly>
             </div>
 
-            <!-- Fila 5: Interés Previo y Valor sin Comisión -->
+            <!-- Fila 5: Interés Previo y Retenciones -->
             <div class="form-field half-width">
-              <label for="interes_previo_venta">Interés Previo de Venta</label>
-              <input type="number" id="interes_previo_venta" class="form-control" formControlName="interes_previo_venta" placeholder="Interés previo">
+              <label for="interes_previo_venta">Interés Previo de Venta <span class="text-danger">*</span></label>
+              <input type="number" id="interes_previo_venta" class="form-control" formControlName="interes_previo_venta" [class.is-invalid]="f['interes_previo_venta'].invalid && f['interes_previo_venta'].dirty" placeholder="Interés previo">
+              <div class="invalid-feedback" *ngIf="f['interes_previo_venta'].invalid && f['interes_previo_venta'].dirty">
+                El interés previo es requerido
+              </div>
             </div>
             <div class="form-field half-width">
-              <label for="valor_venta_sin_comision">Valor Venta sin Comisión</label>
-              <input type="number" id="valor_venta_sin_comision" class="form-control" formControlName="valor_venta_sin_comision" placeholder="Valor sin comisión">
-            </div>
-
-            <!-- Fila 6: Comisiones (2 columnas) -->
-            <div class="form-field half-width">
-              <label for="comision_operador">Comisión Operador</label>
-              <input type="number" id="comision_operador" class="form-control" formControlName="comision_operador" placeholder="Comisión">
-            </div>
-            <div class="form-field half-width">
-              <label for="comision_bolsa">Comisión Bolsa</label>
-              <input type="number" id="comision_bolsa" class="form-control" formControlName="comision_bolsa" placeholder="Comisión">
+              <label for="retenciones">Retenciones <span class="text-danger">*</span></label>
+              <input type="number" id="retenciones" class="form-control" formControlName="retenciones" [class.is-invalid]="f['retenciones'].invalid && f['retenciones'].dirty" placeholder="Retenciones">
+              <div class="invalid-feedback" *ngIf="f['retenciones'].invalid && f['retenciones'].dirty">
+                Las retenciones son requeridas
+              </div>
             </div>
 
-            <!-- Fila 7: Retenciones y Valor con Comisión -->
+            <!-- Fila 6: Comisión Operador y Comisión Bolsa -->
             <div class="form-field half-width">
-              <label for="retenciones">Retenciones</label>
-              <input type="number" id="retenciones" class="form-control" formControlName="retenciones" placeholder="Retenciones">
+              <label for="comision_operador">Comisión Operador <span class="text-danger">*</span></label>
+              <input type="number" id="comision_operador" class="form-control" formControlName="comision_operador" [class.is-invalid]="f['comision_operador'].invalid && f['comision_operador'].dirty" placeholder="Comisión">
+              <div class="invalid-feedback" *ngIf="f['comision_operador'].invalid && f['comision_operador'].dirty">
+                La comisión del operador es requerida
+              </div>
             </div>
+            <div class="form-field half-width">
+              <label for="comision_bolsa">Comisión Bolsa <span class="text-danger">*</span></label>
+              <input type="number" id="comision_bolsa" class="form-control" formControlName="comision_bolsa" [class.is-invalid]="f['comision_bolsa'].invalid && f['comision_bolsa'].dirty" placeholder="Comisión">
+              <div class="invalid-feedback" *ngIf="f['comision_bolsa'].invalid && f['comision_bolsa'].dirty">
+                La comisión de bolsa es requerida
+              </div>
+            </div>
+
+            <!-- Fila 7: Valor Venta con Comisión y Precio Neto -->
             <div class="form-field half-width">
               <label for="valor_venta_con_comision">Valor Venta con Comisión</label>
-              <input type="number" id="valor_venta_con_comision" class="form-control" formControlName="valor_venta_con_comision" placeholder="Valor con comisión">
+              <input type="number" id="valor_venta_con_comision" class="form-control" formControlName="valor_venta_con_comision" placeholder="Valor con comisión" readonly>
+            </div>
+            <div class="form-field half-width">
+              <label for="precio_neto_venta">Precio Neto de Venta</label>
+              <input type="number" id="precio_neto_venta" class="form-control" formControlName="precio_neto_venta" placeholder="Precio neto" readonly>
             </div>
 
             <!-- Fila 8: Observación (ancho completo) -->
@@ -409,13 +421,14 @@
            [resizable]="false"
            [closable]="true"
            header="Seleccionar Posición Vendible"
+           styleClass="venta-agrupada-modal"
            (onHide)="cerrarSelectorPosicion()">
     <div class="posicion-selector-container">
       <!-- Filtros globales -->
       <div class="posicion-filters mb-3">
         <div class="row g-2">
-          <div class="col-md-3">
-            <input type="text" pInputText placeholder="Búsqueda global..." [(ngModel)]="filtroGlobalPosicion" (ngModelChange)="filtrarPosiciones()">
+          <div class="col-md-2">
+            <input type="text" pInputText class="form-control" placeholder="Búsqueda global..." [(ngModel)]="filtroGlobalPosicion" (ngModelChange)="filtrarPosiciones()">
           </div>
           <div class="col-md-2">
             <select class="form-control" [(ngModel)]="filtroPropietario" (ngModelChange)="filtrarPosiciones()">
@@ -435,7 +448,10 @@
               <option *ngFor="let emisor of emisoresUnicos" [value]="emisor">{{ emisor }}</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
+            <input type="text" pInputText class="form-control" placeholder="Vence (YYYY-MM-DD)..." [(ngModel)]="filtroVencimiento" (ngModelChange)="filtrarPosiciones()">
+          </div>
+          <div class="col-md-2">
             <button type="button" class="btn btn-secondary w-100" (click)="limpiarFiltrosPosicion()">
               <i class="bi bi-x-circle"></i> Limpiar Filtros
             </button>
@@ -460,12 +476,12 @@
             <th pSortableColumn="nombre_propietario">Propietario <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="nombre_instrumento">Instrumento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="nombre_emisor">Emisor <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
-            <th pSortableColumn="nombre_tipo_inversion">Tipo Inversión <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="nombre_tipo_inversion" pTooltip="Tipo de Inversión" tooltipPosition="top">Tipo <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="fecha_vencimiento">Vencimiento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="valor_nominal_total">Valor Nominal <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="capital_invertido_total">Capital Invertido <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
             <th pSortableColumn="rendimiento_promedio">Rendimiento <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
-            <th pSortableColumn="cantidad_inversiones">Cant. Inversiones <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
+            <th pSortableColumn="cantidad_inversiones" pTooltip="Cantidad de Inversiones" tooltipPosition="top"># Inv. <p-sortIcon icon="pi pi-sort-alt"></p-sortIcon></th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-posicion>

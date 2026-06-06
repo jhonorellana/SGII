@@ -62,13 +62,14 @@ class VentaInversionController extends Controller
             'id_tipo_venta' => 'nullable|exists:catalogo_valor,id_catalogo_valor',
             'porcentaje_vendido' => 'nullable|numeric',
             'fecha_venta' => 'required|date',
-            'liquidacion_venta' => 'nullable|string|max:50',
-            'precio_venta' => 'nullable|numeric',
+            'liquidacion_venta' => 'required|string|max:50',
+            'precio_venta' => 'required|numeric',
             'precio_neto_venta' => 'nullable|numeric',
-            'interes_previo_venta' => 'nullable|numeric',
+            'interes_previo_venta' => 'required|numeric',
             'valor_venta_sin_comision' => 'nullable|numeric',
-            'comision_operador' => 'nullable|numeric',
-            'comision_bolsa' => 'nullable|numeric',
+            'comision_operador' => 'required|numeric',
+            'comision_bolsa' => 'required|numeric',
+            'retenciones' => 'required|numeric',
             'valor_venta_con_comision' => 'nullable|numeric',
             'utilidad_sin_comision' => 'nullable|numeric',
             'utilidad_con_comision' => 'nullable|numeric',
@@ -126,7 +127,7 @@ class VentaInversionController extends Controller
 
                 // Calcular valores financieros según las fórmulas de Excel
                 $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
-                $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+                $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
 
                 $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
                 $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
@@ -315,7 +316,11 @@ class VentaInversionController extends Controller
         $inversiones = $instrumento->inversiones;
         $valorNominalTotal = $inversiones->sum('valor_nominal');
         $capitalInvertidoTotal = $inversiones->sum('capital_invertido');
-        $rendimientoPromedio = $inversiones->avg('rendimiento_efectivo');
+        $rendimientoPromedio = $valorNominalTotal > 0
+            ? ($inversiones->sum(function($inv) {
+                return $inv->valor_nominal * $inv->rendimiento_nominal;
+            }) / $valorNominalTotal)
+            : 0;
 
         return response()->json([
             'success' => true,
@@ -374,7 +379,11 @@ class VentaInversionController extends Controller
         $inversiones = $instrumento->inversiones;
         $valorNominalTotal = $inversiones->sum('valor_nominal');
         $capitalInvertidoTotal = $inversiones->sum('capital_invertido');
-        $rendimientoPromedio = $inversiones->avg('rendimiento_efectivo');
+        $rendimientoPromedio = $valorNominalTotal > 0
+            ? ($inversiones->sum(function($inv) {
+                return $inv->valor_nominal * $inv->rendimiento_nominal;
+            }) / $valorNominalTotal)
+            : 0;
 
         return response()->json([
             'success' => true,
@@ -399,13 +408,13 @@ class VentaInversionController extends Controller
             'id_instrumento' => 'required|exists:instrumento,id_instrumento',
             'tipo_venta' => 'required|in:TOTAL,PARCIAL',
             'fecha_venta' => 'required|date',
-            'liquidacion_venta' => 'nullable|string|max:50',
-            'precio_venta' => 'nullable|numeric',
+            'liquidacion_venta' => 'required|string|max:50',
+            'precio_venta' => 'required|numeric',
             'precio_neto_venta' => 'nullable|numeric',
-            'interes_previo' => 'nullable|numeric',
-            'comision_operador' => 'nullable|numeric',
-            'comision_bolsa' => 'nullable|numeric',
-            'retenciones' => 'nullable|numeric',
+            'interes_previo' => 'required|numeric',
+            'comision_operador' => 'required|numeric',
+            'comision_bolsa' => 'required|numeric',
+            'retenciones' => 'required|numeric',
             'observacion' => 'nullable|string',
             // Para venta parcial
             'porcentaje_vender' => 'nullable|numeric|min:0|max:100',
@@ -494,7 +503,7 @@ class VentaInversionController extends Controller
 
         // Calcular valores financieros
         $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
-        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+        $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
 
         $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
         $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
@@ -669,7 +678,7 @@ class VentaInversionController extends Controller
 
         // Calcular valores financieros
         $valorVentaSinComision = (($request->precio_venta ?? 0) * $nominalVendido) / 100;
-        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
+        $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
 
         // Paso 1: Cerrar inversión original
         $inversion->update([

@@ -6,6 +6,7 @@ export interface VentaInversion {
   id_venta_inversion?: number;
   id_inversion: number | null; // null para ventas agrupadas
   id_instrumento?: number;
+  id_propietario?: number;
   id_tipo_venta?: number;
   porcentaje_vendido?: number;
   fecha_venta: string;

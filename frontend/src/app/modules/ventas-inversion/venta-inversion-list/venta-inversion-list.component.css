@@ -416,3 +416,50 @@
 :host ::ng-deep .totals-row td {
   padding: 12px 10px;
 }
+
+/* Ajustes para la grilla del selector de posiciones de acuerdo a la imagen de Previsualización */
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-thead > tr > th {
+  background-color: #f8f9fa !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #dee2e6 !important;
+  text-align: left;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-thead > tr > th p-sorticon .pi {
+  color: #6b7280 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr > td {
+  font-size: 13px !important;
+  padding: 6px 10px !important;
+  border: 1px solid #dee2e6 !important;
+  color: #4b5563 !important;
+}
+
+/* Fila seleccionada con mayor contraste y persistencia de color en hover */
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight {
+  background-color: #bbf7d0 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight td {
+  background-color: #bbf7d0 !important;
+  color: #14532d !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight:hover,
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight:hover td {
+  background-color: #86efac !important;
+  color: #14532d !important;
+}
+
+/* Estilos para campos autocalculados (bloqueados) */
+input[readonly] {
+  background-color: #f3f4f6 !important;
+  color: #4b5563 !important;
+  cursor: not-allowed;
+  border: 1px solid #d1d5db !important;
+}
