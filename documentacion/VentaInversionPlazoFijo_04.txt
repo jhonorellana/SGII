@@ -149,4 +149,4 @@ d. La otra que representa la parte sobrante de la inversión. Esta inversión si r
 2. Se escoge la de menor rendimiento y se ejecuta la venta de acuerdo a los lineamientos previamente establecidos en los puntos 1.1 y 1.2. Si después de la venta todavía queda una parte del la inversión original por vender, se intenta hacer lo mismo con la siguiente.
 
 
-Siempre se debe almacenar en la tabla venta_inversion_detalle la relaciÃ³n entre la venta y las inversiones vendidas.
+Siempre se debe almacenar en la tabla venta_inversion_detalle la relación entre la venta y las inversiones vendidas.
