@@ -709,7 +709,7 @@ export class VentaInversionListComponent implements OnInit {
       } finally {
         this.isCalculating = false;
       }
-      this.calculateFormValues();
+      setTimeout(() => this.calculateFormValues());
     });
 
     // 2. Listen to porcentaje_vendido changes (bidirectional sync)
@@ -725,7 +725,7 @@ export class VentaInversionListComponent implements OnInit {
       } finally {
         this.isCalculating = false;
       }
-      this.calculateFormValues();
+      setTimeout(() => this.calculateFormValues());
     });
 
     // 3. Listen to valor_nominal_vendido changes (bidirectional sync)
@@ -741,14 +741,14 @@ export class VentaInversionListComponent implements OnInit {
       } finally {
         this.isCalculating = false;
       }
-      this.calculateFormValues();
+      setTimeout(() => this.calculateFormValues());
     });
 
     // 4. Listen to other fields to recalculate formulas
     const fieldNames = ['precio_venta', 'interes_previo_venta', 'comision_operador', 'comision_bolsa'];
     fieldNames.forEach(field => {
       this.ventaForm.get(field)?.valueChanges.subscribe(() => {
-        this.calculateFormValues();
+        setTimeout(() => this.calculateFormValues());
       });
     });
   }

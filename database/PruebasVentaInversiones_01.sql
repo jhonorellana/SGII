@@ -30,19 +30,18 @@ select * from catalogo_valor where id_catalogo =5  order by id_catalogo_valor
 5 rows
 */
 
-select * from instrumento where id_instrumento = 120;
-select * from inversion where id_inversion in (241,244);
-UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333313', `fecha_venta` = null, `activo` = '1', id_estado_inversion=128 WHERE (`id_inversion` = '241');
-UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333555', `fecha_venta` = null, `activo` = '1', id_estado_inversion=128 WHERE (`id_inversion` = '244');
+select * from instrumento where id_instrumento = 64;
+select * from inversion where id_inversion in (281,289,393);  -- 347901 / 20288 - VRF35 / 366691
 
-select * from amortizacion where id_inversion in (241,244) order by fecha_pago;
-update sipro_desa.amortizacion set activo = 1 where id_inversion in (241,244);
 
-select * from inversion.bonos where inv_id = 241;
-Select * from inversion where id_inversion in (241,244);   -- cambia el estado, fecha_venta, activo 
-Select * from amortizacion where id_inversion in (241, 244); -- id_estado_amortizacion / activo   --- originalmente 134
-Select * from sipro_desa.movimiento_capital where id_inversion in (241,244); -- se crear un nuevo registro
-Select * from venta_inversion where id_inversion in (241,244); -- se debe crear un nuevo registro
+select * from amortizacion where id_inversion in (393) -- (281,289,393); order by fecha_pago;
+
+
+-- select * from inversion.bonos where inv_id = 241;
+select * from inversion where id_inversion in (281,289,393,569);   -- cambia el estado, fecha_venta, activo 
+Select * from amortizacion where id_inversion in (393) (281,289,393); -- id_estado_amortizacion / activo   --- originalmente 134
+Select * from sipro_desa.movimiento_capital where id_inversion in (281,289,393); -- se crear un nuevo registro
+Select * from venta_inversion where id_inversion in (281,289,393); -- se debe crear un nuevo registro
 Select * from venta_inversion_detalle; -- se deben crear la misma cantidad de inversiones afectadas
 select * from inversion_propietario_reasignacion_log -- se carga cuando hay una reasignación automática de notas de crédito
 
