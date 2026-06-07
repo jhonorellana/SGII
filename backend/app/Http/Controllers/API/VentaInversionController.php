@@ -409,6 +409,7 @@ class VentaInversionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id_instrumento' => 'required|exists:instrumento,id_instrumento',
+            'id_propietario' => 'nullable|exists:persona,id_persona',
             'tipo_venta' => 'required|in:TOTAL,PARCIAL',
             'fecha_venta' => 'required|date',
             'liquidacion_venta' => 'required|string|max:50',
@@ -443,10 +444,15 @@ class VentaInversionController extends Controller
             }
 
             // Obtener inversiones activas del instrumento
-            $inversiones = Inversion::where('id_instrumento', $request->id_instrumento)
+            $query = Inversion::where('id_instrumento', $request->id_instrumento)
                 ->where('activo', true)
-                ->with('propietario', 'amortizaciones')
-                ->get();
+                ->with('propietario', 'amortizaciones');
+
+            if ($request->has('id_propietario') && $request->id_propietario) {
+                $query->where('id_propietario', $request->id_propietario);
+            }
+
+            $inversiones = $query->get();
 
             if ($inversiones->isEmpty()) {
                 return response()->json([
@@ -694,14 +700,6 @@ class VentaInversionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        // Paso 2: Inactivar amortizaciones futuras
-        \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
-            ->where('fecha_pago', '>=', $request->fecha_venta)
-            ->update([
-                'activo' => false,
-                'fecha_actualizacion' => now()
-            ]);
-
         // Paso 3: Crear inversión derivada parte vendida
         $inversionVendida = $this->crearInversionDerivada($inversion, $porcentajeVender, 'VENDIDA_TOTAL', false);
 
@@ -709,8 +707,16 @@ class VentaInversionController extends Controller
         $porcentajeRemanente = 100 - $porcentajeVender;
         $inversionRemanente = $this->crearInversionDerivada($inversion, $porcentajeRemanente, 'ACTIVA', true);
 
-        // Paso 5: Crear nueva amortización para inversión remanente
-        $this->crearAmortizacionRemanente($inversion, $inversionRemanente, $porcentajeRemanente);
+        // Paso 5: Crear nueva amortización para inversión remanente (antes de inactivar las originales para que las encuentre activas y filtre por fecha)
+        $this->crearAmortizacionRemanente($inversion, $inversionRemanente, $porcentajeRemanente, $request->fecha_venta);
+
+        // Paso 2: Inactivar amortizaciones futuras en la inversión original
+        \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
+            ->where('fecha_pago', '>=', $request->fecha_venta)
+            ->update([
+                'activo' => false,
+                'fecha_actualizacion' => now()
+            ]);
 
         $utilidadSinComision = $valorVentaSinComision - ($inversionVendida->valor_sin_comision ?? 0);
         $utilidadConComision = $valorVentaConComision - ($inversionVendida->capital_invertido ?? 0);
@@ -872,10 +878,10 @@ class VentaInversionController extends Controller
     /**
      * Crear amortización para inversión remanente
      */
-    private function crearAmortizacionRemanente($inversionOriginal, $inversionRemanente, $porcentaje)
+    private function crearAmortizacionRemanente($inversionOriginal, $inversionRemanente, $porcentaje, $fechaVenta)
     {
         $amortizacionesOriginales = \App\Models\Amortizacion::where('id_inversion', $inversionOriginal->id_inversion)
-            ->where('activo', true)
+            ->where('fecha_pago', '>=', $fechaVenta)
             ->get();
 
         foreach ($amortizacionesOriginales as $amortizacionOriginal) {
@@ -891,7 +897,7 @@ class VentaInversionController extends Controller
                 'retencion' => ($amortizacionOriginal->retencion * $porcentaje) / 100,
                 'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
                 'pagada' => false,
-                'activo' => true,
+                'activo' => $amortizacionOriginal->activo,
                 'eliminado' => false,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()

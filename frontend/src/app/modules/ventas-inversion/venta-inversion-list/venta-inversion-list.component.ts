@@ -16,7 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { AccordionModule } from 'primeng/accordion';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { VentaInversionService, VentaInversion } from '../../../core/venta-inversion.service';
+import { VentaInversionService, VentaInversion, RegistrarVentaRequest } from '../../../core/venta-inversion.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { PaginationService } from '../../../core/pagination.service';
@@ -624,7 +624,24 @@ export class VentaInversionListComponent implements OnInit {
         }
       });
     } else {
-      this.ventaService.create(ventaData).subscribe({
+      const registerData: RegistrarVentaRequest = {
+        id_instrumento: this.selectedPosicion.id_instrumento,
+        id_propietario: this.selectedPosicion.id_propietario,
+        tipo_venta: this.ventaForm.value.tipo_venta,
+        fecha_venta: this.ventaForm.value.fecha_venta,
+        liquidacion_venta: this.ventaForm.value.liquidacion_venta,
+        precio_venta: this.ventaForm.value.precio_venta,
+        precio_neto_venta: this.ventaForm.value.precio_neto_venta,
+        interes_previo: this.ventaForm.value.interes_previo_venta,
+        comision_operador: this.ventaForm.value.comision_operador,
+        comision_bolsa: this.ventaForm.value.comision_bolsa,
+        retenciones: this.ventaForm.value.retenciones,
+        observacion: this.ventaForm.value.observacion,
+        porcentaje_vender: this.ventaForm.value.porcentaje_vendido,
+        valor_nominal_vender: this.ventaForm.value.valor_nominal_vendido
+      };
+
+      this.ventaService.registrarVenta(registerData).subscribe({
         next: (response) => {
           if (response.success) {
             this.messageService.add({

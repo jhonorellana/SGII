@@ -202,6 +202,7 @@ export interface InfoInstrumentoResponse {
 
 export interface RegistrarVentaRequest {
   id_instrumento: number;
+  id_propietario?: number;
   tipo_venta: 'TOTAL' | 'PARCIAL';
   fecha_venta: string;
   liquidacion_venta?: string;
