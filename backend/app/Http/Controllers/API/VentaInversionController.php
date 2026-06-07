@@ -127,7 +127,7 @@ class VentaInversionController extends Controller
 
                 // Calcular valores financieros según las fórmulas de Excel
                 $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
-                $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
+                $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
 
                 $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
                 $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
@@ -174,6 +174,8 @@ class VentaInversionController extends Controller
                         ]);
                 }
 
+                $valorRecibido = $valorVentaConComision + $interesPrevioVenta;
+ 
                 // Paso 3: Crear registro en venta_inversion
                 $venta = VentaInversion::create([
                     'id_inversion' => $inversion->id_inversion,
@@ -190,6 +192,7 @@ class VentaInversionController extends Controller
                     'comision_operador' => $comisionOperador,
                     'comision_bolsa' => $comisionBolsa,
                     'valor_venta_con_comision' => $valorVentaConComision,
+                    'valor_recibido' => $valorRecibido,
                     'utilidad_sin_comision' => $utilidadSinComision,
                     'utilidad_con_comision' => $utilidadConComision,
                     'ganancia_perdida' => $gananciaPerdida,
@@ -204,7 +207,7 @@ class VentaInversionController extends Controller
                     'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
                 ]);
-
+ 
                 // Paso 4: Crear detalle en venta_inversion_detalle
                 VentaInversionDetalle::create([
                     'id_venta_inversion' => $venta->id_venta_inversion,
@@ -219,7 +222,7 @@ class VentaInversionController extends Controller
                     'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
                 ]);
-
+ 
                 // Paso 5: Crear movimiento_capital
                 MovimientoCapital::create([
                     'id_tipo_movimiento' => 182,
@@ -228,7 +231,7 @@ class VentaInversionController extends Controller
                     'id_venta_inversion' => $venta->id_venta_inversion,
                     'id_cuenta_bancaria' => null,
                     'id_signo' => 190, // Positivo
-                    'monto' => $valorVentaConComision,
+                    'monto' => $valorRecibido,
                     'fecha_movimiento' => $request->fecha_venta,
                     'descripcion' => 'Venta de ' . ($inversion->instrumento->nombre ?? 'inversión'),
                     'conciliado' => 0,
@@ -503,7 +506,7 @@ class VentaInversionController extends Controller
 
         // Calcular valores financieros
         $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
-        $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
+        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
 
         $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
         $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
@@ -546,6 +549,8 @@ class VentaInversionController extends Controller
                 'fecha_actualizacion' => now()
             ]);
 
+        $valorRecibido = $valorVentaConComision + $interesPrevioVenta;
+ 
         // Paso 3: Crear registro en venta_inversion
         $venta = VentaInversion::create([
             'id_inversion' => $inversion->id_inversion,
@@ -562,6 +567,7 @@ class VentaInversionController extends Controller
             'comision_operador' => $comisionOperador,
             'comision_bolsa' => $comisionBolsa,
             'valor_venta_con_comision' => $valorVentaConComision,
+            'valor_recibido' => $valorRecibido,
             'utilidad_sin_comision' => $utilidadSinComision,
             'utilidad_con_comision' => $utilidadConComision,
             'ganancia_perdida' => $utilidadConComision,
@@ -576,7 +582,7 @@ class VentaInversionController extends Controller
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
         ]);
-
+ 
         // Paso 4: Crear detalle
         VentaInversionDetalle::create([
             'id_venta_inversion' => $venta->id_venta_inversion,
@@ -591,7 +597,7 @@ class VentaInversionController extends Controller
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
         ]);
-
+ 
         // Paso 5: Crear movimiento_capital
         $instrumento = \App\Models\Instrumento::find($inversion->id_instrumento);
         MovimientoCapital::create([
@@ -601,7 +607,7 @@ class VentaInversionController extends Controller
             'id_venta_inversion' => $venta->id_venta_inversion,
             'id_cuenta_bancaria' => null,
             'id_signo' => 190,
-            'monto' => $valorVentaConComision,
+            'monto' => $valorRecibido,
             'fecha_movimiento' => $request->fecha_venta,
             'descripcion' => 'Venta de ' . ($instrumento ? $instrumento->nombre : 'inversión'),
             'conciliado' => 0,
@@ -678,7 +684,7 @@ class VentaInversionController extends Controller
 
         // Calcular valores financieros
         $valorVentaSinComision = (($request->precio_venta ?? 0) * $nominalVendido) / 100;
-        $valorVentaConComision = $valorVentaSinComision + $interesPrevioVenta - $comisionOperador - $comisionBolsa;
+        $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
 
         // Paso 1: Cerrar inversión original
         $inversion->update([
@@ -730,7 +736,8 @@ class VentaInversionController extends Controller
         // Obtener interés recibido (proporcional al porcentaje vendido)
         $interesRecibido = (($inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0) * $porcentajeVender) / 100;
         $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
-
+        $valorRecibido = $valorVentaConComision + $interesPrevioVenta;
+ 
         // Paso 6: Crear venta
         $venta = VentaInversion::create([
             'id_inversion' => $inversionVendida->id_inversion,
@@ -747,6 +754,7 @@ class VentaInversionController extends Controller
             'comision_operador' => $comisionOperador,
             'comision_bolsa' => $comisionBolsa,
             'valor_venta_con_comision' => $valorVentaConComision,
+            'valor_recibido' => $valorRecibido,
             'utilidad_sin_comision' => $utilidadSinComision,
             'utilidad_con_comision' => $utilidadConComision,
             'ganancia_perdida' => $utilidadConComision,
@@ -761,7 +769,7 @@ class VentaInversionController extends Controller
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
         ]);
-
+ 
         // Paso 7: Crear movimiento_capital (solo de la parte vendida)
         MovimientoCapital::create([
             'id_tipo_movimiento' => 182,
@@ -770,7 +778,7 @@ class VentaInversionController extends Controller
             'id_venta_inversion' => $venta->id_venta_inversion,
             'id_cuenta_bancaria' => null,
             'id_signo' => 190,
-            'monto' => $valorVentaConComision,
+            'monto' => $valorRecibido,
             'fecha_movimiento' => $request->fecha_venta,
             'descripcion' => 'Venta parcial de ' . ($inversion->instrumento->nombre ?? 'inversión'),
             'conciliado' => 0,

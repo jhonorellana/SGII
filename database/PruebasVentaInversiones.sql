@@ -30,17 +30,94 @@ select * from catalogo_valor where id_catalogo =5  order by id_catalogo_valor
 5 rows
 */
 
+select * from instrumento where id_instrumento = 120;
 select * from inversion where id_inversion in (241,244);
-UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333313', `fecha_venta` = null, `activo` = '1', id_estado_inversion=132 WHERE (`id_inversion` = '241');
-UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333555', `fecha_venta` = null, `activo` = '1', id_estado_inversion=132 WHERE (`id_inversion` = '244');
+UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333313', `fecha_venta` = null, `activo` = '1', id_estado_inversion=128 WHERE (`id_inversion` = '241');
+UPDATE `sipro_desa`.`inversion` SET `liquidacion` = '333555', `fecha_venta` = null, `activo` = '1', id_estado_inversion=128 WHERE (`id_inversion` = '244');
 
 select * from amortizacion where id_inversion in (241,244) order by fecha_pago;
-update sipro_desa.amortizacion set activo = 1 where id_inversion in (241,244)
+update sipro_desa.amortizacion set activo = 1 where id_inversion in (241,244);
 
-
+select * from inversion.bonos where inv_id = 241;
 Select * from inversion where id_inversion in (241,244);   -- cambia el estado, fecha_venta, activo 
 Select * from amortizacion where id_inversion in (241,244); -- id_estado_amortizacion / activo   --- originalmente 134
-Select * from sipro_desa.movimiento_capital order by id_movimiento_capital desc, id_movimiento_capital desc -- where id_inversion in (525) -- in (491,492,493,494,495,496,497,498, 499,500, 501) -- se crear un nuevo registro
-Select * from venta_inversion -- se debe crear un nuevo registro
-Select * from venta_inversion_detalle -- se deben crear la misma cantidad de inversiones afectadas
+Select * from sipro_desa.movimiento_capital where id_inversion in (241,244); -- se crear un nuevo registro
+Select * from venta_inversion where id_inversion in (241,244); -- se debe crear un nuevo registro
+Select * from venta_inversion_detalle; -- se deben crear la misma cantidad de inversiones afectadas
 select * from inversion_propietario_reasignacion_log -- se carga cuando hay una reasignación automática de notas de crédito
+
+utilidad_sin_comision = Valor Efectivo Venta es decir valor_venta_sin_comision de la tabla venta_inversion - Valor Efectivo Compra 
+
+
+
+Select * from inversion.inversion where inv_tipo = 4
+Select * from inversion.inversion where id in(241,244,316,424,447,494)
+
+Select 
+id,
+inv_liquidacion, 
+inv_valor_nominal,
+inv_valor_con_interes,
+inv_tasa_interes,
+inv_rendimiento_nominal,
+inv_valor_interes,
+inv_comision_bolsa,
+inv_comision_operador,
+inv_tasa_mensual_real,
+inv_interes_primer_mes,
+inv_fecha_primer_pago,
+inv_precio_comprado,
+inv_precio_neto_comprado,
+inv_valor_sin_comision,
+inv_capital_invertido,
+inv_interes_acumulado_previo,
+inv_total_comisiones
+from inversion.inversion 
+where id in (241,244,316,424,447,494)
+
+
+Select id_inversion,
+liquidacion,
+`valor_nominal`,
+`valor_con_interes`,
+`tasa_interes`,
+`rendimiento_nominal`,
+`interes_mensual`,
+`comision_bolsa`,
+`comision_casa_valores`,
+`tasa_mensual_real`,
+`interes_primer_mes`,
+`fecha_primer_pago`,
+`precio_compra`,
+`precio_neto_compra`,
+`valor_sin_comision`,
+`capital_invertido`,
+`interes_acumulado_previo`,
+`total_comisiones`
+ from sipro_desa.inversion where id_inversion in (241,244,316,424,447,494)
+ 
+ 
+ 
+ UPDATE sipro_desa.inversion I
+INNER JOIN inversion.inversion INV
+    ON INV.id = I.id_inversion
+SET
+    I.liquidacion               = INV.inv_liquidacion,
+    I.valor_nominal             = INV.inv_valor_nominal,
+    I.valor_con_interes         = INV.inv_valor_con_interes,
+    I.tasa_interes              = INV.inv_tasa_interes,
+    I.rendimiento_nominal       = INV.inv_rendimiento_nominal,
+    I.interes_mensual           = INV.inv_valor_interes,
+    I.comision_bolsa            = INV.inv_comision_bolsa,
+    I.comision_casa_valores     = INV.inv_comision_operador,
+    I.tasa_mensual_real         = INV.inv_tasa_mensual_real,
+    I.interes_primer_mes        = INV.inv_interes_primer_mes,
+    I.fecha_primer_pago         = INV.inv_fecha_primer_pago,
+    I.precio_compra             = INV.inv_precio_comprado,
+    I.precio_neto_compra        = INV.inv_precio_neto_comprado,
+    I.valor_sin_comision        = INV.inv_valor_sin_comision,
+    I.capital_invertido         = INV.inv_capital_invertido,
+    I.interes_acumulado_previo  = INV.inv_interes_acumulado_previo,
+    I.total_comisiones          = INV.inv_total_comisiones
+    where inv_tipo=4;
+    

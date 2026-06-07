@@ -136,6 +136,7 @@ export class VentaInversionListComponent implements OnInit {
       comision_bolsa: [0, Validators.required],
       retenciones: [0, Validators.required],
       valor_venta_con_comision: [null],
+      total_vendedor_neto: [null],
       observacion: ['']
     });
   }
@@ -566,6 +567,7 @@ export class VentaInversionListComponent implements OnInit {
       comision_bolsa: venta.comision_bolsa !== null && venta.comision_bolsa !== undefined ? venta.comision_bolsa : 0,
       retenciones: venta.retenciones !== null && venta.retenciones !== undefined ? venta.retenciones : 0,
       valor_venta_con_comision: venta.valor_venta_con_comision,
+      total_vendedor_neto: 0,
       observacion: venta.observacion
     });
     this.displayDialog = true;
@@ -775,15 +777,19 @@ export class VentaInversionListComponent implements OnInit {
       // 1. Valor Venta sin Comisión (Valor Efectivo) = Valor Nominal * (Precio de Venta / 100)
       const valorVentaSinComision = valorNominal * (precioVenta / 100);
 
-      // 2. Valor Venta con Comisión = Valor sin Comisión + Interés previo - Comisión Operador - Comisión Bolsa
-      const valorVentaConComision = valorVentaSinComision + interesPrevio - comisionOperador - comisionBolsa;
+      // 2. Valor Venta con Comisión = Valor sin Comisión - Comisión Operador - Comisión Bolsa
+      const valorVentaConComision = valorVentaSinComision - comisionOperador - comisionBolsa;
 
-      // 3. Precio Neto de Venta = (Valor con comisión / Valor Nominal) * 100
-      const precioNetoVenta = valorNominal > 0 ? (valorVentaConComision / valorNominal) * 100 : 0;
+      // 3. Total Vendedor Neto = Valor sin Comisión (Valor Efectivo) + Interés Previo - Comisión Bolsa - Comisión Operador
+      const totalVendedorNeto = valorVentaSinComision + interesPrevio - comisionBolsa - comisionOperador;
+
+      // 4. Precio Neto de Venta = (Total Vendedor Neto / Valor Nominal) * 100
+      const precioNetoVenta = valorNominal > 0 ? (totalVendedorNeto / valorNominal) * 100 : 0;
 
       this.ventaForm.patchValue({
         valor_venta_sin_comision: valorVentaSinComision ? parseFloat(valorVentaSinComision.toFixed(2)) : 0,
         valor_venta_con_comision: valorVentaConComision ? parseFloat(valorVentaConComision.toFixed(2)) : 0,
+        total_vendedor_neto: totalVendedorNeto ? parseFloat(totalVendedorNeto.toFixed(2)) : 0,
         precio_neto_venta: precioNetoVenta ? parseFloat(precioNetoVenta.toFixed(4)) : 0
       }, { emitEvent: false });
 
