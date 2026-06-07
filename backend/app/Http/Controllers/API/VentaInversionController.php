@@ -707,16 +707,8 @@ class VentaInversionController extends Controller
         $porcentajeRemanente = 100 - $porcentajeVender;
         $inversionRemanente = $this->crearInversionDerivada($inversion, $porcentajeRemanente, 'ACTIVA', true);
 
-        // Paso 5: Crear nueva amortización para inversión remanente (antes de inactivar las originales para que las encuentre activas y filtre por fecha)
-        $this->crearAmortizacionRemanente($inversion, $inversionRemanente, $porcentajeRemanente, $request->fecha_venta);
-
-        // Paso 2: Inactivar amortizaciones futuras en la inversión original
-        \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
-            ->where('fecha_pago', '>=', $request->fecha_venta)
-            ->update([
-                'activo' => false,
-                'fecha_actualizacion' => now()
-            ]);
+        // Paso 5: Generar nuevas tablas de amortización prorrateadas y anular la original
+        $this->generarTablasAmortizacionVentaParcial($inversion, $inversionVendida, $inversionRemanente, $porcentajeVender, $request->fecha_venta);
 
         $utilidadSinComision = $valorVentaSinComision - ($inversionVendida->valor_sin_comision ?? 0);
         $utilidadConComision = $valorVentaConComision - ($inversionVendida->capital_invertido ?? 0);
@@ -876,33 +868,92 @@ class VentaInversionController extends Controller
     }
 
     /**
-     * Crear amortización para inversión remanente
+     * Generar las dos nuevas tablas de amortización prorrateadas (Vendida y Remanente)
+     * y anular las cuotas de la inversión original.
      */
-    private function crearAmortizacionRemanente($inversionOriginal, $inversionRemanente, $porcentaje, $fechaVenta)
+    private function generarTablasAmortizacionVentaParcial($inversionOriginal, $inversionVendida, $inversionRemanente, $porcentajeVender, $fechaVenta)
     {
+        // 1. Obtener todas las cuotas de la inversión original ordenadas por fecha y ID
         $amortizacionesOriginales = \App\Models\Amortizacion::where('id_inversion', $inversionOriginal->id_inversion)
-            ->where('fecha_pago', '>=', $fechaVenta)
+            ->orderBy('fecha_pago', 'asc')
+            ->orderBy('id_amortizacion', 'asc')
             ->get();
 
+        $porcentajeRemanente = 100 - $porcentajeVender;
+        $fechaVentaCarbon = \Carbon\Carbon::parse($fechaVenta)->startOfDay();
+
         foreach ($amortizacionesOriginales as $amortizacionOriginal) {
+            // Prorratear valores financieros garantizando que la suma coincida exactamente con la original
+            // Se calcula la parte vendida y el remanente es la diferencia para evitar descuadres por redondeo.
+            
+            $interesVendido = round(($amortizacionOriginal->interes * $porcentajeVender) / 100, 2);
+            $interesRemanente = $amortizacionOriginal->interes - $interesVendido;
+
+            $capitalVendido = round(($amortizacionOriginal->capital * $porcentajeVender) / 100, 2);
+            $capitalRemanente = $amortizacionOriginal->capital - $capitalVendido;
+
+            $descuentoVendido = round(($amortizacionOriginal->descuento * $porcentajeVender) / 100, 2);
+            $descuentoRemanente = $amortizacionOriginal->descuento - $descuentoVendido;
+
+            $totalVendido = round(($amortizacionOriginal->total * $porcentajeVender) / 100, 2);
+            $totalRemanente = $amortizacionOriginal->total - $totalVendido;
+
+            $intParcialVendido = round(($amortizacionOriginal->int_parcial * $porcentajeVender) / 100, 2);
+            $intParcialRemanente = $amortizacionOriginal->int_parcial - $intParcialVendido;
+
+            $retencionVendido = round(($amortizacionOriginal->retencion * $porcentajeVender) / 100, 2);
+            $retencionRemanente = $amortizacionOriginal->retencion - $retencionVendido;
+
+            $fechaPagoCarbon = \Carbon\Carbon::parse($amortizacionOriginal->fecha_pago)->startOfDay();
+
+            // 2. Crear cuota en la tabla de Amortización de la Parte Vendida (solo si fecha_pago <= fecha_venta)
+            if ($fechaPagoCarbon->lte($fechaVentaCarbon)) {
+                \App\Models\Amortizacion::create([
+                    'id_inversion' => $inversionVendida->id_inversion,
+                    'numero_cuota' => $amortizacionOriginal->numero_cuota,
+                    'fecha_pago' => $amortizacionOriginal->fecha_pago,
+                    'interes' => $interesVendido,
+                    'capital' => $capitalVendido,
+                    'descuento' => $descuentoVendido,
+                    'total' => $totalVendido,
+                    'int_parcial' => $intParcialVendido,
+                    'retencion' => $retencionVendido,
+                    'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
+                    'pagada' => $amortizacionOriginal->pagada,
+                    'activo' => $amortizacionOriginal->activo,
+                    'eliminado' => $amortizacionOriginal->eliminado,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
+                ]);
+            }
+
+            // 3. Crear cuota en la tabla de Amortización de la Parte Remanente (siempre, para todas las cuotas)
             \App\Models\Amortizacion::create([
                 'id_inversion' => $inversionRemanente->id_inversion,
                 'numero_cuota' => $amortizacionOriginal->numero_cuota,
                 'fecha_pago' => $amortizacionOriginal->fecha_pago,
-                'interes' => ($amortizacionOriginal->interes * $porcentaje) / 100,
-                'capital' => ($amortizacionOriginal->capital * $porcentaje) / 100,
-                'descuento' => ($amortizacionOriginal->descuento * $porcentaje) / 100,
-                'total' => ($amortizacionOriginal->total * $porcentaje) / 100,
-                'int_parcial' => ($amortizacionOriginal->int_parcial * $porcentaje) / 100,
-                'retencion' => ($amortizacionOriginal->retencion * $porcentaje) / 100,
+                'interes' => $interesRemanente,
+                'capital' => $capitalRemanente,
+                'descuento' => $descuentoRemanente,
+                'total' => $totalRemanente,
+                'int_parcial' => $intParcialRemanente,
+                'retencion' => $retencionRemanente,
                 'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
-                'pagada' => false,
+                'pagada' => $amortizacionOriginal->pagada,
                 'activo' => $amortizacionOriginal->activo,
-                'eliminado' => false,
+                'eliminado' => $amortizacionOriginal->eliminado,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()
             ]);
         }
+
+        // 4. Actualizar todas las cuotas de la amortización original a id_estado_amortizacion = 200 y activo = false
+        \App\Models\Amortizacion::where('id_inversion', $inversionOriginal->id_inversion)
+            ->update([
+                'id_estado_amortizacion' => 200,
+                'activo' => false,
+                'fecha_actualizacion' => now()
+            ]);
     }
 
     /**
