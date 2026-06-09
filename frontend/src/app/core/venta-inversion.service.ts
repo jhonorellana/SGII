@@ -201,6 +201,7 @@ export interface InfoInstrumentoResponse {
 }
 
 export interface RegistrarVentaRequest {
+  id_inversion?: number;
   id_instrumento: number;
   id_propietario?: number;
   tipo_venta: 'TOTAL' | 'PARCIAL';

@@ -63,6 +63,8 @@ export class VentaInversionListComponent implements OnInit {
   selectedPropietarioInfo: any = null;
   inversionesAsociadas: any[] = [];
   resumenInversiones: any = null;
+  selectedInversion: any = null;
+  pendingInversionId: number | null = null;
   inversionesAccordionOpen: boolean = false;
   tiposVenta: CatalogoValor[] = [];
   loading = false;
@@ -331,15 +333,27 @@ export class VentaInversionListComponent implements OnInit {
           this.resumenInversiones = data.resumen;
           console.log('Info posición:', response.data);
 
+          // Preselect investment if editing or if there's only one
+          if (this.pendingInversionId) {
+            this.selectedInversion = this.inversionesAsociadas.find(inv => inv.id_inversion === this.pendingInversionId) || null;
+            this.pendingInversionId = null;
+          } else if (this.inversionesAsociadas.length === 1) {
+            this.selectedInversion = this.inversionesAsociadas[0];
+          } else {
+            this.selectedInversion = null;
+          }
+
+          const nominalTotal = this.selectedInversion?.valor_nominal || 0;
+
           // Trigger calculations after loading position info
           if (this.ventaForm.get('tipo_venta')?.value === 'TOTAL') {
             this.ventaForm.patchValue({
               porcentaje_vendido: 100,
-              valor_nominal_vendido: this.resumenInversiones?.valor_nominal_acumulado || 0
+              valor_nominal_vendido: nominalTotal
             }, { emitEvent: false });
           } else {
             const pct = this.ventaForm.get('porcentaje_vendido')?.value || 0;
-            const nominalVendido = (this.resumenInversiones?.valor_nominal_acumulado || 0) * (pct / 100);
+            const nominalVendido = nominalTotal * (pct / 100);
             this.ventaForm.patchValue({
               valor_nominal_vendido: parseFloat(nominalVendido.toFixed(2))
             }, { emitEvent: false });
@@ -353,8 +367,40 @@ export class VentaInversionListComponent implements OnInit {
         this.selectedPropietarioInfo = null;
         this.inversionesAsociadas = [];
         this.resumenInversiones = null;
+        this.selectedInversion = null;
       }
     });
+  }
+
+  toggleInversionSelection(inv: any): void {
+    if (this.selectedInversion && this.selectedInversion.id_inversion === inv.id_inversion) {
+      this.selectedInversion = null;
+    } else {
+      this.selectedInversion = inv;
+    }
+
+    if (this.selectedInversion) {
+      const nominalTotal = this.selectedInversion.valor_nominal || 0;
+      if (this.ventaForm.get('tipo_venta')?.value === 'TOTAL') {
+        this.ventaForm.patchValue({
+          porcentaje_vendido: 100,
+          valor_nominal_vendido: nominalTotal
+        });
+      } else {
+        const pct = this.ventaForm.get('porcentaje_vendido')?.value || 0;
+        const nominalVendido = nominalTotal * (pct / 100);
+        this.ventaForm.patchValue({
+          valor_nominal_vendido: parseFloat(nominalVendido.toFixed(2))
+        });
+      }
+    } else {
+      this.ventaForm.patchValue({
+        valor_nominal_vendido: 0,
+        porcentaje_vendido: this.ventaForm.get('tipo_venta')?.value === 'TOTAL' ? 100 : 0
+      });
+    }
+
+    this.calculateFormValues();
   }
 
   clearInstrumentoInfo(): void {
@@ -426,6 +472,16 @@ export class VentaInversionListComponent implements OnInit {
       style: 'percent',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
+    }).format(value / 100);
+  }
+
+  formatPrecio6Decimales(value: number | null | undefined): string {
+    if (value === null || value === undefined) return '0.000000%';
+    // El precio representa el porcentaje de negociación con 6 decimales
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 6,
+      maximumFractionDigits: 6
     }).format(value / 100);
   }
 
@@ -519,6 +575,8 @@ export class VentaInversionListComponent implements OnInit {
     this.ventaId = null;
     this.ventaForm.reset();
     this.selectedPosicion = null;
+    this.selectedInversion = null;
+    this.pendingInversionId = null;
     this.clearInstrumentoInfo();
     this.inversionesAccordionOpen = false;
     // Establecer fecha actual por defecto
@@ -544,6 +602,7 @@ export class VentaInversionListComponent implements OnInit {
     this.ventaId = venta.id_venta_inversion || null;
     this.ventaForm.reset();
     this.selectedPosicion = null;
+    this.pendingInversionId = venta.id_inversion;
 
     // Buscar la posición en la lista (si existe)
     const posicion = this.posicionesVendibles.find(p => p.id_instrumento === venta.id_instrumento && p.id_propietario === venta.id_propietario);
@@ -588,6 +647,11 @@ export class VentaInversionListComponent implements OnInit {
       return;
     }
 
+    if (!this.selectedInversion) {
+      this.formError = 'Debe seleccionar una inversión de la lista para proceder con la venta.';
+      return;
+    }
+
     if (this.ventaForm.invalid) {
       this.markFormAsDirty();
       return;
@@ -599,7 +663,8 @@ export class VentaInversionListComponent implements OnInit {
     const ventaData = {
       ...this.ventaForm.value,
       id_instrumento: this.selectedPosicion.id_instrumento,
-      id_propietario: this.selectedPosicion.id_propietario
+      id_propietario: this.selectedPosicion.id_propietario,
+      id_inversion: this.selectedInversion.id_inversion
     };
 
     if (this.isEdit && this.ventaId) {
@@ -625,6 +690,7 @@ export class VentaInversionListComponent implements OnInit {
       });
     } else {
       const registerData: RegistrarVentaRequest = {
+        id_inversion: this.selectedInversion.id_inversion,
         id_instrumento: this.selectedPosicion.id_instrumento,
         id_propietario: this.selectedPosicion.id_propietario,
         tipo_venta: this.ventaForm.value.tipo_venta,
@@ -711,7 +777,7 @@ export class VentaInversionListComponent implements OnInit {
       if (this.isCalculating) return;
       this.isCalculating = true;
       try {
-        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        const nominalTotal = this.selectedInversion?.valor_nominal || 0;
         if (tipo === 'TOTAL') {
           this.ventaForm.patchValue({
             porcentaje_vendido: 100,
@@ -734,7 +800,7 @@ export class VentaInversionListComponent implements OnInit {
       if (this.isCalculating) return;
       this.isCalculating = true;
       try {
-        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        const nominalTotal = this.selectedInversion?.valor_nominal || 0;
         const nominalVendido = (nominalTotal * (pct || 0)) / 100;
         this.ventaForm.patchValue({
           valor_nominal_vendido: parseFloat(nominalVendido.toFixed(2))
@@ -750,7 +816,7 @@ export class VentaInversionListComponent implements OnInit {
       if (this.isCalculating) return;
       this.isCalculating = true;
       try {
-        const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+        const nominalTotal = this.selectedInversion?.valor_nominal || 0;
         const pct = nominalTotal > 0 ? ((nominal || 0) / nominalTotal) * 100 : 0;
         this.ventaForm.patchValue({
           porcentaje_vendido: parseFloat(pct.toFixed(4))
@@ -777,7 +843,7 @@ export class VentaInversionListComponent implements OnInit {
     try {
       const formVal = this.ventaForm.value;
       const tipoVenta = formVal.tipo_venta;
-      const nominalTotal = this.resumenInversiones?.valor_nominal_acumulado || 0;
+      const nominalTotal = this.selectedInversion?.valor_nominal || 0;
 
       let valorNominal = 0;
       if (tipoVenta === 'TOTAL') {

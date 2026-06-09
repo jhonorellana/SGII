@@ -172,7 +172,7 @@
               <!-- Resumen compacto -->
               <div *ngIf="resumenInversiones" class="resumen-compacto">
                 <span class="resumen-item-text">
-                  <strong>Total inversiones:</strong> {{ resumenInversiones.cantidad_inversiones || 0 }}
+                  <strong>Inversiones:</strong> {{ resumenInversiones.cantidad_inversiones || 0 }}
                 </span>
                 <span class="resumen-separator">|</span>
                 <span class="resumen-item-text">
@@ -188,7 +188,11 @@
                 </span>
                 <span class="resumen-separator" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">|</span>
                 <span class="resumen-item-text" *ngIf="selectedInstrumentoInfo?.fecha_vencimiento">
-                  <strong>Fecha vencimiento:</strong> {{ formatDate(selectedInstrumentoInfo.fecha_vencimiento) }}
+                  <strong>Vencimiento:</strong> {{ formatDate(selectedInstrumentoInfo.fecha_vencimiento) }}
+                </span>
+                <span class="resumen-separator" *ngIf="selectedPropietarioInfo?.nombre">|</span>
+                <span class="resumen-item-text" *ngIf="selectedPropietarioInfo?.nombre">
+                  <strong>Propietario:</strong> {{ selectedPropietarioInfo.nombre }}
                 </span>
               </div>
 
@@ -202,25 +206,33 @@
                 <table class="table table-sm table-bordered inversiones-table">
                   <thead>
                     <tr>
+                      <th class="text-center" style="width: 80px;">Sel.</th>
                       <th>ID</th>
-                      <th>Liquidación</th>
-                      <th>Propietario</th>
-                      <th>Valor Nominal</th>
-                      <th>Capital Invertido</th>
-                      <th>Rendimiento</th>
                       <th>Fecha Compra</th>
+                      <th>Liquidación</th>
+                      <th class="text-right">Valor Nominal</th>
+                      <th class="text-right">Capital Invertido</th>
+                      <th class="text-right">Rend.</th>
+                      <th class="text-right">Precio Compra</th>
+                      <th class="text-right">Precio Neto</th>
                       <th>Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr *ngFor="let inv of inversionesAsociadas">
+                      <td class="text-center">
+                        <input type="checkbox"
+                               [checked]="selectedInversion?.id_inversion === inv.id_inversion"
+                               (change)="toggleInversionSelection(inv)">
+                      </td>
                       <td>{{ inv.id_inversion }}</td>
-                      <td>{{ inv.liquidacion || '-' }}</td>
-                      <td>{{ inv.propietario?.nombre || '-' }}</td>
-                      <td>{{ formatCurrency(inv.valor_nominal) }}</td>
-                      <td>{{ formatCurrency(inv.capital_invertido) }}</td>
-                      <td>{{ formatPercentage(inv.rendimiento_nominal) }}</td>
                       <td>{{ formatDate(inv.fecha_compra) }}</td>
+                      <td>{{ inv.liquidacion || '-' }}</td>
+                      <td class="text-right">{{ formatCurrency(inv.valor_nominal) }}</td>
+                      <td class="text-right">{{ formatCurrency(inv.capital_invertido) }}</td>
+                      <td class="text-right">{{ formatPercentage(inv.rendimiento_nominal) }}</td>
+                      <td class="text-right">{{ formatPrecio6Decimales(inv.precio_compra) }}</td>
+                      <td class="text-right">{{ formatPrecio6Decimales(inv.precio_neto_compra) }}</td>
                       <td>
                         <span [class]="'badge ' + getEstadoClass(inv.estado_inversion?.codigo || inv.estadoInversion?.codigo)">
                           {{ inv.estado_inversion?.nombre || inv.estadoInversion?.nombre || '-' }}
@@ -315,7 +327,7 @@
             [cancelText]="'Cancelar'"
             [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
             [loading]="formLoading"
-            [disabled]="ventaForm.invalid || inversionesAsociadas.length === 0"
+            [disabled]="ventaForm.invalid || !selectedInversion"
             (onCancel)="hideDialog()"
             (onSave)="save()">
           </app-modal-actions>

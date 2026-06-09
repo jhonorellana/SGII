@@ -408,6 +408,7 @@ class VentaInversionController extends Controller
     public function registrarVentaInversion(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'id_inversion' => 'required|exists:inversion,id_inversion',
             'id_instrumento' => 'required|exists:instrumento,id_instrumento',
             'id_propietario' => 'nullable|exists:persona,id_persona',
             'tipo_venta' => 'required|in:TOTAL,PARCIAL',
@@ -450,6 +451,10 @@ class VentaInversionController extends Controller
 
             if ($request->has('id_propietario') && $request->id_propietario) {
                 $query->where('id_propietario', $request->id_propietario);
+            }
+
+            if ($request->has('id_inversion') && $request->id_inversion) {
+                $query->where('id_inversion', $request->id_inversion);
             }
 
             $inversiones = $query->get();
