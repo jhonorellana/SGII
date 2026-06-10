@@ -27,6 +27,11 @@ class InversionResource extends JsonResource
             'valor_nominal' => $this->valor_nominal,
             'monto_a_negociar' => $this->monto_a_negociar,
             'capital_invertido' => $this->capital_invertido,
+            'saldo_capital' => $this->fecha_venta !== null 
+                ? 0 
+                : (($this->instrumento && $this->instrumento->id_tipo_inversion == 4)
+                    ? ($this->instrumento->fecha_vencimiento && $this->instrumento->fecha_vencimiento->format('Y-m-d') > date('Y-m-d') ? (float)$this->capital_invertido : 0)
+                    : (float)($this->saldo_capital ?? $this->getSaldoCapital())),
             'tasa_interes' => $this->tasa_interes,
             'rendimiento_nominal' => $this->rendimiento_nominal,
             'rendimiento_efectivo' => $this->rendimiento_efectivo,

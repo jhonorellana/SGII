@@ -45,6 +45,7 @@ export interface Inversion {
   propietario?: any;
   aportante?: any;
   estadoInversion?: any;
+  saldo_capital?: number;
 }
 
 @Injectable({
@@ -61,7 +62,8 @@ export class InversionService {
         ...i,
         activo: typeof i.activo === 'boolean' ? i.activo : i.activo === 1 || i.activo === '1',
         expirado: typeof i.expirado === 'boolean' ? i.expirado : i.expirado === 1 || i.expirado === '1',
-        eliminado: typeof i.eliminado === 'boolean' ? i.eliminado : i.eliminado === 1 || i.eliminado === '1'
+        eliminado: typeof i.eliminado === 'boolean' ? i.eliminado : i.eliminado === 1 || i.eliminado === '1',
+        saldo_capital: typeof i.saldo_capital === 'string' ? parseFloat(i.saldo_capital) : (i.saldo_capital || 0)
       })))
     );
   }

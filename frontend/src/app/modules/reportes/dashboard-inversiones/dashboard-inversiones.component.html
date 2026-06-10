@@ -95,7 +95,7 @@
   <p-tabView>
     <!-- Tab 1: Resumen e Instrumentos -->
     <p-tabPanel header="Resumen e Instrumentos" leftIcon="pi pi-briefcase">
-      <div class="charts-grid">
+      <div class="charts-grid-vertical">
         <div class="chart-card">
           <div class="chart-title">
             <span>Composición de Instrumentos</span>
@@ -131,14 +131,103 @@
         </div>
 
         <div class="chart-card">
-          <div class="chart-title">
-            <span>Capital Invertido por Empresa</span>
-            <span class="chart-legend-compact">Por Emisor</span>
+          <div class="chart-title d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center" style="border: none; padding-left: 0;">
+              <span>Capital Invertido por Empresa</span>
+              <span class="chart-legend-compact ms-2">Por Emisor</span>
+            </div>
+            <!-- Toggle de vista -->
+            <div class="view-toggle-buttons">
+              <button 
+                class="btn-toggle" 
+                [class.active]="emisorView === 'chart'"
+                (click)="emisorView = 'chart'"
+                title="Ver Gráfico">
+                📊 Gráfico
+              </button>
+              <button 
+                class="btn-toggle" 
+                [class.active]="emisorView === 'ranking'"
+                (click)="emisorView = 'ranking'"
+                title="Ver Ranking Completo">
+                🏆 Ranking
+              </button>
+            </div>
           </div>
-          <div class="chart-content">
-            <p-chart *ngIf="hasData" type="doughnut" [data]="emisoresChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+
+          <!-- Vista de Gráfico -->
+          <ng-container *ngIf="emisorView === 'chart'">
+            <div class="chart-content-split" *ngIf="hasData">
+              <!-- Gráfico a la izquierda -->
+              <div class="chart-wrapper">
+                <p-chart type="doughnut" [data]="emisoresChartData" [options]="emisoresChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+                <!-- Texto central del donut -->
+                <div class="chart-center-text">
+                  <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                  <strong class="text-primary">{{ formatCurrency(totalInvertido) }}</strong>
+                </div>
+              </div>
+              <!-- Leyenda a la derecha -->
+              <div class="chart-legend-panel">
+                <div class="leyenda-container">
+                  <div *ngFor="let item of emisoresLegend" class="leyenda-item">
+                    <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                    <div class="leyenda-info">
+                      <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                      <div class="leyenda-stats">
+                        <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                        <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
-          </div>
+          </ng-container>
+
+          <!-- Vista de Ranking -->
+          <ng-container *ngIf="emisorView === 'ranking'">
+            <div class="ranking-panel" *ngIf="hasData">
+              <!-- Buscador -->
+              <div class="search-bar-container">
+                <input 
+                  type="text" 
+                  [(ngModel)]="emisorSearchQuery" 
+                  placeholder="Buscar empresa..." 
+                  class="search-input" />
+                <span class="search-icon">🔍</span>
+              </div>
+              
+              <!-- Tabla de Ranking -->
+              <div class="ranking-list-container">
+                <div class="ranking-header">
+                  <span class="col-pos">#</span>
+                  <span class="col-company">Empresa</span>
+                  <span class="col-val text-end">Monto</span>
+                  <span class="col-pct text-end">%</span>
+                </div>
+                
+                <div class="ranking-body">
+                  <div *ngFor="let item of filteredEmisoresRanking" class="ranking-row">
+                    <span class="col-pos">{{ item.pos }}</span>
+                    <div class="col-company-info">
+                      <span class="company-name" [title]="item.label">{{ item.label }}</span>
+                      <div class="progress-bar-container">
+                        <div class="progress-bar-fill" [style.width]="item.porcentaje" [style.backgroundColor]="item.color"></div>
+                      </div>
+                    </div>
+                    <span class="col-val text-end font-semibold">{{ formatCurrency(item.valor) }}</span>
+                    <span class="col-pct text-end badge-pct">{{ item.porcentaje }}</span>
+                  </div>
+                  <div *ngIf="filteredEmisoresRanking.length === 0" class="no-results">
+                    No se encontraron empresas con ese nombre
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          </ng-container>
         </div>
       </div>
     </p-tabPanel>

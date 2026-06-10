@@ -61,11 +61,18 @@ export class DashboardInversionesComponent implements OnInit {
   // Chart configurations
   donutChartOptions: any;
   instrumentosChartOptions: any;
+  emisoresChartOptions: any;
   barChartOptions: any;
   horizontalBarChartOptions: any;
 
   // Custom legend lists
   instrumentosLegend: any[] = [];
+  emisoresLegend: any[] = [];
+
+  // View states for Emisor card
+  emisorView: 'chart' | 'ranking' = 'chart';
+  emisorSearchQuery = '';
+  emisoresRankingList: any[] = [];
 
   // HSL curated palette
   private colorsList = [
@@ -99,7 +106,12 @@ export class DashboardInversionesComponent implements OnInit {
     this.inversionService.getAll().subscribe({
       next: (data) => {
         // Filter out soft-deleted ones, only work with active ones, and exclude sold ones (fecha_venta IS NULL)
-        this.inversiones = (data || []).filter(i => !i.eliminado && i.activo && !i.fecha_venta);
+        this.inversiones = (data || []).filter(i => !i.eliminado && i.activo && !i.fecha_venta).map(i => {
+          if (i.saldo_capital !== undefined) {
+            i.capital_invertido = i.saldo_capital;
+          }
+          return i;
+        });
         this.filteredInversiones = [...this.inversiones];
 
         this.extractFilterOptions();
@@ -219,12 +231,17 @@ export class DashboardInversionesComponent implements OnInit {
 
   private loadPatrimonioData(): void {
     const today = new Date();
-    const dateInicio = this.fechaDesde ? this.fechaDesde : today;
-    const dateFin = this.fechaHasta ? this.fechaHasta : new Date(today.getFullYear(), today.getMonth() + 12, 0);
+    const dateInicioStr = this.fechaDesde 
+      ? this.formatDate(this.fechaDesde) 
+      : this.formatServerDate(today);
+
+    const dateFinStr = this.fechaHasta 
+      ? this.formatDate(this.fechaHasta) 
+      : this.formatDate(new Date(today.getFullYear(), today.getMonth() + 12, 0));
 
     const params = {
-      fecha_inicio: this.formatDate(dateInicio),
-      fecha_fin: this.formatDate(dateFin),
+      fecha_inicio: dateInicioStr,
+      fecha_fin: dateFinStr,
       id_propietario: this.selectedPropietario || undefined
     };
 
@@ -249,10 +266,19 @@ export class DashboardInversionesComponent implements OnInit {
     });
   }
 
+  private formatServerDate(date: Date): string {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   private buildInstrumentosFromPatrimonio(patrimonio: any[]): void {
     const filtered = (patrimonio || []).filter(item => 
       item.detalle !== 'TOTAL' && 
       item.detalle !== 'Total Corriente' &&
+      item.detalle !== 'Intereses esperados' &&
+      item.detalle !== 'Bonos vencimiento próximo' &&
       item.valor > 0
     );
 
@@ -300,8 +326,41 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(emisor, (counts.get(emisor) || 0) + amt);
     });
 
-    const labels = Array.from(counts.keys());
-    const data = Array.from(counts.values());
+    const rawList = Array.from(counts.entries()).map(([label, val]) => ({
+      label,
+      valor: val
+    })).sort((a, b) => b.valor - a.valor);
+
+    const total = rawList.reduce((sum, item) => sum + item.valor, 0);
+
+    // Build the full ranking list for the table view
+    this.emisoresRankingList = rawList.map((item, idx) => {
+      return {
+        pos: idx + 1,
+        label: item.label,
+        valor: item.valor,
+        porcentaje: total > 0 ? ((item.valor / total) * 100).toFixed(1) + '%' : '0%',
+        color: this.colorsList[idx % this.colorsList.length]
+      };
+    });
+
+    // Group Top 7 + "Otros" for the doughnut chart and custom legend
+    const topCount = 7;
+    let chartList: any[] = [];
+    
+    if (rawList.length > topCount + 1) {
+      chartList = rawList.slice(0, topCount);
+      const restSum = rawList.slice(topCount).reduce((sum, item) => sum + item.valor, 0);
+      chartList.push({
+        label: 'Otros Emisores',
+        valor: restSum
+      });
+    } else {
+      chartList = [...rawList];
+    }
+
+    const labels = chartList.map(item => item.label);
+    const data = chartList.map(item => item.valor);
 
     this.emisoresChartData = {
       labels: labels,
@@ -311,6 +370,15 @@ export class DashboardInversionesComponent implements OnInit {
         borderWidth: 1
       }]
     };
+
+    this.emisoresLegend = chartList.map((item, idx) => {
+      return {
+        color: this.colorsList[idx % this.colorsList.length],
+        label: item.label,
+        valor: item.valor,
+        porcentaje: total > 0 ? ((item.valor / total) * 100).toFixed(1) + '%' : '0%'
+      };
+    });
   }
 
   private generatePropietariosChart(): void {
@@ -567,6 +635,36 @@ export class DashboardInversionesComponent implements OnInit {
       maintainAspectRatio: false
     };
 
+    // Options for the custom split emisores donut chart
+    this.emisoresChartOptions = {
+      cutout: '70%',
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: 'rgba(33, 37, 41, 0.95)',
+          padding: 10,
+          titleFont: { size: 11, weight: 'bold' },
+          bodyFont: { size: 11 },
+          callbacks: {
+            label: (context: any) => {
+              const value = context.raw;
+              const formattedVal = this.formatCurrency(value);
+              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const pct = total > 0 ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+              return ` ${context.label}: ${formattedVal} (${pct})`;
+            }
+          }
+        },
+        datalabels: {
+          display: false
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false
+    };
+
     // Options for vertical bar charts
     this.barChartOptions = {
       plugins: {
@@ -660,5 +758,15 @@ export class DashboardInversionesComponent implements OnInit {
   formatPercentage(value: number | null | undefined): string {
     if (value === null || value === undefined || isNaN(value)) return '0.00%';
     return value.toFixed(2) + '%';
+  }
+
+  get filteredEmisoresRanking(): any[] {
+    if (!this.emisorSearchQuery) {
+      return this.emisoresRankingList;
+    }
+    const query = this.emisorSearchQuery.toLowerCase().trim();
+    return this.emisoresRankingList.filter(item => 
+      item.label.toLowerCase().includes(query)
+    );
   }
 }

@@ -155,4 +155,28 @@ class Inversion extends Model
             'id_inversion_generada'
         );
     }
+
+    public function getSaldoCapital()
+    {
+        if ($this->fecha_venta !== null) {
+            return 0;
+        }
+
+        $idTipoInversion = $this->instrumento?->id_tipo_inversion;
+        if ($idTipoInversion == 4) {
+            $vencimiento = $this->instrumento?->fecha_vencimiento;
+            $today = date('Y-m-d');
+            if ($vencimiento && $vencimiento->format('Y-m-d') > $today) {
+                return (float) $this->capital_invertido;
+            }
+            return 0;
+        }
+
+        $today = date('Y-m-d');
+        return (float) $this->amortizaciones()
+            ->where('activo', 1)
+            ->where('eliminado', 0)
+            ->where('fecha_pago', '>', $today)
+            ->sum('capital');
+    }
 }

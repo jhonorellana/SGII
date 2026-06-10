@@ -161,6 +161,12 @@
   gap: 24px;
 }
 
+.charts-grid-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 @media (max-width: 992px) {
   .charts-grid {
     grid-template-columns: 1fr;
@@ -370,5 +376,208 @@
 }
 
 .chart-legend-panel::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Card title view toggle buttons */
+.view-toggle-buttons {
+  display: flex;
+  background-color: #f1f3f5;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  flex-shrink: 0;
+}
+
+.btn-toggle {
+  background: transparent;
+  border: none;
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #495057;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-toggle:hover {
+  color: #212529;
+}
+
+.btn-toggle.active {
+  background-color: white;
+  color: #22c55e;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Ranking panel and search input */
+.ranking-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 12px;
+  flex-grow: 1;
+}
+
+.search-bar-container {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 6px 12px 6px 30px;
+  font-size: 0.8rem;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #22c55e;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  color: #6c757d;
+  pointer-events: none;
+}
+
+/* Ranking list table styling */
+.ranking-list-container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  max-height: 260px;
+}
+
+.ranking-header {
+  display: grid;
+  grid-template-columns: 30px 1fr 100px 60px;
+  background-color: #f8f9fa;
+  padding: 8px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #495057;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.ranking-body {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.ranking-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 100px 60px;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f3f5;
+  font-size: 0.78rem;
+  transition: background-color 0.15s ease;
+}
+
+.ranking-row:hover {
+  background-color: #f8f9fa;
+}
+
+.ranking-row:last-child {
+  border-bottom: none;
+}
+
+.col-pos {
+  font-weight: 700;
+  color: #adb5bd;
+}
+
+.ranking-row:nth-child(1) .col-pos {
+  color: #f59e0b; /* Gold */
+}
+.ranking-row:nth-child(2) .col-pos {
+  color: #64748b; /* Silver */
+}
+.ranking-row:nth-child(3) .col-pos {
+  color: #b45309; /* Bronze */
+}
+
+.col-company-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-right: 10px;
+}
+
+.company-name {
+  font-weight: 600;
+  color: #343a40;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+
+.progress-bar-container {
+  height: 4px;
+  background-color: #e9ecef;
+  border-radius: 2px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.badge-pct {
+  font-weight: 600;
+  color: #495057;
+  background-color: #e9ecef;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.68rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #868e96;
+  font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* Custom scrollbar for ranking body */
+.ranking-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ranking-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.ranking-body::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.ranking-body::-webkit-scrollbar-thumb:hover {
   background: #999;
 }

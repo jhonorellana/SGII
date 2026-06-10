@@ -19,6 +19,11 @@ class InversionController extends Controller
     public function index()
     {
         $inversiones = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])
+            ->withSum(['amortizaciones as saldo_capital' => function($query) {
+                $query->where('activo', 1)
+                      ->where('eliminado', 0)
+                      ->where('fecha_pago', '>', date('Y-m-d'));
+            }], 'capital')
             ->orderBy('id_inversion', 'desc')
             ->get();
 
