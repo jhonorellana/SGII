@@ -1,0 +1,233 @@
+<div class="dashboard-container">
+  <div class="dashboard-header d-flex justify-content-between align-items-center">
+    <h2>Dashboard de Gráficos de Inversiones</h2>
+  </div>
+
+  <!-- Filters Panel -->
+  <div class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label>Propietario</label>
+        <p-dropdown
+          [(ngModel)]="selectedPropietario"
+          [options]="propietarios"
+          optionLabel="nombre"
+          optionValue="id_persona"
+          placeholder="Todos los propietarios"
+          [showClear]="true"
+          (onChange)="onFilterChange()">
+        </p-dropdown>
+      </div>
+
+      <div class="filter-field">
+        <label>Emisor</label>
+        <p-dropdown
+          [(ngModel)]="selectedEmisor"
+          [options]="emisores"
+          optionLabel="nombre"
+          optionValue="id_emisor"
+          placeholder="Todos los emisores"
+          [showClear]="true"
+          (onChange)="onFilterChange()">
+        </p-dropdown>
+      </div>
+
+      <div class="filter-field">
+        <label>Fecha Desde (Compra)</label>
+        <p-calendar
+          [(ngModel)]="fechaDesde"
+          dateFormat="yy-mm-dd"
+          placeholder="Seleccione fecha"
+          [showIcon]="true"
+          (onSelect)="onFilterChange()"
+          (onClearClick)="onFilterChange()">
+        </p-calendar>
+      </div>
+
+      <div class="filter-field">
+        <label>Fecha Hasta (Compra)</label>
+        <p-calendar
+          [(ngModel)]="fechaHasta"
+          dateFormat="yy-mm-dd"
+          placeholder="Seleccione fecha"
+          [showIcon]="true"
+          (onSelect)="onFilterChange()"
+          (onClearClick)="onFilterChange()">
+        </p-calendar>
+      </div>
+
+      <div class="filter-field filter-actions">
+        <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+          <i class="bi bi-x-circle"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="summary-stats">
+    <div class="stat-card nominal">
+      <div class="stat-icon">💵</div>
+      <div class="stat-info">
+        <span class="stat-label">Total Capital Nominal</span>
+        <span class="stat-value">{{ formatCurrency(totalNominal) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">💼</div>
+      <div class="stat-info">
+        <span class="stat-label">Total Capital Invertido</span>
+        <span class="stat-value">{{ formatCurrency(totalInvertido) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card rendimiento">
+      <div class="stat-icon">📈</div>
+      <div class="stat-info">
+        <span class="stat-label">Rendimiento Promedio</span>
+        <span class="stat-value">{{ formatPercentage(rendimientoPromedio) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs View -->
+  <p-tabView>
+    <!-- Tab 1: Resumen e Instrumentos -->
+    <p-tabPanel header="Resumen e Instrumentos" leftIcon="pi pi-briefcase">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Composición de Instrumentos</span>
+            <span class="chart-legend-compact">Por tipo</span>
+          </div>
+          <div class="chart-content-split" *ngIf="hasData">
+            <!-- Gráfico a la izquierda -->
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="instrumentosChartData" [options]="instrumentosChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <!-- Texto central del donut -->
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                <strong class="text-primary">{{ formatCurrency(totalInvertidoPatrimonio) }}</strong>
+              </div>
+            </div>
+            <!-- Leyenda a la derecha -->
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of instrumentosLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Capital Invertido por Empresa</span>
+            <span class="chart-legend-compact">Por Emisor</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData" type="doughnut" [data]="emisoresChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Tab 2: Distribución por Propietarios -->
+    <p-tabPanel header="Distribución por Propietarios" leftIcon="pi pi-users">
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Capital Consolidado por Propietario</span>
+            <span class="chart-legend-compact">Total consolidado</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData" type="doughnut" [data]="propietariosChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Tipo de Inversión por Propietario</span>
+            <span class="chart-legend-compact">Propietario e Instrumento</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData" type="doughnut" [data]="propietariosTiposChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Distribución de Bonos por Propietario</span>
+            <span class="chart-legend-compact">Sólo Bonos</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData && hasBonosData" type="doughnut" [data]="propietariosBonosChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+            <div *ngIf="!hasData || !hasBonosData" class="no-data-msg">No hay datos de bonos para mostrar</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Otras Inversiones por Propietario</span>
+            <span class="chart-legend-compact">Acciones, Obligaciones, etc.</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData && hasOtrasInversionesData" type="doughnut" [data]="propietariosOtrasChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+            <div *ngIf="!hasData || !hasOtrasInversionesData" class="no-data-msg">No hay datos de otras inversiones para mostrar</div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Tab 3: Rendimiento y Vencimientos -->
+    <p-tabPanel header="Rendimiento y Vencimientos" leftIcon="pi pi-chart-bar">
+      <div class="charts-grid">
+        <div class="chart-card full-width">
+          <div class="chart-title">
+            <span>Vencimientos por Año</span>
+            <span class="chart-legend-compact">Distribución cronológica del capital</span>
+          </div>
+          <div class="chart-content" style="min-height: 300px;">
+            <p-chart *ngIf="hasData" type="bar" [data]="vencimientosChartData" [options]="barChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de vencimientos para mostrar</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Rendimiento en Bonos</span>
+            <span class="chart-legend-compact">Por Tasa de Rendimiento</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData && hasBonosData" type="bar" [data]="rendimientoBonosChartData" [options]="horizontalBarChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+            <div *ngIf="!hasData || !hasBonosData" class="no-data-msg">No hay datos de bonos para mostrar</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Rendimiento en Otras Inversiones</span>
+            <span class="chart-legend-compact">Por Tasa de Rendimiento</span>
+          </div>
+          <div class="chart-content">
+            <p-chart *ngIf="hasData && hasOtrasInversionesData" type="bar" [data]="rendimientoOtrasChartData" [options]="horizontalBarChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+            <div *ngIf="!hasData || !hasOtrasInversionesData" class="no-data-msg">No hay datos de otras inversiones para mostrar</div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
+</div>

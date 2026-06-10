@@ -115,14 +115,9 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/proyeccion-interes-anual'
         },
         {
-          title: 'Reporte de Inversiones',
-          icon: 'bi-graph-up-arrow',
-          path: '/reportes/inversiones'
-        },
-        {
-          title: 'Reporte de Rendimientos',
-          icon: 'bi-percent',
-          path: '/reportes/rendimientos'
+          title: 'Dashboard de Gráficos',
+          icon: 'bi-bar-chart-steps',
+          path: '/reportes/dashboard-inversiones'
         }
       ]
     },
