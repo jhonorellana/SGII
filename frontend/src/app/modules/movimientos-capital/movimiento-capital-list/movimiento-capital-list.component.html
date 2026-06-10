@@ -5,6 +5,12 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Movimientos de Capital</h2>
     <div class="d-flex gap-2">
+      <button *ngIf="selectedMovimientos && selectedMovimientos.length > 0" 
+              class="btn btn-success" 
+              [disabled]="getPendingSelectedCount() === 0" 
+              (click)="conciliarSeleccionados()">
+        <i class="bi bi-check-circle"></i> Conciliar ({{ getPendingSelectedCount() }})
+      </button>
       <button class="btn btn-outline-success" (click)="exportToExcel()">
         <i class="bi bi-file-earmark-excel"></i> Excel
       </button>
@@ -18,7 +24,7 @@
   </div>
 
   <!-- Table -->
-  <p-table #dt [value]="movimientos" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['descripcion', 'tipo_movimiento.nombre', 'persona.nombre', 'inversion.id_inversion', 'cuentaBancaria.persona.nombres']">
+  <p-table #dt [value]="movimientos" [(selection)]="selectedMovimientos" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['descripcion', 'tipo_movimiento.nombre', 'persona.nombre', 'inversion.id_inversion', 'cuentaBancaria.persona.nombres']">
     <!-- Header con buscador global -->
     <ng-template pTemplate="caption">
       <div class="d-flex justify-content-end align-items-center">
@@ -30,7 +36,10 @@
     </ng-template>
     <ng-template pTemplate="header">
       <tr>
-        <th>ID</th>
+        <th style="width: 3rem; text-align: center;">
+          <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+        </th>
+        <th style="width: 4rem; text-align: center;">ID</th>
         <th pSortableColumn="fecha_movimiento">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
         <th>Tipo</th>
         <th>Persona</th>
@@ -43,6 +52,7 @@
         <th>Acciones</th>
       </tr>
       <tr>
+        <th></th>
         <th></th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_movimiento', 'contains')" class="w-100" placeholder="Filtrar fecha" style="min-width: 120px !important;"/></th>
         <th>
@@ -103,6 +113,7 @@
           </p-dropdown>
         </th>
         <th></th>
+        <th></th>
         <th>
           <p-dropdown
             [(ngModel)]="filters.conciliado"
@@ -118,14 +129,14 @@
           </p-dropdown>
         </th>
         <th></th>
-        <th></th>
-        <th></th>
-        <th></th>
       </tr>
     </ng-template>
     <ng-template pTemplate="body" let-movimiento>
       <tr (click)="viewMovimientoDetails(movimiento)" style="cursor: pointer;">
-        <td>{{ movimiento.id_movimiento_capital }}</td>
+        <td class="text-center">
+          <p-tableCheckbox [value]="movimiento" [disabled]="movimiento.conciliado" (click)="$event.stopPropagation()"></p-tableCheckbox>
+        </td>
+        <td class="text-center">{{ movimiento.id_movimiento_capital }}</td>
         <td>{{ formatDateShort(movimiento.fecha_movimiento) }}</td>
         <td>{{ movimiento.tipo_movimiento?.nombre || movimiento.tipoMovimiento?.nombre || '-' }}</td>
         <td>{{ getPersonaNombre(movimiento) }}</td>
@@ -147,7 +158,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="11" class="text-center">No hay movimientos registrados</td>
+        <td colspan="12" class="text-center">No hay movimientos registrados</td>
       </tr>
     </ng-template>
   </p-table>

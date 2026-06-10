@@ -124,6 +124,10 @@ export class MovimientoCapitalService {
     return this.apiService.delete<any>(`${this.endpoint}/${id}`);
   }
 
+  conciliarLote(ids: number[]): Observable<ApiResponse<any>> {
+    return this.apiService.post<any>(`${this.endpoint}/conciliar-lote`, { ids });
+  }
+
   getSaldoEsperado(fecha_desde?: string, fecha_hasta?: string): Observable<ApiResponse<SaldoEsperado>> {
     let url = `${this.endpoint}/saldo-esperado`;
     const params: string[] = [];

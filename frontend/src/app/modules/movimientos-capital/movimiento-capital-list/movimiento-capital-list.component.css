@@ -203,8 +203,8 @@
 }
 
 /* Column width for investment dropdown */
-::ng-deep .p-datatable .p-datatable-thead > tr > th:nth-child(5),
-::ng-deep .p-datatable .p-datatable-tbody > tr > td:nth-child(5) {
+::ng-deep .p-datatable .p-datatable-thead > tr > th:nth-child(6),
+::ng-deep .p-datatable .p-datatable-tbody > tr > td:nth-child(6) {
   min-width: 250px;
 }
 

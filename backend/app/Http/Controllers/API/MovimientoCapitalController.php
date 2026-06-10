@@ -435,4 +435,36 @@ class MovimientoCapitalController extends Controller
             'data' => array_values($reportePorCuenta)
         ], Response::HTTP_OK);
     }
+
+    /**
+     * Conciliar múltiples movimientos de capital a la vez
+     */
+    public function conciliarLote(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'ids' => 'required|array',
+            'ids.*' => 'exists:movimiento_capital,id_movimiento_capital'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $ids = $request->input('ids');
+
+        MovimientoCapital::whereIn('id_movimiento_capital', $ids)
+            ->update([
+                'conciliado' => true,
+                'fecha_conciliacion' => now()->toDateString(),
+                'fecha_actualizacion' => now()
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Movimientos conciliados exitosamente'
+        ], Response::HTTP_OK);
+    }
 }

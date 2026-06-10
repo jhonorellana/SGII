@@ -23,6 +23,10 @@ import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-banc
 import { PersonaService } from '../../../core/persona.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 import { PaginationService } from '../../../core/pagination.service';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface CatalogoValor {
   id_catalogo_valor: number;
@@ -101,6 +105,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   // View details modal
   displayDetailsDialog: boolean = false;
   selectedMovimiento: MovimientoCapital | null = null;
+  selectedMovimientos: MovimientoCapital[] = [];
 
   constructor(
     private movimientoService: MovimientoCapitalService,
@@ -158,6 +163,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   loadMovimientos(): void {
     this.loading = true;
     this.error = '';
+    this.selectedMovimientos = [];
 
     const filters: any = {};
     if (this.filters.fecha_desde) filters.fecha_desde = this.formatDate(this.filters.fecha_desde);
@@ -494,6 +500,62 @@ export class MovimientoCapitalListComponent implements OnInit {
     });
   }
 
+  getPendingSelectedCount(): number {
+    return this.selectedMovimientos.filter(m => !m.conciliado).length;
+  }
+
+  conciliarSeleccionados(): void {
+    const pendingMovimientos = this.selectedMovimientos.filter(m => !m.conciliado);
+    const count = pendingMovimientos.length;
+
+    if (count === 0) {
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Información',
+        detail: 'No hay movimientos pendientes de conciliación seleccionados'
+      });
+      return;
+    }
+
+    const ids = pendingMovimientos.map(m => m.id_movimiento_capital).filter((id): id is number => !!id);
+
+    this.confirmationService.confirm({
+      message: `¿Está seguro de conciliar los ${count} movimientos seleccionados?`,
+      header: 'Confirmar conciliación masiva',
+      icon: 'pi pi-check-circle',
+      accept: () => {
+        this.loading = true;
+        this.movimientoService.conciliarLote(ids).subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.messageService.add({
+                severity: 'success',
+                summary: 'Éxito',
+                detail: response.message || 'Movimientos conciliados correctamente'
+              });
+              this.loadMovimientos();
+            } else {
+              this.messageService.add({
+                severity: 'error',
+                summary: 'Error',
+                detail: response.message || 'Error al conciliar movimientos'
+              });
+              this.loading = false;
+            }
+          },
+          error: (err) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'Error al conciliar movimientos: ' + err.message
+            });
+            this.loading = false;
+          }
+        });
+      }
+    });
+  }
+
   formatDate(date: Date | string | null): string | null {
     if (!date) return null;
     if (typeof date === 'string') {
@@ -718,13 +780,74 @@ export class MovimientoCapitalListComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    // TODO: Implementar exportación a Excel
-    console.log('Exportar a Excel');
+    const dataToExport = this.dt?.filteredValue || this.movimientos;
+    const exportData = dataToExport.map(mov => ({
+      ID: mov.id_movimiento_capital,
+      Fecha: this.formatDateShort(mov.fecha_movimiento),
+      Tipo: mov.tipo_movimiento?.nombre || mov.tipoMovimiento?.nombre || '-',
+      Persona: this.getPersonaNombre(mov),
+      Descripción: mov.descripcion || '',
+      Inversión: this.getInversionLabel(mov),
+      Signo: this.getSignoLabel(mov.id_signo, mov),
+      Monto: this.getMonto(mov),
+      'Saldo Acumulado': mov.saldo_acumulado || 0,
+      Conciliado: mov.conciliado ? 'Sí' : 'No'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Movimientos');
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const fileName = `movimientos_capital_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    saveAs(blob, fileName);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo Excel exportado correctamente'
+    });
   }
 
   exportToPDF(): void {
-    // TODO: Implementar exportación a PDF
-    console.log('Exportar a PDF');
+    const dataToExport = this.dt?.filteredValue || this.movimientos;
+    const doc = new jsPDF('landscape');
+
+    doc.setFontSize(18);
+    doc.text('Reporte de Movimientos de Capital', 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableData = dataToExport.map(mov => [
+      mov.id_movimiento_capital,
+      this.formatDateShort(mov.fecha_movimiento),
+      mov.tipo_movimiento?.nombre || mov.tipoMovimiento?.nombre || '-',
+      this.getPersonaNombre(mov),
+      mov.descripcion || '',
+      this.getInversionLabel(mov),
+      this.getSignoLabel(mov.id_signo, mov),
+      this.formatCurrency(this.getMonto(mov)),
+      this.formatCurrency(mov.saldo_acumulado || 0),
+      mov.conciliado ? 'Sí' : 'No'
+    ]);
+
+    autoTable(doc, {
+      head: [['ID', 'Fecha', 'Tipo', 'Persona', 'Descripción', 'Inversión', 'Signo', 'Monto', 'Saldo Acumulado', 'Conciliado']],
+      body: tableData,
+      startY: 35,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [97, 178, 125] }
+    });
+
+    doc.save(`movimientos_capital_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Archivo PDF exportado correctamente'
+    });
   }
 
   hasSaldosPorPersona(): boolean {

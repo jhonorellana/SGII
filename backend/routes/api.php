@@ -61,6 +61,7 @@ Route::apiResource('personas', PersonaController::class);
 Route::apiResource('cuentas-bancarias', CuentaBancariaController::class);
 
 // Rutas de Movimientos de Capital (temporalmente sin autenticación para pruebas)
+Route::post('movimientos-capital/conciliar-lote', [MovimientoCapitalController::class, 'conciliarLote']);
 Route::apiResource('movimientos-capital', MovimientoCapitalController::class);
 Route::get('movimientos-capital/saldo-esperado', [MovimientoCapitalController::class, 'getSaldoEsperado']);
 Route::get('movimientos-capital/estado-cuenta', [MovimientoCapitalController::class, 'getEstadoCuenta']);
