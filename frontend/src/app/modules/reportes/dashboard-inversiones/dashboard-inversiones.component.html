@@ -240,21 +240,133 @@
             <span>Capital Consolidado por Propietario</span>
             <span class="chart-legend-compact">Total consolidado</span>
           </div>
-          <div class="chart-content">
-            <p-chart *ngIf="hasData" type="doughnut" [data]="propietariosChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
-            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          <div class="chart-content-split" *ngIf="hasData">
+            <!-- Gráfico a la izquierda -->
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="propietariosChartData" [options]="instrumentosChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <!-- Texto central del donut -->
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietarios) }}</strong>
+              </div>
+            </div>
+            <!-- Leyenda a la derecha -->
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of propietariosLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
         </div>
 
         <div class="chart-card">
-          <div class="chart-title">
-            <span>Tipo de Inversión por Propietario</span>
-            <span class="chart-legend-compact">Propietario e Instrumento</span>
+          <div class="chart-title d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center" style="border: none; padding-left: 0;">
+              <span>Tipo de Inversión por Propietario</span>
+              <span class="chart-legend-compact ms-2">Propietario e Instrumento</span>
+            </div>
+            <!-- Toggle de vista -->
+            <div class="view-toggle-buttons">
+              <button 
+                class="btn-toggle" 
+                [class.active]="propietarioTipoView === 'chart'"
+                (click)="propietarioTipoView = 'chart'"
+                title="Ver Gráfico">
+                📊 Gráfico
+              </button>
+              <button 
+                class="btn-toggle" 
+                [class.active]="propietarioTipoView === 'ranking'"
+                (click)="propietarioTipoView = 'ranking'"
+                title="Ver Ranking Completo">
+                🏆 Ranking
+              </button>
+            </div>
           </div>
-          <div class="chart-content">
-            <p-chart *ngIf="hasData" type="doughnut" [data]="propietariosTiposChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
+
+          <!-- Vista de Gráfico -->
+          <ng-container *ngIf="propietarioTipoView === 'chart'">
+            <div class="chart-content-split" *ngIf="hasData">
+              <!-- Gráfico a la izquierda -->
+              <div class="chart-wrapper">
+                <p-chart type="doughnut" [data]="propietariosTiposChartData" [options]="instrumentosChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+                <!-- Texto central del donut -->
+                <div class="chart-center-text">
+                  <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                  <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietariosTipos) }}</strong>
+                </div>
+              </div>
+              <!-- Leyenda a la derecha -->
+              <div class="chart-legend-panel">
+                <div class="leyenda-container">
+                  <div *ngFor="let item of propietariosTiposLegend" class="leyenda-item">
+                    <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                    <div class="leyenda-info">
+                      <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                      <div class="leyenda-stats">
+                        <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                        <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
-          </div>
+          </ng-container>
+
+          <!-- Vista de Ranking -->
+          <ng-container *ngIf="propietarioTipoView === 'ranking'">
+            <div class="ranking-panel" *ngIf="hasData">
+              <!-- Buscador -->
+              <div class="search-bar-container">
+                <input 
+                  type="text" 
+                  [(ngModel)]="propietarioTipoSearchQuery" 
+                  placeholder="Buscar tipo/propietario..." 
+                  class="search-input" />
+                <span class="search-icon">🔍</span>
+              </div>
+              
+              <!-- Tabla de Ranking -->
+              <div class="ranking-list-container">
+                <div class="ranking-header">
+                  <span class="col-pos">#</span>
+                  <span class="col-company">Detalle</span>
+                  <span class="col-val text-end">Monto</span>
+                  <span class="col-pct text-end">%</span>
+                </div>
+                
+                <div class="ranking-body">
+                  <div *ngFor="let item of filteredPropietariosTiposRanking" class="ranking-row">
+                    <span class="col-pos">{{ item.pos }}</span>
+                    <div class="col-company-info">
+                      <span class="company-name" [title]="item.label">{{ item.label }}</span>
+                      <div class="progress-bar-container">
+                        <div class="progress-bar-fill" [style.width]="item.porcentaje" [style.backgroundColor]="item.color"></div>
+                      </div>
+                    </div>
+                    <span class="col-val text-end font-semibold">{{ formatCurrency(item.valor) }}</span>
+                    <span class="col-pct text-end badge-pct">{{ item.porcentaje }}</span>
+                  </div>
+                  <div *ngIf="filteredPropietariosTiposRanking.length === 0" class="no-results">
+                    No se encontraron registros
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="!hasData" class="no-data-msg">No hay datos de inversiones para mostrar</div>
+          </ng-container>
         </div>
 
         <div class="chart-card">
@@ -262,10 +374,33 @@
             <span>Distribución de Bonos por Propietario</span>
             <span class="chart-legend-compact">Sólo Bonos</span>
           </div>
-          <div class="chart-content">
-            <p-chart *ngIf="hasData && hasBonosData" type="doughnut" [data]="propietariosBonosChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
-            <div *ngIf="!hasData || !hasBonosData" class="no-data-msg">No hay datos de bonos para mostrar</div>
+          <div class="chart-content-split" *ngIf="hasData && hasBonosData">
+            <!-- Gráfico a la izquierda -->
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="propietariosBonosChartData" [options]="instrumentosChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <!-- Texto central del donut -->
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietariosBonos) }}</strong>
+              </div>
+            </div>
+            <!-- Leyenda a la derecha -->
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of propietariosBonosLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          <div *ngIf="!hasData || !hasBonosData" class="no-data-msg">No hay datos de bonos para mostrar</div>
         </div>
 
         <div class="chart-card">
@@ -273,10 +408,33 @@
             <span>Otras Inversiones por Propietario</span>
             <span class="chart-legend-compact">Acciones, Obligaciones, etc.</span>
           </div>
-          <div class="chart-content">
-            <p-chart *ngIf="hasData && hasOtrasInversionesData" type="doughnut" [data]="propietariosOtrasChartData" [options]="donutChartOptions" [style]="{width: '80%', height: '80%'}"></p-chart>
-            <div *ngIf="!hasData || !hasOtrasInversionesData" class="no-data-msg">No hay datos de otras inversiones para mostrar</div>
+          <div class="chart-content-split" *ngIf="hasData && hasOtrasInversionesData">
+            <!-- Gráfico a la izquierda -->
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="propietariosOtrasChartData" [options]="instrumentosChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <!-- Texto central del donut -->
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Total Invertido</small>
+                <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietariosOtras) }}</strong>
+              </div>
+            </div>
+            <!-- Leyenda a la derecha -->
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of propietariosOtrasLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+          <div *ngIf="!hasData || !hasOtrasInversionesData" class="no-data-msg">No hay datos de otras inversiones para mostrar</div>
         </div>
       </div>
     </p-tabPanel>
@@ -284,13 +442,13 @@
     <!-- Tab 3: Rendimiento y Vencimientos -->
     <p-tabPanel header="Rendimiento y Vencimientos" leftIcon="pi pi-chart-bar">
       <div class="charts-grid">
-        <div class="chart-card full-width">
+        <div class="chart-card full-width vencimientos-card">
           <div class="chart-title">
             <span>Vencimientos por Año</span>
             <span class="chart-legend-compact">Distribución cronológica del capital</span>
           </div>
-          <div class="chart-content" style="min-height: 300px;">
-            <p-chart *ngIf="hasData" type="bar" [data]="vencimientosChartData" [options]="barChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+          <div class="vencimientos-chart-content">
+            <p-chart *ngIf="hasData" type="bar" [data]="vencimientosChartData" [options]="barChartOptions" height="200px" [style]="{width: '100%'}"></p-chart>
             <div *ngIf="!hasData" class="no-data-msg">No hay datos de vencimientos para mostrar</div>
           </div>
         </div>

@@ -41,6 +41,7 @@ export class DashboardInversionesComponent implements OnInit {
   totalInvertido = 0;
   rendimientoPromedio = 0;
   totalInvertidoPatrimonio = 0;
+  totalInvertidoPropietarios = 0;
 
   // Data checks
   hasData = false;
@@ -68,11 +69,23 @@ export class DashboardInversionesComponent implements OnInit {
   // Custom legend lists
   instrumentosLegend: any[] = [];
   emisoresLegend: any[] = [];
+  propietariosLegend: any[] = [];
+  propietariosTiposLegend: any[] = [];
+  propietariosBonosLegend: any[] = [];
+  propietariosOtrasLegend: any[] = [];
 
   // View states for Emisor card
   emisorView: 'chart' | 'ranking' = 'chart';
   emisorSearchQuery = '';
   emisoresRankingList: any[] = [];
+
+  // View states for PropietarioTipo card
+  propietarioTipoView: 'chart' | 'ranking' = 'chart';
+  propietarioTipoSearchQuery = '';
+  propietariosTiposRankingList: any[] = [];
+  totalInvertidoPropietariosTipos = 0;
+  totalInvertidoPropietariosBonos = 0;
+  totalInvertidoPropietariosOtras = 0;
 
   // HSL curated palette
   private colorsList = [
@@ -389,8 +402,16 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
-    const labels = Array.from(counts.keys());
-    const data = Array.from(counts.values());
+    const rawList = Array.from(counts.entries()).map(([label, val]) => ({
+      label,
+      valor: val
+    })).sort((a, b) => b.valor - a.valor);
+
+    const labels = rawList.map(item => item.label);
+    const data = rawList.map(item => item.valor);
+
+    const total = data.reduce((a, b) => a + b, 0);
+    this.totalInvertidoPropietarios = total;
 
     this.propietariosChartData = {
       labels: labels,
@@ -400,6 +421,16 @@ export class DashboardInversionesComponent implements OnInit {
         borderWidth: 1
       }]
     };
+
+    this.propietariosLegend = labels.map((label, idx) => {
+      const val = data[idx];
+      return {
+        color: this.colorsList[(2 + idx) % this.colorsList.length],
+        label: label,
+        valor: val,
+        porcentaje: total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%'
+      };
+    });
   }
 
   private generatePropietariosTiposChart(): void {
@@ -412,8 +443,42 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(label, (counts.get(label) || 0) + amt);
     });
 
-    const labels = Array.from(counts.keys());
-    const data = Array.from(counts.values());
+    const rawList = Array.from(counts.entries()).map(([label, val]) => ({
+      label,
+      valor: val
+    })).sort((a, b) => b.valor - a.valor);
+
+    const total = rawList.reduce((sum, item) => sum + item.valor, 0);
+    this.totalInvertidoPropietariosTipos = total;
+
+    // Build the full ranking list for the table view
+    this.propietariosTiposRankingList = rawList.map((item, idx) => {
+      return {
+        pos: idx + 1,
+        label: item.label,
+        valor: item.valor,
+        porcentaje: total > 0 ? ((item.valor / total) * 100).toFixed(1) + '%' : '0%',
+        color: this.colorsList[idx % this.colorsList.length]
+      };
+    });
+
+    // Group Top 7 + "Otros Tipos" for the doughnut chart and custom legend
+    const topCount = 7;
+    let chartList: any[] = [];
+    
+    if (rawList.length > topCount + 1) {
+      chartList = rawList.slice(0, topCount);
+      const restSum = rawList.slice(topCount).reduce((sum, item) => sum + item.valor, 0);
+      chartList.push({
+        label: 'Otros Tipos',
+        valor: restSum
+      });
+    } else {
+      chartList = [...rawList];
+    }
+
+    const labels = chartList.map(item => item.label);
+    const data = chartList.map(item => item.valor);
 
     this.propietariosTiposChartData = {
       labels: labels,
@@ -423,6 +488,15 @@ export class DashboardInversionesComponent implements OnInit {
         borderWidth: 1
       }]
     };
+
+    this.propietariosTiposLegend = chartList.map((item, idx) => {
+      return {
+        color: this.colorsList[idx % this.colorsList.length],
+        label: item.label,
+        valor: item.valor,
+        porcentaje: total > 0 ? ((item.valor / total) * 100).toFixed(1) + '%' : '0%'
+      };
+    });
   }
 
   private generatePropietariosBonosChart(): void {
@@ -431,6 +505,8 @@ export class DashboardInversionesComponent implements OnInit {
 
     if (!this.hasBonosData) {
       this.propietariosBonosChartData = null;
+      this.propietariosBonosLegend = [];
+      this.totalInvertidoPropietariosBonos = 0;
       return;
     }
 
@@ -441,8 +517,16 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
-    const labels = Array.from(counts.keys());
-    const data = Array.from(counts.values());
+    const rawList = Array.from(counts.entries()).map(([label, val]) => ({
+      label,
+      valor: val
+    })).sort((a, b) => b.valor - a.valor);
+
+    const labels = rawList.map(item => item.label);
+    const data = rawList.map(item => item.valor);
+
+    const total = data.reduce((a, b) => a + b, 0);
+    this.totalInvertidoPropietariosBonos = total;
 
     this.propietariosBonosChartData = {
       labels: labels,
@@ -452,6 +536,16 @@ export class DashboardInversionesComponent implements OnInit {
         borderWidth: 1
       }]
     };
+
+    this.propietariosBonosLegend = labels.map((label, idx) => {
+      const val = data[idx];
+      return {
+        color: this.colorsList[(4 + idx) % this.colorsList.length],
+        label: label,
+        valor: val,
+        porcentaje: total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%'
+      };
+    });
   }
 
   private generatePropietariosOtrasChart(): void {
@@ -460,6 +554,8 @@ export class DashboardInversionesComponent implements OnInit {
 
     if (!this.hasOtrasInversionesData) {
       this.propietariosOtrasChartData = null;
+      this.propietariosOtrasLegend = [];
+      this.totalInvertidoPropietariosOtras = 0;
       return;
     }
 
@@ -470,8 +566,16 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
-    const labels = Array.from(counts.keys());
-    const data = Array.from(counts.values());
+    const rawList = Array.from(counts.entries()).map(([label, val]) => ({
+      label,
+      valor: val
+    })).sort((a, b) => b.valor - a.valor);
+
+    const labels = rawList.map(item => item.label);
+    const data = rawList.map(item => item.valor);
+
+    const total = data.reduce((a, b) => a + b, 0);
+    this.totalInvertidoPropietariosOtras = total;
 
     this.propietariosOtrasChartData = {
       labels: labels,
@@ -481,16 +585,29 @@ export class DashboardInversionesComponent implements OnInit {
         borderWidth: 1
       }]
     };
+
+    this.propietariosOtrasLegend = labels.map((label, idx) => {
+      const val = data[idx];
+      return {
+        color: this.colorsList[(6 + idx) % this.colorsList.length],
+        label: label,
+        valor: val,
+        porcentaje: total > 0 ? ((val / total) * 100).toFixed(1) + '%' : '0%'
+      };
+    });
   }
 
   private generateVencimientosChart(): void {
     const counts = new Map<string, number>();
+    const currentYear = new Date().getFullYear();
     this.filteredInversiones.forEach(inv => {
       const vencimiento = inv.instrumento?.fecha_vencimiento;
       if (vencimiento) {
         const year = vencimiento.split('-')[0];
-        const amt = Number(inv.capital_invertido || 0);
-        counts.set(year, (counts.get(year) || 0) + amt);
+        if (Number(year) >= currentYear) {
+          const amt = Number(inv.capital_invertido || 0);
+          counts.set(year, (counts.get(year) || 0) + amt);
+        }
       }
     });
 
@@ -766,6 +883,16 @@ export class DashboardInversionesComponent implements OnInit {
     }
     const query = this.emisorSearchQuery.toLowerCase().trim();
     return this.emisoresRankingList.filter(item => 
+      item.label.toLowerCase().includes(query)
+    );
+  }
+
+  get filteredPropietariosTiposRanking(): any[] {
+    if (!this.propietarioTipoSearchQuery) {
+      return this.propietariosTiposRankingList;
+    }
+    const query = this.propietarioTipoSearchQuery.toLowerCase().trim();
+    return this.propietariosTiposRankingList.filter(item => 
       item.label.toLowerCase().includes(query)
     );
   }
