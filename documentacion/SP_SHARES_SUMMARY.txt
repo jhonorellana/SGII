@@ -1,0 +1,41 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_SHARES_SUMMARY`(IN `p_issuer` INT, IN `p_year` INT)
+BEGIN
+  IF p_issuer <> 0 AND p_year <> 0 THEN
+    SELECT SHA_DATE AS fecha, 
+           SHA_ISSUER AS emisor, 
+           SUM(SHA_NUMBER) AS cantidad, 
+           ROUND(SUM(SHA_CASH_VALUE),2) AS valor, 
+           ROUND(SUM(SHA_CASH_VALUE) / SUM(SHA_NUMBER),2) AS precio, 
+           COUNT(*) AS transacciones
+    FROM shares
+    WHERE SHA_ISSUER_ID = p_issuer and YEAR(SHA_DATE) = p_year and SHA_PRICE > 0
+    GROUP BY SHA_DATE
+    ORDER BY SHA_DATE;
+  END IF;
+
+  IF p_issuer <> 0 AND p_year = 0 THEN
+    SELECT SHA_DATE AS fecha, 
+           SHA_ISSUER AS emisor, 
+           SUM(SHA_NUMBER) AS cantidad, 
+           ROUND(SUM(SHA_CASH_VALUE),2) AS valor, 
+           ROUND(SUM(SHA_CASH_VALUE) / SUM(SHA_NUMBER),2) AS precio, 
+           COUNT(*) AS transacciones
+    FROM shares
+    WHERE SHA_ISSUER_ID = p_issuer and SHA_PRICE > 0
+    GROUP BY SHA_DATE
+    ORDER BY SHA_DATE;
+  END IF;
+
+  IF p_issuer = 0 THEN
+    SELECT SHA_DATE AS fecha, 
+           SHA_ISSUER AS emisor, 
+           SUM(SHA_NUMBER) AS cantidad, 
+           ROUND(SUM(SHA_CASH_VALUE),2) AS valor, 
+           ROUND(SUM(SHA_CASH_VALUE) / SUM(SHA_NUMBER),2) AS precio, 
+           COUNT(*) AS transacciones
+    FROM shares
+    WHERE SHA_PRICE > 0
+    GROUP BY SHA_DATE
+    ORDER BY SHA_DATE;
+  END IF;
+END

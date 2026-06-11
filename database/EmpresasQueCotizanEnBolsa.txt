@@ -1,0 +1,82 @@
+Execute:
+> select id_catalogo_valor, id_catalogo, codigo , nombre , descripcion, activo from sipro_desa.catalogo_valor where id_catalogo = 3
+
++ ---------------------- + ---------------- + ----------- + ----------- + ---------------- + ----------- +
+| id_catalogo_valor      | id_catalogo      | codigo      | nombre      | descripcion      | activo      |
++ ---------------------- + ---------------- + ----------- + ----------- + ---------------- + ----------- +
+| 34                     | 3                | ALICOSTA B  | ALICOSTA BK HOLDING S A | ALICOSTA BK HOLDING S A | 1           |
+| 64                     | 3                | ALIMENTOS   | ALIMENTOS ECUATORANOS ALIMEC S.A | ALIMENTOS ECUATORANOS ALIMEC S.A | 1           |
+| 86                     | 3                | ATLAS       | FONDO DE INVERSION COLECTIVO ATLAS | FONDO DE INVERSION COLECTIVO ATLAS | 1           |
+| 56                     | 3                | BANCO AMAZ  | BANCO AMAZONAS | BANCO AMAZONAS   | 1           |
+| 28                     | 3                | BANCO BOLI  | BANCO BOLIVARIANO C.A. | BANCO BOLIVARIANO C.A. | 1           |
+| 50                     | 3                | BANCO DE L  | PRODUBANCO  | BANCO DE LA PRODUCCION S.A . PRODUBANCO | 1           |
+| 21                     | 3                | BANCO GUAY  | BANCO GUAYAQUIL | BANCO GUAYAQUIL S.A. | 1           |
+| 24                     | 3                | BANCO PICH  | BANCO PICHINCHA | BANCO PICHINCHA C.A. | 1           |
+| 30                     | 3                | BANCO SOLI  | BANCO SOLIDARIO S.A. | BANCO SOLIDARIO S.A. | 1           |
+| 71                     | 3                | BANCOAUSTR  | BANCO AUSTRO | BANCO DEL AUSTRO | 1           |
+| 72                     | 3                | BANCOMACHA  | BANCO DE MACHALA S.A. | BANCO DE MACHALA S.A. | 1           |
+| 67                     | 3                | BEVERAGE B  | BEVERAGE BRAND PATENTS SA | BEVERAGE BRAND PATENTS SA | 1           |
+| 81                     | 3                | BIENES UIO  | FONDO INVER COLEC BIENES UIO 2 | FONDO INVER COLEC BIENES UIO 2 | 1           |
+| 18                     | 3                | BRIKAPITAL  | BRIKAPITAL  | BRIKAPITAL SA    | 1           |
+| 62                     | 3                | BVG         | BOLSA DE VALORES DE GUAYAQUIL | BOLSA DE VALORES DE GUAYAQUIL | 1           |
+| 59                     | 3                | BVQ         | BOLSA DE VALORES DE QUITO | BOLSA DE VALORES DE QUITO | 1           |
+| 61                     | 3                | CEPSA       | CEPSA       | CEPSA            | 1           |
+| 40                     | 3                | CERRO ALTO  | CERRO ALTO HIGHFOREST S A | CERRO ALTO HIGHFOREST S A | 1           |
+| 41                     | 3                | CERRO VERD  | CERRO VERDE FORESTAL S A BIGFOREST | CERRO VERDE FORESTAL S A BIGFOREST | 1           |
+| 15                     | 3                | CERVECERIA  | CERVECERIA NACIONAL CN S A | CERVECERIA NACIONAL CN S A | 1           |
+| 63                     | 3                | CERVPREF    | CERVECERIA NACIONAL CN S A PREFERIDAS | CERVECERIA NACIONAL CN S A PREFERIDAS | 1           |
+| 69                     | 3                | CIALCO CON  | CIALCO CONSTRUCTORA IMPORTADORA ALVAREZ | CIALCO CONSTRUCTORA IMPORTADORA ALVAREZ | 1           |
+| 31                     | 3                | CONCLINA C  | CONCLINA C A CIA CONJU CLINICO NACIONAL | CONCLINA C A CIA CONJU CLINICO NACIONAL | 1           |
+| 88                     | 3                | CONSTRUYE   | FONDO INV COLEC CONSTRUYE PATRIMONIO 01 | FONDO INV COLEC CONSTRUYE PATRIMONIO 01 | 1           |
+| 29                     | 3                | CONTINENTA  | CONTINENTAL TIRE ANDINA S A | CONTINENTAL TIRE ANDINA S A | 1           |
+| 60                     | 3                | CORP.DESAR  | CORP.DESARROLLO.M.S.HIPOTECAS  CTH | CORP.DESARROLLO.M.S.HIPOTECAS  CTH | 1           |
+| 79                     | 3                | COTIZADO E  | FONDO DE INVERSION COTIZADO ETF | FONDO DE INVERSION COTIZADO ETF | 1           |
+| 80                     | 3                | COTIZADO P  | FONDO DE INVERSION COTIZADO PRIME | FONDO DE INVERSION COTIZADO PRIME | 1           |
+| 35                     | 3                | CRIDESA     | CRIDESA     | CRIDESA          | 1           |
+| 77                     | 3                | EDUCACION   | EDUCACION Y FUTURO TEKAFUTURO SA | EDUCACION Y FUTURO TEKAFUTURO SA | 1           |
+| 46                     | 3                | EL TECAL    | EL TECAL    | EL TECAL         | 1           |
+| 16                     | 3                | FAVORITA    | LA FAVORITA | CORPORACION FAVORITA C.A. | 1           |
+| 78                     | 3                | FONDO COLE  | FONDO COLEC DE INVER VANGUARDIA VERSATIL | FONDO COLEC DE INVER VANGUARDIA VERSATIL | 1           |
+| 22                     | 3                | HOLCIM ECU  | HOLCIM ECUADOR S.A. | HOLCIM ECUADOR S.A. | 1           |
+| 27                     | 3                | HOLDING TO  | HOLDING TONICORP S.A. | HOLDING TONICORP S.A. | 1           |
+| 47                     | 3                | HOMEFOREST  | HOMEFOREST EL REFUGIO FORESTAL S A | HOMEFOREST EL REFUGIO FORESTAL S A | 1           |
+| 19                     | 3                | HOTEL COLO  | HOTEL COLON | HOTEL COLON      | 1           |
+| 84                     | 3                | HS HOSPICA  | HS HOSPICAPITAL HOLDING SA | HS HOSPICAPITAL HOLDING SA | 1           |
+| 57                     | 3                | INDUSTRIAS  | INDUSTRIAS ALES | INDUSTRIAS ALES  | 1           |
+| 54                     | 3                | INGENIO AZ  | INGENIO AZUCARERO DEL NORTE | INGENIO AZUCARERO DEL NORTE | 1           |
+| 26                     | 3                | INVERSANCA  | INVERSANCARLOS | INVERSANCARLOS   | 1           |
+| 32                     | 3                | LA CAMPINA  | LA CAMPINA FORESTAL STRONGFOREST S A | LA CAMPINA FORESTAL STRONGFOREST S A | 1           |
+| 38                     | 3                | LA COLINA   | LA COLINA FORESTAL (HILLFOREST) S.A. | LA COLINA FORESTAL (HILLFOREST) S.A. | 1           |
+| 43                     | 3                | LA CUMBRE   | LA CUMBRE FORESTAL PEAKFOREST SA | LA CUMBRE FORESTAL PEAKFOREST SA | 1           |
+| 20                     | 3                | LA ENSENAD  | LA ENSENADA FORESTAL COVEFORESTS SA | LA ENSENADA FORESTAL COVEFORESTS SA | 1           |
+| 44                     | 3                | LA ESTANCI  | LA ESTANCIA FORESTAL FORESTEAD S A | LA ESTANCIA FORESTAL FORESTEAD S A | 1           |
+| 42                     | 3                | LA RESERVA  | LA RESERVA FORESTAL S.A.(REFOREST) | LA RESERVA FORESTAL S.A.(REFOREST) | 1           |
+| 52                     | 3                | LA SABANA   | LA SABANA FORESTAL (PLAINFOREST) S.A. | LA SABANA FORESTAL (PLAINFOREST) S.A. | 1           |
+| 53                     | 3                | LA VANGUAR  | LA VANGUARDIA FORESTAL | LA VANGUARDIA FORESTAL | 1           |
+| 83                     | 3                | LEGACYPRIM  | FONDO DE INVERSION COTIZADO LEGACYPRIME | FONDO DE INVERSION COTIZADO LEGACYPRIME | 1           |
+| 37                     | 3                | MERIZA      | MERIZA      | MERIZA           | 1           |
+| 66                     | 3                | MULTI-BG S  | MULTI-BG S.A. CORPORACION | MULTI-BG S.A. CORPORACION | 1           |
+| 33                     | 3                | MUTUALISTA  | MUTUALISTA PICHINCHA | MUTUALISTA PICHINCHA | 1           |
+| 58                     | 3                | NATLUK SA   | NATLUK SA   | NATLUK SA        | 1           |
+| 89                     | 3                | OCCIPLAZA   | FONDO DE INVERSION COLECT OCCIPLAZA 06 | FONDO DE INVERSION COLECT OCCIPLAZA 06 | 1           |
+| 45                     | 3                | PATHFOREST  | PATHFOREST S.A. EL SENDERO FORESTAL | PATHFOREST S.A. EL SENDERO FORESTAL | 1           |
+| 161                    | 3                | PITO        | COLORITO    | COLORITO         | 0           |
+| 23                     | 3                | QUITOLINDO  | QUITOLINDO QUITO LINDO SA | QUITOLINDO QUITO LINDO SA | 1           |
+| 87                     | 3                | REIT 03     | FONDO DE INVERSION COLECTIVO REIT 03 | FONDO DE INVERSION COLECTIVO REIT 03 | 1           |
+| 36                     | 3                | RETRATOREC  | RETRATOREC S.A. | RETRATOREC S.A.  | 1           |
+| 48                     | 3                | RIO CONGO   | RIO CONGO FORESTAL | RIO CONGO FORESTAL | 1           |
+| 17                     | 3                | RIO GRANDE  | RIO GRANDE FORESTAL RIVERFOREST SA | RIO GRANDE FORESTAL RIVERFOREST SA | 1           |
+| 82                     | 3                | ROSADO GYE  | FONDO DE INV COLECTIVO ROSADO GYE 1 | FONDO DE INV COLECTIVO ROSADO GYE 1 | 1           |
+| 25                     | 3                | SAN CARLOS  | SAN CARLOS SOC. AGR. IND. | SAN CARLOS SOC. AGR. IND. | 1           |
+| 68                     | 3                | SIEMPREVER  | SIEMPREVERDE SA | SIEMPREVERDE SA  | 1           |
+| 49                     | 3                | SUPERDEPOR  | SUPERDEPORTE S.A. | SUPERDEPORTE S.A. | 1           |
+| 55                     | 3                | SURPAPELCO  | SURPAPELCORP S A | SURPAPELCORP S A | 1           |
+| 70                     | 3                | TECAFORTUN  | TECAFORTUNA SA | TECAFORTUNA SA   | 1           |
+| 65                     | 3                | TECATEAK S  | TECATEAK SA | TECATEAK SA      | 1           |
+| 51                     | 3                | UNACEM ECU  | UNACEM ECUADOR SA | UNACEM ECUADOR SA | 1           |
+| 39                     | 3                | VALLE GRAN  | VALLE GRANDE FORESTAL | VALLE GRANDE FORESTAL | 1           |
+| 85                     | 3                | VERDE 01    | FONDO DE INV COLEC PATRIMONIO  VERDE 01 | FONDO DE INV COLEC PATRIMONIO  VERDE 01 | 1           |
+| 76                     | 3                | VERDETEKA   | VERDETEKA   | VERDETEKA        | 1           |
+| NULL                   | NULL             | NULL        | NULL        | NULL             | NULL        |
++ ---------------------- + ---------------- + ----------- + ----------- + ---------------- + ----------- +
+74 rows
