@@ -25,6 +25,7 @@ import { MovimientoCapitalListComponent } from './modules/movimientos-capital/mo
 import { VentaInversionListComponent } from './modules/ventas-inversion/venta-inversion-list/venta-inversion-list.component';
 import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.component';
 import { DashboardInversionesComponent } from './modules/reportes/dashboard-inversiones/dashboard-inversiones.component';
+import { HistoricoAccionesComponent } from './modules/reportes/historico-acciones/historico-acciones.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -55,6 +56,7 @@ export const routes: Routes = [
       { path: 'reportes/recuperacion-anual', component: RecuperacionAnualComponent },
       { path: 'reportes/proyeccion-interes-anual', component: ProyeccionInteresAnualComponent },
       { path: 'reportes/dashboard-inversiones', component: DashboardInversionesComponent },
+      { path: 'reportes/historico-acciones', component: HistoricoAccionesComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },
       { path: 'movimientos-capital', component: MovimientoCapitalListComponent },

@@ -118,6 +118,11 @@ export class SidebarComponent implements OnInit {
           title: 'Dashboard de Gráficos',
           icon: 'bi-bar-chart-steps',
           path: '/reportes/dashboard-inversiones'
+        },
+        {
+          title: 'Historial de Acciones',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/historico-acciones'
         }
       ]
     },

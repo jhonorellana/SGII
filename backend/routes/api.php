@@ -22,6 +22,7 @@ use App\Http\Controllers\API\CuentaBancariaController;
 use App\Http\Controllers\API\MovimientoCapitalController;
 use App\Http\Controllers\API\VentaInversionController;
 use App\Http\Controllers\API\VentaInversionDetalleController;
+use App\Http\Controllers\API\SharesHistoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -133,6 +134,9 @@ Route::get('reportes/flujo-capital/exportar/pdf', [FlujoCapitalController::class
 
 // Rutas de Reportes de Recuperación Anual
 Route::get('reportes/recuperacion-anual', [RecuperacionAnualController::class, 'getRecuperacionAnual']);
+
+// Rutas de Reportes de Historial de Acciones
+Route::get('reportes/historico-acciones', [SharesHistoryController::class, 'getHistoricoAcciones']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

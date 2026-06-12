@@ -1,0 +1,203 @@
+<div class="historico-container">
+  <!-- Page Header -->
+  <div class="page-header mb-2">
+    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+      <h1 class="page-title mb-0">Historial de Acciones</h1>
+      <span class="text-muted small">Evolución de cotizaciones, precios y volúmenes negociados en bolsa</span>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filter-card mb-2 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-center">
+        <!-- Empresa Selector -->
+        <div class="col-md-6 col-lg-4">
+          <label class="form-label text-secondary small fw-bold">Empresa Emisora</label>
+          <p-dropdown 
+            [options]="empresas" 
+            [(ngModel)]="selectedEmpresa" 
+            (onChange)="onFiltersChange()" 
+            placeholder="Seleccione una empresa" 
+            [filter]="true" 
+            filterBy="label"
+            [style]="{'width':'100%'}"
+            styleClass="w-100 p-dropdown-sm">
+          </p-dropdown>
+        </div>
+
+        <!-- Año Selector -->
+        <div class="col-md-4 col-lg-3">
+          <label class="form-label text-secondary small fw-bold">Rango de Año</label>
+          <p-dropdown 
+            [options]="anos" 
+            [(ngModel)]="selectedAnio" 
+            (onChange)="onFiltersChange()" 
+            [style]="{'width':'100%'}"
+            styleClass="w-100 p-dropdown-sm">
+          </p-dropdown>
+        </div>
+
+        <div class="col-md-2 col-lg-5 text-end mt-md-4 pt-md-2">
+          <button 
+            class="btn btn-outline-success btn-sm border-2 fw-bold" 
+            [disabled]="!hasData" 
+            (click)="exportarExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i> Exportar a Excel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-2 mb-2" *ngIf="hasData">
+    <!-- Card 1: Precio Promedio -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Precio Promedio</span>
+            <div class="kpi-icon-wrapper bg-blue-light text-blue">
+              <i class="bi bi-currency-dollar"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0">{{ formatCurrency(precioPromedio) }}</h3>
+          <span class="kpi-subtitle text-muted small">Promedio del periodo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Máximo / Mínimo -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Rango de Precio</span>
+            <div class="kpi-icon-wrapper bg-orange-light text-orange">
+              <i class="bi bi-arrow-down-up"></i>
+            </div>
+          </div>
+          <h4 class="kpi-value-alt mb-0">
+            <span class="text-success">{{ formatCurrency(precioMaximo) }}</span>
+            <span class="text-muted mx-1">/</span>
+            <span class="text-danger">{{ formatCurrency(precioMinimo) }}</span>
+          </h4>
+          <span class="kpi-subtitle text-muted small">Máx / Mín registrado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Volumen Total -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Volumen Total</span>
+            <div class="kpi-icon-wrapper bg-green-light text-green">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0 text-green">{{ formatCurrency(volumenTotal) }}</h3>
+          <span class="kpi-subtitle text-muted small">Monto transado acumulado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Acciones & Transacciones -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Operaciones</span>
+            <div class="kpi-icon-wrapper bg-purple-light text-purple">
+              <i class="bi bi-activity"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0">{{ formatInteger(transaccionesTotales) }}</h3>
+          <span class="kpi-subtitle text-muted small">En {{ formatInteger(accionesTotales) }} acciones</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="d-flex justify-content-center my-5 py-5" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Content Section (Chart & Table) -->
+  <div [class.d-none]="loading || !hasData">
+    <!-- Chart Card -->
+    <div class="card chart-card mb-2 border-0 shadow-sm">
+      <div class="card-header bg-white border-0 py-2">
+        <div class="d-flex align-items-baseline gap-2 flex-wrap">
+          <h5 class="mb-0 fw-bold">Evolución de Precio y Volumen</h5>
+          <span class="text-muted small">Línea: Precio promedio ($) | Barras: Volumen transado ($)</span>
+        </div>
+      </div>
+      <div class="card-body chart-card-body">
+        <div class="chart-container" style="height: 500px; position: relative;">
+          <p-chart *ngIf="chartData" type="line" [data]="chartData" [options]="chartOptions" [plugins]="chartPlugins" height="460px" [style]="{width: '100%'}"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card table-card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 py-3">
+        <h5 class="mb-0 fw-bold">Detalle Diario de Operaciones</h5>
+      </div>
+      <div class="card-body p-0">
+        <p-table 
+          [value]="historicoRecords" 
+          [paginator]="true" 
+          [rows]="10" 
+          [rowsPerPageOptions]="[10, 25, 50, 100]"
+          styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+          responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="fecha" style="width: 15%">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
+              <th pSortableColumn="emisor" style="width: 30%">Emisor <p-sortIcon field="emisor"></p-sortIcon></th>
+              <th pSortableColumn="cantidad" style="width: 15%" class="text-end">Acciones <p-sortIcon field="cantidad"></p-sortIcon></th>
+              <th pSortableColumn="precio" style="width: 13%" class="text-end">Precio Ponderado <p-sortIcon field="precio"></p-sortIcon></th>
+              <th pSortableColumn="valor" style="width: 15%" class="text-end">Monto Negociado <p-sortIcon field="valor"></p-sortIcon></th>
+              <th pSortableColumn="transacciones" style="width: 12%" class="text-end">Transacciones <p-sortIcon field="transacciones"></p-sortIcon></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-record>
+            <tr>
+              <td>{{ record.fecha }}</td>
+              <td>{{ record.emisor }}</td>
+              <td class="text-end">{{ formatInteger(record.cantidad) }}</td>
+              <td class="text-end fw-semibold text-primary">{{ formatCurrency(record.precio) }}</td>
+              <td class="text-end text-success fw-semibold">{{ formatCurrency(record.valor) }}</td>
+              <td class="text-end">{{ formatInteger(record.transacciones) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center py-4">No se encontraron registros para esta empresa.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data State -->
+  <div class="card border-0 shadow-sm text-center py-5 my-4" *ngIf="!loading && !hasData">
+    <div class="card-body">
+      <div class="text-muted mb-3">
+        <i class="bi bi-graph-down" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="fw-bold">No se encontraron registros</h5>
+      <p class="text-muted small mx-auto" style="max-width: 400px;">
+        Intenta seleccionar otra empresa emisora o cambia el filtro de año.
+      </p>
+    </div>
+  </div>
+</div>
