@@ -1,0 +1,181 @@
+.historico-container {
+  padding: 0.25rem 1.5rem 1rem 1.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Page Title */
+.page-title {
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* Cards & Layout */
+.card {
+  border-radius: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-card .card-body {
+  padding: 0.75rem 1rem;
+}
+
+.filter-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0 !important;
+}
+
+/* KPI icon wrappers with matching colors to chart lines */
+.kpi-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.bg-total-light {
+  background-color: hsl(215, 100%, 95%);
+}
+.text-total {
+  color: #3b82f6; /* Blue */
+}
+
+.bg-jhon-light {
+  background-color: hsl(0, 100%, 95%);
+}
+.text-jhon {
+  color: #ef4444; /* Red */
+}
+
+.bg-jaime-light {
+  background-color: hsl(84, 80%, 93%);
+}
+.text-jaime {
+  color: #84cc16; /* Green */
+}
+
+.bg-cristian-light {
+  background-color: hsl(188, 90%, 93%);
+}
+.text-cristian {
+  color: #06b6d4; /* Teal */
+}
+
+.bg-argentina-light {
+  background-color: hsl(262, 80%, 95%);
+}
+.text-argentina {
+  color: #8b5cf6; /* Purple */
+}
+
+/* KPI text styles */
+.kpi-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.kpi-subtitle {
+  color: #94a3b8;
+  font-size: 0.75rem;
+}
+
+/* Chart Styles */
+.chart-card {
+  border: 1px solid #e2e8f0;
+}
+
+.chart-card-body {
+  padding: 1rem !important;
+}
+
+.chart-container {
+  border-radius: 8px;
+  padding: 0 5px;
+}
+
+/* Table Styles */
+.table-card {
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+::v-deep .p-datatable {
+  font-size: 0.9rem;
+}
+
+::v-deep .p-datatable .p-datatable-thead > tr > th {
+  background-color: #f8fafc;
+  color: #334155;
+  font-weight: 600;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 12px 16px;
+}
+
+::v-deep .p-datatable .p-datatable-tbody > tr {
+  background-color: #ffffff;
+  color: #334155;
+  transition: background-color 0.15s ease;
+}
+
+::v-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background-color: #f1f5f9;
+}
+
+::v-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+::v-deep .p-paginator {
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  padding: 8px;
+}
+
+::v-deep .p-dropdown {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+::v-deep .p-dropdown:not(.p-disabled).p-focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
+}
+
+::v-deep .p-dropdown .p-dropdown-label {
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}

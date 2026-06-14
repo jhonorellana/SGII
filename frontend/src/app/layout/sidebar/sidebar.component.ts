@@ -128,6 +128,11 @@ export class SidebarComponent implements OnInit {
           title: 'Resumen Diario de Bolsa',
           icon: 'bi-journal-check',
           path: '/reportes/resumen-diario-bolsa'
+        },
+        {
+          title: 'Histórico de Capital',
+          icon: 'bi-graph-up',
+          path: '/reportes/historico-patrimonio'
         }
       ]
     },
@@ -160,6 +165,11 @@ export class SidebarComponent implements OnInit {
           title: 'Cuentas Bancarias',
           icon: 'bi-bank',
           path: '/cuentas-bancarias'
+        },
+        {
+          title: 'Histórico Patrimonio',
+          icon: 'bi-wallet2',
+          path: '/historico-patrimonio'
         }
       ]
     },

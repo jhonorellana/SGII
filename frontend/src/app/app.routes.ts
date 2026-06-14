@@ -27,6 +27,8 @@ import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.
 import { DashboardInversionesComponent } from './modules/reportes/dashboard-inversiones/dashboard-inversiones.component';
 import { HistoricoAccionesComponent } from './modules/reportes/historico-acciones/historico-acciones.component';
 import { ResumenDiarioBolsaComponent } from './modules/reportes/resumen-diario-bolsa/resumen-diario-bolsa.component';
+import { HistoricoPatrimonioListComponent } from './modules/historico-patrimonio/historico-patrimonio-list/historico-patrimonio-list.component';
+import { HistoricoPatrimonioReportComponent } from './modules/reportes/historico-patrimonio-report/historico-patrimonio-report.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -59,6 +61,8 @@ export const routes: Routes = [
       { path: 'reportes/dashboard-inversiones', component: DashboardInversionesComponent },
       { path: 'reportes/historico-acciones', component: HistoricoAccionesComponent },
       { path: 'reportes/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
+      { path: 'reportes/historico-patrimonio', component: HistoricoPatrimonioReportComponent },
+      { path: 'historico-patrimonio', component: HistoricoPatrimonioListComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },
       { path: 'movimientos-capital', component: MovimientoCapitalListComponent },

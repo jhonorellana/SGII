@@ -1,0 +1,219 @@
+<div class="container-fluid">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+    <div>
+      <h2 class="mb-1 text-dark">Histórico de Crecimiento de Patrimonio</h2>
+      <p class="text-muted small">Mantenimiento de las inversiones y capital consolidado de los socios y fondos propios</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()" [disabled]="loading || !records.length">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()" [disabled]="loading || !records.length">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openNew()">
+        <i class="bi bi-plus-circle"></i> Nuevo Snapshot
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5 glass border rounded">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2 text-muted">Cargando registros de patrimonio histórico...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="alert alert-danger shadow-sm">
+    <i class="bi bi-exclamation-triangle"></i> {{ error }}
+  </div>
+
+  <!-- Table Section -->
+  <div *ngIf="!loading && !error" class="card shadow-sm border border-slate-100 rounded-lg overflow-hidden">
+    <p-table #dt [value]="records" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
+             [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [globalFilterFields]="['fecha']"
+             [tableStyle]="{'min-width': '85rem'}"
+             styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped"
+             [loading]="loading"
+             responsiveLayout="scroll"
+             [totalRecords]="totalRecords"
+             showCurrentPageReport="true"
+             (onFilter)="onFilter($event)"
+             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
+
+      <!-- Header with search bar -->
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-between align-items-center table-header-caption">
+          <span class="table-caption-title">Registros Históricos</span>
+          <span class="p-input-icon-left search-wrapper">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="onGlobalFilter($event)"
+                   placeholder="Buscar por fecha (YYYY-MM-DD)..." class="p-inputtext-sm search-filter-input" />
+          </span>
+        </div>
+      </ng-template>
+
+      <!-- Columns definition -->
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="fecha" class="text-center">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
+          <th pSortableColumn="capital_jaime" class="text-right">Cap. Jaime <p-sortIcon field="capital_jaime"></p-sortIcon></th>
+          <th pSortableColumn="capital_argentina" class="text-right">Cap. Argentina <p-sortIcon field="capital_argentina"></p-sortIcon></th>
+          <th pSortableColumn="capital_cristian" class="text-right">Cap. Cristian <p-sortIcon field="capital_cristian"></p-sortIcon></th>
+          <th pSortableColumn="capital_propio" class="text-right">Cap. Propio <p-sortIcon field="capital_propio"></p-sortIcon></th>
+          <th pSortableColumn="capital_importacion" class="text-right">Cap. Importación <p-sortIcon field="capital_importacion"></p-sortIcon></th>
+          <th pSortableColumn="capital_total_propio" class="text-right">Total Propio <p-sortIcon field="capital_total_propio"></p-sortIcon></th>
+          <th pSortableColumn="capital_total" class="text-right">Total Consolidado <p-sortIcon field="capital_total"></p-sortIcon></th>
+          <th class="text-center" style="width: 8rem;">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <!-- Body mapping -->
+      <ng-template pTemplate="body" let-record>
+        <tr>
+          <td class="text-center font-mono font-bold">{{ record.fecha | date:'dd/MM/yyyy' }}</td>
+          <td class="text-right font-mono">{{ formatearMoneda(record.capital_jaime) }}</td>
+          <td class="text-right font-mono">{{ formatearMoneda(record.capital_argentina) }}</td>
+          <td class="text-right font-mono">{{ formatearMoneda(record.capital_cristian) }}</td>
+          <td class="text-right font-mono">{{ formatearMoneda(record.capital_propio) }}</td>
+          <td class="text-right font-mono">{{ formatearMoneda(record.capital_importacion) }}</td>
+          <td class="text-right font-mono font-bold text-info">{{ formatearMoneda(record.capital_total_propio) }}</td>
+          <td class="text-right font-mono font-bold text-success">{{ formatearMoneda(record.capital_total) }}</td>
+          <td class="text-center">
+            <div class="btn-group">
+              <button class="btn btn-sm btn-outline-info" (click)="openEdit(record)" title="Editar registro">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="delete(record)" title="Eliminar registro">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <!-- Empty state template -->
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="9" class="text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted"></i>
+            <p class="mb-0 text-muted mt-2">No se encontraron registros de patrimonio histórico</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Form Dialog Modal -->
+  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Registro de Patrimonio' : 'Nuevo Registro de Patrimonio'"
+            [style]="{width: '550px'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true" appendTo="body"
+            styleClass="custom-patrimonio-dialog">
+    
+    <div *ngIf="formError" class="alert alert-danger shadow-sm">
+      <i class="bi bi-exclamation-triangle"></i> {{ formError }}
+    </div>
+
+    <form [formGroup]="patrimonioForm" (ngSubmit)="save()">
+      
+      <!-- Date Field -->
+      <div class="mb-3">
+        <label for="fecha" class="form-label font-bold small text-secondary">Fecha de Registro <span class="text-danger">*</span></label>
+        <input type="date" class="form-control" id="fecha" formControlName="fecha"
+               [class.is-invalid]="patrimonioForm.get('fecha')?.invalid && patrimonioForm.get('fecha')?.touched">
+        <div class="invalid-feedback" *ngIf="patrimonioForm.get('fecha')?.invalid && patrimonioForm.get('fecha')?.touched">
+          La fecha es obligatoria.
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Capital Jaime -->
+        <div class="col-md-6 mb-3">
+          <label for="capital_jaime" class="form-label font-bold small text-secondary">Capital Jaime ($) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control text-right font-mono" id="capital_jaime" formControlName="capital_jaime"
+                 [class.is-invalid]="patrimonioForm.get('capital_jaime')?.invalid && patrimonioForm.get('capital_jaime')?.touched">
+          <div class="invalid-feedback" *ngIf="patrimonioForm.get('capital_jaime')?.invalid && patrimonioForm.get('capital_jaime')?.touched">
+            Requerido y debe ser positivo.
+          </div>
+        </div>
+
+        <!-- Capital Argentina -->
+        <div class="col-md-6 mb-3">
+          <label for="capital_argentina" class="form-label font-bold small text-secondary">Capital Argentina ($) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control text-right font-mono" id="capital_argentina" formControlName="capital_argentina"
+                 [class.is-invalid]="patrimonioForm.get('capital_argentina')?.invalid && patrimonioForm.get('capital_argentina')?.touched">
+          <div class="invalid-feedback" *ngIf="patrimonioForm.get('capital_argentina')?.invalid && patrimonioForm.get('capital_argentina')?.touched">
+            Requerido y debe ser positivo.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Capital Cristian -->
+        <div class="col-md-6 mb-3">
+          <label for="capital_cristian" class="form-label font-bold small text-secondary">Capital Cristian ($) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control text-right font-mono" id="capital_cristian" formControlName="capital_cristian"
+                 [class.is-invalid]="patrimonioForm.get('capital_cristian')?.invalid && patrimonioForm.get('capital_cristian')?.touched">
+          <div class="invalid-feedback" *ngIf="patrimonioForm.get('capital_cristian')?.invalid && patrimonioForm.get('capital_cristian')?.touched">
+            Requerido y debe ser positivo.
+          </div>
+        </div>
+
+        <!-- Capital Total Consolidado -->
+        <div class="col-md-6 mb-3">
+          <label for="capital_total" class="form-label font-bold small text-secondary">Capital Total Consolidado ($) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control text-right font-mono" id="capital_total" formControlName="capital_total"
+                 [class.is-invalid]="patrimonioForm.get('capital_total')?.invalid && patrimonioForm.get('capital_total')?.touched">
+          <div class="invalid-feedback" *ngIf="patrimonioForm.get('capital_total')?.invalid && patrimonioForm.get('capital_total')?.touched">
+            Requerido y debe ser positivo.
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <!-- Capital Importación -->
+        <div class="col-md-6 mb-3">
+          <label for="capital_importacion" class="form-label font-bold small text-secondary">Capital Importación ($) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" class="form-control text-right font-mono" id="capital_importacion" formControlName="capital_importacion"
+                 [class.is-invalid]="patrimonioForm.get('capital_importacion')?.invalid && patrimonioForm.get('capital_importacion')?.touched">
+          <div class="invalid-feedback" *ngIf="patrimonioForm.get('capital_importacion')?.invalid && patrimonioForm.get('capital_importacion')?.touched">
+            Requerido y debe ser positivo.
+          </div>
+        </div>
+      </div>
+
+      <!-- Live-calculated fields summary box -->
+      <div class="p-3 bg-light rounded border border-slate-200 mt-4 mb-4">
+        <h6 class="font-bold text-dark border-bottom pb-2 mb-2"><i class="bi bi-calculator-fill me-1"></i> Resumen Calculado (Previsualización)</h6>
+        
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="small text-secondary font-medium">Capital Propio (Total - Socios):</span>
+          <span class="font-mono font-bold text-dark">{{ formatearMoneda(calculatedPropio) }}</span>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="small text-secondary font-medium">Total Capital Propio (Propio + Importación):</span>
+          <span class="font-mono font-bold text-info">{{ formatearMoneda(calculatedTotalPropio) }}</span>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <app-modal-actions
+          [cancelText]="'Cancelar'"
+          [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
+          [loading]="formLoading"
+          (onCancel)="displayDialog = false"
+          (onSave)="save()">
+        </app-modal-actions>
+      </div>
+    </form>
+  </p-dialog>
+</div>

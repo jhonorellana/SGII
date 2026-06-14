@@ -1,0 +1,207 @@
+<div class="historico-container">
+  <!-- Page Header -->
+  <div class="page-header mb-3">
+    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+      <h1 class="page-title mb-0">Histórico de Capital Invertido</h1>
+      <span class="text-muted small">Evolución de los fondos invertidos por el grupo familiar y capital propio</span>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card filter-card mb-3 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-center">
+        <!-- Año Selector -->
+        <div class="col-md-4 col-lg-3">
+          <label class="form-label text-secondary small fw-bold">Rango de Año</label>
+          <p-dropdown 
+            [options]="anos" 
+            [(ngModel)]="selectedAnio" 
+            (onChange)="onFiltersChange()" 
+            [style]="{'width':'100%'}"
+            styleClass="w-100 p-dropdown-sm">
+          </p-dropdown>
+        </div>
+
+        <div class="col-md-8 col-lg-9 text-end mt-md-4 pt-md-2 d-flex gap-2 justify-content-end">
+          <button 
+            class="btn btn-outline-success btn-sm border-2 fw-bold" 
+            [disabled]="!hasData" 
+            (click)="exportarExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+          </button>
+          <button 
+            class="btn btn-outline-danger btn-sm border-2 fw-bold" 
+            [disabled]="!hasData" 
+            (click)="exportarPDF()">
+            <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Loading State -->
+  <div class="d-flex justify-content-center my-5 py-5" *ngIf="loading">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Content Section (Chart, KPIs & Table) -->
+  <div [class.d-none]="loading || !hasData">
+    <!-- Chart Card -->
+    <div class="card chart-card mb-3 border-0 shadow-sm">
+      <div class="card-header bg-white border-0 py-2">
+        <div class="d-flex align-items-baseline gap-2 flex-wrap">
+          <h5 class="mb-0 fw-bold">Evolución de Capital Invertido</h5>
+          <span class="text-muted small">Comparación gráfica de crecimiento de patrimonio consolidado y aportes individuales</span>
+        </div>
+      </div>
+      <div class="card-body chart-card-body">
+        <div class="chart-container" style="height: 670px; position: relative;">
+          <p-chart *ngIf="chartData" type="line" [data]="chartData" [options]="chartOptions" height="630px" [style]="{width: '100%'}"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI Cards (Latest Snapshot Values) -->
+    <div class="row g-2 mb-3">
+      <!-- Card 1: Capital Total Consolidado -->
+      <div class="col-xl col-md-4 col-sm-6">
+        <div class="kpi-card shadow-sm border-0 h-100 card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="kpi-label text-secondary small fw-semibold">Total Consolidado</span>
+              <div class="kpi-icon-wrapper bg-total-light text-total">
+                <i class="bi bi-cash-stack"></i>
+              </div>
+            </div>
+            <h3 class="kpi-value mb-0 text-total">{{ formatCurrency(totalConsolidado) }}</h3>
+            <span class="kpi-subtitle text-muted small">Último valor registrado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Jhon (Propio) -->
+      <div class="col-xl col-md-4 col-sm-6">
+        <div class="kpi-card shadow-sm border-0 h-100 card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="kpi-label text-secondary small fw-semibold">Cap. Jhon (Propio)</span>
+              <div class="kpi-icon-wrapper bg-jhon-light text-jhon">
+                <i class="bi bi-person-fill-gear"></i>
+              </div>
+            </div>
+            <h3 class="kpi-value mb-0 text-jhon">{{ formatCurrency(totalJhon) }}</h3>
+            <span class="kpi-subtitle text-muted small">Último valor registrado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Jaime -->
+      <div class="col-xl col-md-4 col-sm-6">
+        <div class="kpi-card shadow-sm border-0 h-100 card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="kpi-label text-secondary small fw-semibold">Cap. Jaime</span>
+              <div class="kpi-icon-wrapper bg-jaime-light text-jaime">
+                <i class="bi bi-person-fill"></i>
+              </div>
+            </div>
+            <h3 class="kpi-value mb-0 text-jaime">{{ formatCurrency(totalJaime) }}</h3>
+            <span class="kpi-subtitle text-muted small">Último valor registrado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Cristian -->
+      <div class="col-xl col-md-4 col-sm-6">
+        <div class="kpi-card shadow-sm border-0 h-100 card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="kpi-label text-secondary small fw-semibold">Cap. Cristian</span>
+              <div class="kpi-icon-wrapper bg-cristian-light text-cristian">
+                <i class="bi bi-person-fill"></i>
+              </div>
+            </div>
+            <h3 class="kpi-value mb-0 text-cristian">{{ formatCurrency(totalCristian) }}</h3>
+            <span class="kpi-subtitle text-muted small">Último valor registrado</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Argentina -->
+      <div class="col-xl col-md-4 col-sm-6">
+        <div class="kpi-card shadow-sm border-0 h-100 card">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="kpi-label text-secondary small fw-semibold">Cap. Argentina</span>
+              <div class="kpi-icon-wrapper bg-argentina-light text-argentina">
+                <i class="bi bi-person-fill"></i>
+              </div>
+            </div>
+            <h3 class="kpi-value mb-0 text-argentina">{{ formatCurrency(totalArgentina) }}</h3>
+            <span class="kpi-subtitle text-muted small">Último valor registrado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card table-card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 py-3">
+        <h5 class="mb-0 fw-bold">Registros de Patrimonio Histórico</h5>
+      </div>
+      <div class="card-body p-0">
+        <p-table 
+          [value]="tableRecords" 
+          [paginator]="true" 
+          [rows]="10" 
+          [rowsPerPageOptions]="[10, 25, 50, 100]"
+          styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+          responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="fecha" style="width: 12%">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
+              <th pSortableColumn="capital_propio" style="width: 14%" class="text-end">Cap. Jhon (Propio) <p-sortIcon field="capital_propio"></p-sortIcon></th>
+              <th pSortableColumn="capital_jaime" style="width: 14%" class="text-end">Cap. Jaime <p-sortIcon field="capital_jaime"></p-sortIcon></th>
+              <th pSortableColumn="capital_argentina" style="width: 14%" class="text-end">Cap. Argentina <p-sortIcon field="capital_argentina"></p-sortIcon></th>
+              <th pSortableColumn="capital_cristian" style="width: 14%" class="text-end">Cap. Cristian <p-sortIcon field="capital_cristian"></p-sortIcon></th>
+              <th pSortableColumn="capital_importacion" style="width: 14%" class="text-end">Cap. Importación <p-sortIcon field="capital_importacion"></p-sortIcon></th>
+              <th pSortableColumn="capital_total" style="width: 18%" class="text-end fw-bold">Total Consolidado <p-sortIcon field="capital_total"></p-sortIcon></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-record>
+            <tr>
+              <td>{{ record.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="text-end font-mono">{{ formatCurrency(record.capital_propio) }}</td>
+              <td class="text-end font-mono">{{ formatCurrency(record.capital_jaime) }}</td>
+              <td class="text-end font-mono">{{ formatCurrency(record.capital_argentina) }}</td>
+              <td class="text-end font-mono">{{ formatCurrency(record.capital_cristian) }}</td>
+              <td class="text-end font-mono">{{ formatCurrency(record.capital_importacion) }}</td>
+              <td class="text-end font-mono fw-bold text-success">{{ formatCurrency(record.capital_total) }}</td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center py-4">No se encontraron registros de patrimonio histórico para el año seleccionado.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data State -->
+  <div class="card border-0 shadow-sm text-center py-5 my-4" *ngIf="!loading && !hasData">
+    <div class="card-body">
+      <div class="text-muted mb-3">
+        <i class="bi bi-graph-down" style="font-size: 3rem;"></i>
+      </div>
+      <h5 class="fw-bold">No se encontraron registros</h5>
+      <p class="text-muted small mx-auto" style="max-width: 400px;">
+        Intenta cambiar el filtro de año.
+      </p>
+    </div>
+  </div>
+</div>

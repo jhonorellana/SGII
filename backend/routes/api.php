@@ -24,6 +24,7 @@ use App\Http\Controllers\API\VentaInversionController;
 use App\Http\Controllers\API\VentaInversionDetalleController;
 use App\Http\Controllers\API\SharesHistoryController;
 use App\Http\Controllers\API\ResumenBolsaController;
+use App\Http\Controllers\API\HistoricoPatrimonioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,6 +97,9 @@ Route::apiResource('emisores', EmisorController::class);
 
 // Rutas de Instrumentos (temporalmente sin autenticación para pruebas)
 Route::apiResource('instrumentos', InstrumentoController::class);
+
+// Rutas de Histórico de Patrimonio (temporalmente sin autenticación para pruebas)
+Route::apiResource('historico-patrimonio', HistoricoPatrimonioController::class);
 
 // Rutas de Inversiones (temporalmente sin autenticación para pruebas)
 Route::apiResource('inversiones', InversionController::class);
