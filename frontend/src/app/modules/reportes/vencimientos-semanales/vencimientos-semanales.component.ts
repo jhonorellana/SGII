@@ -623,6 +623,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     // Encabezados para el detalle
     const headers = [
+      'Id',
       'Propietario',
       'Emisor',
       'Tipo Inversión',
@@ -639,6 +640,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     // Si es lunes, crear hoja para lunes
     if (this.esLunes && this.detalleItemsLunes.length > 0) {
       const datosLunes = this.detalleItemsLunes.map(item => [
+        item.id_inversion_amortizacion,
         item.propietario,
         item.emisor,
         item.tipo_inversion,
@@ -662,14 +664,14 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
       const wsLunes = XLSX.utils.aoa_to_sheet(wsDataLunes);
       wsLunes['!cols'] = [
-        {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
+        {wch: 18}, {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
         {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}
       ];
 
       // Formatear columnas numéricas
       const rangeLunes = XLSX.utils.decode_range(wsLunes['!ref'] || 'A1');
       for (let row = 4; row <= rangeLunes.e.r; row++) {
-        for (let col = rangeLunes.s.c + 4; col <= rangeLunes.e.c; col++) {
+        for (let col = rangeLunes.s.c + 5; col <= rangeLunes.e.c; col++) {
           const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
           if (wsLunes[cellAddress]) {
             wsLunes[cellAddress].z = '#,##0.00';
@@ -682,6 +684,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     // Datos del detalle consolidado
     const datosDetalle = this.detalleItems.map(item => [
+      item.id_inversion_amortizacion,
       item.propietario,
       item.emisor,
       item.tipo_inversion,
@@ -709,6 +712,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     // Ancho de columnas
     ws['!cols'] = [
+      {wch: 18}, // Id
       {wch: 25}, // Propietario
       {wch: 25}, // Emisor
       {wch: 20}, // Tipo Inversión
@@ -726,7 +730,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     const startRow = this.esLunes ? 5 : 1; // Empezar después de los headers de info si es lunes
     for (let row = startRow; row <= range.e.r; row++) {
-      for (let col = range.s.c + 4; col <= range.e.c; col++) {
+      for (let col = range.s.c + 5; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
         if (ws[cellAddress]) {
           ws[cellAddress].z = '#,##0.00';
@@ -766,6 +770,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     const wb = XLSX.utils.book_new();
 
     const headers = [
+      'Id',
       'Propietario',
       'Emisor',
       'Tipo Inversión',
@@ -780,6 +785,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
     ];
 
     const datosLunes = this.detalleItemsLunes.map(item => [
+      item.id_inversion_amortizacion,
       item.propietario,
       item.emisor,
       item.tipo_inversion,
@@ -803,14 +809,14 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
     ws['!cols'] = [
-      {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
+      {wch: 18}, {wch: 25}, {wch: 25}, {wch: 20}, {wch: 15},
       {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 12}
     ];
 
     // Formatear columnas numéricas
     const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
     for (let row = 4; row <= range.e.r; row++) {
-      for (let col = range.s.c + 4; col <= range.e.c; col++) {
+      for (let col = range.s.c + 5; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({r: row, c: col});
         if (ws[cellAddress]) {
           ws[cellAddress].z = '#,##0.00';

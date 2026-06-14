@@ -7,6 +7,12 @@ import { TableModule } from 'primeng/table';
 import { CatalogoService, CatalogoValor } from '../../../core/catalogo.service';
 import { SharesHistoryService, SharesHistoryRecord } from '../../../core/shares-history.service';
 import * as XLSX from 'xlsx';
+import 'chartjs-adapter-date-fns';
+import { es } from 'date-fns/locale';
+import { Chart, TimeScale, TimeSeriesScale } from 'chart.js';
+
+// Register the required temporal scales globally in Chart.js
+Chart.register(TimeScale, TimeSeriesScale);
 
 @Component({
   selector: 'app-historico-acciones',
@@ -182,28 +188,6 @@ export class HistoricoAccionesComponent implements OnInit {
     this.transaccionesTotales = totalTrans;
   }
 
-  getDecimalMonthsSinceBase(dateStr: string): number {
-    if (!dateStr) return 0;
-    const parts = dateStr.split('-');
-    if (parts.length !== 3) return 0;
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10); // 1-12
-    const day = parseInt(parts[2], 10);
-    
-    if (Number(this.selectedAnio) === 0) {
-      const yearsDiff = year - 2017;
-      const monthsDiff = yearsDiff * 12 + (month - 1);
-      const daysInMonth = new Date(year, month, 0).getDate();
-      const dayFraction = (day - 1) / daysInMonth;
-      return monthsDiff + dayFraction;
-    } else {
-      const monthsDiff = month - 1;
-      const daysInMonth = new Date(year, month, 0).getDate();
-      const dayFraction = (day - 1) / daysInMonth;
-      return monthsDiff + dayFraction;
-    }
-  }
-
   buildChart(): void {
     if (!this.hasData) {
       this.chartData = null;
@@ -213,29 +197,19 @@ export class HistoricoAccionesComponent implements OnInit {
     // Re-initialize chart options to dynamically apply selected year settings (min/max range)
     this.setupChartOptions();
 
-    const firstRec = this.historicoRecords[0];
-    const initialPrice = typeof firstRec.precio === 'string' ? parseFloat(firstRec.precio) : (firstRec.precio || 0);
-
-    const firstX = this.getDecimalMonthsSinceBase(firstRec.fecha);
-    this.hasPrepended = firstX > 0;
-
     const prices = this.historicoRecords.map(rec => {
-      const x = this.getDecimalMonthsSinceBase(rec.fecha);
+      const x = new Date(rec.fecha + 'T00:00:00').getTime();
       const y = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
       return { x, y };
     });
 
     const volumes = this.historicoRecords.map(rec => {
-      const x = this.getDecimalMonthsSinceBase(rec.fecha);
+      const x = new Date(rec.fecha + 'T00:00:00').getTime();
       const y = typeof rec.valor === 'string' ? parseFloat(rec.valor) : (rec.valor || 0);
       return { x, y };
     });
 
-    // Insertar punto de línea base en Ene 1 si el primer punto no es exactamente el inicio de la escala (x = 0)
-    if (prices.length > 0 && this.hasPrepended) {
-      prices.unshift({ x: 0, y: initialPrice });
-      volumes.unshift({ x: 0, y: 0 });
-    }
+    this.hasPrepended = false;
 
     this.chartData = {
       datasets: [
@@ -309,22 +283,12 @@ export class HistoricoAccionesComponent implements OnInit {
           callbacks: {
             title: (tooltipItems: any[]) => {
               if (tooltipItems.length > 0) {
-                const rawIndex = tooltipItems[0].dataIndex;
-                let index = rawIndex;
-                if (this.hasPrepended) {
-                  index = Math.max(0, index - 1);
-                }
+                const index = tooltipItems[0].dataIndex;
                 const record = this.historicoRecords[index];
                 if (!record) return '';
-                
-                let fechaDisplay = record.fecha;
-                if (this.hasPrepended && rawIndex === 0) {
-                  fechaDisplay = Number(this.selectedAnio) === 0 ? '2017-01-01' : `${this.selectedAnio}-01-01`;
-                }
-                
                 return [
                   `Emisor: ${record.emisor || ''}`,
-                  `Fecha: ${fechaDisplay}`
+                  `Fecha: ${record.fecha}`
                 ];
               }
               return '';
@@ -341,17 +305,7 @@ export class HistoricoAccionesComponent implements OnInit {
             },
             footer: (tooltipItems: any[]) => {
               if (tooltipItems.length > 0) {
-                const rawIndex = tooltipItems[0].dataIndex;
-                if (this.hasPrepended && rawIndex === 0) {
-                  return [
-                    `Acciones: 0`,
-                    `Transacciones: 0`
-                  ].join('\n');
-                }
-                let index = rawIndex;
-                if (this.hasPrepended) {
-                  index = index - 1;
-                }
+                const index = tooltipItems[0].dataIndex;
                 const record = this.historicoRecords[index];
                 if (!record) return '';
                 return [
@@ -366,11 +320,25 @@ export class HistoricoAccionesComponent implements OnInit {
       },
       scales: {
         x: {
-          type: 'linear',
-          bounds: 'ticks',
+          type: 'time',
+          adapters: {
+            date: {
+              locale: es
+            }
+          },
+          time: {
+            unit: Number(this.selectedAnio) === 0 ? 'year' : 'month',
+            tooltipFormat: 'yyyy-MM-dd',
+            displayFormats: {
+              year: 'yyyy',
+              month: 'MMM yyyy'
+            }
+          },
           offset: false,
           grid: {
-            display: false
+            display: true,
+            drawTicks: false,
+            color: () => 'rgba(234, 179, 8, 0.6)'
           },
           ticks: {
             color: '#6c757d',
@@ -380,42 +348,51 @@ export class HistoricoAccionesComponent implements OnInit {
             },
             autoSkip: false,
             callback: (value: any) => {
-              const val = Math.round(value);
+              const d = new Date(value);
               if (Number(this.selectedAnio) === 0) {
-                const year = 2017 + Math.floor(val / 12);
-                if (val % 12 === 0) {
-                  return val === 120 ? '' : year.toString();
+                if (d.getMonth() === 0 && d.getDate() === 1) {
+                  return d.getFullYear().toString();
                 }
                 return '';
               } else {
                 const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                if (val >= 0 && val < 12) {
-                  return `${monthNames[val]} ${this.selectedAnio}`;
+                if (d.getDate() === 1) {
+                  return `${monthNames[d.getMonth()]} ${this.selectedAnio}`;
                 }
                 return '';
               }
             }
           },
           afterBuildTicks: (scale: any) => {
-            const ticks = [];
+            const tickDates: Date[] = [];
             if (Number(this.selectedAnio) === 0) {
-              for (let y = 2017; y <= 2027; y++) {
-                ticks.push({ value: (y - 2017) * 12 });
+              for (let y = 2017; y <= 2026; y++) {
+                tickDates.push(new Date(y, 0, 1));
               }
+              tickDates.push(new Date(2026, 11, 31, 23, 59, 59));
             } else {
-              for (let m = 0; m <= 12; m++) {
-                ticks.push({ value: m });
+              const y = Number(this.selectedAnio);
+              for (let m = 0; m < 12; m++) {
+                tickDates.push(new Date(y, m, 1));
               }
+              tickDates.push(new Date(y, 11, 31, 23, 59, 59));
             }
-            scale.ticks = ticks;
+            scale.ticks = tickDates.map(d => ({
+              value: d.getTime()
+            }));
           },
-          min: 0,
-          max: Number(this.selectedAnio) === 0 ? 120 : 12
+          min: Number(this.selectedAnio) === 0
+            ? new Date('2017-01-01T00:00:00').getTime()
+            : new Date(`${this.selectedAnio}-01-01T00:00:00`).getTime(),
+          max: Number(this.selectedAnio) === 0
+            ? new Date('2026-12-31T23:59:59').getTime()
+            : new Date(`${this.selectedAnio}-12-31T23:59:59`).getTime()
         },
         y: {
           type: 'linear',
           display: true,
           position: 'left',
+          beginAtZero: false,
           title: {
             display: true,
             text: 'Precio ($)',

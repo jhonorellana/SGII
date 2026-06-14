@@ -285,6 +285,7 @@
         <table class="table table-striped table-hover">
           <thead>
             <tr style="background-color: #198754; color: white;">
+              <th style="background-color: #198754; color: white;">Id</th>
               <th style="background-color: #198754; color: white;">Propietario</th>
               <th style="background-color: #198754; color: white;">Emisor</th>
               <th style="background-color: #198754; color: white;">Tipo Inversión</th>
@@ -300,6 +301,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of detalleItemsLunes">
+              <td class="text-left">{{ item.id_inversion_amortizacion }}</td>
               <td class="text-left">{{ item.propietario }}</td>
               <td class="text-left">{{ item.emisor }}</td>
               <td class="text-left">{{ item.tipo_inversion }}</td>
@@ -313,7 +315,7 @@
               <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
             </tr>
             <tr *ngIf="detalleItemsLunes.length === 0">
-              <td colspan="11" class="text-center text-muted">No hay vencimientos para el lunes</td>
+              <td colspan="12" class="text-center text-muted">No hay vencimientos para el lunes</td>
             </tr>
           </tbody>
         </table>
@@ -336,6 +338,7 @@
         <table class="table table-striped table-hover">
           <thead>
             <tr style="background-color: #4a8c62; color: white;">
+              <th style="background-color: #4a8c62; color: white;">Id</th>
               <th style="background-color: #4a8c62; color: white;">Propietario</th>
               <th style="background-color: #4a8c62; color: white;">Emisor</th>
               <th style="background-color: #4a8c62; color: white;">Tipo Inversión</th>
@@ -351,6 +354,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of detalleItems">
+              <td class="text-left">{{ item.id_inversion_amortizacion }}</td>
               <td class="text-left">{{ item.propietario }}</td>
               <td class="text-left">{{ item.emisor }}</td>
               <td class="text-left">{{ item.tipo_inversion }}</td>

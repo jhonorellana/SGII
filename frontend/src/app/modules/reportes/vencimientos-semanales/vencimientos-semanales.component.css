@@ -14,13 +14,13 @@
 }
 
 .reporte-table {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   table-layout: fixed;
 }
 
 .reporte-table th {
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   white-space: nowrap;
@@ -236,3 +236,23 @@
   height: 100% !important;
   max-width: 100% !important;
 }
+
+/* Reducir tamaño de letra y padding de las tablas de detalle en el modal */
+.table-responsive .table:not(.reporte-table) {
+  font-size: 0.75rem;
+}
+
+.table-responsive .table:not(.reporte-table) th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0.3rem 0.4rem;
+  white-space: nowrap;
+}
+
+.table-responsive .table:not(.reporte-table) td {
+  padding: 0.3rem 0.4rem;
+  vertical-align: middle;
+}
+

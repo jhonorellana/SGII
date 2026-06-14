@@ -354,6 +354,7 @@ class VencimientosSemanalesController extends Controller
             // Función para obtener detalle agrupado
             $obtenerDetalle = function($fechas) {
                 $query = Amortizacion::select([
+                    \DB::raw("GROUP_CONCAT(CONCAT(amortizacion.id_inversion, '-', amortizacion.id_amortizacion) SEPARATOR ', ') as id_inversion_amortizacion"),
                     'persona.id_persona',
                     \DB::raw("CONCAT(persona.nombres, ' ', persona.apellidos) as propietario"),
                     'emisor.id_emisor',
@@ -411,6 +412,7 @@ class VencimientosSemanalesController extends Controller
                 $detalle = [];
                 foreach ($results as $row) {
                     $detalle[] = [
+                        'id_inversion_amortizacion' => $row->id_inversion_amortizacion,
                         'id_persona' => $row->id_persona,
                         'propietario' => $row->propietario,
                         'id_emisor' => $row->id_emisor,
