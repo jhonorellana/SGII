@@ -123,6 +123,11 @@ export class SidebarComponent implements OnInit {
           title: 'Historial de Acciones',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/historico-acciones'
+        },
+        {
+          title: 'Resumen Diario de Bolsa',
+          icon: 'bi-journal-check',
+          path: '/reportes/resumen-diario-bolsa'
         }
       ]
     },

@@ -1,0 +1,280 @@
+<p-toast></p-toast>
+
+<div class="report-container">
+  <!-- Encabezado y Selector de Filtros -->
+  <div class="header-section">
+    <div class="title-area">
+      <h1>Resumen Diario de Transacciones de Bolsa</h1>
+      <p class="subtitle">Análisis diario de renta fija, renta variable y cotizaciones de cierres del mercado</p>
+    </div>
+    
+    <div class="filter-controls">
+      <div class="calendar-wrapper">
+        <label for="fechaInicio">Fecha Inicio:</label>
+        <p-calendar 
+          id="fechaInicio"
+          [(ngModel)]="fechaInicio" 
+          dateFormat="yy-mm-dd" 
+          [showIcon]="true"
+          [readonlyInput]="true"
+          styleClass="custom-calendar"
+        ></p-calendar>
+      </div>
+
+      <div class="calendar-wrapper">
+        <label for="fechaFin">Fecha Fin:</label>
+        <p-calendar 
+          id="fechaFin"
+          [(ngModel)]="fechaFin" 
+          dateFormat="yy-mm-dd" 
+          [showIcon]="true"
+          [readonlyInput]="true"
+          styleClass="custom-calendar"
+        ></p-calendar>
+      </div>
+
+      <button class="btn btn-primary" (click)="cargarDatos()" [disabled]="cargando">
+        <i class="bi bi-search"></i> Consultar
+      </button>
+
+      <button class="btn btn-outline-excel" (click)="exportarExcel()" [disabled]="cargando || (!rentaFijaConsolidada.length && !acciones.length)">
+        <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+      </button>
+
+      <button class="btn btn-outline-pdf" (click)="exportarPDF()" [disabled]="cargando || (!rentaFijaConsolidada.length && !acciones.length)">
+        <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Estado de Carga -->
+  <div *ngIf="cargando" class="loading-state">
+    <div class="spinner"></div>
+    <p>Consultando transacciones en la base de datos...</p>
+  </div>
+
+  <!-- Estado Sin Datos -->
+  <div *ngIf="!cargando && datosCargados && rentaFijaConsolidada.length === 0 && acciones.length === 0" class="empty-state">
+    <i class="bi bi-info-circle-fill"></i>
+    <h3>No se registraron transacciones</h3>
+    <p *ngIf="fechaInicio.getTime() === fechaFin.getTime()">No existen operaciones de bolsa registradas en la base de datos para el día {{ fechaInicio | date:'dd/MM/yyyy' }}.</p>
+    <p *ngIf="fechaInicio.getTime() !== fechaFin.getTime()">No existen operaciones de bolsa registradas en la base de datos para el período del {{ fechaInicio | date:'dd/MM/yyyy' }} al {{ fechaFin | date:'dd/MM/yyyy' }}.</p>
+  </div>
+
+  <!-- Dashboard Principal -->
+  <div *ngIf="!cargando && datosCargados && (rentaFijaConsolidada.length > 0 || acciones.length > 0)">
+    
+    <!-- Fila de Tarjetas de Métricas (KPI Cards) -->
+    <div class="kpi-grid">
+      <!-- Tarjeta 1: Rendimiento Máx. Corto Plazo -->
+      <div class="kpi-card glass">
+        <div class="kpi-icon volume" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+          <i class="bi bi-lightning-charge"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-title">Rendimiento Máx. C.P. (≤ 360d)</span>
+          <h2 class="kpi-value positive">{{ rendimientoMaxCortoPlazo > 0 ? formatearPorcentaje(rendimientoMaxCortoPlazo) : 'N/A' }}</h2>
+          <span class="kpi-detail text-truncate" [title]="emisorMaxCortoPlazo" style="max-width: 100%;">{{ emisorMaxCortoPlazo }}</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta 2: Rendimiento Máx. Largo Plazo -->
+      <div class="kpi-card glass">
+        <div class="kpi-icon return" style="background-color: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-title">Rendimiento Máx. L.P. (> 360d)</span>
+          <h2 class="kpi-value positive">{{ rendimientoMaxLargoPlazo > 0 ? formatearPorcentaje(rendimientoMaxLargoPlazo) : 'N/A' }}</h2>
+          <span class="kpi-detail text-truncate" [title]="emisorMaxLargoPlazo" style="max-width: 100%;">{{ emisorMaxLargoPlazo }}</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta 3: Eficiencia de Tasa (Mejor Relación Rendimiento/Plazo) -->
+      <div class="kpi-card glass">
+        <div class="kpi-icon instrument" style="background-color: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+          <i class="bi bi-award"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-title">Eficiencia de Tasa (Rend. / Plazo)</span>
+          <h2 class="kpi-value">{{ eficienciaTasa > 0 ? formatearPorcentaje(eficienciaTasa) : 'N/A' }}</h2>
+          <span class="kpi-detail text-truncate" [title]="eficienciaPlazo > 0 ? 'A ' + eficienciaPlazo + ' días - ' + eficienciaEmisor : eficienciaEmisor" style="max-width: 100%;">{{ eficienciaPlazo > 0 ? 'A ' + eficienciaPlazo + ' días - ' + eficienciaEmisor : eficienciaEmisor }}</span>
+        </div>
+      </div>
+
+      <!-- Tarjeta 4: Mayor Descuento (Precio Mínimo en Renta Fija) -->
+      <div class="kpi-card glass">
+        <div class="kpi-icon operation" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+          <i class="bi bi-tags-fill"></i>
+        </div>
+        <div class="kpi-content">
+          <span class="kpi-title">Mayor Descuento (Precio Mín.)</span>
+          <h2 class="kpi-value">{{ descuentoPrecio > 0 ? (descuentoPrecio | number:'1.2-2') + '%' : 'N/A' }}</h2>
+          <span class="kpi-detail text-truncate" [title]="descuentoAhorro > 0 ? 'Ahorro: ' + (descuentoAhorro | number:'1.2-2') + '% - ' + descuentoEmisor : 'Sobre la par - ' + descuentoEmisor" style="max-width: 100%;">{{ descuentoAhorro > 0 ? 'Ahorro: ' + (descuentoAhorro | number:'1.2-2') + '% - ' + descuentoEmisor : 'Precio par - ' + descuentoEmisor }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Gráficos Analíticos -->
+    <div class="charts-grid">
+      <!-- Gráfico de Dispersión: Curva de Rendimiento -->
+      <div class="chart-card glass">
+        <h3>Curva de Rendimiento de Renta Fija (Rendimiento % vs Plazo)</h3>
+        <div class="scatter-wrapper">
+          <p-chart type="scatter" [data]="graficoCurvaDatos" [options]="graficoCurvaOpciones" height="320px" [style]="{width: '100%'}"></p-chart>
+        </div>
+      </div>
+
+      <!-- Gráfico de Rendimiento Promedio por Instrumento -->
+      <div class="chart-card glass">
+        <h3>Rendimiento Máximo por Tipo de Instrumento (Renta Fija)</h3>
+        <div class="chart-content-split">
+          <!-- Gráfico a la izquierda -->
+          <div class="chart-wrapper">
+            <p-chart type="bar" [data]="graficoRendimientoDatos" [options]="graficoRendimientoOpciones" height="260px" [style]="{width: '100%'}"></p-chart>
+          </div>
+          <!-- Leyenda a la derecha -->
+          <div class="chart-legend-panel">
+            <div class="leyenda-container">
+              <div *ngFor="let item of rendimientoLeyenda" class="leyenda-item">
+                <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                <div class="leyenda-info">
+                  <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                  <div class="leyenda-stats">
+                    <span class="leyenda-valor" style="color: #10b981; font-weight: 700;">{{ item.valor }}</span>
+                    <span class="leyenda-porcentaje" style="background-color: #f1f5f9; color: #64748b;">{{ item.detalle }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pestañas Detalladas (TabView) -->
+    <div class="tables-section glass">
+      <p-tabView>
+        <!-- Pestaña Renta Fija -->
+        <p-tabPanel header="Renta Fija (Deuda)">
+          <div class="table-container">
+            <p-table [value]="rentaFijaConsolidada" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRF [globalFilterFields]="['tipo','emisor','plazo','tasa','precio','rendimiento','valor_nominal','valor_efectivo','vencimiento']">
+              <ng-template pTemplate="caption">
+                <div class="d-flex justify-content-between align-items-center table-header-caption">
+                  <span class="table-caption-title">Operaciones de Renta Fija</span>
+                  <span class="p-input-icon-left search-wrapper">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dtRF.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en renta fija..." class="p-inputtext-sm search-filter-input" />
+                  </span>
+                </div>
+              </ng-template>
+              <ng-template pTemplate="header">
+                <tr>
+                  <th pSortableColumn="tipo">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
+                  <th pSortableColumn="emisor">Emisor / Decreto <p-sortIcon field="emisor"></p-sortIcon></th>
+                  <th pSortableColumn="plazo" class="text-right">Plazo (Días) <p-sortIcon field="plazo"></p-sortIcon></th>
+                  <th pSortableColumn="tasa" class="text-right">Tasa (%) <p-sortIcon field="tasa"></p-sortIcon></th>
+                  <th pSortableColumn="precio" class="text-right">Precio (%) <p-sortIcon field="precio"></p-sortIcon></th>
+                  <th pSortableColumn="rendimiento" class="text-right">Rendimiento (%) <p-sortIcon field="rendimiento"></p-sortIcon></th>
+                  <th pSortableColumn="valor_nominal" class="text-right">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+                  <th pSortableColumn="valor_efectivo" class="text-right">Valor Efectivo <p-sortIcon field="valor_efectivo"></p-sortIcon></th>
+                  <th pSortableColumn="vencimiento" class="text-center">Vencimiento <p-sortIcon field="vencimiento"></p-sortIcon></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <td>
+                    <p-tag [severity]="obtenerTipoBadge(item.tipo)" [value]="item.tipo"></p-tag>
+                  </td>
+                  <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
+                  <td class="text-right font-mono">{{ item.plazo }}</td>
+                  <td class="text-right font-mono">{{ item.tasa > 0 ? (item.tasa | number:'1.2-2') + '%' : 'N/A' }}</td>
+                  <td class="text-right font-mono">{{ item.precio | number:'1.4-4' }}%</td>
+                  <td class="text-right font-mono font-bold text-success">{{ item.rendimiento | number:'1.2-2' }}%</td>
+                  <td class="text-right font-mono">{{ formatearMoneda(item.valor_nominal) }}</td>
+                  <td class="text-right font-mono font-bold">{{ formatearMoneda(item.valor_efectivo) }}</td>
+                  <td class="text-center font-mono text-muted">{{ item.vencimiento | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+
+        <!-- Pestaña Renta Variable -->
+        <p-tabPanel header="Renta Variable (Acciones)">
+          <div class="table-container">
+            <p-table [value]="acciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
+              <ng-template pTemplate="caption">
+                <div class="d-flex justify-content-between align-items-center table-header-caption">
+                  <span class="table-caption-title">Operaciones de Renta Variable</span>
+                  <span class="p-input-icon-left search-wrapper">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dtRV.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en renta variable..." class="p-inputtext-sm search-filter-input" />
+                  </span>
+                </div>
+              </ng-template>
+              <ng-template pTemplate="header">
+                <tr>
+                  <th pSortableColumn="emisor">Emisor <p-sortIcon field="emisor"></p-sortIcon></th>
+                  <th pSortableColumn="tipo">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
+                  <th pSortableColumn="valor_nominal" class="text-right">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+                  <th pSortableColumn="precio" class="text-right">Precio Acción <p-sortIcon field="precio"></p-sortIcon></th>
+                  <th pSortableColumn="cantidad" class="text-right">Cantidad Acciones <p-sortIcon field="cantidad"></p-sortIcon></th>
+                  <th pSortableColumn="efectivo" class="text-right">Monto Efectivo <p-sortIcon field="efectivo"></p-sortIcon></th>
+                  <th pSortableColumn="procedencia" class="text-center">Mercado <p-sortIcon field="procedencia"></p-sortIcon></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
+                  <td>{{ item.tipo }}</td>
+                  <td class="text-right font-mono">{{ formatearMoneda(item.valor_nominal) }}</td>
+                  <td class="text-right font-mono font-bold text-info">{{ formatearMoneda(item.precio) }}</td>
+                  <td class="text-right font-mono">{{ formatearNumero(item.cantidad) }}</td>
+                  <td class="text-right font-mono font-bold">{{ formatearMoneda(item.efectivo) }}</td>
+                  <td class="text-center font-mono"><span class="badge badge-light">{{ item.procedencia }}</span></td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+
+        <!-- Pestaña Cierres de Mercado -->
+        <p-tabPanel header="Cierres de Acciones (Mercado)">
+          <div class="table-container">
+            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
+              <ng-template pTemplate="caption">
+                <div class="d-flex justify-content-between align-items-center table-header-caption">
+                  <span class="table-caption-title">Cierres de Mercado</span>
+                  <span class="p-input-icon-left search-wrapper">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dtCierres.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en cierres..." class="p-inputtext-sm search-filter-input" />
+                  </span>
+                </div>
+              </ng-template>
+              <ng-template pTemplate="header">
+                <tr>
+                  <th pSortableColumn="emisor">Emisor <p-sortIcon field="emisor"></p-sortIcon></th>
+                  <th pSortableColumn="fecha_maxima" class="text-center">Fecha Último Cierre <p-sortIcon field="fecha_maxima"></p-sortIcon></th>
+                  <th pSortableColumn="precio_maximo" class="text-right">Precio Máximo <p-sortIcon field="precio_maximo"></p-sortIcon></th>
+                  <th pSortableColumn="precio_minimo" class="text-right">Precio Mínimo <p-sortIcon field="precio_minimo"></p-sortIcon></th>
+                  <th pSortableColumn="precio_promedio" class="text-right">Precio Promedio <p-sortIcon field="precio_promedio"></p-sortIcon></th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
+                  <td class="text-center font-mono text-muted">{{ item.fecha_maxima | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-right font-mono text-danger">{{ formatearMoneda(item.precio_maximo) }}</td>
+                  <td class="text-right font-mono text-success">{{ formatearMoneda(item.precio_minimo) }}</td>
+                  <td class="text-right font-mono font-bold text-dark">{{ formatearMoneda(item.precio_promedio) }}</td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+      </p-tabView>
+    </div>
+
+  </div>
+</div>

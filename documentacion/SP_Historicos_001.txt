@@ -1,0 +1,209 @@
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_SHARESLASTDATE_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_SHARESLASTDATE_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_SHARESLASTDATE_SELECT`()
+BEGIN
+    SELECT `shares_lastdate`.`SHA_ISSUER_ID` AS idEmisor,
+    `shares_lastdate`.`SHA_ISSUER` as emisor,
+    `shares_lastdate`.`MAX_DATE` as fechamaxima,
+    `shares_lastdate`.`MAX_PRICE` as preciomaximo,
+    `shares_lastdate`.`MIN_PRICE` as preciominimo,
+    `shares_lastdate`.`AVG_PRICE` as preciopromedio
+    FROM `shares_lastdate`
+    order by max_date desc;
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_BONDHIS_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_BONDHIS_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_BONDHIS_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+
+SELECT 
+	`bond_his`.`id` as id,
+    `bond_his`.`FECHA` as fecha,
+    `bond_his`.`DECRETO` as decreto,
+    `bond_his`.`PRECIO_PORC` as precio_porc,
+    `bond_his`.`RENDIMIENTO_PORC` as rendimiento,
+    `bond_his`.`PLAZO_POR_VENCER` as dias_por_vencer,
+     ROUND(plazo_por_vencer / 360, 2) AS anios_por_vencer,
+    `bond_his`.`TASA_INTERES` as tasa_interes,
+    `bond_his`.`VALOR_NOMINAL` as valor_nominal,
+    `bond_his`.`VALOR_EFECTIVO` as valor_efectivo,
+    `bond_his`.`FECHA_EMISION` as fecha_emision,
+    `bond_his`.`FECHA_VENCIMIENTO` as fecha_vencimiento,
+    `bond_his`.`PROCEDENCIA` as procedencia,
+    `bond_his`.`TIPO` as tipo,
+    `bond_his`.`TIPO_MERCADO_1` as tipo_mercado
+FROM `bond_his`
+WHERE (FECHA between _initialDate and _finalDate) or (FECHA=_initialDate)
+ORDER BY rendimiento_porc desc;
+
+
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_SHARES_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_SHARES_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_SHARES_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+
+
+SELECT `shares`.`SHA_ID` as id,
+    `shares`.`SHA_ISSUER_ID` as idemisor,
+    `shares`.`SHA_DATE` as fecha,
+    `shares`.`SHA_ISSUER` as emisor,
+    `shares`.`SHA_TYPE` as tipo,
+    `shares`.`SHA_NOMINAL_VALUE` as valornominal,
+    `shares`.`SHA_PRICE` as precio,
+    `shares`.`SHA_NUMBER` as cantidad,
+    `shares`.`SHA_CASH_VALUE` as efectivo,
+    `shares`.`SHA_PROVENANCE` as procedencia
+FROM `shares`
+WHERE  SHA_TYPE like '%ACCIONES%' and  
+      ((SHA_DATE between _initialDate and _finalDate) or (SHA_DATE=_initialDate))
+      
+
+ORDER BY SHA_TYPE, SHA_ISSUER, SHA_PRICE desc;
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_OBLIGACIONESHIS_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_OBLIGACIONESHIS_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_OBLIGACIONESHIS_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+
+SELECT
+    `obligaciones_his`.`id`,
+    `obligaciones_his`.`FECHA` as fecha,
+    `obligaciones_his`.`EMISOR` as emisor,
+    `obligaciones_his`.`PRECIO_PORC` as precio_porc,
+    `obligaciones_his`.`RENDIMIENTO` as rendimiento,
+    `obligaciones_his`.`PLAZO_DIAS` as plazo_dias,
+    plazo_dias / 360 as plazo_anios,
+    `obligaciones_his`.`INTERES` as interes,
+    `obligaciones_his`.`VALOR_NOMINAL` as valornominal,
+    `obligaciones_his`.`VALOR_EFECTIVO` as valorefectivo,
+    `obligaciones_his`.`EMISION` as emision,
+    `obligaciones_his`.`VENCIMIENTO` as vencimiento,
+    `obligaciones_his`.`PROCEDENCIA` as procedencia,
+    `obligaciones_his`.`TIPO_MERCADO` as mercado
+FROM `obligaciones_his`
+WHERE (FECHA between _initialDate and _finalDate) or (FECHA=_initialDate)
+ORDER BY rendimiento desc;
+
+
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_FACTURASHIS_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_FACTURASHIS_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_FACTURASHIS_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+
+SELECT `facturas_his`.`id`,
+    `facturas_his`.`FECHA` as fecha,
+    `facturas_his`.`EMISOR` as emisor,
+    `facturas_his`.`PRECIO_PORC` as precio_porc,
+    `facturas_his`.`VALOR_NOMINAL` as valornominal,
+    `facturas_his`.`VALOR_EFECTIVO` as valorefectivo,
+    `facturas_his`.`EMISION` as emision,
+    `facturas_his`.`VENCIMIENTO` as vencimiento,
+    `facturas_his`.`RENDIMIENTO` as rendimiento,
+    `facturas_his`.`PROCEDENCIA` as procedencia,
+    `facturas_his`.`OBSERVACIONES` as observaciones
+FROM `facturas_his`
+ WHERE (FECHA between _initialDate and _finalDate) or (FECHA=_initialDate)
+ORDER BY rendimiento desc;
+
+
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_PAPELESHIS_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_PAPELESHIS_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_PAPELESHIS_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+
+SELECT `papeles_his`.`id`,
+    `papeles_his`.`FECHA` as fecha,
+    `papeles_his`.`EMISOR` as emisor,
+    `papeles_his`.`PRECIO_PORC` as precio_porc,
+    `papeles_his`.`RENDIMIENTO` as rendimiento,
+    `papeles_his`.`PLAZO_DIAS` as plazo_dias,
+     PLAZO_DIAS / 360 as plazo_anios,
+    `papeles_his`.`DESCUENTO_PORC` as descuento_porc,
+    `papeles_his`.`INTERES` as interes,
+    `papeles_his`.`VALOR_NOMINAL` as valornominal,
+    `papeles_his`.`VALOR_EFECTIVO` as valorefectivo,
+    `papeles_his`.`EMISION` as emision,
+    `papeles_his`.`VENCIMIENTO` as vencimiento,
+    `papeles_his`.`PROCEDENCIA` as procedencia,
+    `papeles_his`.`MERCADO` as mercado
+FROM `papeles_his`
+WHERE (FECHA between _initialDate and _finalDate) or (FECHA=_initialDate)
+ORDER BY rendimiento desc;
+
+
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+
+Execute:
+> SHOW CREATE PROCEDURE INVERSION.SP_TITULARIZACIONESHIS_SELECT
+
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| Procedure      | sql_mode      | Create Procedure      | character_set_client      | collation_connection      | Database Collation      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+| SP_TITULARIZACIONESHIS_SELECT | NO_AUTO_VALUE_ON_ZERO | CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_TITULARIZACIONESHIS_SELECT`(IN `_initialDate` DATE, IN `_finalDate` DATE)
+BEGIN
+SELECT
+    `titularizaciones_his`.`id` as id,
+    `titularizaciones_his`.`FECHA` as fecha,
+    `titularizaciones_his`.`EMISOR` as emisor,
+    `titularizaciones_his`.`PRECIO_PORC` as precio_porc,
+    `titularizaciones_his`.`RENDIMIENTO` as rendimiento,
+    `titularizaciones_his`.`PLAZO_DIAS` as plazo_dias,
+     plazo_dias / 360 as plazo_anios,
+    `titularizaciones_his`.`INTERES` as interes,
+    `titularizaciones_his`.`VALOR_NOMINAL` as valornominal,
+    `titularizaciones_his`.`VALOR_EFECTIVO` as valorefectivo,
+    `titularizaciones_his`.`EMISION` as emision,
+    `titularizaciones_his`.`VENCIMIENTO` as vencimiento,
+    `titularizaciones_his`.`PROCEDENCIA` as procedencia,
+    `titularizaciones_his`.`MERCADO` as mercado
+FROM `titularizaciones_his`
+ WHERE (FECHA between _initialDate and _finalDate) or (FECHA=_initialDate)
+ORDER BY rendimiento desc;
+END | utf8mb4                   | utf8mb4_general_ci        | utf8mb4_general_ci      |
++ -------------- + ------------- + --------------------- + ------------------------- + ------------------------- + ----------------------- +
+1 rows
+

@@ -26,6 +26,7 @@ import { VentaInversionListComponent } from './modules/ventas-inversion/venta-in
 import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.component';
 import { DashboardInversionesComponent } from './modules/reportes/dashboard-inversiones/dashboard-inversiones.component';
 import { HistoricoAccionesComponent } from './modules/reportes/historico-acciones/historico-acciones.component';
+import { ResumenDiarioBolsaComponent } from './modules/reportes/resumen-diario-bolsa/resumen-diario-bolsa.component';
 import { AuthGuard } from './core/auth.guard';
 
 export const routes: Routes = [
@@ -57,6 +58,7 @@ export const routes: Routes = [
       { path: 'reportes/proyeccion-interes-anual', component: ProyeccionInteresAnualComponent },
       { path: 'reportes/dashboard-inversiones', component: DashboardInversionesComponent },
       { path: 'reportes/historico-acciones', component: HistoricoAccionesComponent },
+      { path: 'reportes/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },
       { path: 'movimientos-capital', component: MovimientoCapitalListComponent },

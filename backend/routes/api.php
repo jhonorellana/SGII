@@ -23,6 +23,7 @@ use App\Http\Controllers\API\MovimientoCapitalController;
 use App\Http\Controllers\API\VentaInversionController;
 use App\Http\Controllers\API\VentaInversionDetalleController;
 use App\Http\Controllers\API\SharesHistoryController;
+use App\Http\Controllers\API\ResumenBolsaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,10 @@ Route::get('reportes/recuperacion-anual', [RecuperacionAnualController::class, '
 
 // Rutas de Reportes de Historial de Acciones
 Route::get('reportes/historico-acciones', [SharesHistoryController::class, 'getHistoricoAcciones']);
+
+// Rutas de Reportes de Resumen Diario de Bolsa
+Route::get('reportes/resumen-diario', [ResumenBolsaController::class, 'obtenerResumenDiario']);
+Route::get('reportes/acciones-ultimo-cierre', [ResumenBolsaController::class, 'obtenerUltimoCierreAcciones']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {
