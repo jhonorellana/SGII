@@ -51,15 +51,9 @@
   <div [class.d-none]="loading || !hasData">
     <!-- Chart Card -->
     <div class="card chart-card mb-3 border-0 shadow-sm">
-      <div class="card-header bg-white border-0 py-2">
-        <div class="d-flex align-items-baseline gap-2 flex-wrap">
-          <h5 class="mb-0 fw-bold">Evolución de Capital Invertido</h5>
-          <span class="text-muted small">Comparación gráfica de crecimiento de patrimonio consolidado y aportes individuales</span>
-        </div>
-      </div>
       <div class="card-body chart-card-body">
-        <div class="chart-container" style="height: 670px; position: relative;">
-          <p-chart *ngIf="chartData" type="line" [data]="chartData" [options]="chartOptions" height="630px" [style]="{width: '100%'}"></p-chart>
+        <div class="chart-container" style="height: 720px; position: relative;">
+          <p-chart *ngIf="chartData" type="line" [data]="chartData" [options]="chartOptions" [plugins]="chartPlugins" height="680px" [style]="{width: '100%'}"></p-chart>
         </div>
       </div>
     </div>

@@ -63,6 +63,37 @@ export class HistoricoPatrimonioReportComponent implements OnInit {
   // Chart config
   chartData: any = null;
   chartOptions: any = null;
+  chartPlugins = [
+    {
+      id: 'verticalYearLines',
+      beforeDatasetsDraw: (chart: any) => {
+        const ctx = chart.ctx;
+        const xScale = chart.scales.x;
+        const yScale = chart.scales.y;
+        
+        if (!xScale || !yScale) return;
+        
+        const minYear = new Date(xScale.min).getFullYear();
+        const maxYear = new Date(xScale.max).getFullYear();
+        
+        ctx.save();
+        ctx.strokeStyle = '#f97316'; // Orange color
+        ctx.lineWidth = 1.5;
+        
+        for (let year = minYear; year <= maxYear + 1; year++) {
+          const dateVal = new Date(`${year}-01-01T00:00:00`).getTime();
+          if (dateVal >= xScale.min && dateVal <= xScale.max) {
+            const xPos = xScale.getPixelForValue(dateVal);
+            ctx.beginPath();
+            ctx.moveTo(xPos, yScale.top);
+            ctx.lineTo(xPos, yScale.bottom);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+    }
+  ];
 
   constructor(
     private service: HistoricoPatrimonioService,
@@ -255,7 +286,7 @@ export class HistoricoPatrimonioReportComponent implements OnInit {
       },
       plugins: {
         title: {
-          display: true,
+          display: false,
           text: 'Capital invertido',
           color: '#1e293b',
           font: {
@@ -322,27 +353,8 @@ export class HistoricoPatrimonioReportComponent implements OnInit {
           grid: {
             display: true,
             drawTicks: false,
-            color: (context: any) => {
-              const tick = context.tick;
-              if (tick) {
-                const d = new Date(tick.value);
-                // Draw orange vertical grid lines for the start of each year
-                if (d.getMonth() === 0) {
-                  return '#f97316'; // orange vertical gridline
-                }
-              }
-              return '#e2e8f0'; // standard light gridline
-            },
-            lineWidth: (context: any) => {
-              const tick = context.tick;
-              if (tick) {
-                const d = new Date(tick.value);
-                if (d.getMonth() === 0) {
-                  return 1.5;
-                }
-              }
-              return 1;
-            }
+            color: '#e2e8f0', // standard light gridline
+            lineWidth: 1
           },
           ticks: {
             color: '#64748b',
@@ -367,7 +379,7 @@ export class HistoricoPatrimonioReportComponent implements OnInit {
           position: 'left',
           title: {
             display: true,
-            text: 'Capital',
+            text: 'Capital Invertido',
             color: '#1e293b',
             font: {
               size: 14,

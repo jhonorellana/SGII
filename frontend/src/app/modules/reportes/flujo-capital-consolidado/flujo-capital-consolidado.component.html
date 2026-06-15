@@ -238,21 +238,21 @@
       <!-- Tabla de Detalle -->
       <div class="mb-4">
         <div class="table-responsive" *ngIf="!loadingDetalle">
-          <table class="table table-striped table-hover">
+          <table class="table table-striped table-hover modal-detalle-table">
             <thead>
-              <tr style="background-color: #0d6efd; color: white;">
-                <th style="background-color: #0d6efd; color: white;">INV-AM</th>
-                <th style="background-color: #0d6efd; color: white;">Fecha Compra</th>
-                <th style="background-color: #0d6efd; color: white;">Liquidación</th>
-                <th style="background-color: #0d6efd; color: white;">Nombre Instrumento</th>
-                <th style="background-color: #0d6efd; color: white;">Cuota</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Interés</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Capital</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Premio</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Int. Riesgo</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Cap. Riesgo</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Prem. Riesgo</th>
-                <th style="background-color: #0d6efd; color: white; text-align: right;">Total</th>
+              <tr>
+                <th>INV-AM</th>
+                <th>Fecha Compra</th>
+                <th>Liquidación</th>
+                <th>Nombre Instrumento</th>
+                <th>Cuota</th>
+                <th class="text-end">Interés</th>
+                <th class="text-end">Capital</th>
+                <th class="text-end">Premio</th>
+                <th class="text-end">Int. Riesgo</th>
+                <th class="text-end">Cap. Riesgo</th>
+                <th class="text-end">Prem. Riesgo</th>
+                <th class="text-end">Total</th>
               </tr>
             </thead>
             <tbody>

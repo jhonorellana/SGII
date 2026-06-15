@@ -218,10 +218,10 @@ tr.fila-totales td {
 
 /* Estilos personalizados para el modal */
 ::ng-deep .custom-modal-header .p-dialog-header {
-  background: #0d6efd !important;
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%) !important;
   color: #ffffff !important;
-  padding: 1.5rem !important;
-  border-bottom: 4px solid #0b5ed7 !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 3px solid #15803d !important;
   font-weight: 600 !important;
   font-size: 1.1rem !important;
 }
@@ -229,4 +229,36 @@ tr.fila-totales td {
 ::ng-deep .custom-modal-header .p-dialog-header .p-dialog-title {
   color: #ffffff !important;
   font-weight: 600 !important;
+}
+
+::ng-deep .custom-modal-header .p-dialog-header-close {
+  color: #ffffff !important;
+}
+
+::ng-deep .custom-modal-header .p-dialog-header-close:hover {
+  color: #f0fdf4 !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Tabla de Detalle dentro del Modal */
+.modal-detalle-table {
+  font-size: 0.76rem !important; /* letras más pequeñas */
+}
+
+.modal-detalle-table th,
+.modal-detalle-table td {
+  padding: 8px 10px !important; /* padding un poco más compacto */
+  vertical-align: middle;
+}
+
+.modal-detalle-table th {
+  background-color: #22c55e !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border: 1px solid #166534 !important;
+  text-transform: none !important;
+}
+
+.modal-detalle-table tbody tr:hover {
+  background-color: #f0f9ff !important;
 }
