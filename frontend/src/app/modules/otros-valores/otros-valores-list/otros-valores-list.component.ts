@@ -671,7 +671,7 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
     const tipoCodigo = movimiento.tipo_movimiento?.codigo || movimiento.tipoMovimiento?.codigo;
 
     if (tipoCodigo === 'COM_INV' && movimiento.inversion) {
-      const monto = parseFloat(String(movimiento.inversion.valor_con_interes || 0));
+      const monto = parseFloat(String(movimiento.inversion.valor_con_interes || movimiento.inversion.capital_invertido || 0));
       return isNaN(monto) ? 0 : monto;
     }
 

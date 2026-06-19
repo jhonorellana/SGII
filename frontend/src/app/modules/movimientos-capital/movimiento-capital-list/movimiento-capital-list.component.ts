@@ -146,7 +146,7 @@ export class MovimientoCapitalListComponent implements OnInit {
 
   createForm(): FormGroup {
     return this.fb.group({
-      fecha_movimiento: [null, Validators.required],
+      fecha_movimiento: [new Date(), Validators.required],
       id_tipo_movimiento: [null, Validators.required],
       id_persona: [null, Validators.required],
       id_signo: [null, Validators.required],
@@ -784,7 +784,6 @@ export class MovimientoCapitalListComponent implements OnInit {
     const exportData = dataToExport.map(mov => ({
       ID: mov.id_movimiento_capital,
       Fecha: this.formatDateShort(mov.fecha_movimiento),
-      Tipo: mov.tipo_movimiento?.nombre || mov.tipoMovimiento?.nombre || '-',
       Persona: this.getPersonaNombre(mov),
       Descripción: mov.descripcion || '',
       Inversión: this.getInversionLabel(mov),
@@ -823,7 +822,6 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tableData = dataToExport.map(mov => [
       mov.id_movimiento_capital,
       this.formatDateShort(mov.fecha_movimiento),
-      mov.tipo_movimiento?.nombre || mov.tipoMovimiento?.nombre || '-',
       this.getPersonaNombre(mov),
       mov.descripcion || '',
       this.getInversionLabel(mov),
@@ -834,7 +832,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Fecha', 'Tipo', 'Persona', 'Descripción', 'Inversión', 'Signo', 'Monto', 'Saldo Acumulado', 'Conciliado']],
+      head: [['ID', 'Fecha', 'Persona', 'Descripción', 'Inversión', 'Signo', 'Monto', 'Saldo Acumulado', 'Conciliado']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 8 },

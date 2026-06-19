@@ -23,14 +23,69 @@
     </div>
   </div>
 
+  <!-- Summary Cards (8 Indicators in one row) -->
+  <div class="summary-cards mb-4">
+    <!-- Card 1: Total Ingresos -->
+    <p-card class="summary-card ingresos">
+      <div class="card-content">
+        <div class="card-label">Total Ingresos</div>
+        <div class="card-value">{{ formatCurrency(totalIngresos) }}</div>
+      </div>
+    </p-card>
+
+    <!-- Card 2: Total Egresos -->
+    <p-card class="summary-card egresos">
+      <div class="card-content">
+        <div class="card-label">Total Egresos</div>
+        <div class="card-value">{{ formatCurrency(totalEgresos) }}</div>
+      </div>
+    </p-card>
+
+    <!-- Card 3: Saldo Esperado -->
+    <p-card class="summary-card saldo">
+      <div class="card-content">
+        <div class="card-label">Saldo Esperado</div>
+        <div class="card-value" [ngClass]="saldoEsperado > 0 ? 'positive' : saldoEsperado < 0 ? 'negative' : 'zero'">{{ formatCurrency(saldoEsperado) }}</div>
+      </div>
+    </p-card>
+
+    <!-- Card 4: Pendientes de Conciliación -->
+    <p-card class="summary-card pendientes">
+      <div class="card-content">
+        <div class="card-label">Pendientes de Conciliación</div>
+        <div class="card-value">
+          <span class="pendientes-badge" [ngClass]="pendientesConciliacion > 0 ? 'warning' : 'success'">
+            <i class="pi pi-exclamation-triangle" *ngIf="pendientesConciliacion > 0"></i>
+            <i class="pi pi-check-circle" *ngIf="pendientesConciliacion === 0"></i>
+            {{ pendientesConciliacion }}
+          </span>
+        </div>
+      </div>
+    </p-card>
+
+    <!-- Cards 5-8: Saldos por Persona -->
+    <ng-container *ngIf="hasSaldosPorPersona()">
+      <p-card *ngFor="let item of saldosPorPersona | keyvalue" 
+              class="summary-card persona-card" 
+              [ngClass]="item.value.saldo >= 0 ? 'positive' : 'negative'">
+        <div class="card-content">
+          <div class="card-label">{{ item.value.nombre }}</div>
+          <div class="card-value" [ngClass]="item.value.saldo >= 0 ? 'positive' : 'negative'">
+            {{ formatCurrency(item.value.saldo) }}
+          </div>
+        </div>
+      </p-card>
+    </ng-container>
+  </div>
+
   <!-- Table -->
   <p-table #dt [value]="movimientos" [(selection)]="selectedMovimientos" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['descripcion', 'tipo_movimiento.nombre', 'persona.nombre', 'inversion.id_inversion', 'cuentaBancaria.persona.nombres']">
     <!-- Header con buscador global -->
     <ng-template pTemplate="caption">
       <div class="d-flex justify-content-end align-items-center">
-        <span class="p-input-icon-left">
+        <span class="search-wrapper">
           <i class="pi pi-search"></i>
-          <input pInputText type="text" (input)="onGlobalFilter($event)" placeholder="Buscar movimiento..." class="w-100"/>
+          <input pInputText type="text" (input)="onGlobalFilter($event)" placeholder="Buscar movimiento..." class="search-filter-input"/>
         </span>
       </div>
     </ng-template>
@@ -41,7 +96,6 @@
         </th>
         <th style="width: 4rem; text-align: center;">ID</th>
         <th pSortableColumn="fecha_movimiento">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
-        <th>Tipo</th>
         <th>Persona</th>
         <th>Descripción</th>
         <th>Inversión</th>
@@ -55,20 +109,6 @@
         <th></th>
         <th></th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_movimiento', 'contains')" class="w-100" placeholder="Filtrar fecha" style="min-width: 120px !important;"/></th>
-        <th>
-          <p-dropdown
-            [(ngModel)]="filters.id_tipo_movimiento"
-            [options]="tiposMovimiento"
-            optionLabel="nombre"
-            optionValue="id_catalogo_valor"
-            placeholder="Todos"
-            [style]="{'width':'100%'}"
-            [panelStyle]="{'max-height':'200px', 'overflow':'auto'}"
-            appendTo="body"
-            (onChange)="applyFilters()"
-            [showClear]="true">
-          </p-dropdown>
-        </th>
         <th>
           <p-dropdown
             [(ngModel)]="filters.id_persona"
@@ -138,7 +178,6 @@
         </td>
         <td class="text-center">{{ movimiento.id_movimiento_capital }}</td>
         <td>{{ formatDateShort(movimiento.fecha_movimiento) }}</td>
-        <td>{{ movimiento.tipo_movimiento?.nombre || movimiento.tipoMovimiento?.nombre || '-' }}</td>
         <td>{{ getPersonaNombre(movimiento) }}</td>
         <td>{{ movimiento.descripcion || '-' }}</td>
         <td>{{ getInversionLabel(movimiento) }}</td>
@@ -158,55 +197,10 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="12" class="text-center">No hay movimientos registrados</td>
+        <td colspan="11" class="text-center">No hay movimientos registrados</td>
       </tr>
     </ng-template>
   </p-table>
-
-  <!-- Summary Cards -->
-  <div class="summary-cards mt-3">
-    <p-card class="summary-card ingresos">
-      <div class="card-content">
-        <div class="card-label">Total Ingresos</div>
-        <div class="card-value">{{ formatCurrency(totalIngresos) }}</div>
-      </div>
-    </p-card>
-    <p-card class="summary-card egresos">
-      <div class="card-content">
-        <div class="card-label">Total Egresos</div>
-        <div class="card-value">{{ formatCurrency(totalEgresos) }}</div>
-      </div>
-    </p-card>
-    <p-card class="summary-card saldo">
-      <div class="card-content">
-        <div class="card-label">Saldo Esperado</div>
-        <div class="card-value" [ngClass]="saldoEsperado > 0 ? 'positive' : saldoEsperado < 0 ? 'negative' : 'zero'">{{ formatCurrency(saldoEsperado) }}</div>
-      </div>
-    </p-card>
-    <p-card class="summary-card pendientes">
-      <div class="card-content">
-        <div class="card-label">Pendientes de Conciliación</div>
-        <div class="card-value">
-          <span class="pendientes-badge" [ngClass]="pendientesConciliacion > 0 ? 'warning' : 'success'">
-            <i class="pi pi-exclamation-triangle" *ngIf="pendientesConciliacion > 0"></i>
-            <i class="pi pi-check-circle" *ngIf="pendientesConciliacion === 0"></i>
-            {{ pendientesConciliacion }}
-          </span>
-        </div>
-      </div>
-    </p-card>
-  </div>
-
-  <!-- Saldos por Persona -->
-  <div class="saldos-por-persona" *ngIf="hasSaldosPorPersona()">
-    <h3>Saldos por Persona</h3>
-    <div class="saldos-grid">
-      <div *ngFor="let item of saldosPorPersona | keyvalue" class="saldo-persona-card" [ngClass]="item.value.saldo >= 0 ? 'positive' : 'negative'">
-        <div class="saldo-persona-label">{{ item.value.nombre }}</div>
-        <div class="saldo-persona-value">{{ formatCurrency(item.value.saldo) }}</div>
-      </div>
-    </div>
-  </div>
 
   <!-- Modal -->
   <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Movimiento' : 'Nuevo Movimiento'" [modal]="true" [style]="{width: '850px', 'max-width': '92vw', 'max-height': '85vh'}" [contentStyle]="{'max-height': 'calc(85vh - 140px)', 'overflow-y': 'auto'}" [styleClass]="'movimiento-modal'">

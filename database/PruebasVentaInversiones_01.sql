@@ -30,7 +30,7 @@ select * from catalogo_valor where id_catalogo =5  order by id_catalogo_valor
 5 rows
 */
 
-select * from instrumento where id_instrumento = 64;
+select * from instrumento where nombre like '%pichincha%' id_instrumento = 194 -- id_instrumento = 64;
 select * from inversion where id_inversion in (281,289,393);  -- 347901 / 20288 - VRF35 / 366691
 
 
@@ -38,8 +38,8 @@ select * from amortizacion where id_inversion in (393) -- (281,289,393); order b
 
 
 -- select * from inversion.bonos where inv_id = 241;
-select * from inversion where id_inversion in (281,289,393,569);   -- cambia el estado, fecha_venta, activo 
-Select * from amortizacion where id_inversion in (393) (281,289,393); -- id_estado_amortizacion / activo   --- originalmente 134
+select * from sipro_desa.inversion where id_inversion in (281,289,393,569);   -- cambia el estado, fecha_venta, activo 
+Select * from sipro_desa.amortizacion where id_inversion > 500 in (393) (281,289,393); -- id_estado_amortizacion / activo   --- originalmente 134
 Select * from sipro_desa.movimiento_capital where id_inversion in (281,289,393); -- se crear un nuevo registro
 Select * from venta_inversion where id_inversion in (281,289,393); -- se debe crear un nuevo registro
 Select * from venta_inversion_detalle; -- se deben crear la misma cantidad de inversiones afectadas
@@ -50,6 +50,7 @@ utilidad_sin_comision = Valor Efectivo Venta es decir valor_venta_sin_comision d
 
 
 Select * from inversion.inversion where inv_tipo = 4
+Select * from inversion.amortizacion where inv_id>600
 Select * from inversion.inversion where id in(241,244,316,424,447,494)
 
 Select 
