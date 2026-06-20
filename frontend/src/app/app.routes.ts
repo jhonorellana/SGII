@@ -30,6 +30,9 @@ import { ResumenDiarioBolsaComponent } from './modules/reportes/resumen-diario-b
 import { HistoricoPatrimonioListComponent } from './modules/historico-patrimonio/historico-patrimonio-list/historico-patrimonio-list.component';
 import { HistoricoPatrimonioReportComponent } from './modules/reportes/historico-patrimonio-report/historico-patrimonio-report.component';
 import { AuthGuard } from './core/auth.guard';
+import { PortafolioListComponent } from './modules/renta-variable/portafolio/portafolio-list.component';
+import { OperacionListComponent } from './modules/renta-variable/operaciones/operacion-list.component';
+import { DividendoListComponent } from './modules/renta-variable/dividendos/dividendo-list.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -69,6 +72,9 @@ export const routes: Routes = [
       { path: 'ventas-inversion', component: VentaInversionListComponent },
       // { path: 'ventas-inversion/nueva', component: VentaInversionNewComponent },
       { path: 'venta-agrupada', component: VentaAgrupadaComponent },
+      { path: 'renta-variable/portafolio', component: PortafolioListComponent },
+      { path: 'renta-variable/operaciones', component: OperacionListComponent },
+      { path: 'renta-variable/dividendos', component: DividendoListComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

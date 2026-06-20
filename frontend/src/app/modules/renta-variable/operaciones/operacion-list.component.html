@@ -1,0 +1,226 @@
+<div class="renta-variable-container">
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <!-- Top bar -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="module-title">Operaciones de Renta Variable</h2>
+      <p class="text-muted subtitle">Registro y control de compras, ventas y ajustes de acciones</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportToExcel()" [disabled]="loading || operaciones.length === 0">
+        <i class="bi bi-file-earmark-excel"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportToPDF()" [disabled]="loading || operaciones.length === 0">
+        <i class="bi bi-file-earmark-pdf"></i> PDF
+      </button>
+      <button class="btn btn-primary" (click)="openCreateDialog()">
+        <i class="bi bi-plus-circle"></i> Nueva Operación
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters panel -->
+  <p-card class="mb-4 search-card">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label font-semibold">Socio / Propietario</label>
+        <p-dropdown [options]="personas" [(ngModel)]="filters.id_persona" [filter]="true" filterBy="label" placeholder="Seleccione un socio" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label font-semibold">Acción / Instrumento</label>
+        <p-dropdown [options]="instrumentos" [(ngModel)]="filters.id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione una acción" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label font-semibold">Tipo Operación</label>
+        <p-dropdown [options]="tiposOperacion" [(ngModel)]="filters.id_tipo_operacion" placeholder="Tipo" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label font-semibold">Fecha Desde</label>
+        <p-calendar [(ngModel)]="filters.fecha_desde" dateFormat="yy-mm-dd" placeholder="Desde" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label font-semibold">Fecha Hasta</label>
+        <p-calendar [(ngModel)]="filters.fecha_hasta" dateFormat="yy-mm-dd" placeholder="Hasta" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
+      </div>
+    </div>
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <button class="btn btn-secondary btn-sm" (click)="clearFilters()"><i class="bi bi-x-circle"></i> Limpiar</button>
+      <button class="btn btn-primary btn-sm" (click)="applyFilters()"><i class="bi bi-search"></i> Buscar</button>
+    </div>
+  </p-card>
+
+  <!-- Operations Table -->
+  <p-table #dt [value]="operaciones" [loading]="loading" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [totalRecords]="totalRecords" [rowsPerPageOptions]="[10, 20, 50, 100]" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" [globalFilterFields]="['observacion', 'liquidacion', 'persona.nombres', 'persona.apellidos', 'instrumento.nombre']">
+    <ng-template pTemplate="caption">
+      <div class="d-flex justify-content-end align-items-center">
+        <span class="search-wrapper">
+          <i class="pi pi-search"></i>
+          <input pInputText type="text" (input)="onGlobalFilter($event)" placeholder="Buscar en listado..." class="search-filter-input"/>
+        </span>
+      </div>
+    </ng-template>
+    
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width: 4rem; text-align: center;">ID</th>
+        <th pSortableColumn="fecha_operacion" style="width: 8rem;">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
+        <th>Socio</th>
+        <th>Acción / Instrumento</th>
+        <th style="width: 10rem;">Tipo</th>
+        <th class="text-right" style="width: 8rem;">Cantidad</th>
+        <th class="text-right" style="width: 8rem;">P. Unitario</th>
+        <th class="text-right" style="width: 9rem;">V. Bruto</th>
+        <th class="text-right" style="width: 8rem;">Comisiones</th>
+        <th class="text-right" style="width: 9rem;">V. Neto</th>
+        <th style="width: 8rem;">Liquidación</th>
+        <th style="width: 6rem; text-align: center;">Acciones</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-op>
+      <tr>
+        <td class="text-center font-bold text-muted">{{ op.id_accion_operacion }}</td>
+        <td>{{ formatDate(op.fecha_operacion) }}</td>
+        <td>{{ getPersonaNombre(op) }}</td>
+        <td><span class="font-medium text-primary">{{ op.instrumento?.nombre || op.instrumento?.codigo_titulo || '-' }}</span></td>
+        <td>
+          <p-tag [severity]="getTipoOperacionClass(op)" [value]="getTipoOperacionNombre(op)"></p-tag>
+        </td>
+        <td class="text-right font-medium">{{ formatNumber(op.quantity || op.cantidad, 4) }}</td>
+        <td class="text-right">{{ formatCurrency(op.precio_unitario) }}</td>
+        <td class="text-right font-semibold">{{ formatCurrency(op.valor_bruto) }}</td>
+        <td class="text-right text-muted">{{ formatCurrency(op.total_comisiones) }}</td>
+        <td class="text-right font-bold text-success">{{ formatCurrency(op.valor_neto) }}</td>
+        <td><span class="badge bg-light text-dark">{{ op.liquidacion || '-' }}</span></td>
+        <td class="text-center">
+          <div class="d-flex justify-content-center gap-1">
+            <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm" (click)="openEditDialog(op)" pTooltip="Editar operación" tooltipPosition="top"></button>
+            <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm" (click)="deleteOperacion(op)" pTooltip="Eliminar operación" tooltipPosition="top"></button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="12" class="text-center p-4 text-muted">
+          No se encontraron operaciones registradas.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <!-- Create / Edit Dialog -->
+  <p-dialog [(visible)]="displayDialog" [style]="{width: '650px'}" [header]="isEdit ? 'Editar Operación' : 'Registrar Nueva Operación'" [modal]="true" styleClass="p-fluid rounded-lg shadow-xl" [contentStyle]="{'overflow': 'visible'}">
+    <form [formGroup]="operacionForm" (ngSubmit)="save()" class="p-fluid">
+      
+      <div *ngIf="formError" class="alert alert-danger p-2 mb-3 text-sm">
+        <i class="pi pi-exclamation-circle me-1"></i> {{ formError }}
+      </div>
+
+      <div class="row g-3">
+        <!-- Propietario / Socio -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Socio / Propietario <span class="text-danger">*</span></label>
+          <p-dropdown [options]="personas" formControlName="id_persona" [filter]="true" filterBy="label" placeholder="Seleccione el socio" appendTo="body" [readonly]="isEdit"></p-dropdown>
+          <small class="text-danger" *ngIf="operacionForm.get('id_persona')?.touched && operacionForm.get('id_persona')?.invalid">Este campo es requerido.</small>
+        </div>
+
+        <!-- Instrumento -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Acción / Instrumento <span class="text-danger">*</span></label>
+          <p-dropdown [options]="instrumentos" formControlName="id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione el instrumento" appendTo="body" [readonly]="isEdit"></p-dropdown>
+          <small class="text-danger" *ngIf="operacionForm.get('id_instrumento')?.touched && operacionForm.get('id_instrumento')?.invalid">Este campo es requerido.</small>
+        </div>
+
+        <!-- Tipo de Operacion -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Tipo de Operación <span class="text-danger">*</span></label>
+          <p-dropdown [options]="tiposOperacion" formControlName="id_tipo_operacion" placeholder="Seleccione el tipo de operación" appendTo="body" [readonly]="isEdit"></p-dropdown>
+          <small class="text-danger" *ngIf="operacionForm.get('id_tipo_operacion')?.touched && operacionForm.get('id_tipo_operacion')?.invalid">Este campo es requerido.</small>
+        </div>
+
+        <!-- Fecha Operacion -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Fecha de Operación <span class="text-danger">*</span></label>
+          <p-calendar formControlName="fecha_operacion" dateFormat="yy-mm-dd" appendTo="body" [showIcon]="true"></p-calendar>
+          <small class="text-danger" *ngIf="operacionForm.get('fecha_operacion')?.touched && operacionForm.get('fecha_operacion')?.invalid">Este campo es requerido.</small>
+        </div>
+
+        <!-- Stock Disponible (Solo Informativo si aplica) -->
+        <div class="col-12" *ngIf="stockDisponible !== null || cargandoStock">
+          <div class="alert alert-info py-2 px-3 m-0 d-flex justify-content-between align-items-center text-sm">
+            <span><i class="pi pi-info-circle me-1"></i> Stock disponible de acciones:</span>
+            <span class="font-bold" *ngIf="!cargandoStock">{{ formatNumber(stockDisponible, 4) }} acciones</span>
+            <span class="text-muted" *ngIf="cargandoStock"><i class="pi pi-spin pi-spinner"></i> Consultando...</span>
+          </div>
+        </div>
+
+        <!-- Cantidad -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Cantidad de Acciones <span class="text-danger">*</span></label>
+          <input pInputText type="number" formControlName="cantidad" step="0.000001" placeholder="Ej. 100.00" class="p-inputtext-sm"/>
+          <small class="text-danger" *ngIf="operacionForm.get('cantidad')?.touched && operacionForm.get('cantidad')?.hasError('required')">Cantidad es requerida.</small>
+          <small class="text-danger" *ngIf="operacionForm.get('cantidad')?.touched && operacionForm.get('cantidad')?.hasError('min')">Cantidad debe ser mayor a 0.</small>
+          <small class="text-danger" *ngIf="operacionForm.get('cantidad')?.hasError('superarStock')">
+            <i class="pi pi-exclamation-triangle"></i> La cantidad supera las acciones disponibles en cartera ({{ formatNumber(stockDisponible, 4) }}).
+          </small>
+        </div>
+
+        <!-- Precio Unitario -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Precio Unitario ($) <span class="text-danger">*</span></label>
+          <input pInputText type="number" formControlName="precio_unitario" step="0.000001" placeholder="Ej. 2.50" class="p-inputtext-sm" [readonly]="!isTipoOperacionFinanciera()"/>
+          <small class="text-danger" *ngIf="operacionForm.get('precio_unitario')?.touched && operacionForm.get('precio_unitario')?.invalid">Este campo es requerido.</small>
+        </div>
+
+        <!-- Comisiones (Solo para Compra/Venta) -->
+        <ng-container *ngIf="isTipoOperacionFinanciera()">
+          <div class="col-md-6">
+            <label class="form-label font-semibold text-muted">Comisión Bolsa ($)</label>
+            <input pInputText type="number" formControlName="comision_bolsa" step="0.01" class="p-inputtext-sm"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label font-semibold text-muted">Comisión Operador ($)</label>
+            <input pInputText type="number" formControlName="comision_operador" step="0.01" class="p-inputtext-sm"/>
+          </div>
+        </ng-container>
+
+        <!-- Totales autocalculados -->
+        <div class="col-12 bg-light p-3 rounded-lg border">
+          <div class="row g-2">
+            <div class="col-4 text-center">
+              <span class="text-muted text-xs d-block">Valor Bruto</span>
+              <span class="font-bold text-lg">{{ formatCurrency(operacionForm.get('valor_bruto')?.value) }}</span>
+            </div>
+            <div class="col-4 text-center border-start border-end">
+              <span class="text-muted text-xs d-block">Total Comisiones</span>
+              <span class="font-bold text-lg text-muted">{{ formatCurrency(operacionForm.get('total_comisiones')?.value) }}</span>
+            </div>
+            <div class="col-4 text-center">
+              <span class="text-muted text-xs d-block">Valor Neto</span>
+              <span class="font-bold text-lg text-success">{{ formatCurrency(operacionForm.get('valor_neto')?.value) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liquidacion y Observacion -->
+        <div class="col-md-6">
+          <label class="form-label font-bold">Liquidación / Comprobante</label>
+          <input pInputText type="text" formControlName="liquidacion" placeholder="Ej. L-1002" class="p-inputtext-sm"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label font-bold">Observación</label>
+          <textarea pInputTextarea formControlName="observacion" rows="2" placeholder="Detalles de la transacción..." class="p-inputtext-sm"></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button pButton type="button" label="Cancelar" class="p-button-secondary p-button-outlined" (click)="displayDialog = false" [disabled]="formLoading"></button>
+        <button pButton type="submit" [label]="formLoading ? 'Guardando...' : 'Guardar'" icon="pi pi-check" [disabled]="formLoading || operacionForm.invalid"></button>
+      </div>
+    </form>
+  </p-dialog>
+</div>

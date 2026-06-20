@@ -68,6 +68,28 @@ export class SidebarComponent implements OnInit {
       ]
     },
     {
+      title: 'Renta Variable',
+      icon: 'bi-graph-up-arrow',
+      path: '/renta-variable',
+      children: [
+        {
+          title: 'Portafolio',
+          icon: 'bi-briefcase',
+          path: '/renta-variable/portafolio'
+        },
+        {
+          title: 'Operaciones',
+          icon: 'bi-arrow-left-right',
+          path: '/renta-variable/operaciones'
+        },
+        {
+          title: 'Dividendos',
+          icon: 'bi-gift',
+          path: '/renta-variable/dividendos'
+        }
+      ]
+    },
+    {
       title: 'Contabilidad',
       icon: 'bi-calculator',
       path: '/contabilidad',

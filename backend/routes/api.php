@@ -25,6 +25,9 @@ use App\Http\Controllers\API\VentaInversionDetalleController;
 use App\Http\Controllers\API\SharesHistoryController;
 use App\Http\Controllers\API\ResumenBolsaController;
 use App\Http\Controllers\API\HistoricoPatrimonioController;
+use App\Http\Controllers\API\AccionOperacionController;
+use App\Http\Controllers\API\AccionDividendoController;
+use App\Http\Controllers\API\AccionPosicionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -146,6 +149,12 @@ Route::get('reportes/historico-acciones', [SharesHistoryController::class, 'getH
 // Rutas de Reportes de Resumen Diario de Bolsa
 Route::get('reportes/resumen-diario', [ResumenBolsaController::class, 'obtenerResumenDiario']);
 Route::get('reportes/acciones-ultimo-cierre', [ResumenBolsaController::class, 'obtenerUltimoCierreAcciones']);
+
+// Rutas de Renta Variable / Acciones
+Route::apiResource('acciones/operaciones', AccionOperacionController::class);
+Route::apiResource('acciones/dividendos', AccionDividendoController::class);
+Route::get('acciones/posicion', [AccionPosicionController::class, 'index']);
+Route::get('acciones/posicion/info', [AccionPosicionController::class, 'getSocioPosicion']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

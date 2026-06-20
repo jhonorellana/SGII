@@ -1,0 +1,292 @@
+<div class="portafolio-container">
+  <div class="portafolio-header d-flex justify-content-between align-items-center mb-4">
+    <h2>Portafolio y Dashboard de Renta Variable</h2>
+  </div>
+
+  <!-- Panel de Filtros -->
+  <div class="filters-panel">
+    <div class="filters-grid">
+      <div class="filter-field">
+        <label>Socio</label>
+        <p-dropdown
+          [(ngModel)]="selectedSocio"
+          [options]="socios"
+          placeholder="Todos los socios"
+          [showClear]="true"
+          (onChange)="onFilterChange()"
+          [style]="{width: '100%'}">
+        </p-dropdown>
+      </div>
+
+      <div class="filter-field">
+        <label>Acción / Emisor</label>
+        <p-dropdown
+          [(ngModel)]="selectedInstrumento"
+          [options]="instrumentos"
+          placeholder="Todas las acciones"
+          [showClear]="true"
+          (onChange)="onFilterChange()"
+          [style]="{width: '100%'}">
+        </p-dropdown>
+      </div>
+
+      <div class="filter-field filter-actions">
+        <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
+          <i class="pi pi-refresh"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjetas KPI de Resumen -->
+  <div class="summary-stats">
+    <div class="stat-card nominal">
+      <div class="stat-icon bg-blue-light text-blue">💼</div>
+      <div class="stat-info">
+        <span class="stat-label">Capital Invertido (Costo)</span>
+        <span class="stat-value font-bold">{{ formatCurrency(totalInvertido) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon bg-green-light text-green">💵</div>
+      <div class="stat-info">
+        <span class="stat-label">Valor de Mercado Actual</span>
+        <span class="stat-value font-bold">{{ formatCurrency(totalValorMercado) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card" [ngClass]="utilidadNoRealizada >= 0 ? 'ganancia' : 'perdida'">
+      <div class="stat-icon" [ngClass]="utilidadNoRealizada >= 0 ? 'bg-emerald-light text-emerald' : 'bg-red-light text-red'">
+        {{ utilidadNoRealizada >= 0 ? '📈' : '📉' }}
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Plusvalía / Minusvalía</span>
+        <span class="stat-value font-bold d-flex align-items-center gap-2">
+          {{ formatCurrency(utilidadNoRealizada) }}
+          <p-tag 
+            [severity]="utilidadNoRealizada >= 0 ? 'success' : 'danger'" 
+            [value]="(utilidadNoRealizada >= 0 ? '+' : '') + formatNumber(porcentajeRendimiento, 2) + '%'">
+          </p-tag>
+        </span>
+      </div>
+    </div>
+
+    <div class="stat-card dividendos-kpi">
+      <div class="stat-icon bg-amber-light text-amber">💰</div>
+      <div class="stat-info">
+        <span class="stat-label">Dividendos Cobrados (Efectivo)</span>
+        <span class="stat-value font-bold text-amber-dark">{{ formatCurrency(totalDividendosCobrados) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pestañas de Navegación -->
+  <p-tabView>
+    <!-- Pestaña 1: Portafolio de Acciones -->
+    <p-tabPanel header="Portafolio de Acciones" leftIcon="pi pi-list">
+      <div class="card p-3">
+        <!-- Barra de búsqueda y botones de exportación -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+          <div class="search-container">
+            <span class="p-input-icon-left w-100">
+              <i class="pi pi-search"></i>
+              <input 
+                pInputText 
+                type="text" 
+                [(ngModel)]="globalSearchQuery"
+                (input)="onGlobalFilter($event)" 
+                placeholder="Buscar socio, acción o emisor..." 
+                class="p-inputtext-sm w-100" />
+            </span>
+          </div>
+          
+          <div class="export-buttons d-flex gap-2">
+            <button 
+              pButton 
+              type="button" 
+              icon="pi pi-file-excel" 
+              label="Excel" 
+              class="p-button-success p-button-sm" 
+              (click)="exportToExcel()"
+              pTooltip="Exportar a Excel" 
+              tooltipPosition="top">
+            </button>
+            <button 
+              pButton 
+              type="button" 
+              icon="pi pi-file-pdf" 
+              label="PDF" 
+              class="p-button-danger p-button-sm" 
+              (click)="exportToPDF()"
+              pTooltip="Exportar a PDF" 
+              tooltipPosition="top">
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de posiciones -->
+        <p-table 
+          #dt 
+          [value]="filteredPosiciones" 
+          [columns]="cols"
+          [loading]="loading" 
+          [rows]="10" 
+          [paginator]="true"
+          [rowsPerPageOptions]="[10,25,50]"
+          [globalFilterFields]="['persona', 'instrumento']"
+          [rowHover]="true"
+          styleClass="p-datatable-sm p-datatable-striped"
+          responsiveLayout="scroll">
+          
+          <ng-template pTemplate="header" let-columns>
+            <tr>
+              <th *ngFor="let col of columns" [pSortableColumn]="col.field" [style.textAlign]="col.field !== 'persona' && col.field !== 'instrumento' && col.field !== 'fecha_ultimo_precio' ? 'right' : 'left'">
+                {{ col.header }}
+                <p-sortIcon [field]="col.field"></p-sortIcon>
+              </th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row let-columns="columns">
+            <tr>
+              <td *ngFor="let col of columns" [style.textAlign]="col.field !== 'persona' && col.field !== 'instrumento' && col.field !== 'fecha_ultimo_precio' ? 'right' : 'left'">
+                
+                <!-- Socio / Persona -->
+                <span *ngIf="col.field === 'persona'" class="font-semibold text-gray-800">
+                  {{ row.persona || '-' }}
+                </span>
+
+                <!-- Instrumento / Acción -->
+                <span *ngIf="col.field === 'instrumento'" class="badge-instrumento">
+                  {{ row.instrumento || '-' }}
+                </span>
+
+                <!-- Cantidad de Acciones -->
+                <span *ngIf="col.field === 'cantidad_actual'">
+                  {{ formatNumber(row.cantidad_actual, 4) }}
+                </span>
+
+                <!-- Costo Promedio Unitario -->
+                <span *ngIf="col.field === 'costo_promedio_unitario'" class="text-muted">
+                  {{ formatCurrency(row.costo_promedio_unitario) }}
+                </span>
+
+                <!-- Capital Invertido -->
+                <span *ngIf="col.field === 'capital_invertido'" class="font-semibold">
+                  {{ formatCurrency(row.capital_invertido) }}
+                </span>
+
+                <!-- Último Precio -->
+                <span *ngIf="col.field === 'precio_ultimo'">
+                  {{ formatCurrency(row.precio_ultimo) }}
+                </span>
+
+                <!-- Fecha de Último Precio -->
+                <span *ngIf="col.field === 'fecha_ultimo_precio'" class="text-sm">
+                  {{ row.fecha_ultimo_precio || '-' }}
+                </span>
+
+                <!-- Valor de Mercado -->
+                <span *ngIf="col.field === 'valor_mercado'" class="font-bold text-primary">
+                  {{ formatCurrency(row.valor_mercado) }}
+                </span>
+
+                <!-- Plusvalía / Minusvalía -->
+                <span *ngIf="col.field === 'utilidad_perdida_no_realizada'" [ngClass]="row.utilidad_perdida_no_realizada >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold'">
+                  {{ row.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatCurrency(row.utilidad_perdida_no_realizada) }}
+                  <small class="d-block text-xs" [ngClass]="row.utilidad_perdida_no_realizada >= 0 ? 'text-success' : 'text-danger'">
+                    {{ row.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatNumber((row.utilidad_perdida_no_realizada / (row.capital_invertido || 1)) * 100, 2) }}%
+                  </small>
+                </span>
+                
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td [attr.colspan]="cols.length" class="text-center p-4">
+                <i class="pi pi-inbox text-4xl text-gray-300 mb-2 d-block"></i>
+                No se encontraron posiciones activas en el portafolio.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </p-tabPanel>
+
+    <!-- Pestaña 2: Gráficos y Dashboard -->
+    <p-tabPanel header="Gráficos y Dashboard" leftIcon="pi pi-chart-pie">
+      <div class="charts-grid">
+        <!-- Gráfico de Concentración por Emisor -->
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Composición de Portafolio</span>
+            <span class="chart-legend-compact">Por Emisor / Acción</span>
+          </div>
+          <div class="chart-content-split" *ngIf="filteredPosiciones.length > 0">
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="emisorChartData" [options]="emisorChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Valor Total</small>
+                <strong class="text-primary">{{ formatCurrency(totalValorMercado) }}</strong>
+              </div>
+            </div>
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of emisorLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="filteredPosiciones.length === 0" class="no-data-msg">
+            No hay datos de portafolio para mostrar gráficos
+          </div>
+        </div>
+
+        <!-- Gráfico de Distribución por Socio -->
+        <div class="chart-card">
+          <div class="chart-title">
+            <span>Distribución de Activos</span>
+            <span class="chart-legend-compact">Por Socio</span>
+          </div>
+          <div class="chart-content-split" *ngIf="filteredPosiciones.length > 0">
+            <div class="chart-wrapper">
+              <p-chart type="doughnut" [data]="socioChartData" [options]="socioChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+              <div class="chart-center-text">
+                <small class="text-muted d-block text-uppercase">Total Portafolio</small>
+                <strong class="text-success">{{ formatCurrency(totalValorMercado) }}</strong>
+              </div>
+            </div>
+            <div class="chart-legend-panel">
+              <div class="leyenda-container">
+                <div *ngFor="let item of socioLegend" class="leyenda-item">
+                  <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                  <div class="leyenda-info">
+                    <span class="leyenda-label" [title]="item.label">{{ item.label }}</span>
+                    <div class="leyenda-stats">
+                      <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                      <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div *ngIf="filteredPosiciones.length === 0" class="no-data-msg">
+            No hay datos de portafolio para mostrar gráficos
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
+</div>
