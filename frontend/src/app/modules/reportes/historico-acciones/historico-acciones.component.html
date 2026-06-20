@@ -154,10 +154,17 @@
         <p-table 
           [value]="historicoRecords" 
           [paginator]="true" 
-          [rows]="10" 
+          [(rows)]="rowsPerPage" 
           [rowsPerPageOptions]="[10, 25, 50, 100]"
+          [sortField]="sortField"
+          [sortOrder]="sortOrder"
+          (onSort)="onSort($event)"
+          (onPage)="onPage($event)"
           styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
-          responsiveLayout="scroll">
+          responsiveLayout="scroll"
+          showCurrentPageReport="true"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+          paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport">
           <ng-template pTemplate="header">
             <tr>
               <th pSortableColumn="fecha" style="width: 15%">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>

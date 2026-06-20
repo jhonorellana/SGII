@@ -84,6 +84,11 @@ export class HistoricoAccionesComponent implements OnInit {
   accionesTotales = 0;
   transaccionesTotales = 0;
 
+  // Table options (cached in localStorage)
+  rowsPerPage = 10;
+  sortField = '';
+  sortOrder = 1;
+
   // Dual-Axis Chart config
   chartData: any = null;
   chartOptions: any = null;
@@ -102,6 +107,7 @@ export class HistoricoAccionesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadCachedTableState();
     this.loadEmpresas();
   }
 
@@ -123,17 +129,45 @@ export class HistoricoAccionesComponent implements OnInit {
           ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; // Yellow color matching previous design
           ctx.lineWidth = 1.5;
           
-          for (let year = minYear; year <= maxYear + 1; year++) {
-            // Normalizar a inicio de año en hora local
-            const dateVal = new Date(year, 0, 1).getTime();
-            if (dateVal >= xScale.min && dateVal <= xScale.max) {
-              const xPos = xScale.getPixelForValue(dateVal);
-              ctx.beginPath();
-              ctx.moveTo(xPos, yScale.top);
-              ctx.lineTo(xPos, yScale.bottom);
-              ctx.stroke();
+          if (Number(this.selectedAnio) === 0) {
+            // Draw a line at the start of each year (01/01/year)
+            for (let year = minYear; year <= maxYear + 1; year++) {
+              // Normalizar a inicio de año en hora local
+              const dateVal = new Date(year, 0, 1).getTime();
+              if (dateVal >= xScale.min && dateVal <= xScale.max) {
+                const xPos = xScale.getPixelForValue(dateVal);
+                ctx.beginPath();
+                ctx.moveTo(xPos, yScale.top);
+                ctx.lineTo(xPos, yScale.bottom);
+                ctx.stroke();
+              }
+            }
+          } else {
+            // Draw a line at the start of each month of the selected year (01/month/selectedAnio)
+            const year = Number(this.selectedAnio);
+            for (let month = 0; month < 12; month++) {
+              // Normalizar a inicio de mes en hora local
+              const dateVal = new Date(year, month, 1).getTime();
+              if (dateVal >= xScale.min && dateVal <= xScale.max) {
+                const xPos = xScale.getPixelForValue(dateVal);
+                ctx.beginPath();
+                ctx.moveTo(xPos, yScale.top);
+                ctx.lineTo(xPos, yScale.bottom);
+                ctx.stroke();
+              }
             }
           }
+
+          // Draw the closing vertical line at the end of the period (e.g. 31/12/2026 or 31/12 of the selected year)
+          const closingVal = xScale.max;
+          if (closingVal >= xScale.min) {
+            const xPos = xScale.getPixelForValue(closingVal);
+            ctx.beginPath();
+            ctx.moveTo(xPos, yScale.top);
+            ctx.lineTo(xPos, yScale.bottom);
+            ctx.stroke();
+          }
+
           ctx.restore();
         }
       }
@@ -556,5 +590,43 @@ export class HistoricoAccionesComponent implements OnInit {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(num);
+  }
+
+  // Caching helper methods for table state persistence
+  loadCachedTableState(): void {
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      const cachedRows = localStorage.getItem('historico_acciones_rows');
+      if (cachedRows) {
+        this.rowsPerPage = parseInt(cachedRows, 10);
+      }
+      const cachedSortField = localStorage.getItem('historico_acciones_sortField');
+      if (cachedSortField) {
+        this.sortField = cachedSortField;
+      }
+      const cachedSortOrder = localStorage.getItem('historico_acciones_sortOrder');
+      if (cachedSortOrder) {
+        this.sortOrder = parseInt(cachedSortOrder, 10);
+      }
+    }
+  }
+
+  onSort(event: any): void {
+    if (event.field) {
+      this.sortField = event.field;
+      this.sortOrder = event.order;
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('historico_acciones_sortField', this.sortField);
+        localStorage.setItem('historico_acciones_sortOrder', this.sortOrder.toString());
+      }
+    }
+  }
+
+  onPage(event: any): void {
+    if (event.rows) {
+      this.rowsPerPage = event.rows;
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('historico_acciones_rows', this.rowsPerPage.toString());
+      }
+    }
   }
 }

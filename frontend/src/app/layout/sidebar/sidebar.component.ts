@@ -120,19 +120,26 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/dashboard-inversiones'
         },
         {
-          title: 'Historial de Acciones',
+          title: 'Histórico de Capital',
+          icon: 'bi-graph-up',
+          path: '/reportes/historico-patrimonio'
+        }
+      ]
+    },
+    {
+      title: 'Reportes de la Bolsa',
+      icon: 'bi-graph-up',
+      path: '/reportes-bolsa',
+      children: [
+        {
+          title: 'Historial de acciones',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/historico-acciones'
         },
         {
-          title: 'Resumen Diario de Bolsa',
+          title: 'Resumen Diario de la Bolsa',
           icon: 'bi-journal-check',
           path: '/reportes/resumen-diario-bolsa'
-        },
-        {
-          title: 'Histórico de Capital',
-          icon: 'bi-graph-up',
-          path: '/reportes/historico-patrimonio'
         }
       ]
     },
