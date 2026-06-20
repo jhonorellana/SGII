@@ -9,10 +9,33 @@ import { SharesHistoryService, SharesHistoryRecord } from '../../../core/shares-
 import * as XLSX from 'xlsx';
 import 'chartjs-adapter-date-fns';
 import { es } from 'date-fns/locale';
-import { Chart, TimeScale, TimeSeriesScale } from 'chart.js';
+import { 
+  Chart, 
+  TimeScale, 
+  TimeSeriesScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  BarElement, 
+  LineController, 
+  BarController, 
+  Tooltip, 
+  Legend 
+} from 'chart.js';
 
-// Register the required temporal scales globally in Chart.js
-Chart.register(TimeScale, TimeSeriesScale);
+// Register the required temporal scales and elements globally in Chart.js
+Chart.register(
+  TimeScale, 
+  TimeSeriesScale, 
+  LinearScale, 
+  PointElement, 
+  LineElement, 
+  BarElement, 
+  LineController, 
+  BarController, 
+  Tooltip, 
+  Legend
+);
 
 @Component({
   selector: 'app-historico-acciones',
@@ -83,7 +106,38 @@ export class HistoricoAccionesComponent implements OnInit {
   }
 
   initializePlugins(): void {
-    this.chartPlugins = [];
+    this.chartPlugins = [
+      {
+        id: 'verticalYearLines',
+        beforeDatasetsDraw: (chart: any) => {
+          const ctx = chart.ctx;
+          const xScale = chart.scales.x;
+          const yScale = chart.scales.y;
+          
+          if (!xScale || !yScale) return;
+          
+          const minYear = new Date(xScale.min).getFullYear();
+          const maxYear = new Date(xScale.max).getFullYear();
+          
+          ctx.save();
+          ctx.strokeStyle = 'rgba(234, 179, 8, 0.6)'; // Yellow color matching previous design
+          ctx.lineWidth = 1.5;
+          
+          for (let year = minYear; year <= maxYear + 1; year++) {
+            // Normalizar a inicio de año en hora local
+            const dateVal = new Date(year, 0, 1).getTime();
+            if (dateVal >= xScale.min && dateVal <= xScale.max) {
+              const xPos = xScale.getPixelForValue(dateVal);
+              ctx.beginPath();
+              ctx.moveTo(xPos, yScale.top);
+              ctx.lineTo(xPos, yScale.bottom);
+              ctx.stroke();
+            }
+          }
+          ctx.restore();
+        }
+      }
+    ];
   }
 
   loadEmpresas(): void {
@@ -198,13 +252,15 @@ export class HistoricoAccionesComponent implements OnInit {
     this.setupChartOptions();
 
     const prices = this.historicoRecords.map(rec => {
-      const x = new Date(rec.fecha + 'T00:00:00').getTime();
+      const parts = rec.fecha.split('-');
+      const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       const y = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
       return { x, y };
     });
 
     const volumes = this.historicoRecords.map(rec => {
-      const x = new Date(rec.fecha + 'T00:00:00').getTime();
+      const parts = rec.fecha.split('-');
+      const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
       const y = typeof rec.valor === 'string' ? parseFloat(rec.valor) : (rec.valor || 0);
       return { x, y };
     });
@@ -283,12 +339,14 @@ export class HistoricoAccionesComponent implements OnInit {
           callbacks: {
             title: (tooltipItems: any[]) => {
               if (tooltipItems.length > 0) {
-                const index = tooltipItems[0].dataIndex;
-                const record = this.historicoRecords[index];
-                if (!record) return '';
+                const dateVal = new Date(tooltipItems[0].raw.x);
+                const nombreEmpresa = this.empresas.find(e => e.value === this.selectedEmpresa)?.label || '';
+                const year = dateVal.getFullYear();
+                const month = String(dateVal.getMonth() + 1).padStart(2, '0');
+                const day = String(dateVal.getDate()).padStart(2, '0');
                 return [
-                  `Emisor: ${record.emisor || ''}`,
-                  `Fecha: ${record.fecha}`
+                  `Emisor: ${nombreEmpresa}`,
+                  `Fecha: ${year}-${month}-${day}`
                 ];
               }
               return '';
@@ -335,10 +393,12 @@ export class HistoricoAccionesComponent implements OnInit {
             }
           },
           offset: false,
+          bounds: 'ticks',
           grid: {
             display: true,
-            drawTicks: false,
-            color: () => 'rgba(234, 179, 8, 0.6)'
+            drawOnChartArea: false,
+            drawTicks: true,
+            color: '#e2e8f0'
           },
           ticks: {
             color: '#6c757d',
@@ -347,46 +407,23 @@ export class HistoricoAccionesComponent implements OnInit {
               weight: '600'
             },
             autoSkip: false,
-            callback: (value: any) => {
-              const d = new Date(value);
+            callback: (value: any, index: number, ticks: any[]) => {
+              if (!ticks || !ticks[index]) return '';
+              const d = new Date(ticks[index].value);
               if (Number(this.selectedAnio) === 0) {
-                if (d.getMonth() === 0 && d.getDate() === 1) {
-                  return d.getFullYear().toString();
-                }
-                return '';
+                return d.getFullYear().toString();
               } else {
                 const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                if (d.getDate() === 1) {
-                  return `${monthNames[d.getMonth()]} ${this.selectedAnio}`;
-                }
-                return '';
+                return monthNames[d.getMonth()];
               }
             }
-          },
-          afterBuildTicks: (scale: any) => {
-            const tickDates: Date[] = [];
-            if (Number(this.selectedAnio) === 0) {
-              for (let y = 2017; y <= 2026; y++) {
-                tickDates.push(new Date(y, 0, 1));
-              }
-              tickDates.push(new Date(2026, 11, 31, 23, 59, 59));
-            } else {
-              const y = Number(this.selectedAnio);
-              for (let m = 0; m < 12; m++) {
-                tickDates.push(new Date(y, m, 1));
-              }
-              tickDates.push(new Date(y, 11, 31, 23, 59, 59));
-            }
-            scale.ticks = tickDates.map(d => ({
-              value: d.getTime()
-            }));
           },
           min: Number(this.selectedAnio) === 0
-            ? new Date('2017-01-01T00:00:00').getTime()
-            : new Date(`${this.selectedAnio}-01-01T00:00:00`).getTime(),
+            ? new Date(2017, 0, 1).getTime()
+            : new Date(Number(this.selectedAnio), 0, 1).getTime(),
           max: Number(this.selectedAnio) === 0
-            ? new Date('2026-12-31T23:59:59').getTime()
-            : new Date(`${this.selectedAnio}-12-31T23:59:59`).getTime()
+            ? new Date(2026, 11, 31, 23, 59, 59).getTime()
+            : new Date(Number(this.selectedAnio), 11, 31, 23, 59, 59).getTime()
         },
         y: {
           type: 'linear',
