@@ -7,6 +7,8 @@ import { CalendarModule } from 'primeng/calendar';
 import { ChartModule } from 'primeng/chart';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { PatrimonioService } from '../../../core/patrimonio.service';
+import { AccionPosicionService } from '../../../core/accion-posicion.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard-inversiones',
@@ -106,6 +108,7 @@ export class DashboardInversionesComponent implements OnInit {
   constructor(
     private inversionService: InversionService,
     private patrimonioService: PatrimonioService,
+    private accionPosicionService: AccionPosicionService,
     private cdr: ChangeDetectorRef
   ) {
     this.setupChartOptions();
@@ -116,15 +119,60 @@ export class DashboardInversionesComponent implements OnInit {
   }
 
   loadInversiones(): void {
-    this.inversionService.getAll().subscribe({
-      next: (data) => {
-        // Filter out soft-deleted ones, only work with active ones, and exclude sold ones (fecha_venta IS NULL)
-        this.inversiones = (data || []).filter(i => !i.eliminado && i.activo && !i.fecha_venta).map(i => {
+    forkJoin({
+      rentaFija: this.inversionService.getAll(),
+      rentaVariable: this.accionPosicionService.getPosiciones()
+    }).subscribe({
+      next: ({ rentaFija, rentaVariable }) => {
+        // 1. Procesar Renta Fija
+        const fijas = (rentaFija || []).filter(i => !i.eliminado && i.activo && !i.fecha_venta).map(i => {
           if (i.saldo_capital !== undefined) {
             i.capital_invertido = i.saldo_capital;
           }
           return i;
         });
+
+        // 2. Procesar Renta Variable (Acciones) y mapear a estructura de Inversion
+        const variables = (rentaVariable?.data || [])
+          .filter(pos => pos.cantidad_actual > 0)
+          .map(pos => {
+            const inv: Inversion = {
+              id_inversion: undefined,
+              id_grupo_familiar: 0, // No agrupado directamente o mapeado por defecto
+              id_instrumento: pos.id_instrumento,
+              id_propietario: pos.id_persona,
+              id_estado_inversion: 128, // Vigente
+              fecha_compra: pos.fecha_primera_operacion || '',
+              valor_nominal: 0, // Acciones no tienen valor nominal
+              capital_invertido: pos.capital_invertido || 0,
+              tasa_interes: 0,
+              rendimiento_nominal: 0,
+              activo: true,
+              eliminado: false,
+              propietario: {
+                nombre: pos.persona,
+                nombres: pos.persona ? pos.persona.split(' ')[0] : '',
+                apellidos: pos.persona ? pos.persona.split(' ').slice(1).join(' ') : ''
+              },
+              instrumento: {
+                id_instrumento: pos.id_instrumento,
+                nombre: pos.instrumento,
+                id_emisor: pos.id_emisor,
+                emisor: {
+                  id_emisor: pos.id_emisor,
+                  nombre: pos.emisor_nombre || 'Acciones'
+                },
+                tipoInversion: {
+                  id_tipo_inversion: 203,
+                  nombre: 'Acciones Sin Interés'
+                }
+              }
+            };
+            return inv;
+          });
+
+        // 3. Consolidar ambas listas
+        this.inversiones = [...fijas, ...variables];
         this.filteredInversiones = [...this.inversiones];
 
         this.extractFilterOptions();
@@ -215,6 +263,7 @@ export class DashboardInversionesComponent implements OnInit {
     let sumNominal = 0;
     let sumInvertido = 0;
     let sumWeightedRendimiento = 0;
+    let sumInvertidoForYield = 0;
 
     this.filteredInversiones.forEach(inv => {
       const nominal = Number(inv.valor_nominal || 0);
@@ -223,12 +272,17 @@ export class DashboardInversionesComponent implements OnInit {
 
       sumNominal += nominal;
       sumInvertido += invertido;
-      sumWeightedRendimiento += (rendimiento * invertido);
+      
+      // Excluir acciones (id_tipo_inversion = 203) del rendimiento promedio
+      if (inv.instrumento?.tipoInversion?.id_tipo_inversion !== 203) {
+        sumWeightedRendimiento += (rendimiento * invertido);
+        sumInvertidoForYield += invertido;
+      }
     });
 
     this.totalNominal = sumNominal;
     this.totalInvertido = sumInvertido;
-    this.rendimientoPromedio = sumInvertido > 0 ? (sumWeightedRendimiento / sumInvertido) : 0;
+    this.rendimientoPromedio = sumInvertidoForYield > 0 ? (sumWeightedRendimiento / sumInvertidoForYield) : 0;
 
     // 2. Generate Chart Data Sets
     this.loadPatrimonioData();
@@ -657,7 +711,10 @@ export class DashboardInversionesComponent implements OnInit {
   }
 
   private generateRendimientosOtrasChart(): void {
-    const otrasInversiones = this.filteredInversiones.filter(inv => !(inv.instrumento?.tipoInversion?.nombre || '').toUpperCase().includes('BONO'));
+    const otrasInversiones = this.filteredInversiones.filter(inv => 
+      !(inv.instrumento?.tipoInversion?.nombre || '').toUpperCase().includes('BONO')
+      && inv.instrumento?.tipoInversion?.id_tipo_inversion !== 203
+    );
     if (otrasInversiones.length === 0) {
       this.rendimientoOtrasChartData = null;
       return;

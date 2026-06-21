@@ -105,16 +105,23 @@ BEGIN
 
     -- Acciones
     SELECT 'Acciones Sin Interés' as detalle,
-           COALESCE(SUM(A.capital), 0) as valor
-    FROM amortizacion A
-    JOIN inversion I ON A.id_inversion = I.id_inversion
-    JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
-    WHERE A.fecha_pago > p_fecha_inicio
-      AND I.fecha_venta IS NULL
-      AND A.activo = 1
-      AND A.eliminado = 0
-      AND I.eliminado = 0
-      AND INS.id_tipo_inversion = 203
+           COALESCE(SUM(
+               CASE 
+                   WHEN ao.id_tipo_operacion IN (204, 206, 207) THEN ao.valor_neto
+                   WHEN ao.id_tipo_operacion IN (205, 208) THEN -ao.valor_neto
+                   ELSE 0
+               END
+           ), 0) as valor
+    FROM sipro_desa.accion_operacion ao
+    WHERE ao.activo = 1
+      AND ao.eliminado = 0
+      AND ao.fecha_operacion <= p_fecha_fin
+      AND (p_id_propietario IS NULL OR ao.id_persona = p_id_propietario)
+      AND (p_id_grupo_familiar IS NULL OR ao.id_persona IN (
+          SELECT gfp.id_persona 
+          FROM sipro_desa.grupo_familiar_persona gfp 
+          WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
+      ))
     UNION ALL
 
     -- Titularizaciones
@@ -230,16 +237,23 @@ BEGIN
                  AND INS.id_tipo_inversion = 73
            ) +
            (
-               SELECT COALESCE(SUM(A.capital), 0)
-               FROM amortizacion A
-               JOIN inversion I ON A.id_inversion = I.id_inversion
-               JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
-               WHERE A.fecha_pago > p_fecha_inicio
-                 AND I.fecha_venta IS NULL
-                 AND A.activo = 1
-                 AND A.eliminado = 0
-                 AND I.eliminado = 0
-                 AND INS.id_tipo_inversion = 203
+               SELECT COALESCE(SUM(
+                   CASE 
+                       WHEN ao.id_tipo_operacion IN (204, 206, 207) THEN ao.valor_neto
+                       WHEN ao.id_tipo_operacion IN (205, 208) THEN -ao.valor_neto
+                       ELSE 0
+                   END
+               ), 0)
+               FROM sipro_desa.accion_operacion ao
+               WHERE ao.activo = 1
+                 AND ao.eliminado = 0
+                 AND ao.fecha_operacion <= p_fecha_fin
+                 AND (p_id_propietario IS NULL OR ao.id_persona = p_id_propietario)
+                 AND (p_id_grupo_familiar IS NULL OR ao.id_persona IN (
+                     SELECT gfp.id_persona 
+                     FROM sipro_desa.grupo_familiar_persona gfp 
+                     WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
+                 ))
            ) +
            (
                SELECT COALESCE(SUM(A.capital), 0)

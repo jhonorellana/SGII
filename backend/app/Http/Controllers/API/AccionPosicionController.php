@@ -15,18 +15,20 @@ class AccionPosicionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('vw_accion_posicion');
+        $query = DB::table('vw_accion_posicion as vp')
+            ->join('emisor as e', 'e.id_emisor', '=', 'vp.id_emisor')
+            ->select('vp.*', 'e.nombre as emisor_nombre');
 
         if ($request->has('id_persona') && $request->id_persona) {
-            $query->where('id_persona', $request->id_persona);
+            $query->where('vp.id_persona', $request->id_persona);
         }
 
         if ($request->has('id_emisor') && $request->id_emisor) {
-            $query->where('id_emisor', $request->id_emisor);
+            $query->where('vp.id_emisor', $request->id_emisor);
         }
 
         if ($request->has('id_instrumento') && $request->id_instrumento) {
-            $query->where('id_instrumento', $request->id_instrumento);
+            $query->where('vp.id_instrumento', $request->id_instrumento);
         }
 
         $posiciones = $query->get();
@@ -76,9 +78,11 @@ class AccionPosicionController extends Controller
             'id_instrumento' => 'required|integer'
         ]);
 
-        $posicion = DB::table('vw_accion_posicion')
-            ->where('id_persona', $request->id_persona)
-            ->where('id_instrumento', $request->id_instrumento)
+        $posicion = DB::table('vw_accion_posicion as vp')
+            ->join('emisor as e', 'e.id_emisor', '=', 'vp.id_emisor')
+            ->select('vp.*', 'e.nombre as emisor_nombre')
+            ->where('vp.id_persona', $request->id_persona)
+            ->where('vp.id_instrumento', $request->id_instrumento)
             ->first();
 
         // Calcular costo promedio ponderado específico para esta posición

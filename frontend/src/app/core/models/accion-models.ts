@@ -70,6 +70,7 @@ export interface AccionPosicion {
   id_instrumento: number;
   instrumento?: string;
   id_emisor?: number;
+  emisor_nombre?: string;
   fecha_primera_operacion?: string;
   fecha_ultima_operacion?: string;
   cantidad_actual: number;
