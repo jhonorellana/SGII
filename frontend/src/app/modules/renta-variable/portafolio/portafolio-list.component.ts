@@ -96,7 +96,7 @@ export class PortafolioListComponent implements OnInit {
     { field: 'persona', header: 'Socio' },
     { field: 'instrumento', header: 'Acción' },
     { field: 'cantidad_actual', header: 'Cantidad Acciones' },
-    { field: 'costo_promedio_unitario', header: 'Costo Prom. Unitario' },
+    { field: 'costo_promedio_unitario', header: 'Precio Prom.' },
     { field: 'capital_invertido', header: 'Capital Invertido' },
     { field: 'precio_ultimo', header: 'Último Precio Cierre' },
     { field: 'fecha_ultimo_precio', header: 'Fecha Cierre' },
@@ -115,6 +115,11 @@ export class PortafolioListComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const savedSocio = localStorage.getItem('portafolio_selected_socio');
+    const savedInstrumento = localStorage.getItem('portafolio_selected_instrumento');
+    this.selectedSocio = savedSocio ? Number(savedSocio) : null;
+    this.selectedInstrumento = savedInstrumento ? Number(savedInstrumento) : null;
+
     this.loadFiltros();
     this.loadData();
   }
@@ -176,6 +181,17 @@ export class PortafolioListComponent implements OnInit {
               this.dividendos = [];
             }
             
+            // Aplicar filtros iniciales recuperados de localStorage
+            this.filteredPosiciones = this.posiciones.filter(pos => {
+              if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
+                return false;
+              }
+              if (this.selectedInstrumento && pos.id_instrumento !== this.selectedInstrumento) {
+                return false;
+              }
+              return true;
+            });
+
             this.calculateMetricsAndCharts();
             this.loading = false;
             this.cdr.detectChanges();
@@ -183,6 +199,18 @@ export class PortafolioListComponent implements OnInit {
           error: (err) => {
             console.error('Error al cargar dividendos en el portafolio:', err);
             this.dividendos = [];
+            
+            // Aplicar filtros iniciales en caso de error de dividendos también
+            this.filteredPosiciones = this.posiciones.filter(pos => {
+              if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
+                return false;
+              }
+              if (this.selectedInstrumento && pos.id_instrumento !== this.selectedInstrumento) {
+                return false;
+              }
+              return true;
+            });
+
             this.calculateMetricsAndCharts();
             this.loading = false;
             this.cdr.detectChanges();
@@ -198,6 +226,19 @@ export class PortafolioListComponent implements OnInit {
   }
 
   onFilterChange(): void {
+    // Persistir filtros en localStorage
+    if (this.selectedSocio !== null) {
+      localStorage.setItem('portafolio_selected_socio', this.selectedSocio.toString());
+    } else {
+      localStorage.removeItem('portafolio_selected_socio');
+    }
+
+    if (this.selectedInstrumento !== null) {
+      localStorage.setItem('portafolio_selected_instrumento', this.selectedInstrumento.toString());
+    } else {
+      localStorage.removeItem('portafolio_selected_instrumento');
+    }
+
     // Filtrar posiciones en memoria
     this.filteredPosiciones = this.posiciones.filter(pos => {
       if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
@@ -215,6 +256,8 @@ export class PortafolioListComponent implements OnInit {
   clearFilters(): void {
     this.selectedSocio = null;
     this.selectedInstrumento = null;
+    localStorage.removeItem('portafolio_selected_socio');
+    localStorage.removeItem('portafolio_selected_instrumento');
     this.globalSearchQuery = '';
     if (this.dt) {
       this.dt.reset();
@@ -267,7 +310,7 @@ export class PortafolioListComponent implements OnInit {
 
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,
-      valor: val
+      valor: Number(Number(val).toFixed(2))
     })).sort((a, b) => b.valor - a.valor);
 
     const total = rawList.reduce((sum, item) => sum + item.valor, 0);
@@ -316,7 +359,7 @@ export class PortafolioListComponent implements OnInit {
 
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,
-      valor: val
+      valor: Number(Number(val).toFixed(2))
     })).sort((a, b) => b.valor - a.valor);
 
     const total = rawList.reduce((sum, item) => sum + item.valor, 0);
@@ -345,6 +388,7 @@ export class PortafolioListComponent implements OnInit {
       cutout: '70%',
       plugins: {
         legend: { display: false },
+        datalabels: { display: false },
         tooltip: {
           backgroundColor: 'rgba(33, 37, 41, 0.95)',
           padding: 10,
@@ -369,6 +413,7 @@ export class PortafolioListComponent implements OnInit {
       cutout: '70%',
       plugins: {
         legend: { display: false },
+        datalabels: { display: false },
         tooltip: {
           backgroundColor: 'rgba(33, 37, 41, 0.95)',
           padding: 10,
@@ -420,7 +465,7 @@ export class PortafolioListComponent implements OnInit {
       Socio: pos.persona || '-',
       Acción: pos.instrumento || '-',
       'Cantidad Acciones': pos.cantidad_actual,
-      'Costo Promedio Unitario': pos.costo_promedio_unitario || 0,
+      'Precio Prom.': pos.costo_promedio_unitario || 0,
       'Capital Invertido': pos.capital_invertido || 0,
       'Último Precio': pos.precio_ultimo || 0,
       'Fecha Cierre': pos.fecha_ultimo_precio || '-',
@@ -451,7 +496,7 @@ export class PortafolioListComponent implements OnInit {
     const tableData = dataToExport.map(pos => [
       pos.persona || '-',
       pos.instrumento || '-',
-      this.formatNumber(pos.cantidad_actual, 4),
+      this.formatNumber(pos.cantidad_actual, 2),
       this.formatCurrency(pos.costo_promedio_unitario),
       this.formatCurrency(pos.capital_invertido),
       this.formatCurrency(pos.precio_ultimo),
@@ -461,7 +506,7 @@ export class PortafolioListComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      head: [['Socio', 'Acción', 'Cantidad', 'Costo Prom. Unit', 'Cap. Invertido', 'Últ. Precio', 'F. Cierre', 'Valor Mercado', 'Plus/Minusvalía']],
+      head: [['Socio', 'Acción', 'Cantidad', 'Precio Prom.', 'Cap. Invertido', 'Últ. Precio', 'F. Cierre', 'Valor Mercado', 'Plus/Minusvalía']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 8 },

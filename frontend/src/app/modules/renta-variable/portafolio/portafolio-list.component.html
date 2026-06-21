@@ -134,6 +134,9 @@
           [rows]="10" 
           [paginator]="true"
           [rowsPerPageOptions]="[10,25,50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+          paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
           [globalFilterFields]="['persona', 'instrumento']"
           [rowHover]="true"
           styleClass="p-datatable-sm p-datatable-striped"
@@ -141,7 +144,7 @@
           
           <ng-template pTemplate="header" let-columns>
             <tr>
-              <th *ngFor="let col of columns" [pSortableColumn]="col.field" [style.textAlign]="col.field !== 'persona' && col.field !== 'instrumento' && col.field !== 'fecha_ultimo_precio' ? 'right' : 'left'">
+              <th *ngFor="let col of columns" [pSortableColumn]="col.field" [style.textAlign]="col.field === 'fecha_ultimo_precio' ? 'center' : (col.field !== 'persona' && col.field !== 'instrumento' ? 'right' : 'left')">
                 {{ col.header }}
                 <p-sortIcon [field]="col.field"></p-sortIcon>
               </th>
@@ -150,7 +153,7 @@
 
           <ng-template pTemplate="body" let-row let-columns="columns">
             <tr>
-              <td *ngFor="let col of columns" [style.textAlign]="col.field !== 'persona' && col.field !== 'instrumento' && col.field !== 'fecha_ultimo_precio' ? 'right' : 'left'">
+              <td *ngFor="let col of columns" [style.textAlign]="col.field === 'fecha_ultimo_precio' ? 'center' : (col.field !== 'persona' && col.field !== 'instrumento' ? 'right' : 'left')">
                 
                 <!-- Socio / Persona -->
                 <span *ngIf="col.field === 'persona'" class="font-semibold text-gray-800">
@@ -164,7 +167,7 @@
 
                 <!-- Cantidad de Acciones -->
                 <span *ngIf="col.field === 'cantidad_actual'">
-                  {{ formatNumber(row.cantidad_actual, 4) }}
+                  {{ formatNumber(row.cantidad_actual, 2) }}
                 </span>
 
                 <!-- Costo Promedio Unitario -->

@@ -191,7 +191,7 @@ export class DividendoListComponent implements OnInit {
       next: (data: any) => {
         const instrumentosArray = Array.isArray(data) ? data : (data as any).data || [];
         this.instrumentos = instrumentosArray
-          .filter((i: any) => i.activo === true || i.activo === 1)
+          .filter((i: any) => (i.activo === true || i.activo === 1) && i.id_tipo_inversion === 203)
           .map((i: any) => ({
             value: i.id_instrumento,
             label: i.nombre || i.codigo_titulo
@@ -336,9 +336,22 @@ export class DividendoListComponent implements OnInit {
 
   private disableAndResetField(field: string): void {
     this.dividendoForm.get(field)?.disable({ emitEvent: false });
-    this.dividendoForm.get(field)?.setValue(0, { emitEvent: false });
+    const resetValue = field.startsWith('id_') ? null : 0;
+    this.dividendoForm.get(field)?.setValue(resetValue, { emitEvent: false });
   }
-
+  /**
+   * Calculate Plusvalía percentage based on bruto and neto values.
+   * Returns a number rounded to two decimal places.
+   */
+  computePlusvalia(): number {
+    const bruto = this.dividendoForm.get('valor_bruto')?.value ?? 0;
+    const neto = this.dividendoForm.get('valor_neto')?.value ?? 0;
+    if (bruto && neto) {
+      const plus = ((bruto - neto) / bruto) * 100;
+      return Math.round(plus * 100) / 100;
+    }
+    return 0;
+  }
   isEfectivoHabilitado(): boolean {
     const tipo = this.dividendoForm.get('id_tipo_dividendo')?.value;
     return tipo === 209 || tipo === 211;
@@ -421,6 +434,18 @@ export class DividendoListComponent implements OnInit {
       activo: true
     };
 
+    const handleValidationError = (err: any, fallbackMessage: string): string => {
+      if (err.error && err.error.errors) {
+        const errors = err.error.errors;
+        const messages = Object.keys(errors).map(key => {
+          const fieldErrors = errors[key];
+          return Array.isArray(fieldErrors) ? fieldErrors.join(', ') : fieldErrors;
+        });
+        return messages.join(' | ');
+      }
+      return err.error?.message || fallbackMessage;
+    };
+
     if (this.isEdit && this.dividendoId) {
       this.dividendoService.update(this.dividendoId, payload).subscribe({
         next: (response) => {
@@ -434,7 +459,7 @@ export class DividendoListComponent implements OnInit {
           this.formLoading = false;
         },
         error: (err) => {
-          this.formError = err.error?.message || 'Error al conectar con la base de datos.';
+          this.formError = handleValidationError(err, 'Error al conectar con la base de datos.');
           this.formLoading = false;
         }
       });
@@ -451,7 +476,7 @@ export class DividendoListComponent implements OnInit {
           this.formLoading = false;
         },
         error: (err) => {
-          this.formError = err.error?.message || 'Error al registrar el dividendo.';
+          this.formError = handleValidationError(err, 'Error al registrar el dividendo.');
           this.formLoading = false;
         }
       });

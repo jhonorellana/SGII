@@ -393,3 +393,37 @@
 .text-xs { font-size: 0.75rem; }
 .text-sm { font-size: 0.875rem; }
 .d-block { display: block; }
+
+/* Table styling updates */
+::ng-deep .p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
+  font-size: 0.775rem !important;
+  font-weight: 700 !important;
+  color: #495057 !important;
+  background-color: #f1f3f5 !important;
+  border-bottom: 2px solid #dee2e6 !important;
+  padding: 10px 12px !important;
+  white-space: nowrap !important;
+}
+
+::ng-deep .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+  font-size: 0.8rem !important;
+  padding: 8px 12px !important;
+  vertical-align: middle !important;
+}
+
+/* Hover effect on table rows */
+::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background-color: rgba(40, 167, 69, 0.05) !important;
+}
+
+/* Force nowrap and transparent style for action labels (no badge styling) */
+.badge-instrumento {
+  background-color: transparent !important;
+  color: #212529 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap !important;
+  display: inline-block !important;
+}

@@ -26,7 +26,7 @@ export class SidebarComponent implements OnInit {
 
   menuItems: MenuItem[] = [
     {
-      title: 'Inversiones',
+      title: 'Renta Fija',
       icon: 'bi-currency-dollar',
       path: '/inversiones',
       children: [
@@ -39,11 +39,6 @@ export class SidebarComponent implements OnInit {
           title: 'Instrumentos',
           icon: 'bi-graph-up',
           path: '/instrumentos'
-        },
-        {
-          title: 'Otros Valores',
-          icon: 'bi-wallet2',
-          path: '/otros-valores'
         },
         {
           title: 'Amortizaciones',
@@ -98,6 +93,11 @@ export class SidebarComponent implements OnInit {
           title: 'Movimientos de Capital',
           icon: 'bi-cash-coin',
           path: '/movimientos-capital'
+        },
+        {
+          title: 'Otros Valores',
+          icon: 'bi-wallet2',
+          path: '/otros-valores'
         }
       ]
     },

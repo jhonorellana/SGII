@@ -55,11 +55,27 @@
   border-bottom: 2px solid #cbd5e1;
 }
 
-::ng-deep .p-dialog-header {
+::ng-deep .dividendo-modal .p-dialog-header {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+  color: white !important;
+  border-bottom: 2px solid #15803d !important;
   border-top-left-radius: 8px !important;
   border-top-right-radius: 8px !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  padding: 1.25rem 1.5rem !important;
+  padding: 1rem 1.5rem !important;
+}
+
+::ng-deep .dividendo-modal .p-dialog-title {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 1.1rem !important;
+}
+
+::ng-deep .dividendo-modal .p-dialog-header-close {
+  color: white !important;
+}
+
+::ng-deep .dividendo-modal .p-dialog-header-close:hover {
+  color: #f0fdf4 !important;
 }
 
 ::ng-deep .p-dialog-content {
