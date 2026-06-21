@@ -30,6 +30,7 @@ class AccionOperacionObserver
 
             $movimiento->monto = $operacion->valor_neto;
             $movimiento->id_inversion = $operacion->id_inversion;
+            $movimiento->id_accion_operacion = $operacion->id_accion_operacion;
             $movimiento->conciliado = false;
             $movimiento->activo = true;
             $movimiento->eliminado = false;
@@ -56,6 +57,7 @@ class AccionOperacionObserver
                 $movimiento->id_persona = $operacion->id_persona;
                 $movimiento->monto = $operacion->valor_neto;
                 $movimiento->id_inversion = $operacion->id_inversion;
+                $movimiento->id_accion_operacion = $operacion->id_accion_operacion;
                 
                 if ($tipoOp === 204) {
                     $movimiento->id_tipo_movimiento = 181; // COM_INV

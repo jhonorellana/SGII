@@ -98,7 +98,7 @@
         <th pSortableColumn="fecha_movimiento">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
         <th>Persona</th>
         <th>Descripción</th>
-        <th>Inversión</th>
+        <th>Inversión / Acción</th>
         <th>Signo</th>
         <th pSortableColumn="monto" class="text-right">Monto <i class="pi pi-sort-amount-down-alt"></i></th>
         <th class="text-right">Saldo Acumulado</th>
@@ -125,18 +125,32 @@
         </th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
         <th>
-          <p-dropdown
-            [(ngModel)]="filters.id_inversion"
-            [options]="inversiones"
-            optionLabel="label"
-            optionValue="id_inversion"
-            placeholder="Todas"
-            [style]="{'width':'100%', 'min-width':'150px'}"
-            [panelStyle]="{'max-height':'200px', 'overflow':'auto', 'min-width':'150px'}"
-            appendTo="body"
-            (onChange)="applyFilters()"
-            [showClear]="true">
-          </p-dropdown>
+          <div class="d-flex flex-column gap-1">
+            <p-dropdown
+              [(ngModel)]="filters.id_inversion"
+              [options]="inversiones"
+              optionLabel="label"
+              optionValue="id_inversion"
+              placeholder="Inv. R.Fija"
+              [style]="{'width':'100%', 'min-width':'150px'}"
+              [panelStyle]="{'max-height':'200px', 'overflow':'auto', 'min-width':'150px'}"
+              appendTo="body"
+              (onChange)="applyFilters()"
+              [showClear]="true">
+            </p-dropdown>
+            <p-dropdown
+              [(ngModel)]="filters.id_accion_operacion"
+              [options]="accionesOperaciones"
+              optionLabel="label"
+              optionValue="id_accion_operacion"
+              placeholder="Op. Acciones"
+              [style]="{'width':'100%', 'min-width':'150px'}"
+              [panelStyle]="{'max-height':'200px', 'overflow':'auto', 'min-width':'150px'}"
+              appendTo="body"
+              (onChange)="applyFilters()"
+              [showClear]="true">
+            </p-dropdown>
+          </div>
         </th>
         <th>
           <p-dropdown
@@ -180,7 +194,7 @@
         <td>{{ formatDateShort(movimiento.fecha_movimiento) }}</td>
         <td>{{ getPersonaNombre(movimiento) }}</td>
         <td>{{ movimiento.descripcion || '-' }}</td>
-        <td>{{ getInversionLabel(movimiento) }}</td>
+        <td>{{ getRelacionLabel(movimiento) }}</td>
         <td>
           <p-tag [value]="getSignoLabel(movimiento.id_signo, movimiento)" [severity]="getSignoClass(movimiento.id_signo, movimiento)"></p-tag>
         </td>
@@ -227,10 +241,9 @@
 
       <form [formGroup]="movimientoForm">
         <div class="form-grid">
-          <!-- Fila 1 -->
           <div class="form-field">
-            <label>Inversión</label>
-            <p-dropdown formControlName="id_inversion" [options]="inversiones" optionLabel="id_inversion" optionValue="id_inversion" placeholder="Seleccione" (onChange)="onInversionChange()"></p-dropdown>
+            <label>Tipo Movimiento *</label>
+            <p-dropdown formControlName="id_tipo_movimiento" [options]="tiposMovimiento" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione" (onChange)="onTipoMovimientoChange()"></p-dropdown>
           </div>
 
           <div class="form-field">
@@ -238,14 +251,8 @@
             <p-calendar formControlName="fecha_movimiento" [showIcon]="true" dateFormat="yy-mm-dd"></p-calendar>
           </div>
 
-          <!-- Fila 2 -->
           <div class="form-field">
-            <label>Tipo Movimiento *</label>
-            <p-dropdown formControlName="id_tipo_movimiento" [options]="tiposMovimiento" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione" (onChange)="onTipoMovimientoChange()"></p-dropdown>
-          </div>
-
-          <div class="form-field">
-            <label>Persona</label>
+            <label>Persona *</label>
             <p-dropdown formControlName="id_persona" [options]="personas" optionLabel="nombre" optionValue="id_persona" placeholder="Seleccione"></p-dropdown>
           </div>
 
@@ -255,7 +262,16 @@
             <small *ngIf="isCuentaBancariaNotApplicable()" class="text-muted">No aplica para este tipo de movimiento</small>
           </div>
 
-          <!-- Fila 3 -->
+          <div class="form-field">
+            <label>Inversión (Renta Fija)</label>
+            <p-dropdown formControlName="id_inversion" [options]="inversiones" optionLabel="label" optionValue="id_inversion" placeholder="Seleccione" (onChange)="onInversionChange()" [showClear]="true"></p-dropdown>
+          </div>
+
+          <div class="form-field">
+            <label>Operación Acciones (Renta Variable)</label>
+            <p-dropdown formControlName="id_accion_operacion" [options]="accionesOperaciones" optionLabel="label" optionValue="id_accion_operacion" placeholder="Seleccione" (onChange)="onAccionOperacionChange()" [showClear]="true"></p-dropdown>
+          </div>
+
           <div class="form-field">
             <label>Signo *</label>
             <p-dropdown formControlName="id_signo" [options]="signos" optionLabel="nombre" optionValue="id_catalogo_valor" placeholder="Seleccione"></p-dropdown>
@@ -322,9 +338,13 @@
         <span class="detail-label">Descripción:</span>
         <span class="detail-value">{{ selectedMovimiento.descripcion || '-' }}</span>
       </div>
-      <div class="detail-row">
-        <span class="detail-label">Inversión:</span>
+      <div class="detail-row" *ngIf="selectedMovimiento.id_inversion">
+        <span class="detail-label">Inversión (Renta Fija):</span>
         <span class="detail-value">{{ getInversionLabel(selectedMovimiento) }}</span>
+      </div>
+      <div class="detail-row" *ngIf="selectedMovimiento.id_accion_operacion">
+        <span class="detail-label">Operación Acciones (Renta Variable):</span>
+        <span class="detail-value">{{ getAccionOperacionLabel(selectedMovimiento) }}</span>
       </div>
       <div class="detail-row">
         <span class="detail-label">Signo:</span>

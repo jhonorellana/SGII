@@ -19,6 +19,7 @@ class MovimientoCapital extends Model
         'id_signo',
         'monto',
         'id_inversion',
+        'id_accion_operacion',
         'id_venta_inversion',
         'id_cuenta_bancaria',
         'descripcion',
@@ -48,6 +49,11 @@ class MovimientoCapital extends Model
     public function inversion()
     {
         return $this->belongsTo(Inversion::class, 'id_inversion');
+    }
+
+    public function accionOperacion()
+    {
+        return $this->belongsTo(AccionOperacion::class, 'id_accion_operacion');
     }
 
     public function ventaInversion()

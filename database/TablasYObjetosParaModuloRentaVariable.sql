@@ -202,14 +202,8 @@ BEGIN
 
 
     /*
-      2. Refrescar tabla de último precio
-    */
-
-    TRUNCATE TABLE sipro_desa.accion_ultimo_precio;
-
-
-    /*
-      3. Insertar último precio disponible por emisor
+      2. Refrescar tabla de último precio (ON DUPLICATE KEY UPDATE)
+      Evita truncar la tabla para no dejarla vacía en consultas concurrentes.
     */
 
     INSERT INTO sipro_desa.accion_ultimo_precio
@@ -229,7 +223,7 @@ BEGIN
         dias_sin_negociacion
     )
     SELECT
-        S.SHA_ISSUER_ID AS id_emisor,
+        M.id_emisor AS id_emisor,
         S.SHA_ISSUER AS emisor,
         S.SHA_DATE AS fecha_ultimo_precio,
 
@@ -248,6 +242,8 @@ BEGIN
         DATEDIFF(CURDATE(), S.SHA_DATE) AS dias_sin_negociacion
 
     FROM inversion.shares S
+    INNER JOIN sipro_desa.map_emisor_legacy M
+        ON M.id_emisor_legacy = S.SHA_ISSUER_ID
     INNER JOIN
     (
         SELECT
@@ -269,46 +265,63 @@ BEGIN
       AND S.SHA_CASH_VALUE > 0
 
     GROUP BY
-        S.SHA_ISSUER_ID,
+        M.id_emisor,
         S.SHA_ISSUER,
-        S.SHA_DATE;
+        S.SHA_DATE
+    ON DUPLICATE KEY UPDATE
+        emisor = VALUES(emisor),
+        fecha_ultimo_precio = VALUES(fecha_ultimo_precio),
+        precio_ultimo = VALUES(precio_ultimo),
+        precio_minimo_dia = VALUES(precio_minimo_dia),
+        precio_maximo_dia = VALUES(precio_maximo_dia),
+        volumen_ultimo_dia = VALUES(volumen_ultimo_dia),
+        valor_ultimo_dia = VALUES(valor_ultimo_dia),
+        transacciones_ultimo_dia = VALUES(transacciones_ultimo_dia),
+        precio_minimo_30d = VALUES(precio_minimo_30d),
+        precio_maximo_30d = VALUES(precio_maximo_30d),
+        precio_promedio_30d = VALUES(precio_promedio_30d),
+        dias_sin_negociacion = VALUES(dias_sin_negociacion);
 
 
     /*
-      4. Actualizar precio anterior y variaciones
+      3. Actualizar precio anterior y variaciones
     */
 
     UPDATE sipro_desa.accion_ultimo_precio A
     LEFT JOIN
     (
         SELECT
-            P.SHA_ISSUER_ID,
+            M.id_emisor,
             ROUND(SUM(P.SHA_CASH_VALUE) / NULLIF(SUM(P.SHA_NUMBER), 0), 6) AS precio_anterior
         FROM inversion.shares P
+        INNER JOIN sipro_desa.map_emisor_legacy M
+            ON M.id_emisor_legacy = P.SHA_ISSUER_ID
         INNER JOIN
         (
             SELECT
-                X.SHA_ISSUER_ID,
+                M2.id_emisor_legacy,
                 MAX(X.SHA_DATE) AS fecha_anterior
             FROM inversion.shares X
+            INNER JOIN sipro_desa.map_emisor_legacy M2
+                ON M2.id_emisor_legacy = X.SHA_ISSUER_ID
             INNER JOIN sipro_desa.accion_ultimo_precio A2
-                ON A2.id_emisor = X.SHA_ISSUER_ID
+                ON A2.id_emisor = M2.id_emisor
             WHERE X.SHA_TYPE = 'ACCIONES'
               AND X.SHA_PRICE > 0
               AND X.SHA_NUMBER > 0
               AND X.SHA_CASH_VALUE > 0
               AND X.SHA_DATE < A2.fecha_ultimo_precio
-            GROUP BY X.SHA_ISSUER_ID
+            GROUP BY M2.id_emisor_legacy
         ) UA
-            ON UA.SHA_ISSUER_ID = P.SHA_ISSUER_ID
+            ON UA.id_emisor_legacy = P.SHA_ISSUER_ID
            AND UA.fecha_anterior = P.SHA_DATE
         WHERE P.SHA_TYPE = 'ACCIONES'
           AND P.SHA_PRICE > 0
           AND P.SHA_NUMBER > 0
           AND P.SHA_CASH_VALUE > 0
-        GROUP BY P.SHA_ISSUER_ID
+        GROUP BY M.id_emisor
     ) B
-        ON B.SHA_ISSUER_ID = A.id_emisor
+        ON B.id_emisor = A.id_emisor
     SET
         A.precio_anterior = B.precio_anterior,
         A.variacion_precio =
@@ -324,26 +337,28 @@ BEGIN
 
 
     /*
-      5. Actualizar indicadores últimos 30 días
+      4. Actualizar indicadores últimos 30 días
     */
 
     UPDATE sipro_desa.accion_ultimo_precio A
     LEFT JOIN
     (
         SELECT
-            D.SHA_ISSUER_ID,
+            D.id_emisor,
             ROUND(MIN(D.precio_diario), 6) AS precio_minimo_30d,
             ROUND(MAX(D.precio_diario), 6) AS precio_maximo_30d,
             ROUND(AVG(D.precio_diario), 6) AS precio_promedio_30d
         FROM
         (
             SELECT
-                S2.SHA_ISSUER_ID,
+                M.id_emisor,
                 S2.SHA_DATE,
                 SUM(S2.SHA_CASH_VALUE) / NULLIF(SUM(S2.SHA_NUMBER), 0) AS precio_diario
             FROM inversion.shares S2
+            INNER JOIN sipro_desa.map_emisor_legacy M
+                ON M.id_emisor_legacy = S2.SHA_ISSUER_ID
             INNER JOIN sipro_desa.accion_ultimo_precio A3
-                ON A3.id_emisor = S2.SHA_ISSUER_ID
+                ON A3.id_emisor = M.id_emisor
             WHERE S2.SHA_TYPE = 'ACCIONES'
               AND S2.SHA_PRICE > 0
               AND S2.SHA_NUMBER > 0
@@ -351,12 +366,12 @@ BEGIN
               AND S2.SHA_DATE BETWEEN DATE_SUB(A3.fecha_ultimo_precio, INTERVAL 30 DAY)
                                   AND A3.fecha_ultimo_precio
             GROUP BY
-                S2.SHA_ISSUER_ID,
+                M.id_emisor,
                 S2.SHA_DATE
         ) D
-        GROUP BY D.SHA_ISSUER_ID
+        GROUP BY D.id_emisor
     ) R
-        ON R.SHA_ISSUER_ID = A.id_emisor
+        ON R.id_emisor = A.id_emisor
     SET
         A.precio_minimo_30d = R.precio_minimo_30d,
         A.precio_maximo_30d = R.precio_maximo_30d,

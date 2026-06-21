@@ -17,7 +17,7 @@ class MovimientoCapitalController extends Controller
      */
     public function index(Request $request)
     {
-        $query = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento', 'persona', 'signoCatalogo'])
+        $query = MovimientoCapital::with(['inversion', 'accionOperacion.instrumento', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento', 'persona', 'signoCatalogo'])
             ->where('eliminado', false);
 
         // Filtros
@@ -41,6 +41,9 @@ class MovimientoCapitalController extends Controller
         }
         if ($request->has('id_inversion') && $request->id_inversion) {
             $query->where('id_inversion', $request->id_inversion);
+        }
+        if ($request->has('id_accion_operacion') && $request->id_accion_operacion) {
+            $query->where('id_accion_operacion', $request->id_accion_operacion);
         }
         if ($request->has('conciliado') && $request->conciliado !== '') {
             $query->where('conciliado', $request->conciliado);
@@ -66,6 +69,7 @@ class MovimientoCapitalController extends Controller
             'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
+            'id_accion_operacion' => 'nullable|exists:accion_operacion,id_accion_operacion',
             'id_venta_inversion' => 'nullable|exists:venta_inversion,id_venta_inversion',
             'id_cuenta_bancaria' => 'nullable|exists:cuenta_bancaria,id_cuenta_bancaria',
             'descripcion' => 'nullable|string|max:100',
@@ -87,6 +91,7 @@ class MovimientoCapitalController extends Controller
             'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
+            'id_accion_operacion' => $request->id_accion_operacion,
             'id_venta_inversion' => $request->id_venta_inversion,
             'id_cuenta_bancaria' => $request->id_cuenta_bancaria,
             'descripcion' => $request->descripcion,
@@ -101,7 +106,7 @@ class MovimientoCapitalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Movimiento creado exitosamente',
-            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
+            'data' => $movimiento->load(['inversion', 'accionOperacion.instrumento', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
         ], Response::HTTP_CREATED);
     }
 
@@ -110,7 +115,7 @@ class MovimientoCapitalController extends Controller
      */
     public function show($id)
     {
-        $movimiento = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])->find($id);
+        $movimiento = MovimientoCapital::with(['inversion', 'accionOperacion.instrumento', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])->find($id);
 
         if (!$movimiento) {
             return response()->json([
@@ -146,6 +151,7 @@ class MovimientoCapitalController extends Controller
             'id_signo' => 'required|exists:catalogo_valor,id_catalogo_valor',
             'monto' => 'nullable|numeric',
             'id_inversion' => 'nullable|exists:inversion,id_inversion',
+            'id_accion_operacion' => 'nullable|exists:accion_operacion,id_accion_operacion',
             'id_venta_inversion' => 'nullable|exists:venta_inversion,id_venta_inversion',
             'id_cuenta_bancaria' => 'nullable|exists:cuenta_bancaria,id_cuenta_bancaria',
             'descripcion' => 'nullable|string|max:100',
@@ -167,6 +173,7 @@ class MovimientoCapitalController extends Controller
             'id_signo' => $request->id_signo,
             'monto' => $request->monto,
             'id_inversion' => $request->id_inversion,
+            'id_accion_operacion' => $request->id_accion_operacion,
             'id_venta_inversion' => $request->id_venta_inversion,
             'id_cuenta_bancaria' => $request->id_cuenta_bancaria,
             'descripcion' => $request->descripcion,
@@ -178,7 +185,7 @@ class MovimientoCapitalController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Movimiento actualizado exitosamente',
-            'data' => $movimiento->load(['inversion', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
+            'data' => $movimiento->load(['inversion', 'accionOperacion.instrumento', 'ventaInversion', 'cuentaBancaria', 'tipoMovimiento', 'persona', 'signoCatalogo'])
         ], Response::HTTP_OK);
     }
 
@@ -213,7 +220,7 @@ class MovimientoCapitalController extends Controller
      */
     public function getSaldoEsperado(Request $request)
     {
-        $query = MovimientoCapital::with(['inversion', 'ventaInversion', 'tipoMovimiento'])
+        $query = MovimientoCapital::with(['inversion', 'accionOperacion', 'ventaInversion', 'tipoMovimiento'])
             ->where('eliminado', false)
             ->where('activo', true);
 
@@ -232,14 +239,16 @@ class MovimientoCapitalController extends Controller
 
             // Determinar el monto según el tipo de movimiento
             if ($movimiento->id_tipo_movimiento == 181) { // COMPRA_INVERSION (COM_INV)
-                // El valor viene de inversion.capital_invertido
                 if ($movimiento->inversion) {
                     $monto = $movimiento->inversion->capital_invertido;
+                } elseif ($movimiento->accionOperacion) {
+                    $monto = $movimiento->accionOperacion->valor_neto;
                 }
             } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION (VEN_INV)
-                // El valor viene de venta_inversion.valor_venta_con_comision
                 if ($movimiento->ventaInversion) {
                     $monto = $movimiento->ventaInversion->valor_venta_con_comision;
+                } elseif ($movimiento->accionOperacion) {
+                    $monto = $movimiento->accionOperacion->valor_neto;
                 }
             } else {
                 // Otros movimientos: valor directo
@@ -269,7 +278,7 @@ class MovimientoCapitalController extends Controller
      */
     public function getEstadoCuenta(Request $request)
     {
-        $query = MovimientoCapital::with(['inversion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento'])
+        $query = MovimientoCapital::with(['inversion', 'accionOperacion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento'])
             ->where('eliminado', false)
             ->where('activo', true);
 
@@ -295,11 +304,17 @@ class MovimientoCapitalController extends Controller
                 if ($movimiento->inversion) {
                     $monto = $movimiento->inversion->capital_invertido;
                     $liquidacion = $movimiento->inversion->liquidacion;
+                } elseif ($movimiento->accionOperacion) {
+                    $monto = $movimiento->accionOperacion->valor_neto;
+                    $liquidacion = $movimiento->accionOperacion->liquidacion ?: '[RV] Op. #' . $movimiento->accionOperacion->id_accion_operacion;
                 }
             } elseif ($movimiento->id_tipo_movimiento == 182) { // VENTA_INVERSION (VEN_INV)
                 if ($movimiento->ventaInversion) {
                     $monto = $movimiento->ventaInversion->valor_venta_con_comision;
                     $liquidacion = $movimiento->ventaInversion->liquidacion_venta;
+                } elseif ($movimiento->accionOperacion) {
+                    $monto = $movimiento->accionOperacion->valor_neto;
+                    $liquidacion = $movimiento->accionOperacion->liquidacion ?: '[RV] Op. #' . $movimiento->accionOperacion->id_accion_operacion;
                 }
             } else {
                 $monto = $movimiento->monto;
@@ -318,6 +333,7 @@ class MovimientoCapitalController extends Controller
                 'tipo_movimiento' => $movimiento->tipoMovimiento ? $movimiento->tipoMovimiento->nombre : '-',
                 'descripcion' => $movimiento->descripcion,
                 'inversion' => $movimiento->inversion ? $movimiento->inversion->id_inversion : null,
+                'id_accion_operacion' => $movimiento->id_accion_operacion,
                 'liquidacion' => $liquidacion,
                 'monto' => $monto,
                 'signo' => $movimiento->signo,

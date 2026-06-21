@@ -21,6 +21,7 @@ import { CatalogoService } from '../../../core/catalogo.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-bancaria.service';
 import { PersonaService } from '../../../core/persona.service';
+import { AccionOperacionService } from '../../../core/accion-operacion.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
@@ -66,6 +67,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   signos: any[] = [];
   personas: any[] = [];
   inversiones: any[] = [];
+  accionesOperaciones: any[] = [];
   ventasInversion: any[] = [];
   cuentasBancarias: CuentaBancaria[] = [];
   cuentasBancariasConLabel: any[] = [];
@@ -89,6 +91,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     id_tipo_movimiento: null as number | null,
     id_persona: null as number | null,
     id_inversion: null as number | null,
+    id_accion_operacion: null as number | null,
     id_signo: null as number | null,
     id_cuenta_bancaria: null as number | null,
     conciliado: null as boolean | null
@@ -111,6 +114,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     private movimientoService: MovimientoCapitalService,
     private catalogoService: CatalogoService,
     private inversionService: InversionService,
+    private accionOperacionService: AccionOperacionService,
     private cuentaBancariaService: CuentaBancariaService,
     private personaService: PersonaService,
     private fb: FormBuilder,
@@ -130,6 +134,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     this.loadSignos();
     this.loadPersonas();
     this.loadInversiones();
+    this.loadAccionesOperaciones();
     this.loadVentasInversion();
     this.loadCuentasBancarias();
   }
@@ -152,6 +157,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       id_signo: [null, Validators.required],
       monto: [null, Validators.nullValidator],
       id_inversion: [null],
+      id_accion_operacion: [null],
       id_venta_inversion: [null],
       id_cuenta_bancaria: [null],
       descripcion: ['', Validators.maxLength(100)],
@@ -171,6 +177,7 @@ export class MovimientoCapitalListComponent implements OnInit {
     if (this.filters.id_tipo_movimiento) filters.id_tipo_movimiento = this.filters.id_tipo_movimiento;
     if (this.filters.id_persona) filters.id_persona = this.filters.id_persona;
     if (this.filters.id_inversion) filters.id_inversion = this.filters.id_inversion;
+    if (this.filters.id_accion_operacion) filters.id_accion_operacion = this.filters.id_accion_operacion;
     if (this.filters.id_signo) filters.id_signo = this.filters.id_signo;
     if (this.filters.id_cuenta_bancaria) filters.id_cuenta_bancaria = this.filters.id_cuenta_bancaria;
     if (this.filters.conciliado !== null) filters.conciliado = this.filters.conciliado;
@@ -289,6 +296,66 @@ export class MovimientoCapitalListComponent implements OnInit {
     });
   }
 
+  loadAccionesOperaciones(): void {
+    this.accionOperacionService.getAll().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.accionesOperaciones = [
+            { id_accion_operacion: undefined, label: 'Todas / Ninguna', valor_neto: null },
+            ...response.data.map((op: any) => {
+              const tipoStr = op.id_tipo_operacion === 204 ? 'Compra' : 'Venta';
+              const instStr = op.instrumento?.nombre || 'Acción';
+              const liq = op.liquidacion || `Op. #${op.id_accion_operacion}`;
+              return {
+                id_accion_operacion: op.id_accion_operacion,
+                label: `#${op.id_accion_operacion} - ${tipoStr} - ${instStr} (${liq})`,
+                valor_neto: op.valor_neto
+              };
+            })
+          ];
+        }
+      }
+    });
+  }
+
+  onAccionOperacionChange(): void {
+    const opId = this.movimientoForm.get('id_accion_operacion')?.value;
+    if (!opId) return;
+
+    const tipoMovimientoId = this.movimientoForm.get('id_tipo_movimiento')?.value;
+    if (!tipoMovimientoId) return;
+
+    const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
+    const codigo = tipoMovimiento?.codigo;
+
+    if (codigo === 'COM_INV' || codigo === 'VEN_INV') {
+      const op = this.accionesOperaciones.find((o: any) => o.id_accion_operacion === opId);
+      if (op && op.valor_neto) {
+        const monto = parseFloat(String(op.valor_neto));
+        this.movimientoForm.patchValue({ monto: isNaN(monto) ? 0 : monto });
+      }
+    }
+  }
+
+  getAccionOperacionLabel(movimiento: any): string {
+    if (!movimiento.accion_operacion && !movimiento.accionOperacion) return '-';
+    const op = movimiento.accion_operacion || movimiento.accionOperacion;
+    const tipo = op.id_tipo_operacion === 204 ? 'Compra' : 'Venta';
+    const inst = op.instrumento?.nombre || 'Acción';
+    const liq = op.liquidacion || `Op. #${op.id_accion_operacion}`;
+    return `#${op.id_accion_operacion} - ${tipo} ${inst} (${liq})`;
+  }
+
+  getRelacionLabel(movimiento: MovimientoCapital): string {
+    if (movimiento.inversion) {
+      return this.getInversionLabel(movimiento);
+    }
+    if (movimiento.accion_operacion || movimiento.accionOperacion) {
+      return this.getAccionOperacionLabel(movimiento);
+    }
+    return '-';
+  }
+
   loadVentasInversion(): void {
     // Cargar ventas de inversión para VENTA_INVERSION
     // Por ahora lo dejamos vacío, se puede implementar cuando se tenga el servicio
@@ -320,6 +387,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       id_tipo_movimiento: null,
       id_persona: null,
       id_inversion: null,
+      id_accion_operacion: null,
       id_signo: null,
       id_cuenta_bancaria: null,
       conciliado: null
@@ -342,15 +410,10 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
     const codigo = tipoMovimiento?.codigo;
 
-    // Si es COMPRA_INVERSION, habilitar inversión y deshabilitar cuenta bancaria si no aplica
-    if (codigo === 'COM_INV') {
+    // Si es COMPRA_INVERSION o VENTA_INVERSION, habilitar inversión y operación acciones
+    if (codigo === 'COM_INV' || codigo === 'VEN_INV') {
       this.movimientoForm.get('id_inversion')?.enable();
-      // Cuenta bancaria puede deshabilitarse según lógica de negocio
-    }
-
-    // Si es VENTA_INVERSION, habilitar venta de inversión
-    if (codigo === 'VEN_INV') {
-      this.movimientoForm.get('id_inversion')?.enable();
+      this.movimientoForm.get('id_accion_operacion')?.enable();
     }
 
     // Para movimientos manuales, limpiar monto calculado
@@ -404,6 +467,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       id_signo: movimiento.id_signo,
       monto: monto,
       id_inversion: movimiento.id_inversion,
+      id_accion_operacion: movimiento.id_accion_operacion,
       id_venta_inversion: movimiento.id_venta_inversion,
       id_cuenta_bancaria: movimiento.id_cuenta_bancaria,
       descripcion: movimiento.descripcion || '',
@@ -598,10 +662,28 @@ export class MovimientoCapitalListComponent implements OnInit {
       return isNaN(monto) ? 0 : monto;
     }
 
-    if (tipoCodigo === 'VEN_INV' && movimiento.ventaInversion) {
-      // VENTA_INVERSION: usar valor_venta_con_comision
-      const monto = parseFloat(String(movimiento.ventaInversion.valor_venta_con_comision || 0));
-      return isNaN(monto) ? 0 : monto;
+    if (tipoCodigo === 'VEN_INV') {
+      if (movimiento.ventaInversion) {
+        const monto = parseFloat(String(movimiento.ventaInversion.valor_venta_con_comision || 0));
+        return isNaN(monto) ? 0 : monto;
+      }
+      const op = movimiento.accion_operacion || movimiento.accionOperacion;
+      if (op) {
+        const monto = parseFloat(String(op.valor_neto || 0));
+        return isNaN(monto) ? 0 : monto;
+      }
+    }
+
+    if (tipoCodigo === 'COM_INV') {
+      if (movimiento.inversion) {
+        const monto = parseFloat(String(movimiento.inversion.capital_invertido || 0));
+        return isNaN(monto) ? 0 : monto;
+      }
+      const op = movimiento.accion_operacion || movimiento.accionOperacion;
+      if (op) {
+        const monto = parseFloat(String(op.valor_neto || 0));
+        return isNaN(monto) ? 0 : monto;
+      }
     }
 
     // Otros tipos: usar monto del movimiento
@@ -786,7 +868,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       Fecha: this.formatDateShort(mov.fecha_movimiento),
       Persona: this.getPersonaNombre(mov),
       Descripción: mov.descripcion || '',
-      Inversión: this.getInversionLabel(mov),
+      'Inversión / Acción': this.getRelacionLabel(mov),
       Signo: this.getSignoLabel(mov.id_signo, mov),
       Monto: this.getMonto(mov),
       'Saldo Acumulado': mov.saldo_acumulado || 0,
@@ -824,7 +906,7 @@ export class MovimientoCapitalListComponent implements OnInit {
       this.formatDateShort(mov.fecha_movimiento),
       this.getPersonaNombre(mov),
       mov.descripcion || '',
-      this.getInversionLabel(mov),
+      this.getRelacionLabel(mov),
       this.getSignoLabel(mov.id_signo, mov),
       this.formatCurrency(this.getMonto(mov)),
       this.formatCurrency(mov.saldo_acumulado || 0),
@@ -868,8 +950,12 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
     const codigo = tipoMovimiento?.codigo;
 
-    // COMPRA_INVERSION (COM_INV) y VENTA_INVERSION (VEN_INV) tienen monto calculado
-    return codigo === 'COM_INV' || codigo === 'VEN_INV';
+    if (codigo === 'COM_INV' || codigo === 'VEN_INV') {
+      const hasInversion = !!this.movimientoForm.get('id_inversion')?.value;
+      const hasAccion = !!this.movimientoForm.get('id_accion_operacion')?.value;
+      return hasInversion || hasAccion;
+    }
+    return false;
   }
 
   getTipoMovimientoNombre(): string {
@@ -887,8 +973,12 @@ export class MovimientoCapitalListComponent implements OnInit {
     const tipoMovimiento = this.tiposMovimiento.find(t => t.id_catalogo_valor === tipoMovimientoId);
     const codigo = tipoMovimiento?.codigo;
 
-    if (codigo === 'COM_INV') return 'la inversión';
-    if (codigo === 'VEN_INV') return 'la venta de inversión';
+    if (codigo === 'COM_INV' || codigo === 'VEN_INV') {
+      const hasInversion = !!this.movimientoForm.get('id_inversion')?.value;
+      const hasAccion = !!this.movimientoForm.get('id_accion_operacion')?.value;
+      if (hasInversion) return 'la inversión';
+      if (hasAccion) return 'la operación de acciones';
+    }
     return '';
   }
 

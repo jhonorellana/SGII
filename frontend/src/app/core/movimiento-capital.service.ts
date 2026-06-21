@@ -10,6 +10,7 @@ export interface MovimientoCapital {
   id_signo: number;
   monto?: number;
   id_inversion?: number;
+  id_accion_operacion?: number;
   id_venta_inversion?: number;
   id_cuenta_bancaria?: number;
   descripcion?: string;
@@ -23,6 +24,8 @@ export interface MovimientoCapital {
   tipo_movimiento?: any;
   persona?: any;
   inversion?: any;
+  accion_operacion?: any;
+  accionOperacion?: any;
   ventaInversion?: any;
   cuentaBancaria?: any;
   signoCatalogo?: any;
