@@ -52,9 +52,13 @@
               <span class="trend-indicator" *ngIf="+row.porcentaje_no_realizado < 0">↓</span>
               {{ row.porcentaje_no_realizado }}%
             </td>
-            <td class="text-center">
-              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_5 ? 'badge-bullish' : 'badge-bearish'">5d</span>
-              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_20 ? 'badge-bullish' : 'badge-bearish'">20d</span>
+            <td class="text-center" style="white-space: nowrap;">
+              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_5 ? 'badge-bullish' : 'badge-bearish'">
+                5d: {{ row.sma_5 | number:'1.2-2' }}
+              </span>
+              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_20 ? 'badge-bullish' : 'badge-bearish'">
+                20d: {{ row.sma_20 | number:'1.2-2' }}
+              </span>
             </td>
             <td class="text-right">{{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}</td>
             <td class="text-center">{{ row.dias_sin_negociacion }}</td>
