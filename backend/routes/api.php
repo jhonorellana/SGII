@@ -160,3 +160,7 @@ Route::get('acciones/posicion/info', [AccionPosicionController::class, 'getSocio
 Route::middleware('auth:sanctum')->group(function () {
     // Ejemplo: Route::get('/inversiones', 'InversionController@index');
 });
+
+// Rutas de Indicadores de Portafolio y Mercado (temporalmente sin autenticación para pruebas)
+Route::get('portfolio/indicadores', [\App\Http\Controllers\Api\PortfolioIndicadoresController::class, 'index']);
+Route::get('mercado/indicadores', [\App\Http\Controllers\Api\MercadoIndicadoresController::class, 'index']);

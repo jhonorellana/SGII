@@ -1,3 +1,5 @@
+DELIMITER $$
+DROP PROCEDURE IF EXISTS SP_ACCION_ULTIMO_PRECIO_REFRESH $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACCION_ULTIMO_PRECIO_REFRESH`()
 BEGIN
 
@@ -226,4 +228,19 @@ BEGIN
         A.precio_maximo_30d = R.precio_maximo_30d,
         A.precio_promedio_30d = R.precio_promedio_30d;
 
-END
+    /* --------------------------------------------------------------- */
+    /* 6. Ejecutar snapshot de cartera y limpiar datos antiguos */
+    CALL sp_actualizar_snapshot_cartera();
+
+    /* 7. Purga de snapshots antiguos según configuración */
+    SELECT CAST(descripcion AS UNSIGNED) INTO @v_retention
+      FROM catalogo_valor
+      WHERE id_catalogo = 19
+        AND codigo = 'RETENTION_DAYS'
+      LIMIT 1;
+
+    DELETE FROM snapshot_cartera_diaria
+    WHERE fecha < CURDATE() - INTERVAL IFNULL(@v_retention, 1825) DAY;
+
+END$$
+DELIMITER ;
