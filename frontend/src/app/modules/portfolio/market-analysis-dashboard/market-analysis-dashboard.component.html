@@ -1,0 +1,67 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">Análisis de Mercado</h1>
+      <p class="dashboard-subtitle">Explora oportunidades de inversión y métricas del mercado</p>
+    </div>
+    <div class="header-actions">
+      <!-- Future: Refresh button or filters -->
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando datos del mercado...</p>
+  </div>
+
+  <div *ngIf="error" class="error-state">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="market-grid">
+    <div *ngFor="let row of indicadores" class="card premium-card glass-panel market-card">
+      <div class="card-header">
+        <h3 class="emisor-title">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</h3>
+        <span class="price-tag">{{ row.precio_mercado | currency:'USD' }}</span>
+      </div>
+      <div class="card-body">
+        <div class="metrics-grid">
+          <div class="metric" title="Tendencia del precio frente a la Media Móvil Simple de 5 días">
+            <span class="metric-label">SMA 5</span>
+            <span class="metric-value">{{ row.sma_5 | currency:'USD' }}</span>
+          </div>
+          <div class="metric" title="Tendencia del precio frente a la Media Móvil Simple de 20 días">
+            <span class="metric-label">SMA 20</span>
+            <span class="metric-value">{{ row.sma_20 | currency:'USD' }}</span>
+          </div>
+          <div class="metric" title="Volumen Relativo: Relación entre el volumen reciente y su promedio de 30 días">
+            <span class="metric-label">Volumen Relativo</span>
+            <span class="metric-value">{{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}</span>
+          </div>
+          <div class="metric" title="Días consecutivos sin negociaciones de esta acción en bolsa">
+            <span class="metric-label">Inactividad</span>
+            <span class="metric-value">{{ row.dias_sin_negociacion }} días</span>
+          </div>
+        </div>
+        <div class="alerts-container" *ngIf="row.alertas && row.alertas.length > 0">
+          <h4 class="alerts-title">Señales:</h4>
+          <div class="alerts-badges">
+            <span *ngFor="let alert of row.alertas" class="alert-badge" [ngClass]="getAlertClass(alert)" [title]="getAlertTooltip(alert)">
+              {{ alert }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Leyenda Explicativa -->
+  <div *ngIf="!loading && !error" class="dashboard-legend mt-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6; font-size: 0.85rem;">
+    <h5 class="mb-2" style="font-size: 0.95rem; font-weight: 600; color: #495057;">Guía Rápida de Alertas y Métricas</h5>
+    <p class="mb-2 text-muted">Pase el cursor sobre los nombres de las métricas en las tarjetas para ver su significado. Las alertas principales significan lo siguiente:</p>
+    <ul class="mb-0 text-muted" style="padding-left: 1.5rem;">
+      <li><span class="font-semibold text-success">No Realizado > X%</span> / <span class="font-semibold text-danger">No Realizado < X%</span>: Rendimiento simulado si se comprara la acción hoy.</li>
+      <li><span class="font-semibold text-success">Variacion diaria > X%</span> / <span class="font-semibold text-danger">Variacion diaria < X%</span>: El precio de la acción tuvo un movimiento atípico hoy.</li>
+      <li><span class="font-semibold" style="color: #6c757d;">Sin negociacion > X dias</span>: Acción ilíquida que no ha tenido actividad bursátil recientemente.</li>
+    </ul>
+  </div>
+</div>

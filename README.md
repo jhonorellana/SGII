@@ -131,6 +131,26 @@ export const environment = {
 };
 ```
 
+### **Configuración de Umbrales de Alerta**
+Los umbrales utilizados para calcular las alertas en el portafolio y el mercado se configuran en la base de datos a través de la tabla `catalogo_valor`. 
+El código del catálogo padre debe ser `CONFIG_ANALISIS_ACCION`. Los parámetros disponibles son:
+
+- `UNREALIZED_PCT_UP`: Umbral superior para P&L No Realizado en % (ej. 5.00)
+- `UNREALIZED_PCT_DOWN`: Umbral inferior para P&L No Realizado en % (ej. -5.00)
+- `DAILY_VARIATION_UP`: Umbral superior para variación diaria del precio en % (ej. 2.00)
+- `DAILY_VARIATION_DOWN`: Umbral inferior para variación diaria del precio en % (ej. -2.00)
+- `VOLUME_RELATIVE`: Umbral de Volumen Relativo (VR) para detectar aumentos inusuales de volumen (ej. 1.5)
+- `RSI_OVERBOUGHT`: Límite superior del RSI (ej. 70)
+- `RSI_OVERSOLD`: Límite inferior del RSI (ej. 30)
+- `DAYS_NO_TRADE`: Número de días sin negociación para alertar inactividad (ej. 30)
+- `RETENTION_DAYS`: Tiempo en días que se mantiene el histórico en `snapshot_cartera_diaria` (ej. 1825 para 5 años)
+
+Para actualizar un umbral, se debe ejecutar un `UPDATE` en la tabla `catalogo_valor` donde el `codigo` sea el parámetro a cambiar. El valor del parámetro se guarda en el campo `descripcion`. Ejemplo:
+```sql
+UPDATE catalogo_valor SET descripcion = '10' WHERE codigo = 'UNREALIZED_PCT_UP';
+```
+
+
 ## 📊 Base de Datos
 
 ### **Tablas Principales**

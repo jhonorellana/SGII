@@ -1,22 +1,23 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PortfolioIndicadoresService, SnapshotCarteraDiaria } from '../../../services/portfolio-indicadores/portfolio-indicadores.service';
+import { MercadoIndicadoresService } from '../../../services/mercado-indicadores/mercado-indicadores.service';
+import { SnapshotCarteraDiaria } from '../../../services/portfolio-indicadores/portfolio-indicadores.service';
 import { HttpClientModule } from '@angular/common/http';
 
 @Component({
-  selector: 'app-portfolio-dashboard',
+  selector: 'app-market-analysis-dashboard',
   standalone: true,
   imports: [CommonModule, HttpClientModule],
-  templateUrl: './portfolio-dashboard.component.html',
-  styleUrl: './portfolio-dashboard.component.css',
-  providers: [PortfolioIndicadoresService]
+  templateUrl: './market-analysis-dashboard.component.html',
+  styleUrl: './market-analysis-dashboard.component.css',
+  providers: [MercadoIndicadoresService]
 })
-export class PortfolioDashboardComponent implements OnInit {
+export class MarketAnalysisDashboardComponent implements OnInit {
   indicadores: SnapshotCarteraDiaria[] = [];
   loading = true;
   error = '';
 
-  constructor(private portfolioService: PortfolioIndicadoresService) {}
+  constructor(private mercadoService: MercadoIndicadoresService) {}
 
   ngOnInit(): void {
     this.loadIndicadores();
@@ -24,17 +25,17 @@ export class PortfolioDashboardComponent implements OnInit {
 
   loadIndicadores() {
     this.loading = true;
-    this.portfolioService.getIndicadores().subscribe({
+    this.mercadoService.getIndicadores().subscribe({
       next: (response) => {
         if (response.success) {
           this.indicadores = response.data;
         } else {
-          this.error = 'No se pudieron cargar los indicadores.';
+          this.error = 'No se pudieron cargar los indicadores de mercado.';
         }
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error de conexión al cargar los indicadores.';
+        this.error = 'Error de conexión al cargar los indicadores de mercado.';
         console.error(err);
         this.loading = false;
       }
@@ -51,8 +52,8 @@ export class PortfolioDashboardComponent implements OnInit {
 
   getAlertTooltip(alerta: string): string {
     const alertLower = alerta.toLowerCase();
-    if (alertLower.includes('no realizado >')) return 'Su P&L no realizado supera el umbral positivo establecido.';
-    if (alertLower.includes('no realizado <')) return 'Su P&L no realizado ha caído por debajo del umbral de pérdida establecido.';
+    if (alertLower.includes('no realizado >')) return 'P&L no realizado positivo (simulado si no se posee).';
+    if (alertLower.includes('no realizado <')) return 'P&L no realizado negativo (simulado si no se posee).';
     if (alertLower.includes('variacion diaria >') || alertLower.includes('variación diaria >')) return 'El precio de la acción subió significativamente hoy.';
     if (alertLower.includes('variacion diaria <') || alertLower.includes('variación diaria <')) return 'El precio de la acción bajó significativamente hoy.';
     if (alertLower.includes('vr >')) return 'El volumen de negociación reciente es anormalmente alto comparado a su promedio.';

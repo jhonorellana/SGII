@@ -1,1 +1,83 @@
-<p>portfolio-dashboard works!</p>
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <h1 class="dashboard-title">Mi Portafolio</h1>
+      <p class="dashboard-subtitle">Análisis detallado y alertas de inversión</p>
+    </div>
+    <div class="header-actions">
+      <!-- Future: Refresh button or filters -->
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando indicadores...</p>
+  </div>
+
+  <div *ngIf="error" class="error-state">
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error" class="card p-3">
+    <div class="table-responsive">
+      <table class="premium-table">
+        <thead>
+          <tr>
+            <th title="Empresa emisora de las acciones">Emisor</th>
+            <th class="text-right" title="Número total de acciones en su posición actual">Cantidad</th>
+            <th class="text-right" title="Costo promedio ponderado de compra por acción">Costo Prom.</th>
+            <th class="text-right" title="Último precio de mercado registrado">Precio Actual</th>
+            <th class="text-right" title="Ganancia o pérdida potencial si vendiera hoy (P&L = Profit and Loss)">P&L No Realizado</th>
+            <th class="text-right" title="Variación porcentual diaria del precio de la acción">Var. %</th>
+            <th class="text-center" title="Tendencia del precio frente a sus medias móviles simples (Simple Moving Average) de 5 y 20 días">SMA 5 / 20</th>
+            <th class="text-right" title="Volumen Relativo: Relación entre el volumen negociado reciente y su promedio de 30 días">VR</th>
+            <th class="text-center" title="Cantidad de días consecutivos sin operaciones registradas en el mercado">Días Inactivo</th>
+            <th title="Señales técnicas y operativas detectadas por el sistema">Alertas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="indicadores.length === 0">
+            <td colspan="10" class="text-center empty-state">No se encontraron posiciones en su portafolio para la fecha actual.</td>
+          </tr>
+          <tr *ngFor="let row of indicadores" class="table-row-hover">
+            <td class="font-bold text-accent">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</td>
+            <td class="text-right">{{ row.cantidad_posicion | number:'1.0-0' }}</td>
+            <td class="text-right">{{ row.costo_promedio | currency:'USD' }}</td>
+            <td class="text-right">{{ row.precio_mercado | currency:'USD' }}</td>
+            <td class="text-right" [ngClass]="{'text-success': +row.pl_no_realizado > 0, 'text-danger': +row.pl_no_realizado < 0}">
+              {{ row.pl_no_realizado | currency:'USD' }}
+            </td>
+            <td class="text-right" [ngClass]="{'text-success': +row.porcentaje_no_realizado > 0, 'text-danger': +row.porcentaje_no_realizado < 0}">
+              <span class="trend-indicator" *ngIf="+row.porcentaje_no_realizado > 0">↑</span>
+              <span class="trend-indicator" *ngIf="+row.porcentaje_no_realizado < 0">↓</span>
+              {{ row.porcentaje_no_realizado }}%
+            </td>
+            <td class="text-center">
+              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_5 ? 'badge-bullish' : 'badge-bearish'">5d</span>
+              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_20 ? 'badge-bullish' : 'badge-bearish'">20d</span>
+            </td>
+            <td class="text-right">{{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}</td>
+            <td class="text-center">{{ row.dias_sin_negociacion }}</td>
+            <td class="alerts-cell">
+              <span *ngFor="let alert of row.alertas" class="alert-badge" [ngClass]="getAlertClass(alert)" [title]="getAlertTooltip(alert)">
+                {{ alert }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Leyenda Explicativa -->
+    <div class="dashboard-legend mt-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6; font-size: 0.85rem;">
+      <h5 class="mb-2" style="font-size: 0.95rem; font-weight: 600; color: #495057;">Guía Rápida de Alertas y Columnas</h5>
+      <p class="mb-2 text-muted">Pase el cursor sobre los encabezados de la tabla para ver el significado de cada métrica. Las alertas principales significan lo siguiente:</p>
+      <ul class="mb-0 text-muted" style="padding-left: 1.5rem;">
+        <li><span class="font-semibold text-success">No Realizado > X%</span>: Tu ganancia latente supera el umbral esperado.</li>
+        <li><span class="font-semibold text-danger">No Realizado < X%</span>: Tu pérdida latente ha caído por debajo del margen de riesgo establecido.</li>
+        <li><span class="font-semibold text-success">Variacion diaria > X%</span> / <span class="font-semibold text-danger">Variacion diaria < X%</span>: El precio de la acción tuvo un movimiento atípico hoy.</li>
+        <li><span class="font-semibold" style="color: #6c757d;">Sin negociacion > X dias</span>: Acción ilíquida que no ha tenido actividad bursátil recientemente.</li>
+      </ul>
+    </div>
+  </div>
+</div>

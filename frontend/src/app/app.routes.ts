@@ -33,6 +33,8 @@ import { AuthGuard } from './core/auth.guard';
 import { PortafolioListComponent } from './modules/renta-variable/portafolio/portafolio-list.component';
 import { OperacionListComponent } from './modules/renta-variable/operaciones/operacion-list.component';
 import { DividendoListComponent } from './modules/renta-variable/dividendos/dividendo-list.component';
+import { PortfolioDashboardComponent } from './modules/portfolio/portfolio-dashboard/portfolio-dashboard.component';
+import { MarketAnalysisDashboardComponent } from './modules/portfolio/market-analysis-dashboard/market-analysis-dashboard.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -75,6 +77,8 @@ export const routes: Routes = [
       { path: 'renta-variable/portafolio', component: PortafolioListComponent },
       { path: 'renta-variable/operaciones', component: OperacionListComponent },
       { path: 'renta-variable/dividendos', component: DividendoListComponent },
+      { path: 'renta-variable/dashboard-portfolio', component: PortfolioDashboardComponent },
+      { path: 'renta-variable/dashboard-mercado', component: MarketAnalysisDashboardComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },
