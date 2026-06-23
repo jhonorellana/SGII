@@ -60,12 +60,28 @@ export class AmortizacionListComponent implements OnInit {
     activo: true
   };
 
+  originalAmortizacionStr: string = '';
+
+  filterValues: any = {
+    inversion: '',
+    emisor: '',
+    propietario: '',
+    fecha_pago: '',
+    interes: '',
+    capital: '',
+    descuento: '',
+    total: '',
+    estado: '',
+    activo: ''
+  };
+
   selectedAmortizaciones: Amortizacion[] = [];
   rowsPerPage: number = 10;
 
   cols: any[] = [
     { field: 'id_amortizacion', header: 'ID' },
     { field: 'inversion.id_inversion', header: 'Inversión' },
+    { field: 'inversion.instrumento.emisor.nombre', header: 'Emisor' },
     { field: 'inversion.propietario.nombres', header: 'Propietario' },
     { field: 'fecha_pago', header: 'Fecha Pago' },
     { field: 'interes', header: 'Interés' },
@@ -91,6 +107,31 @@ export class AmortizacionListComponent implements OnInit {
     this.loadAmortizaciones();
     this.loadInversiones();
     this.loadEstadosAmortizacion();
+    
+    // Restore custom inversion filter
+    const savedInversionFilter = sessionStorage.getItem('amortizaciones-inversion-filter');
+    if (savedInversionFilter) {
+      this.filterValues.inversion = savedInversionFilter;
+      setTimeout(() => {
+        this.onInversionFilterChange({ target: { value: savedInversionFilter } });
+      }, 500); // Wait for amortizaciones to load
+    }
+    
+    // Restore other filters from table state if available
+    setTimeout(() => {
+      if (this.table && this.table.filters) {
+        const f = this.table.filters as any;
+        this.filterValues.emisor = f['inversion.instrumento.emisor.nombre']?.value || f['inversion.instrumento.emisor.nombre']?.[0]?.value || '';
+        this.filterValues.propietario = f['inversion.propietario.nombres']?.value || f['inversion.propietario.nombres']?.[0]?.value || '';
+        this.filterValues.fecha_pago = f['fecha_pago']?.value || f['fecha_pago']?.[0]?.value || '';
+        this.filterValues.interes = f['interes']?.value || f['interes']?.[0]?.value || '';
+        this.filterValues.capital = f['capital']?.value || f['capital']?.[0]?.value || '';
+        this.filterValues.descuento = f['descuento']?.value || f['descuento']?.[0]?.value || '';
+        this.filterValues.total = f['total']?.value || f['total']?.[0]?.value || '';
+        this.filterValues.estado = f['estado_amortizacion.nombre']?.value || f['estado_amortizacion.nombre']?.[0]?.value || '';
+        this.filterValues.activo = f['activo']?.value !== undefined ? f['activo']?.value : (f['activo']?.[0]?.value !== undefined ? f['activo']?.[0]?.value : '');
+      }
+    }, 100);
   }
 
   loadAmortizaciones(): void {
@@ -145,8 +186,23 @@ export class AmortizacionListComponent implements OnInit {
 
   edit(amortizacion: Amortizacion): void {
     this.isEdit = true;
-    this.amortizacion = { ...amortizacion };
+    this.originalAmortizacionStr = JSON.stringify(amortizacion); // Guardar estado original
+    this.amortizacion = amortizacion; // Bind directo para reflejo en tiempo real
+    
+    // Formatear la fecha para que se cargue correctamente en el input type="date"
+    if (this.amortizacion.fecha_pago && this.amortizacion.fecha_pago.includes('T')) {
+      this.amortizacion.fecha_pago = this.amortizacion.fecha_pago.split('T')[0];
+    }
+    
     this.displayDialog = true;
+  }
+
+  cancelEdit(): void {
+    if (this.isEdit && this.originalAmortizacionStr) {
+      // Revertir cambios si el usuario cancela
+      Object.assign(this.amortizacion, JSON.parse(this.originalAmortizacionStr));
+    }
+    this.displayDialog = false;
   }
 
   save(): void {
@@ -210,8 +266,14 @@ export class AmortizacionListComponent implements OnInit {
 
   onInversionFilterChange(event: any): void {
     const value = event.target.value;
+    sessionStorage.setItem('amortizaciones-inversion-filter', value || '');
     if (!value) {
       this.table.filteredValue = this.amortizaciones;
+      // Re-apply other table filters if inversion is cleared
+      if (Object.values(this.filterValues).some(v => v !== '' && v !== null)) {
+         // this triggers PrimeNG internal filtering
+         this.table.filter(this.filterValues.emisor, 'inversion.instrumento.emisor.nombre', 'contains');
+      }
       return;
     }
 
@@ -228,6 +290,42 @@ export class AmortizacionListComponent implements OnInit {
     });
 
     this.table.filteredValue = filtered;
+  }
+
+  triggerSearch(): void {
+    this.table.filter(this.filterValues.emisor, 'inversion.instrumento.emisor.nombre', 'contains');
+    this.table.filter(this.filterValues.propietario, 'inversion.propietario.nombres', 'contains');
+    this.table.filter(this.filterValues.fecha_pago, 'fecha_pago', 'contains');
+    
+    if (this.filterValues.interes !== '') this.table.filter(this.filterValues.interes, 'interes', 'equals');
+    else this.table.filter(null, 'interes', 'equals');
+    
+    if (this.filterValues.capital !== '') this.table.filter(this.filterValues.capital, 'capital', 'equals');
+    else this.table.filter(null, 'capital', 'equals');
+    
+    if (this.filterValues.descuento !== '') this.table.filter(this.filterValues.descuento, 'descuento', 'equals');
+    else this.table.filter(null, 'descuento', 'equals');
+    
+    if (this.filterValues.total !== '') this.table.filter(this.filterValues.total, 'total', 'equals');
+    else this.table.filter(null, 'total', 'equals');
+    
+    if (this.filterValues.estado !== '') this.table.filter(this.filterValues.estado, 'estado_amortizacion.nombre', 'equals');
+    else this.table.filter(null, 'estado_amortizacion.nombre', 'equals');
+    
+    if (this.filterValues.activo !== '') this.table.filter(this.filterValues.activo, 'activo', 'equals');
+    else this.table.filter(null, 'activo', 'equals');
+
+    this.onInversionFilterChange({ target: { value: this.filterValues.inversion } });
+  }
+
+  clearFilters(): void {
+    this.filterValues = {
+      inversion: '', emisor: '', propietario: '', fecha_pago: '',
+      interes: '', capital: '', descuento: '', total: '', estado: '', activo: ''
+    };
+    this.table.clear();
+    sessionStorage.removeItem('amortizaciones-inversion-filter');
+    this.onInversionFilterChange({ target: { value: '' } });
   }
 
   formatDate(date: string): string {
@@ -279,6 +377,7 @@ export class AmortizacionListComponent implements OnInit {
     const exportData = dataToExport.map((amortizacion: Amortizacion) => ({
       ID: amortizacion.id_amortizacion,
       'Inversión': this.formatInversion(amortizacion.inversion),
+      Emisor: amortizacion.inversion?.instrumento?.emisor?.nombre || '',
       Propietario: amortizacion.inversion?.propietario?.nombres || '',
       'Fecha Pago': this.formatDate(amortizacion.fecha_pago),
       Interés: amortizacion.interes,
@@ -318,6 +417,7 @@ export class AmortizacionListComponent implements OnInit {
     const tableData = dataToExport.map((amortizacion: Amortizacion) => [
       amortizacion.id_amortizacion,
       this.formatInversion(amortizacion.inversion),
+      amortizacion.inversion?.instrumento?.emisor?.nombre || '',
       amortizacion.inversion?.propietario?.nombres || '',
       this.formatDate(amortizacion.fecha_pago),
       amortizacion.interes,
@@ -329,7 +429,7 @@ export class AmortizacionListComponent implements OnInit {
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Inversión', 'Propietario', 'Fecha Pago', 'Interés', 'Capital', 'Descuento', 'Total', 'Estado', 'Activo']],
+      head: [['ID', 'Inversión', 'Emisor', 'Propietario', 'Fecha Pago', 'Interés', 'Capital', 'Descuento', 'Total', 'Estado', 'Activo']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 9 },

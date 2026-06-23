@@ -22,6 +22,7 @@
             [(selection)]="selectedAmortizaciones" dataKey="id_amortizacion"
             [totalRecords]="totalRecords"
             showCurrentPageReport="true"
+            stateStorage="session" stateKey="amortizaciones-table-state"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
             currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros">
     <ng-template pTemplate="caption">
@@ -30,6 +31,7 @@
         <span class="p-input-icon-left">
           <i class="pi pi-search"></i>
           <input pInputText type="text" (input)="table.filterGlobal($any($event.target).value, 'contains')"
+                 [value]="$any(table.filters['global'])?.value || ''"
                  placeholder="Buscar..." class="w-100"/>
         </span>
       </div>
@@ -39,6 +41,7 @@
       <tr>
         <th pSortableColumn="id_amortizacion">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
         <th pSortableColumn="inversion.id_inversion">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
+        <th pSortableColumn="inversion.instrumento.emisor.nombre">Emisor <p-sortIcon field="inversion.instrumento.emisor.nombre"></p-sortIcon></th>
         <th pSortableColumn="inversion.propietario.nombres">Propietario <p-sortIcon field="inversion.propietario.nombres"></p-sortIcon></th>
         <th pSortableColumn="fecha_pago">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
         <th pSortableColumn="interes">Interés <p-sortIcon field="interes"></p-sortIcon></th>
@@ -51,39 +54,52 @@
       </tr>
       <tr>
         <th></th>
-        <th><input pInputText type="text" (input)="onInversionFilterChange($event)" placeholder="Código o Liquidación" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" (input)="table.filter($any($event.target).value, 'inversion.propietario.nombres', 'contains')" placeholder="Propietario" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" (input)="table.filter($any($event.target).value, 'fecha_pago', 'contains')" placeholder="YYYY-MM-DD" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'interes', 'equals')" placeholder="Interés" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'capital', 'equals')" placeholder="Capital" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'descuento', 'equals')" placeholder="Descuento" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" (input)="table.filter($any($event.target).value, 'total', 'equals')" placeholder="Total" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.inversion" (keyup.enter)="triggerSearch()" placeholder="Código o Liquidación" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.emisor" (keyup.enter)="triggerSearch()" placeholder="Emisor" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.propietario" (keyup.enter)="triggerSearch()" placeholder="Propietario" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.fecha_pago" (keyup.enter)="triggerSearch()" placeholder="YYYY-MM-DD" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.interes" (keyup.enter)="triggerSearch()" placeholder="Interés" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.capital" (keyup.enter)="triggerSearch()" placeholder="Capital" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.descuento" (keyup.enter)="triggerSearch()" placeholder="Descuento" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.total" (keyup.enter)="triggerSearch()" placeholder="Total" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
         <th>
-          <select (change)="table.filter($any($event.target).value, 'estado_amortizacion.nombre', 'equals')" class="form-select form-select-sm" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
+          <select [(ngModel)]="filterValues.estado" (change)="triggerSearch()" class="form-select form-select-sm" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
             <option value="">Todos</option>
             <option *ngFor="let estado of estadosAmortizacion" [value]="estado.nombre">{{ estado.nombre }}</option>
           </select>
         </th>
         <th>
-          <select (change)="table.filter($any($event.target).value, 'activo', 'equals')" class="form-select form-select-sm" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
+          <select [(ngModel)]="filterValues.activo" (change)="triggerSearch()" class="form-select form-select-sm" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
             <option value="">Todos</option>
             <option value="true">Sí</option>
             <option value="false">No</option>
           </select>
         </th>
-        <th></th>
+        <th class="text-center p-1">
+          <div class="d-flex justify-content-center gap-1">
+            <button class="btn btn-sm btn-primary" (click)="triggerSearch()" title="Buscar">
+              <i class="bi bi-search"></i>
+            </button>
+            <button class="btn btn-sm btn-secondary" (click)="clearFilters()" title="Limpiar Filtros">
+              <i class="bi bi-eraser"></i>
+            </button>
+          </div>
+        </th>
       </tr>
     </ng-template>
 
     <ng-template pTemplate="body" let-amortizacion let-columns="columns">
       <tr>
-        <td *ngFor="let col of columns">
+        <td *ngFor="let col of columns" [ngClass]="{'text-right': ['interes', 'capital', 'descuento', 'total'].includes(col.field)}">
           <ng-container [ngSwitch]="col.field">
             <ng-container *ngSwitchCase="'id_amortizacion'">
               {{amortizacion.id_amortizacion}}
             </ng-container>
             <ng-container *ngSwitchCase="'inversion.id_inversion'">
               {{formatInversion(amortizacion.inversion)}}
+            </ng-container>
+            <ng-container *ngSwitchCase="'inversion.instrumento.emisor.nombre'">
+              {{amortizacion.inversion?.instrumento?.emisor?.nombre || '-'}}
             </ng-container>
             <ng-container *ngSwitchCase="'inversion.propietario.nombres'">
               {{amortizacion.inversion?.propietario?.nombres || '-'}}
@@ -126,9 +142,15 @@
   </p-table>
 
   <!-- Modal para crear/editar -->
-  <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Amortización' : 'Nueva Amortización'"
+  <p-dialog [(visible)]="displayDialog" (onHide)="cancelEdit()"
             [style]="{width: '50vw'}" [modal]="true" [closable]="true"
             [closeOnEscape]="true" [dismissableMask]="true">
+    <ng-template pTemplate="header">
+      <h5 class="m-0 text-primary font-weight-bold">
+        <i class="bi" [ngClass]="isEdit ? 'bi-pencil-square' : 'bi-plus-circle'"></i> 
+        {{ isEdit ? ' Editar Amortización' : ' Nueva Amortización' }}
+      </h5>
+    </ng-template>
     <div class="p-fluid">
       <div class="row">
         <div class="col-md-6 mb-3">
@@ -193,7 +215,7 @@
         [cancelText]="'Cancelar'"
         [saveText]="isEdit ? 'Actualizar' : 'Guardar'"
         [disabled]="!amortizacion.id_inversion || !amortizacion.fecha_pago || !amortizacion.id_estado_amortizacion"
-        (onCancel)="displayDialog = false"
+        (onCancel)="cancelEdit()"
         (onSave)="save()">
       </app-modal-actions>
     </ng-template>

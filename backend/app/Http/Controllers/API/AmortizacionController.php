@@ -15,7 +15,7 @@ class AmortizacionController extends Controller
      */
     public function index()
     {
-        $amortizaciones = Amortizacion::with(['inversion', 'inversion.instrumento', 'inversion.propietario', 'estadoAmortizacion'])
+        $amortizaciones = Amortizacion::with(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion'])
             ->orderBy('id_amortizacion', 'desc')
             ->get();
 
@@ -64,7 +64,7 @@ class AmortizacionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json($amortizacion->load(['inversion', 'inversion.instrumento', 'inversion.propietario', 'estadoAmortizacion']), Response::HTTP_CREATED);
+        return response()->json($amortizacion->load(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion']), Response::HTTP_CREATED);
     }
 
     /**
@@ -72,7 +72,7 @@ class AmortizacionController extends Controller
      */
     public function show($id)
     {
-        $amortizacion = Amortizacion::with(['inversion', 'inversion.instrumento', 'inversion.propietario', 'estadoAmortizacion'])->find($id);
+        $amortizacion = Amortizacion::with(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion'])->find($id);
 
         if (!$amortizacion) {
             return response()->json(['message' => 'Amortización no encontrada'], Response::HTTP_NOT_FOUND);
@@ -127,7 +127,7 @@ class AmortizacionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json($amortizacion->load(['inversion', 'inversion.instrumento', 'inversion.propietario', 'estadoAmortizacion']), Response::HTTP_OK);
+        return response()->json($amortizacion->load(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion']), Response::HTTP_OK);
     }
 
     /**
