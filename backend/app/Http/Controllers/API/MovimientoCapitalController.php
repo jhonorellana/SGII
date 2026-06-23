@@ -18,7 +18,11 @@ class MovimientoCapitalController extends Controller
     public function index(Request $request)
     {
         $query = MovimientoCapital::with(['inversion', 'accionOperacion.instrumento', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento', 'persona', 'signoCatalogo'])
-            ->where('eliminado', false);
+            ->where('eliminado', false)
+            ->where(function($q) {
+                $q->where('id_tipo_movimiento', '!=', 213)
+                  ->orWhereNull('id_tipo_movimiento');
+            });
 
         // Filtros
         if ($request->has('fecha_desde') && $request->fecha_desde) {
@@ -222,7 +226,11 @@ class MovimientoCapitalController extends Controller
     {
         $query = MovimientoCapital::with(['inversion', 'accionOperacion', 'ventaInversion', 'tipoMovimiento'])
             ->where('eliminado', false)
-            ->where('activo', true);
+            ->where('activo', true)
+            ->where(function($q) {
+                $q->where('id_tipo_movimiento', '!=', 213)
+                  ->orWhereNull('id_tipo_movimiento');
+            });
 
         // Filtros opcionales
         if ($request->has('fecha')) {
@@ -280,7 +288,11 @@ class MovimientoCapitalController extends Controller
     {
         $query = MovimientoCapital::with(['inversion', 'accionOperacion', 'ventaInversion', 'cuentaBancaria.persona', 'tipoMovimiento'])
             ->where('eliminado', false)
-            ->where('activo', true);
+            ->where('activo', true)
+            ->where(function($q) {
+                $q->where('id_tipo_movimiento', '!=', 213)
+                  ->orWhereNull('id_tipo_movimiento');
+            });
 
         // Filtros
         if ($request->has('fecha_desde') && $request->fecha_desde) {
@@ -414,7 +426,11 @@ class MovimientoCapitalController extends Controller
         $query = MovimientoCapital::with(['cuentaBancaria.persona', 'tipoMovimiento'])
             ->where('eliminado', false)
             ->where('activo', true)
-            ->whereNotNull('id_cuenta_bancaria');
+            ->whereNotNull('id_cuenta_bancaria')
+            ->where(function($q) {
+                $q->where('id_tipo_movimiento', '!=', 213)
+                  ->orWhereNull('id_tipo_movimiento');
+            });
 
         // Filtros
         if ($request->has('id_cuenta_bancaria') && $request->id_cuenta_bancaria) {

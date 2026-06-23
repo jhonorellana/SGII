@@ -158,10 +158,6 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       const defaultValues: any = {};
 
       if (this.currentUser?.persona) {
-        defaultValues.id_propietario = this.currentUser.persona.id_persona;
-      }
-
-      if (this.currentUser?.persona) {
         const grupoFamiliarPatriarca = this.gruposFamiliares.find(
           gf => gf.id_patriarca === this.currentUser.persona.id_persona
         );
