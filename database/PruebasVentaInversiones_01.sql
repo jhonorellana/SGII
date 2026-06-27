@@ -1,5 +1,7 @@
-select * from catalogo_valor where id_catalogo =4 order by id_catalogo_valor
+select * from catalogo_valor where id_catalogo =14 order by id_catalogo_valor
 select * from catalogo_valor where id_catalogo =5 order by id_catalogo_valor
+
+select * from catalogo_valor where id_catalogo_valor = 213
 /*
 select * from catalogo_valor where id_catalogo =4  order by id_catalogo_valor
 + ---------------------- + ---------------- + ----------- + ----------- +
@@ -44,6 +46,7 @@ Select * from sipro_desa.movimiento_capital where id_inversion in (281,289,393);
 Select * from venta_inversion where id_inversion in (281,289,393); -- se debe crear un nuevo registro
 Select * from venta_inversion_detalle; -- se deben crear la misma cantidad de inversiones afectadas
 select * from inversion_propietario_reasignacion_log -- se carga cuando hay una reasignación automática de notas de crédito
+select * from accion_operacion
 
 utilidad_sin_comision = Valor Efectivo Venta es decir valor_venta_sin_comision de la tabla venta_inversion - Valor Efectivo Compra 
 

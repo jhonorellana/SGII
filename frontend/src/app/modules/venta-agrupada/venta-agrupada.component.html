@@ -1,39 +1,58 @@
 <div class="venta-agrupada-container">
   <p-toast></p-toast>
 
-  <!-- Resumen de Selección Compacto -->
-  <p-card styleClass="compact-card">
-    <div class="resumen-horizontal">
-      <div class="resumen-stats">
-        <div class="resumen-stat">
-          <label>Inversiones seleccionadas</label>
-          <span class="stat-value">{{ inversionesSeleccionadasCount }}</span>
+  <!-- Resumen de Selección -->
+  <div class="row mb-4 align-items-center mt-2">
+    <div class="col-lg-2 col-md-4 mb-2">
+      <div class="card border-primary h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Inversiones Seleccionadas</h6>
+          <h3 class="text-primary mb-0 fw-bold">{{ inversionesSeleccionadasCount }}</h3>
         </div>
-        <div class="resumen-stat">
-          <label>Valor nominal total</label>
-          <span class="stat-value">{{ formatCurrency(valorNominalTotal) }}</span>
-        </div>
-        <div class="resumen-stat">
-          <label>Valor compra total</label>
-          <span class="stat-value">{{ formatCurrency(valorCompraTotal) }}</span>
-        </div>
-      </div>
-      <div class="resumen-action">
-        <span *ngIf="inversionesSeleccionadasCount === 0" class="empty-state-hint">
-          Seleccione una o más notas de crédito para habilitar la venta agrupada.
-        </span>
-        <p-button
-          label="Realizar Venta"
-          [disabled]="inversionesSeleccionadasCount === 0"
-          (onClick)="abrirDialogoVenta()"
-          styleClass="p-button-success">
-        </p-button>
       </div>
     </div>
-  </p-card>
-
-  <!-- Espaciador -->
-  <div class="card-spacer"></div>
+    <div class="col-lg-3 col-md-4 mb-2">
+      <div class="card border-success h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Valor Nominal Total</h6>
+          <h4 class="text-success mb-0 fw-bold">{{ formatCurrency(valorNominalTotal) }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-3 col-md-4 mb-2">
+      <div class="card border-info h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Capital Invertido</h6>
+          <h4 class="text-info mb-0 fw-bold">{{ formatCurrency(valorCompraTotal) }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-2 col-md-6 mb-2">
+      <div class="card border-warning h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Diferencia</h6>
+          <h4 class="text-warning mb-0 fw-bold">{{ formatCurrency(valorNominalTotal - valorCompraTotal) }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-2 col-md-6 mb-2 text-end">
+      <div class="d-flex flex-column align-items-end justify-content-center h-100">
+        <span *ngIf="inversionesSeleccionadasCount === 0" class="text-muted mb-2 text-end" style="font-size: 0.75rem; font-style: italic; line-height: 1.1;">
+          Seleccione una o más notas de crédito<br>para habilitar la venta agrupada.
+        </span>
+        <button
+          pButton
+          type="button"
+          label="Realizar Venta"
+          icon="pi pi-check-circle"
+          [disabled]="inversionesSeleccionadasCount === 0"
+          (click)="abrirDialogoVenta()"
+          class="p-button-success p-button-lg shadow-sm w-100"
+          style="border-radius: 8px;">
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Tabla de inversiones -->
   <p-card header="Inversiones Disponibles" styleClass="compact-card inversiones-card">
@@ -73,9 +92,9 @@
           <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
           <th pSortableColumn="instrumento.nombre">Instrumento <p-sortIcon field="instrumento.nombre"></p-sortIcon></th>
           <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
-          <th pSortableColumn="valor_nominal">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
-          <th pSortableColumn="capital_invertido">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
-          <th pSortableColumn="porcentaje_compra">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
+          <th pSortableColumn="valor_nominal" class="text-right">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+          <th pSortableColumn="capital_invertido" class="text-right">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+          <th pSortableColumn="porcentaje_compra" class="text-right">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
         </tr>
         <tr>
           <th></th>
@@ -83,9 +102,9 @@
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.nombre', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" class="w-100" placeholder="Filtrar valor nominal"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" class="w-100" placeholder="Filtrar valor compra"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" class="w-100" placeholder="Filtrar % compra"/></th>
+          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" class="w-100 text-right" placeholder="Filtrar nominal"/></th>
+          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" class="w-100 text-right" placeholder="Filtrar compra"/></th>
+          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" class="w-100 text-right" placeholder="Filtrar %"/></th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-inversion>
@@ -101,9 +120,9 @@
           <td>{{ inversion.id_inversion }} - {{ inversion.liquidacion || '-' }}</td>
           <td>{{ inversion.instrumento?.nombre || '-' }}</td>
           <td>{{ formatDateDisplay(inversion.fecha_compra) }}</td>
-          <td>{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
-          <td>{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
-          <td>{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
+          <td class="text-right">{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
+          <td class="text-right">{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
+          <td class="text-right">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
         </tr>
       </ng-template>
 
