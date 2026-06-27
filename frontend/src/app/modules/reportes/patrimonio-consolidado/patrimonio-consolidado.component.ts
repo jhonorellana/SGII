@@ -8,6 +8,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CalendarModule } from 'primeng/calendar';
 import { ToastModule } from 'primeng/toast';
 import { ChartModule } from 'primeng/chart';
+import { InputSwitchModule } from 'primeng/inputswitch';
 import { PatrimonioService, PatrimonioItem } from '../../../core/patrimonio.service';
 import { GrupoFamiliarService } from '../../../core/grupo-familiar.service';
 import { PersonaService } from '../../../core/persona.service';
@@ -31,7 +32,8 @@ import { Subscription } from 'rxjs';
     DropdownModule,
     ProgressSpinnerModule,
     CalendarModule,
-    ChartModule
+    ChartModule,
+    InputSwitchModule
   ],
   providers: [MessageService],
   templateUrl: './patrimonio-consolidado.component.html',
@@ -150,7 +152,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_inicio: [fechaInicio, Validators.required],
       fecha_fin: [fechaFin, Validators.required],
       id_grupo_familiar: [null],
-      id_propietario: [null]
+      id_propietario: [null],
+      incluir_dividendos: [true]
     });
 
     // Establecer valores por defecto basados en el usuario actual
@@ -220,7 +223,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
     };
 
     this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
@@ -260,7 +264,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
     };
 
     this.patrimonioService.exportarExcel(params).subscribe({
@@ -291,7 +296,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
     };
 
     this.patrimonioService.exportarPDF(params).subscribe({

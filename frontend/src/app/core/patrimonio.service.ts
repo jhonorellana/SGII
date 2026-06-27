@@ -28,6 +28,7 @@ export class PatrimonioService {
     fecha_fin: string;
     id_grupo_familiar?: number;
     id_propietario?: number;
+    incluir_dividendos?: boolean;
   }): Observable<PatrimonioResponse> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -41,6 +42,10 @@ export class PatrimonioService {
       queryParams.append('id_propietario', params.id_propietario.toString());
     }
 
+    if (params.incluir_dividendos !== undefined) {
+      queryParams.append('incluir_dividendos', params.incluir_dividendos ? '1' : '0');
+    }
+
     return this.http.get<PatrimonioResponse>(
       `${this.apiUrl}/reportes/patrimonio/consolidado?${queryParams.toString()}`
     );
@@ -51,6 +56,7 @@ export class PatrimonioService {
     fecha_fin: string;
     id_grupo_familiar?: number;
     id_propietario?: number;
+    incluir_dividendos?: boolean;
   }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -62,6 +68,10 @@ export class PatrimonioService {
 
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.incluir_dividendos !== undefined) {
+      queryParams.append('incluir_dividendos', params.incluir_dividendos ? '1' : '0');
     }
 
     return this.http.get(
@@ -74,6 +84,7 @@ export class PatrimonioService {
     fecha_fin: string;
     id_grupo_familiar?: number;
     id_propietario?: number;
+    incluir_dividendos?: boolean;
   }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -85,6 +96,10 @@ export class PatrimonioService {
 
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.incluir_dividendos !== undefined) {
+      queryParams.append('incluir_dividendos', params.incluir_dividendos ? '1' : '0');
     }
 
     return this.http.get(

@@ -19,6 +19,7 @@ class PatrimonioController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $idGrupoFamiliar = $request->input('id_grupo_familiar');
         $idPropietario = $request->input('id_propietario');
+        $incluirDividendos = $request->input('incluir_dividendos') ? 1 : 0;
 
         // Validar fechas
         if (!$fechaInicio || !$fechaFin) {
@@ -38,11 +39,12 @@ class PatrimonioController extends Controller
 
         try {
             // Ejecutar stored procedure
-            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?)', [
+            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, ?)', [
                 $fechaInicio,
                 $fechaFin,
                 $idGrupoFamiliar,
-                $idPropietario
+                $idPropietario,
+                $incluirDividendos
             ]);
 
             // Formatear resultados

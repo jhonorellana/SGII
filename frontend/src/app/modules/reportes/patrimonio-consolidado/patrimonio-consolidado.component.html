@@ -18,8 +18,8 @@
 
       <!-- Filtros -->
       <form [formGroup]="reporteForm">
-        <div class="row mb-4">
-          <div class="col-md-2">
+        <div class="row mb-3 align-items-end">
+          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
             <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
             <p-calendar
               id="fecha_inicio"
@@ -27,7 +27,7 @@
               [showIcon]="true"
               [showButtonBar]="true"
               dateFormat="yy-mm-dd"
-              placeholder="Seleccione fecha inicio"
+              placeholder="Inicio"
               [monthNavigator]="true"
               [yearNavigator]="true"
               yearRange="2020:2030"
@@ -35,7 +35,7 @@
               styleClass="w-100">
             </p-calendar>
           </div>
-          <div class="col-md-2">
+          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
             <label for="fecha_fin" class="form-label">Fecha Fin *</label>
             <p-calendar
               id="fecha_fin"
@@ -43,7 +43,7 @@
               [showIcon]="true"
               [showButtonBar]="true"
               dateFormat="yy-mm-dd"
-              placeholder="Seleccione fecha fin"
+              placeholder="Fin"
               [monthNavigator]="true"
               [yearNavigator]="true"
               yearRange="2020:2030"
@@ -51,7 +51,7 @@
               styleClass="w-100">
             </p-calendar>
           </div>
-          <div class="col-md-2">
+          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
             <label for="id_grupo_familiar" class="form-label">Grupo Familiar</label>
             <p-dropdown
               id="id_grupo_familiar"
@@ -64,7 +64,7 @@
               styleClass="w-100">
             </p-dropdown>
           </div>
-          <div class="col-md-2">
+          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
             <label for="id_propietario" class="form-label">Propietario</label>
             <p-dropdown
               id="id_propietario"
@@ -77,13 +77,20 @@
               styleClass="w-100">
             </p-dropdown>
           </div>
-          <div class="col-md-4 d-flex align-items-end">
+          <div class="col-auto mb-3">
+            <label for="incluir_dividendos" class="form-label d-block text-truncate" title="Incluir dividendos en acciones">Inc. Div. Acciones</label>
+            <div class="d-flex align-items-center" style="height: 42px;">
+              <p-inputSwitch id="incluir_dividendos" formControlName="incluir_dividendos"></p-inputSwitch>
+              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_dividendos')?.value ? 'Sí' : 'No' }}</span>
+            </div>
+          </div>
+          <div class="col-auto ms-auto mb-3 d-flex flex-wrap gap-2">
             <button
               pButton
               type="button"
-              label="Generar Reporte"
+              label="Generar"
               icon="pi pi-search"
-              class="p-button-primary me-2"
+              class="p-button-primary"
               (click)="generarReporte()"
               [disabled]="loading">
             </button>
@@ -92,7 +99,7 @@
               type="button"
               label="Excel"
               icon="pi pi-file-excel"
-              class="p-button-success me-2"
+              class="p-button-success"
               (click)="exportarExcel()"
               [disabled]="patrimonio.length === 0">
             </button>
