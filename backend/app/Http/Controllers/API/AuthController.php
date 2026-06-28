@@ -81,7 +81,7 @@ class AuthController extends Controller
 
         // Si no es patriarca, obtener el primer grupo familiar al que pertenece
         if (!$grupoFamiliarPatriarca && $usuario->persona) {
-            $gruposFamiliares = $usuario->persona->gruposFamiliares()->where('activo', 1)->first();
+            $gruposFamiliares = $usuario->persona->gruposFamiliares()->where('grupo_familiar.activo', 1)->first();
             $grupoFamiliar = $gruposFamiliares;
         } else {
             $grupoFamiliar = $grupoFamiliarPatriarca;

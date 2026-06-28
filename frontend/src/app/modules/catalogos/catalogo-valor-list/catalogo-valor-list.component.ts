@@ -234,8 +234,8 @@ export class CatalogoValorListComponent implements OnInit, OnDestroy {
 
     this.catalogoService.getValoresByCatalogo(this.catalogoId).subscribe({
       next: (response) => {
-        if (response.success) {
-          this.valores = response.data || [];
+        if (Array.isArray(response) || response.success) {
+          this.valores = Array.isArray(response) ? response : (response.data || []);
           this.filteredValores = [...this.valores];
           this.totalRecords = this.valores.length;
         } else {

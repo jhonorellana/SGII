@@ -13,6 +13,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
 
     UNION ALL
 
@@ -23,6 +25,8 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE I.activo = 1
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 4
       AND INS.fecha_vencimiento > p_fecha_inicio
       AND I.fecha_venta is null
@@ -40,6 +44,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 4
 
     UNION ALL
@@ -55,6 +61,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 5
 
     UNION ALL
@@ -70,6 +78,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 3
 
     UNION ALL
@@ -85,6 +95,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 91
 
     UNION ALL
@@ -100,6 +112,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 73
 
     UNION ALL
@@ -145,6 +159,8 @@ BEGIN
       AND A.activo = 1
       AND A.eliminado = 0
       AND I.eliminado = 0
+      AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+      AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
       AND INS.id_tipo_inversion = 75
 
     UNION ALL
@@ -175,6 +191,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
            ) +
            (
                SELECT COALESCE(SUM(I.capital_invertido), 0)
@@ -182,6 +200,8 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE I.activo = 1
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 4
                  AND INS.fecha_vencimiento > p_fecha_inicio
            ) +
@@ -195,6 +215,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 4
 				 AND I.fecha_venta is null
            ) +
@@ -208,6 +230,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 5
            ) +
            (
@@ -220,6 +244,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 3
            ) +
            (
@@ -232,6 +258,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 91
            ) +
            (
@@ -244,6 +272,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 73
            ) +
            (
@@ -284,6 +314,8 @@ BEGIN
                  AND A.activo = 1
                  AND A.eliminado = 0
                  AND I.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)
                  AND INS.id_tipo_inversion = 75
            ) +
            (
