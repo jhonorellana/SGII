@@ -5,6 +5,7 @@ import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { DropdownModule } from 'primeng/dropdown';
+import { CalendarModule } from 'primeng/calendar';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TableModule } from 'primeng/table';
 import { CardModule } from 'primeng/card';
@@ -28,6 +29,7 @@ import { LayoutService } from '../../../core/layout.service';
     ToastModule,
     ButtonModule,
     DropdownModule,
+    CalendarModule,
     ProgressSpinnerModule,
     TableModule,
     CardModule,
@@ -43,24 +45,6 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   vencimientosMensuales: VencimientoMensual[] = [];
   resumenAnual: ResumenAnual[] = [];
   loading = false;
-
-  // Opciones para los dropdowns
-  anios: number[] = [];
-  meses: any[] = [
-    { label: 'Todos', value: null },
-    { label: 'Enero', value: 1 },
-    { label: 'Febrero', value: 2 },
-    { label: 'Marzo', value: 3 },
-    { label: 'Abril', value: 4 },
-    { label: 'Mayo', value: 5 },
-    { label: 'Junio', value: 6 },
-    { label: 'Julio', value: 7 },
-    { label: 'Agosto', value: 8 },
-    { label: 'Septiembre', value: 9 },
-    { label: 'Octubre', value: 10 },
-    { label: 'Noviembre', value: 11 },
-    { label: 'Diciembre', value: 12 }
-  ];
 
   // Configuración del gráfico
   public barChartOptions: any = {
@@ -274,7 +258,6 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.inicializarFormulario();
-    this.cargarAnios();
     this.setupLayoutListener();
 
     // Generar reporte automáticamente al cargar la página (sin mostrar mensajes)
@@ -304,18 +287,26 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   }
 
   inicializarFormulario(): void {
+    const anioActual = new Date().getFullYear();
+    const fechaInicioDefault = new Date(anioActual, 0, 1);
+    const fechaFinDefault = new Date(anioActual, 11, 31);
+
     this.reporteForm = this.fb.group({
-      anio: [new Date().getFullYear(), Validators.required],
-      mes: [null]
+      fecha_inicio: [fechaInicioDefault, Validators.required],
+      fecha_fin: [fechaFinDefault, Validators.required]
     });
   }
 
-  cargarAnios(): void {
-    const anioActual = new Date().getFullYear();
-    this.anios = [];
-    for (let i = anioActual - 5; i <= anioActual + 5; i++) {
-      this.anios.push(i);
-    }
+  formatDate(date: Date): string {
+    const d = new Date(date);
+    let month = '' + (d.getMonth() + 1);
+    let day = '' + d.getDate();
+    const year = d.getFullYear();
+
+    if (month.length < 2) month = '0' + month;
+    if (day.length < 2) day = '0' + day;
+
+    return [year, month, day].join('-');
   }
 
   generarReporte(mostrarMensaje: boolean = true): void {
@@ -324,7 +315,7 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         this.messageService.add({
           severity: 'warn',
           summary: 'Advertencia',
-          detail: 'Por favor seleccione un año'
+          detail: 'Por favor seleccione las fechas de inicio y fin'
         });
       }
       return;
@@ -332,11 +323,14 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
 
     this.loading = true;
 
-    const anio = this.reporteForm.get('anio')?.value;
-    const mes = this.reporteForm.get('mes')?.value;
+    const fechaInicioRaw = this.reporteForm.get('fecha_inicio')?.value;
+    const fechaFinRaw = this.reporteForm.get('fecha_fin')?.value;
+
+    const fechaInicio = this.formatDate(fechaInicioRaw);
+    const fechaFin = this.formatDate(fechaFinRaw);
 
     // Llamar al servicio real
-    this.vencimientosService.getVencimientosMensuales(anio, mes).subscribe({
+    this.vencimientosService.getVencimientosMensuales(fechaInicio, fechaFin).subscribe({
       next: (response) => {
         if (response.success) {
           this.vencimientosMensuales = response.data.vencimientos;
@@ -378,47 +372,8 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
     this.barChartData.datasets[2].data = this.vencimientosMensuales.map(v => v.premio);    // Premio (arriba)
   }
 
-  calcularResumenAnual(): void {
-    // Calcular resumen basado en los datos reales del backend
-    if (!this.vencimientosMensuales || this.vencimientosMensuales.length === 0) {
-      this.resumenAnual = [];
-      return;
-    }
+  // calcularResumenAnual() ya no es necesario porque el backend calcula el resumen del rango
 
-    // Calcular totales reales
-    const total = this.vencimientosMensuales.reduce((acc, item) => ({
-      interes: acc.interes + item.interes,
-      capital: acc.capital + item.capital,
-      premio: acc.premio + item.premio,
-      total: acc.total + item.total
-    }), { interes: 0, capital: 0, premio: 0, total: 0 });
-
-    // Calcular ejecutado (meses pasados)
-    const fechaActual = new Date();
-    const mesActual = fechaActual.getMonth() + 1;
-    const ejecutado = this.vencimientosMensuales
-      .filter(item => item.mes <= mesActual)
-      .reduce((acc, item) => ({
-        interes: acc.interes + item.interes,
-        capital: acc.capital + item.capital,
-        premio: acc.premio + item.premio,
-        total: acc.total + item.total
-      }), { interes: 0, capital: 0, premio: 0, total: 0 });
-
-    // Calcular pendiente
-    const pendiente = {
-      interes: total.interes - ejecutado.interes,
-      capital: total.capital - ejecutado.capital,
-      premio: total.premio - ejecutado.premio,
-      total: total.total - ejecutado.total
-    };
-
-    this.resumenAnual = [
-      { tipo: 'TOTAL', ...total },
-      { tipo: 'EJECUTADO', ...ejecutado },
-      { tipo: 'PENDIENTE', ...pendiente }
-    ];
-  }
 
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('es-CO', {
@@ -430,10 +385,13 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   }
 
   exportarExcel(): void {
-    const anio = this.reporteForm.get('anio')?.value;
-    const mes = this.reporteForm.get('mes')?.value;
+    const fechaInicioRaw = this.reporteForm.get('fecha_inicio')?.value;
+    const fechaFinRaw = this.reporteForm.get('fecha_fin')?.value;
 
-    this.vencimientosService.exportarExcel(anio, mes).subscribe({
+    const fechaInicio = this.formatDate(fechaInicioRaw);
+    const fechaFin = this.formatDate(fechaFinRaw);
+
+    this.vencimientosService.exportarExcel(fechaInicio, fechaFin).subscribe({
       next: (response) => {
         if (response.success) {
           this.generarExcelFrontend(response.data);
@@ -613,11 +571,13 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
       }
 
-      // Generar y descargar archivo
-      const anio = this.reporteForm.get('anio')?.value;
-      const mes = this.reporteForm.get('mes')?.value;
-      const fileName = `vencimientos-mensuales-${anio}-${mes || 'todos'}.xlsx`;
-
+      // Guardar el archivo
+      const fechaInicioRaw = this.reporteForm.get('fecha_inicio')?.value;
+      const fechaFinRaw = this.reporteForm.get('fecha_fin')?.value;
+      const fechaInicio = this.formatDate(fechaInicioRaw);
+      const fechaFin = this.formatDate(fechaFinRaw);
+      
+      const fileName = `vencimientos-mensuales-${fechaInicio}-al-${fechaFin}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
       this.messageService.add({
@@ -637,10 +597,13 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   }
 
   exportarPDF(): void {
-    const anio = this.reporteForm.get('anio')?.value;
-    const mes = this.reporteForm.get('mes')?.value;
+    const fechaInicioRaw = this.reporteForm.get('fecha_inicio')?.value;
+    const fechaFinRaw = this.reporteForm.get('fecha_fin')?.value;
 
-    this.vencimientosService.exportarPDF(anio, mes).subscribe({
+    const fechaInicio = this.formatDate(fechaInicioRaw);
+    const fechaFin = this.formatDate(fechaFinRaw);
+
+    this.vencimientosService.exportarPDF(fechaInicio, fechaFin).subscribe({
       next: (response) => {
         if (response.success) {
           this.generarPDFFrontend(response.data);
@@ -678,10 +641,11 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
 
       // Agregar período
       doc.setFontSize(12);
-      const anio = this.reporteForm.get('anio')?.value;
-      const mes = this.reporteForm.get('mes')?.value;
-      const mesNombre = mes ? this.meses.find(m => m.value === mes)?.label || '' : 'Todos';
-      doc.text(`Período: ${anio} - ${mesNombre}`, 148, 25, { align: 'center' });
+      const fechaInicioRaw = this.reporteForm.get('fecha_inicio')?.value;
+      const fechaFinRaw = this.reporteForm.get('fecha_fin')?.value;
+      const fechaInicio = this.formatDate(fechaInicioRaw);
+      const fechaFin = this.formatDate(fechaFinRaw);
+      doc.text(`Período: ${fechaInicio} al ${fechaFin}`, 148, 25, { align: 'center' });
 
       // Preparar datos para la tabla
       const headers = [
@@ -870,7 +834,8 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
       doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 148, finalY + 10, { align: 'center' });
 
       // Guardar PDF
-      const fileName = `vencimientos-mensuales-${anio}-${mes || 'todos'}.pdf`;
+      // Las fechas ya fueron declaradas al inicio de la función
+      const fileName = `vencimientos-mensuales-${fechaInicio}-al-${fechaFin}.pdf`;
       doc.save(fileName);
 
       this.messageService.add({

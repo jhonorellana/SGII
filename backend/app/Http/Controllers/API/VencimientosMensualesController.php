@@ -19,29 +19,33 @@ class VencimientosMensualesController extends Controller
     public function getVencimientosMensuales(Request $request): JsonResponse
     {
         // Validación manual
-        $anio = $request->input('anio');
-        $mes = $request->input('mes', 0); // 0 = todos los meses
+        $fechaInicio = $request->input('fecha_inicio');
+        $fechaFin = $request->input('fecha_fin');
 
-        if (!is_numeric($anio) || $anio < 2020 || $anio > 2030) {
+        if (!$fechaInicio || !$fechaFin) {
             return response()->json([
                 'success' => false,
-                'message' => 'El año es requerido y debe estar entre 2020 y 2030'
-            ], 422);
-        }
-
-        if ($mes !== null && (!is_numeric($mes) || $mes < 0 || $mes > 12)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El mes debe estar entre 0 y 12'
+                'message' => 'Las fechas de inicio y fin son requeridas'
             ], 422);
         }
 
         try {
-            // Obtener datos mensuales
-            $datosMensuales = $this->obtenerDatosMensuales((int)$anio, (int)$mes);
+            // Validar formato de fechas
+            $fechaInicioCarbon = Carbon::parse($fechaInicio);
+            $fechaFinCarbon = Carbon::parse($fechaFin);
 
-            // Calcular resumen anual
-            $resumenAnual = $this->calcularResumenAnual((int)$anio);
+            if ($fechaInicioCarbon->gt($fechaFinCarbon)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La fecha de inicio no puede ser mayor a la fecha de fin'
+                ], 422);
+            }
+
+            // Obtener datos mensuales
+            $datosMensuales = $this->obtenerDatosMensuales($fechaInicio, $fechaFin);
+
+            // Calcular resumen del rango
+            $resumenAnual = $this->calcularResumenRango($fechaInicio, $fechaFin);
 
             return response()->json([
                 'success' => true,
@@ -60,9 +64,9 @@ class VencimientosMensualesController extends Controller
     }
 
     /**
-     * Obtener datos mensuales según el SP legado
+     * Obtener datos mensuales según el SP legado, pero filtrado por rango
      */
-    private function obtenerDatosMensuales(int $anio, int $mes): array
+    private function obtenerDatosMensuales(string $fechaInicio, string $fechaFin): array
     {
         // Primero obtener los datos básicos con GROUP BY
         $query = Amortizacion::select([
@@ -89,16 +93,7 @@ class VencimientosMensualesController extends Controller
             \DB::raw('SUM(interes) + SUM(capital) as total')
         ])
         ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
-        ->where(function($query) use ($anio, $mes) {
-            if ($mes == 0) {
-                // Todos los meses del año
-                $query->whereYear('fecha_pago', $anio);
-            } else {
-                // Mes específico
-                $query->whereYear('fecha_pago', $anio)
-                      ->whereMonth('fecha_pago', $mes);
-            }
-        })
+        ->whereBetween('fecha_pago', [$fechaInicio, $fechaFin])
         ->where(function($query) {
             // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
             $query->where('amortizacion.activo', 1)
@@ -114,14 +109,17 @@ class VencimientosMensualesController extends Controller
 
         // Formatear resultados y agregar nombre del mes
         $datosMensuales = [];
-        $nombresMeses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        $nombresMeses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+                          'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
         foreach ($results as $row) {
+            $mesNombre = $nombresMeses[$row->mes - 1];
+            $nombreMesAnio = $mesNombre . '-' . $row->anio; // Ene-2025
+
             $datosMensuales[] = [
                 'anio' => (int) $row->anio,
                 'mes' => (int) $row->mes,
-                'nombre_mes' => $nombresMeses[$row->mes - 1],
+                'nombre_mes' => $nombreMesAnio,
                 'interes' => round((float) $row->interes, 2),
                 'capital' => round((float) $row->capital, 2),
                 'descuento' => round((float) $row->descuento, 2),
@@ -138,14 +136,14 @@ class VencimientosMensualesController extends Controller
     }
 
     /**
-     * Calcular resumen anual (TOTAL, EJECUTADO, PENDIENTE)
+     * Calcular resumen del rango seleccionado (TOTAL, EJECUTADO, PENDIENTE)
      */
-    private function calcularResumenAnual(int $anio): array
+    private function calcularResumenRango(string $fechaInicio, string $fechaFin): array
     {
         $resumen = [];
 
-        // ANUAL TOTAL
-        $total = $this->calcularTotalesAnuales($anio, 'total');
+        // RANGO TOTAL
+        $total = $this->calcularTotalesRango($fechaInicio, $fechaFin, 'total');
         $resumen[] = [
             'tipo' => 'TOTAL',
             'interes' => $total['interes'],
@@ -154,8 +152,8 @@ class VencimientosMensualesController extends Controller
             'total' => $total['total']
         ];
 
-        // ANUAL EJECUTADO (hasta fecha actual)
-        $ejecutado = $this->calcularTotalesAnuales($anio, 'ejecutado');
+        // RANGO EJECUTADO (hasta fecha actual dentro del rango)
+        $ejecutado = $this->calcularTotalesRango($fechaInicio, $fechaFin, 'ejecutado');
         $resumen[] = [
             'tipo' => 'EJECUTADO',
             'interes' => $ejecutado['interes'],
@@ -164,8 +162,8 @@ class VencimientosMensualesController extends Controller
             'total' => $ejecutado['total']
         ];
 
-        // ANUAL PENDIENTE (fechas futuras)
-        $pendiente = $this->calcularTotalesAnuales($anio, 'pendiente');
+        // RANGO PENDIENTE (fechas futuras dentro del rango)
+        $pendiente = $this->calcularTotalesRango($fechaInicio, $fechaFin, 'pendiente');
         $resumen[] = [
             'tipo' => 'PENDIENTE',
             'interes' => $pendiente['interes'],
@@ -178,9 +176,9 @@ class VencimientosMensualesController extends Controller
     }
 
     /**
-     * Calcular totales según el tipo (total, ejecutado, pendiente)
+     * Calcular totales según el tipo dentro del rango (total, ejecutado, pendiente)
      */
-    private function calcularTotalesAnuales(int $anio, string $tipo): array
+    private function calcularTotalesRango(string $fechaInicio, string $fechaFin, string $tipo): array
     {
         $query = Amortizacion::select([
             \DB::raw('
@@ -195,7 +193,7 @@ class VencimientosMensualesController extends Controller
             \DB::raw('SUM(interes) + SUM(capital) as total')
         ])
         ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
-        ->whereYear('fecha_pago', $anio)
+        ->whereBetween('fecha_pago', [$fechaInicio, $fechaFin])
         ->where(function($query) {
             // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
             $query->where('amortizacion.activo', 1)

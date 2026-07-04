@@ -41,27 +41,15 @@ export class VencimientosMensualesService {
 
   constructor(private http: HttpClient) {}
 
-  getVencimientosMensuales(anio: number, mes?: number): Observable<VencimientosMensualesResponse> {
-    let url = `${this.apiUrl}?anio=${anio}`;
-    if (mes) {
-      url += `&mes=${mes}`;
-    }
-    return this.http.get<VencimientosMensualesResponse>(url);
+  getVencimientosMensuales(fechaInicio: string, fechaFin: string): Observable<VencimientosMensualesResponse> {
+    return this.http.get<VencimientosMensualesResponse>(`${this.apiUrl}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
   }
 
-  exportarExcel(anio: number, mes?: number): Observable<any> {
-    let url = `${this.apiUrl}/exportar/excel?anio=${anio}`;
-    if (mes) {
-      url += `&mes=${mes}`;
-    }
-    return this.http.get(url);
+  exportarExcel(fechaInicio: string, fechaFin: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/exportar/excel?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
   }
 
-  exportarPDF(anio: number, mes?: number): Observable<any> {
-    let url = `${this.apiUrl}/exportar/pdf?anio=${anio}`;
-    if (mes) {
-      url += `&mes=${mes}`;
-    }
-    return this.http.get(url);
+  exportarPDF(fechaInicio: string, fechaFin: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/exportar/pdf?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
   }
 }
