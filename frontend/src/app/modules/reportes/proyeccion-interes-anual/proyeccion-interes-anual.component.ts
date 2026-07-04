@@ -8,6 +8,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { TabViewModule } from 'primeng/tabview';
 import { GananciaAnualChartComponent } from '../ganancia-anual-chart/ganancia-anual-chart.component';
+import { ConsolidadoAnualChartComponent } from '../consolidado-anual-chart/consolidado-anual-chart.component';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { LayoutService } from '../../../core/layout.service';
@@ -26,7 +27,8 @@ Chart.register(ChartDataLabels);
     ProgressSpinnerModule,
     CardModule,
     TabViewModule,
-    GananciaAnualChartComponent
+    GananciaAnualChartComponent,
+    ConsolidadoAnualChartComponent
   ],
   providers: [MessageService],
   templateUrl: './proyeccion-interes-anual.component.html',

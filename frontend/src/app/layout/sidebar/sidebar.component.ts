@@ -142,7 +142,7 @@ export class SidebarComponent implements OnInit {
           path: '/reportes/recuperacion-anual'
         },
         {
-          title: 'Proyección Interés',
+          title: 'Rendimiento Anual',
           icon: 'bi-bar-chart-line',
           path: '/reportes/proyeccion-interes-anual'
         },

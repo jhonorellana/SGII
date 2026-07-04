@@ -14,11 +14,16 @@ class GananciaAnualController extends Controller
             // Se agrupa por año de fecha_venta y se suma la ganancia_perdida
             // Solo registros activos y no eliminados
             $results = DB::table('venta_inversion')
-                ->select(DB::raw('YEAR(fecha_venta) as anio'), DB::raw('SUM(ganancia_perdida) as ganancia'))
-                ->where('activo', 1)
-                ->where('eliminado', 0)
-                ->whereNotNull('fecha_venta')
-                ->groupBy(DB::raw('YEAR(fecha_venta)'))
+                ->join('catalogo_valor', 'venta_inversion.id_tipo_venta', '=', 'catalogo_valor.id_catalogo_valor')
+                ->select(
+                    DB::raw('YEAR(venta_inversion.fecha_venta) as anio'), 
+                    'catalogo_valor.nombre as tipo_venta',
+                    DB::raw('SUM(venta_inversion.ganancia_perdida) as ganancia')
+                )
+                ->where('venta_inversion.activo', 1)
+                ->where('venta_inversion.eliminado', 0)
+                ->whereNotNull('venta_inversion.fecha_venta')
+                ->groupBy(DB::raw('YEAR(venta_inversion.fecha_venta)'), 'catalogo_valor.nombre')
                 ->orderBy('anio', 'asc')
                 ->get();
 

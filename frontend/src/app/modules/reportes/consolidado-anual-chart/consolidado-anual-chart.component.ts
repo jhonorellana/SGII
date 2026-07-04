@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
+import { RecuperacionAnualService, RecuperacionAnualItem } from '../../../core/recuperacion-anual.service';
 import { GananciaAnualService, GananciaAnualItem } from '../../../core/ganancia-anual.service';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
@@ -8,13 +9,13 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { LayoutService } from '../../../core/layout.service';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 
 Chart.register(...registerables);
 Chart.register(ChartDataLabels);
 
 @Component({
-  selector: 'app-ganancia-anual-chart',
+  selector: 'app-consolidado-anual-chart',
   standalone: true,
   imports: [
     CommonModule,
@@ -23,18 +24,21 @@ Chart.register(ChartDataLabels);
     ProgressSpinnerModule
   ],
   providers: [MessageService],
-  templateUrl: './ganancia-anual-chart.component.html',
-  styleUrls: ['./ganancia-anual-chart.component.css']
+  templateUrl: './consolidado-anual-chart.component.html',
+  styleUrls: ['./consolidado-anual-chart.component.css']
 })
-export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
-  datos: GananciaAnualItem[] = [];
+  hasData = false;
+
+  datosInteres: RecuperacionAnualItem[] = [];
+  datosGanancia: GananciaAnualItem[] = [];
 
   chartData: any;
   chartOptions: any;
   chart: any;
 
-  @Input() active: boolean = false; // To know if the tab is active
+  @Input() active: boolean = false;
   private hasInitialized: boolean = false;
 
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
@@ -42,6 +46,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
   private layoutSubscription: Subscription | null = null;
 
   constructor(
+    private recuperacionAnualService: RecuperacionAnualService,
     private gananciaAnualService: GananciaAnualService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
@@ -51,8 +56,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
   ngOnInit(): void {
     this.setupLayoutListener();
   }
-  
-  // Expose a method to be called when the tab becomes active
+
   public onTabActivate(): void {
     if (!this.hasInitialized) {
       this.loadDatos();
@@ -86,7 +90,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
     if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
       return;
     }
-    if (!this.datos || this.datos.length === 0) {
+    if (!this.hasData) {
       return;
     }
     this.initChart();
@@ -94,9 +98,17 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
 
   loadDatos(): void {
     this.loading = true;
-    this.gananciaAnualService.getGananciaAnual().subscribe({
-      next: (data) => {
-        this.datos = data;
+    
+    // Perform both API calls simultaneously
+    forkJoin({
+      intereses: this.recuperacionAnualService.getRecuperacionAnual(1), // Asumiendo historico=1 como en el otro chart
+      ganancias: this.gananciaAnualService.getGananciaAnual()
+    }).subscribe({
+      next: (responses) => {
+        this.datosInteres = responses.intereses;
+        this.datosGanancia = responses.ganancias;
+        
+        this.hasData = this.datosInteres.length > 0 || this.datosGanancia.length > 0;
         this.loading = false;
 
         this.cdr.detectChanges();
@@ -109,7 +121,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Error al cargar datos de ganancia anual'
+          detail: 'Error al cargar datos combinados'
         });
         this.loading = false;
       }
@@ -117,34 +129,54 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
   }
 
   initChart(): void {
-    if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
-      return;
-    }
-
+    if (!this.chartCanvas || !this.chartCanvas.nativeElement) return;
     const canvas = this.chartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const labels = Array.from(new Set(this.datos.map(item => item.anio))).sort();
+    // Obtener todos los años únicos de ambos datasets
+    const yearsSet = new Set<number>();
+    this.datosInteres.forEach(d => yearsSet.add(Number(d.anio)));
+    this.datosGanancia.forEach(d => yearsSet.add(Number(d.anio)));
+    const labels = Array.from(yearsSet).sort();
+
+    // 1. Dataset de Intereses (Base)
+    const dataIntereses = labels.map(anio => {
+      const item = this.datosInteres.find(d => Number(d.anio) === anio);
+      return item ? Number(item.interes) : 0;
+    });
+
+    const datasets: any[] = [
+      {
+        label: 'Intereses',
+        data: dataIntereses,
+        backgroundColor: '#f59e0b', // Naranja/Dorado para intereses
+        borderColor: this.darkenColor('#f59e0b', 20),
+        borderWidth: 1,
+        barPercentage: 0.95,
+        categoryPercentage: 0.95
+      }
+    ];
+
+    // 2. Datasets de Ventas (Apilados encima)
+    let tiposVenta = Array.from(new Set(this.datosGanancia.map(item => item.tipo_venta)));
     
-    // Agrupar los tipos de venta y ordenarlos por la ganancia total (de mayor a menor)
-    // para que el mayor quede en el fondo (primer dataset)
-    let tiposVenta = Array.from(new Set(this.datos.map(item => item.tipo_venta)));
+    // Ordenar por ganancia total
     tiposVenta.sort((a, b) => {
-      const sumA = this.datos.filter(d => d.tipo_venta === a).reduce((sum, curr) => sum + Number(curr.ganancia), 0);
-      const sumB = this.datos.filter(d => d.tipo_venta === b).reduce((sum, curr) => sum + Number(curr.ganancia), 0);
-      return sumB - sumA; // Descendente: mayor abajo
+      const sumA = this.datosGanancia.filter(d => d.tipo_venta === a).reduce((sum, curr) => sum + Number(curr.ganancia), 0);
+      const sumB = this.datosGanancia.filter(d => d.tipo_venta === b).reduce((sum, curr) => sum + Number(curr.ganancia), 0);
+      return sumB - sumA;
     });
 
     const colors = this.generateColors(tiposVenta.length);
 
-    const datasets = tiposVenta.map((tipo, index) => {
+    tiposVenta.forEach((tipo, index) => {
       const dataForTipo = labels.map(anio => {
-        const item = this.datos.find(d => d.anio === anio && d.tipo_venta === tipo);
+        const item = this.datosGanancia.find(d => Number(d.anio) === anio && d.tipo_venta === tipo);
         return item ? Number(item.ganancia) : 0;
       });
 
-      return {
+      datasets.push({
         label: tipo,
         data: dataForTipo,
         backgroundColor: colors[index],
@@ -152,7 +184,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
         borderWidth: 1,
         barPercentage: 0.95,
         categoryPercentage: 0.95
-      };
+      });
     });
 
     this.chartData = {
@@ -174,14 +206,12 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
       plugins: {
         legend: { display: true, position: 'top' },
         datalabels: {
-          // Solo mostrar la etiqueta en el último dataset (el de más arriba) para no repetir
           display: (context: any) => {
             return context.datasetIndex === context.chart.data.datasets.length - 1;
           },
           anchor: 'end',
           align: 'top',
           formatter: (value: number, context: any) => {
-            // Calcular el total de toda la pila para este índice
             let total = 0;
             context.chart.data.datasets.forEach((dataset: any) => {
               total += Number(dataset.data[context.dataIndex]) || 0;
@@ -243,12 +273,11 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
   }
 
   formatCurrencyShort(value: number): string {
-    // Forzar el separador de miles con punto incluso para números de 4 dígitos
     return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
 
   generateColors(count: number): string[] {
-    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
+    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
     const result: string[] = [];
     for (let i = 0; i < count; i++) {
       result.push(colors[i % colors.length]);

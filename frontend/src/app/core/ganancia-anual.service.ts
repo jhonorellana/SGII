@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment';
 
 export interface GananciaAnualItem {
   anio: number;
+  tipo_venta: string;
   ganancia: number;
 }
 

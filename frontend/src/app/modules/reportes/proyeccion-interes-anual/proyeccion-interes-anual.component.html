@@ -29,5 +29,12 @@
         <app-ganancia-anual-chart [active]="activeTabIndex === 1"></app-ganancia-anual-chart>
       </div>
     </p-tabPanel>
+
+    <p-tabPanel header="Consolidado (Intereses y Ventas)">
+      <div class="mt-2">
+        <h2>Reporte Consolidado Anual</h2>
+        <app-consolidado-anual-chart [active]="activeTabIndex === 2"></app-consolidado-anual-chart>
+      </div>
+    </p-tabPanel>
   </p-tabView>
 </div>

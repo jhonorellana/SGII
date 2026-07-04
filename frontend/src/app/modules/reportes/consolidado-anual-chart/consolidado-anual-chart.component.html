@@ -1,0 +1,28 @@
+<p-toast></p-toast>
+<div class="card p-4">
+    <div class="flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-color-secondary mt-1 m-0">Visualización consolidada de intereses y ganancias en ventas a lo largo de los años.</p>
+        </div>
+        <div>
+            <button pButton pRipple type="button" icon="pi pi-refresh" label="Actualizar" 
+                class="p-button-outlined" (click)="loadDatos()" [disabled]="loading">
+            </button>
+        </div>
+    </div>
+
+    <div class="chart-container" [style.height.px]="450">
+        <div *ngIf="loading" class="flex justify-content-center align-items-center h-full">
+            <p-progressSpinner></p-progressSpinner>
+        </div>
+        
+        <div *ngIf="!loading && !hasData" class="flex flex-column justify-content-center align-items-center h-full text-color-secondary">
+            <i class="pi pi-info-circle text-4xl mb-3"></i>
+            <p class="m-0">No hay datos disponibles para mostrar el gráfico consolidado.</p>
+        </div>
+        
+        <div [class.hidden]="loading || !hasData" class="h-full w-full">
+            <canvas #chartCanvas></canvas>
+        </div>
+    </div>
+</div>
