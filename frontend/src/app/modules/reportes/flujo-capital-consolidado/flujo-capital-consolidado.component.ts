@@ -18,6 +18,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CalendarModule } from 'primeng/calendar';
 import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
+import { TabViewModule } from 'primeng/tabview';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 
 export interface FlujoCapitalItem {
@@ -48,6 +49,7 @@ export interface FlujoCapitalItem {
     CalendarModule,
     DialogModule,
     TableModule,
+    TabViewModule,
     ModalActionsComponent
   ],
   providers: [MessageService, ModalActionsComponent],
@@ -71,6 +73,23 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     id_propietario: 0,
     id_emisor: 0
   };
+  
+  flujoCapitalDiario: FlujoCapitalItem[] = [];
+  totalesDiario: FlujoCapitalItem = {
+    fecha: 'TOTAL',
+    propietario: '',
+    empresa: '',
+    interes: 0,
+    capital: 0,
+    descuento: 0,
+    interes_moroso: 0,
+    capital_moroso: 0,
+    descuento_moroso: 0,
+    total: 0,
+    id_propietario: 0,
+    id_emisor: 0
+  };
+
   loading = false;
 
   // Propiedades para el modal de detalle
@@ -221,6 +240,40 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       this.totales.descuento_moroso += item.descuento_moroso;
       this.totales.total += item.total;
     });
+
+    const agrupado: { [fecha: string]: FlujoCapitalItem } = {};
+    this.flujoCapital.forEach(item => {
+      if (!agrupado[item.fecha]) {
+        agrupado[item.fecha] = {
+          fecha: item.fecha,
+          propietario: 'Varios',
+          empresa: 'Varias',
+          interes: 0,
+          capital: 0,
+          descuento: 0,
+          interes_moroso: 0,
+          capital_moroso: 0,
+          descuento_moroso: 0,
+          total: 0,
+          id_propietario: 0,
+          id_emisor: 0
+        };
+      }
+      const g = agrupado[item.fecha];
+      g.interes += item.interes;
+      g.capital += item.capital;
+      g.descuento += item.descuento;
+      g.interes_moroso += item.interes_moroso;
+      g.capital_moroso += item.capital_moroso;
+      g.descuento_moroso += item.descuento_moroso;
+      g.total += item.total;
+    });
+
+    this.flujoCapitalDiario = Object.keys(agrupado)
+      .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+      .map(k => agrupado[k]);
+
+    this.totalesDiario = { ...this.totales };
   }
 
   exportarExcel(): void {
@@ -346,7 +399,87 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       {wch: 12}  // Total
     ];
 
-    XLSX.utils.book_append_sheet(wb, ws, 'Flujo Capital');
+    XLSX.utils.book_append_sheet(wb, ws, 'Detallado');
+
+    // -----------------------------------------------------
+    // HOJA 2: CONSOLIDADO DIARIO
+    // -----------------------------------------------------
+    const headersDiario = [
+      'Fecha',
+      'Interés',
+      'Capital',
+      'Premio',
+      'Int. Riesgo',
+      'Cap. Riesgo',
+      'Prem. Riesgo',
+      'Total'
+    ];
+
+    const datosDiario = this.flujoCapitalDiario.map(item => [
+      item.fecha,
+      item.interes,
+      item.capital,
+      item.descuento,
+      item.interes_moroso,
+      item.capital_moroso,
+      item.descuento_moroso,
+      item.total
+    ]);
+
+    if (this.totalesDiario) {
+      datosDiario.push([
+        this.totalesDiario.fecha,
+        this.totalesDiario.interes,
+        this.totalesDiario.capital,
+        this.totalesDiario.descuento,
+        this.totalesDiario.interes_moroso,
+        this.totalesDiario.capital_moroso,
+        this.totalesDiario.descuento_moroso,
+        this.totalesDiario.total
+      ]);
+    }
+
+    const wsDataDiario = [headersDiario, ...datosDiario];
+    const wsDiario = XLSX.utils.aoa_to_sheet(wsDataDiario);
+
+    // Formato de encabezados diario
+    const headerRangeD = XLSX.utils.decode_range(wsDiario['!ref'] || 'A1');
+    for (let col = headerRangeD.s.c; col <= headerRangeD.e.c; col++) {
+      const cellAddress = XLSX.utils.encode_cell({r: 0, c: col});
+      if (wsDiario[cellAddress]) {
+        wsDiario[cellAddress].s = {
+          font: {bold: true, color: {rgb: "FFFFFFFF"}},
+          fill: {fgColor: {rgb: "FF4472C4"}}
+        };
+      }
+    }
+
+    // Formato de totales diario
+    if (this.totalesDiario) {
+      const totalRow = datosDiario.length;
+      for (let col = headerRangeD.s.c; col <= headerRangeD.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({r: totalRow, c: col});
+        if (wsDiario[cellAddress]) {
+          wsDiario[cellAddress].s = {
+            font: {bold: true, color: {rgb: "FFFFFFFF"}},
+            fill: {fgColor: {rgb: "FF198754"}}
+          };
+        }
+      }
+    }
+
+    wsDiario['!cols'] = [
+      {wch: 12}, // Fecha
+      {wch: 12}, // Interés
+      {wch: 12}, // Capital
+      {wch: 12}, // Premio
+      {wch: 12}, // Int. Riesgo
+      {wch: 12}, // Cap. Riesgo
+      {wch: 12}, // Prem. Riesgo
+      {wch: 12}  // Total
+    ];
+
+    XLSX.utils.book_append_sheet(wb, wsDiario, 'Consolidado Diario');
 
     const params = {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
@@ -512,18 +645,99 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
         }
       };
 
-      // Generar la tabla con autoTable
+      // Generar la primera tabla (Detallado)
+      doc.setFontSize(14);
+      doc.text('Detalle por Propietario', 14, 35);
+      
       autoTable(doc, {
         columns: headers,
         body: tableData,
-        ...tableStyles
+        ...tableStyles,
+        startY: 40
+      });
+
+      // -----------------------------------------------------
+      // TABLA 2: CONSOLIDADO DIARIO
+      // -----------------------------------------------------
+      const headersDiario = [
+        { title: 'Fecha', dataKey: 'fecha' },
+        { title: 'Interés', dataKey: 'interes' },
+        { title: 'Capital', dataKey: 'capital' },
+        { title: 'Premio', dataKey: 'descuento' },
+        { title: 'Int. Riesgo', dataKey: 'interes_moroso' },
+        { title: 'Cap. Riesgo', dataKey: 'capital_moroso' },
+        { title: 'Prem. Riesgo', dataKey: 'descuento_moroso' },
+        { title: 'Total', dataKey: 'total' }
+      ];
+
+      const tableDataDiario = this.flujoCapitalDiario.map(item => ({
+        fecha: item.fecha,
+        interes: this.formatCurrency(item.interes),
+        capital: this.formatCurrency(item.capital),
+        descuento: this.formatCurrency(item.descuento),
+        interes_moroso: this.formatCurrency(item.interes_moroso),
+        capital_moroso: this.formatCurrency(item.capital_moroso),
+        descuento_moroso: this.formatCurrency(item.descuento_moroso),
+        total: this.formatCurrency(item.total)
+      }));
+
+      if (this.totalesDiario) {
+        tableDataDiario.push({
+          fecha: this.totalesDiario.fecha,
+          interes: this.formatCurrency(this.totalesDiario.interes),
+          capital: this.formatCurrency(this.totalesDiario.capital),
+          descuento: this.formatCurrency(this.totalesDiario.descuento),
+          interes_moroso: this.formatCurrency(this.totalesDiario.interes_moroso),
+          capital_moroso: this.formatCurrency(this.totalesDiario.capital_moroso),
+          descuento_moroso: this.formatCurrency(this.totalesDiario.descuento_moroso),
+          total: this.formatCurrency(this.totalesDiario.total)
+        });
+      }
+
+      // Column styles for Diario (fewer columns so wider widths)
+      const columnStylesDiario = {
+        fecha: { cellWidth: 35, halign: 'center' as any },
+        interes: { cellWidth: 30, halign: 'right' as any },
+        capital: { cellWidth: 30, halign: 'right' as any },
+        descuento: { cellWidth: 30, halign: 'right' as any },
+        interes_moroso: { cellWidth: 30, halign: 'right' as any },
+        capital_moroso: { cellWidth: 30, halign: 'right' as any },
+        descuento_moroso: { cellWidth: 30, halign: 'right' as any },
+        total: { cellWidth: 35, halign: 'right' as any, fontStyle: 'bold' as any }
+      };
+
+      const finalY1 = (doc as any).lastAutoTable.finalY || 40;
+      doc.setFontSize(14);
+      doc.text('Consolidado Diario', 14, finalY1 + 15);
+
+      autoTable(doc, {
+        columns: headersDiario,
+        body: tableDataDiario,
+        ...tableStyles,
+        columnStyles: columnStylesDiario,
+        startY: finalY1 + 20,
+        didParseCell: (data: any) => {
+          // Resaltar totales diario
+          if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
+            data.cell.styles.fillColor = [34, 197, 94] as any;
+            data.cell.styles.textColor = 255;
+            data.cell.styles.fontStyle = 'bold' as any;
+          }
+        },
+        didDrawCell: (data: any) => {
+          if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
+            doc.setDrawColor(34, 197, 94);
+            doc.setLineWidth(0.1);
+            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height);
+          }
+        }
       });
 
       // Agregar pie de página
-      const finalY = (doc as any).lastAutoTable.finalY || 200;
+      const finalY2 = (doc as any).lastAutoTable.finalY || 200;
       doc.setFontSize(8);
       doc.setTextColor(128);
-      doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 148, finalY + 10, { align: 'center' });
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 148, finalY2 + 10, { align: 'center' });
 
       // Guardar PDF
       const fileName = `flujo-capital-consolidado-${params.fecha_inicio}-${params.fecha_fin}.pdf`;

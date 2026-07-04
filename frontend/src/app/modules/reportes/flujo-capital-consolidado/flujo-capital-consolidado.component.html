@@ -113,7 +113,10 @@
 
       <!-- Tabla de Resultados -->
       <div *ngIf="!loading && flujoCapital.length > 0">
-        <div class="table-responsive">
+        <p-tabView>
+          <!-- Pestaña 1: Detallado -->
+          <p-tabPanel header="Detallado">
+            <div class="table-responsive mt-3">
           <table class="table table-bordered table-hover reporte-table">
             <thead class="table-dark">
               <tr>
@@ -144,22 +147,83 @@
                 <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
               </tr>
 
-              <!-- Fila de totales -->
-              <tr class="fila-totales fw-bold">
-                <td colspan="3" class="text-center">TOTALES</td>
-                <td class="text-end">{{ formatCurrency(totales.interes) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.capital) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.descuento) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.interes_moroso) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.capital_moroso) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.descuento_moroso) }}</td>
-                <td class="text-end">{{ formatCurrency(totales.total) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  <!-- Filas de datos -->
+                  <tr *ngFor="let item of flujoCapital" class="fila-dato clickable-row" (click)="mostrarDetalle(item)">
+                    <td class="text-center">{{ item.fecha }}</td>
+                    <td class="text-left">{{ item.propietario }}</td>
+                    <td class="text-left">{{ item.empresa }}</td>
+                    <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.descuento) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.interes_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.capital_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.descuento_moroso) }}</td>
+                    <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+                  </tr>
 
-        <!-- Resumen en Cards -->
+                  <!-- Fila de totales -->
+                  <tr class="fila-totales fw-bold">
+                    <td colspan="3" class="text-center">TOTALES</td>
+                    <td class="text-end">{{ formatCurrency(totales.interes) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.capital) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.descuento) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.interes_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.capital_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.descuento_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totales.total) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </p-tabPanel>
+
+          <!-- Pestaña 2: Consolidado Diario -->
+          <p-tabPanel header="Consolidado por Día">
+            <div class="table-responsive mt-3">
+              <table class="table table-bordered table-hover reporte-table">
+                <thead class="table-dark">
+                  <tr>
+                    <th class="text-center" style="width: 120px;">Fecha</th>
+                    <th class="text-end" style="width: 120px;">Interés</th>
+                    <th class="text-end" style="width: 120px;">Capital</th>
+                    <th class="text-end" style="width: 120px;">Premio</th>
+                    <th class="text-end" style="width: 120px;">Int. Riesgo</th>
+                    <th class="text-end" style="width: 120px;">Cap. Riesgo</th>
+                    <th class="text-end" style="width: 120px;">Prem. Riesgo</th>
+                    <th class="text-end" style="width: 120px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Filas de datos -->
+                  <tr *ngFor="let item of flujoCapitalDiario">
+                    <td class="text-center">{{ item.fecha }}</td>
+                    <td class="text-end">{{ formatCurrency(item.interes) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.capital) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.descuento) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.interes_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.capital_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(item.descuento_moroso) }}</td>
+                    <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
+                  </tr>
+
+                  <!-- Fila de totales -->
+                  <tr class="fila-totales fw-bold">
+                    <td class="text-center">TOTALES</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.interes) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.capital) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.descuento) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.interes_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.capital_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.descuento_moroso) }}</td>
+                    <td class="text-end">{{ formatCurrency(totalesDiario.total) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </p-tabPanel>
+        </p-tabView>
+
+    <!-- Resumen en Cards -->
         <div class="row mt-4">
           <div class="col-md-3">
             <div class="card border-primary">
