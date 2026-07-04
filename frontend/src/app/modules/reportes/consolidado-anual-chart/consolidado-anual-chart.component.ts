@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
 import { RecuperacionAnualService, RecuperacionAnualItem } from '../../../core/recuperacion-anual.service';
@@ -27,7 +27,7 @@ Chart.register(ChartDataLabels);
   templateUrl: './consolidado-anual-chart.component.html',
   styleUrls: ['./consolidado-anual-chart.component.css']
 })
-export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, OnDestroy {
+export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   loading = false;
   hasData = false;
 
@@ -55,6 +55,12 @@ export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, On
 
   ngOnInit(): void {
     this.setupLayoutListener();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['active'] && changes['active'].currentValue === true) {
+      this.onTabActivate();
+    }
   }
 
   public onTabActivate(): void {

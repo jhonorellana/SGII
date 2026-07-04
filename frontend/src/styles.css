@@ -131,3 +131,45 @@ body {
   background-color: #dc3545;
   border-color: #dc3545;
 }
+
+/* PrimeNG TabView Styles - Global */
+.p-tabview {
+  background: transparent !important;
+}
+
+.p-tabview .p-tabview-nav {
+  background-color: #f0fdf4 !important; /* Verde muy sutil */
+  border: 1px solid #dcfce7 !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 0 0.5rem !important;
+  margin-bottom: 20px !important;
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  border: none !important;
+  background: transparent !important;
+  font-weight: 600 !important;
+  padding: 12px 18px !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+/* Pestañas inactivas */
+.p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link {
+  background-color: #dcfce7 !important; /* Verde medio */
+  color: #166534 !important; /* Texto verde oscuro */
+  border-bottom: 2px solid transparent !important;
+}
+
+.p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
+  background-color: #bbf7d0 !important; /* Verde un poco más oscuro al pasar el ratón */
+  border-bottom: 2px solid #86efac !important;
+}
+
+/* Pestaña activa con color sólido verde */
+.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  background: #bbf7d0 !important; /* Verde sólido en lugar de degradado */
+  border-bottom: 3px solid #22c55e !important;
+  font-weight: 700 !important;
+  color: #166534 !important;
+}

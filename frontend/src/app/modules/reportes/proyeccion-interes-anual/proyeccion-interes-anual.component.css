@@ -43,21 +43,4 @@ h2 {
   text-align: right;
 }
 
-/* Hacer más vistosa la pestaña activa */
-::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  background-color: #eff6ff;
-  border-bottom: 3px solid #3b82f6;
-  font-weight: 700;
-  color: #1d4ed8;
-}
 
-::ng-deep .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-  padding: 1rem 1.5rem;
-  font-size: 1.05rem;
-  transition: all 0.2s ease-in-out;
-}
-
-::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
-  background-color: #f8fafc;
-  border-bottom: 2px solid #cbd5e1;
-}

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
 import { GananciaAnualService, GananciaAnualItem } from '../../../core/ganancia-anual.service';
@@ -26,7 +26,7 @@ Chart.register(ChartDataLabels);
   templateUrl: './ganancia-anual-chart.component.html',
   styleUrls: ['./ganancia-anual-chart.component.css']
 })
-export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDestroy {
+export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDestroy, OnChanges {
   loading = false;
   datos: GananciaAnualItem[] = [];
 
@@ -50,6 +50,12 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
 
   ngOnInit(): void {
     this.setupLayoutListener();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['active'] && changes['active'].currentValue === true) {
+      this.onTabActivate();
+    }
   }
   
   // Expose a method to be called when the tab becomes active
