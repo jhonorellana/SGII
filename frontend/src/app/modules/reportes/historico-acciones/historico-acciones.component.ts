@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DropdownModule } from 'primeng/dropdown';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
 import { CatalogoService, CatalogoValor } from '../../../core/catalogo.service';
@@ -44,6 +45,7 @@ Chart.register(
     CommonModule,
     FormsModule,
     DropdownModule,
+    MultiSelectModule,
     ChartModule,
     TableModule
   ],
@@ -58,6 +60,7 @@ export class HistoricoAccionesComponent implements OnInit {
   // Years options
   anos: any[] = [
     { label: 'Todos los años', value: 0 },
+    { label: 'Años solapados (Mensual)', value: -1 },
     { label: '2026', value: 2026 },
     { label: '2025', value: 2025 },
     { label: '2024', value: 2024 },
@@ -70,6 +73,20 @@ export class HistoricoAccionesComponent implements OnInit {
     { label: '2017', value: 2017 }
   ];
   selectedAnio: number = 0;
+
+  anosDisponibles: any[] = [
+    { label: '2026', value: 2026 },
+    { label: '2025', value: 2025 },
+    { label: '2024', value: 2024 },
+    { label: '2023', value: 2023 },
+    { label: '2022', value: 2022 },
+    { label: '2021', value: 2021 },
+    { label: '2020', value: 2020 },
+    { label: '2019', value: 2019 },
+    { label: '2018', value: 2018 },
+    { label: '2017', value: 2017 }
+  ];
+  selectedAniosSolapados: number[] = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017];
 
   // Data lists
   historicoRecords: SharesHistoryRecord[] = [];
@@ -143,8 +160,8 @@ export class HistoricoAccionesComponent implements OnInit {
               }
             }
           } else {
-            // Draw a line at the start of each month of the selected year (01/month/selectedAnio)
-            const year = Number(this.selectedAnio);
+            // Draw a line at the start of each month
+            const year = Number(this.selectedAnio) === -1 ? 2000 : Number(this.selectedAnio);
             for (let month = 0; month < 12; month++) {
               // Normalizar a inicio de mes en hora local
               const dateVal = new Date(year, month, 1).getTime();
@@ -209,7 +226,8 @@ export class HistoricoAccionesComponent implements OnInit {
     if (!this.selectedEmpresa) return;
 
     this.loading = true;
-    this.sharesHistoryService.getHistorico(this.selectedEmpresa, this.selectedAnio).subscribe({
+    const yearQuery = Number(this.selectedAnio) === -1 ? 0 : this.selectedAnio;
+    this.sharesHistoryService.getHistorico(this.selectedEmpresa, yearQuery).subscribe({
       next: (response) => {
         this.historicoRecords = response.data || [];
         this.hasData = this.historicoRecords.length > 0;
@@ -276,6 +294,18 @@ export class HistoricoAccionesComponent implements OnInit {
     this.transaccionesTotales = totalTrans;
   }
 
+  generateColors(count: number): string[] {
+    const colors = [
+      '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
+      '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ];
+    const result: string[] = [];
+    for (let i = 0; i < count; i++) {
+      result.push(colors[i % colors.length]);
+    }
+    return result;
+  }
+
   buildChart(): void {
     if (!this.hasData) {
       this.chartData = null;
@@ -285,49 +315,96 @@ export class HistoricoAccionesComponent implements OnInit {
     // Re-initialize chart options to dynamically apply selected year settings (min/max range)
     this.setupChartOptions();
 
-    const prices = this.historicoRecords.map(rec => {
-      const parts = rec.fecha.split('-');
-      const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      const y = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
-      return { x, y };
-    });
-
-    const volumes = this.historicoRecords.map(rec => {
-      const parts = rec.fecha.split('-');
-      const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-      const y = typeof rec.valor === 'string' ? parseFloat(rec.valor) : (rec.valor || 0);
-      return { x, y };
-    });
-
     this.hasPrepended = false;
 
-    this.chartData = {
-      datasets: [
-        {
+    if (Number(this.selectedAnio) === -1) {
+      // Lógica de gráfico solapado
+      const groupedByYear: { [year: string]: any[] } = {};
+      this.historicoRecords.forEach(rec => {
+        const parts = rec.fecha.split('-');
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        
+        // Mapear al año pivote (2000)
+        const x = new Date(2000, m, d);
+        const price = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
+        const recordYear = y.toString();
+        
+        if (!groupedByYear[recordYear]) {
+          groupedByYear[recordYear] = [];
+        }
+        groupedByYear[recordYear].push({ x, y: price, originalYear: recordYear });
+      });
+
+      const years = Object.keys(groupedByYear).sort((a, b) => Number(a) - Number(b));
+      const datasets: any[] = [];
+      
+      // Solo mantener los años que estén seleccionados en el multiselect
+      const filteredYears = years.filter(year => this.selectedAniosSolapados.includes(Number(year)));
+      const colors = this.generateColors(filteredYears.length);
+
+      filteredYears.forEach((year, index) => {
+        datasets.push({
           type: 'line',
-          label: 'Precio Promedio ($)',
-          data: prices,
+          label: `Precio (${year})`,
+          data: groupedByYear[year],
           yAxisID: 'y',
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.05)',
+          borderColor: colors[index],
+          backgroundColor: 'transparent',
           borderWidth: 1.5,
-          pointRadius: this.historicoRecords.length > 180 ? 0 : 2,
+          pointRadius: 0,
           pointHoverRadius: 6,
           tension: 0.2,
-          fill: true
-        },
-        {
-          type: 'bar',
-          label: 'Volumen Transado ($)',
-          data: volumes,
-          yAxisID: 'y1',
-          backgroundColor: 'rgba(34, 197, 94, 0.35)',
-          borderColor: 'rgba(34, 197, 94, 0.7)',
-          borderWidth: 1,
-          barThickness: Number(this.selectedAnio) === 0 ? 1.5 : 3
-        }
-      ]
-    };
+          fill: false
+        });
+      });
+
+      this.chartData = { datasets };
+    } else {
+      // Lógica estándar de línea de tiempo
+      const prices = this.historicoRecords.map(rec => {
+        const parts = rec.fecha.split('-');
+        const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const y = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
+        return { x, y };
+      });
+
+      const volumes = this.historicoRecords.map(rec => {
+        const parts = rec.fecha.split('-');
+        const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        const y = typeof rec.valor === 'string' ? parseFloat(rec.valor) : (rec.valor || 0);
+        return { x, y };
+      });
+
+      this.chartData = {
+        datasets: [
+          {
+            type: 'line',
+            label: 'Precio Promedio ($)',
+            data: prices,
+            yAxisID: 'y',
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.05)',
+            borderWidth: 1.5,
+            pointRadius: this.historicoRecords.length > 180 ? 0 : 2,
+            pointHoverRadius: 6,
+            tension: 0.2,
+            fill: true
+          },
+          {
+            type: 'bar',
+            label: 'Volumen Transado ($)',
+            data: volumes,
+            yAxisID: 'y1',
+            backgroundColor: 'rgba(34, 197, 94, 0.35)',
+            borderColor: 'rgba(34, 197, 94, 0.7)',
+            borderWidth: 1,
+            barThickness: Number(this.selectedAnio) === 0 ? 1.5 : 3
+          }
+        ]
+      };
+    }
   }
 
   setupChartOptions(): void {
@@ -375,12 +452,19 @@ export class HistoricoAccionesComponent implements OnInit {
               if (tooltipItems.length > 0) {
                 const dateVal = new Date(tooltipItems[0].raw.x);
                 const nombreEmpresa = this.empresas.find(e => e.value === this.selectedEmpresa)?.label || '';
-                const year = dateVal.getFullYear();
+                
+                let titleYear = '';
+                if (Number(this.selectedAnio) === -1) {
+                  titleYear = tooltipItems[0].raw.originalYear || dateVal.getFullYear().toString();
+                } else {
+                  titleYear = dateVal.getFullYear().toString();
+                }
+                
                 const month = String(dateVal.getMonth() + 1).padStart(2, '0');
                 const day = String(dateVal.getDate()).padStart(2, '0');
                 return [
                   `Emisor: ${nombreEmpresa}`,
-                  `Fecha: ${year}-${month}-${day}`
+                  `Fecha: ${titleYear}-${month}-${day}`
                 ];
               }
               return '';
@@ -390,7 +474,7 @@ export class HistoricoAccionesComponent implements OnInit {
               const rawVal = context.raw;
               const value = typeof rawVal === 'object' && rawVal !== null ? rawVal.y : rawVal;
               if (datasetLabel.includes('Precio')) {
-                return ` Precio Promedio: ${this.formatCurrency(value)}`;
+                return ` ${datasetLabel}: ${this.formatCurrency(value)}`;
               } else {
                 return ` Volumen Transado: ${this.formatCurrency(value)}`;
               }
@@ -454,10 +538,10 @@ export class HistoricoAccionesComponent implements OnInit {
           },
           min: Number(this.selectedAnio) === 0
             ? new Date(2017, 0, 1).getTime()
-            : new Date(Number(this.selectedAnio), 0, 1).getTime(),
+            : (Number(this.selectedAnio) === -1 ? new Date(2000, 0, 1).getTime() : new Date(Number(this.selectedAnio), 0, 1).getTime()),
           max: Number(this.selectedAnio) === 0
             ? new Date(2026, 11, 31, 23, 59, 59).getTime()
-            : new Date(Number(this.selectedAnio), 11, 31, 23, 59, 59).getTime()
+            : (Number(this.selectedAnio) === -1 ? new Date(2000, 11, 31, 23, 59, 59).getTime() : new Date(Number(this.selectedAnio), 11, 31, 23, 59, 59).getTime())
         },
         y: {
           type: 'linear',
@@ -486,7 +570,7 @@ export class HistoricoAccionesComponent implements OnInit {
         },
         y1: {
           type: 'linear',
-          display: true,
+          display: Number(this.selectedAnio) !== -1,
           position: 'right',
           title: {
             display: true,

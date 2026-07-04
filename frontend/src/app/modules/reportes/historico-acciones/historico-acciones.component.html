@@ -29,13 +29,27 @@
         <!-- Año Selector -->
         <div class="col-md-4 col-lg-3">
           <label class="form-label text-secondary small fw-bold">Rango de Año</label>
-          <p-dropdown 
-            [options]="anos" 
-            [(ngModel)]="selectedAnio" 
-            (onChange)="onFiltersChange()" 
-            [style]="{'width':'100%'}"
-            styleClass="w-100 p-dropdown-sm">
-          </p-dropdown>
+          <div class="d-flex gap-2 w-100">
+            <p-dropdown 
+              [options]="anos" 
+              [(ngModel)]="selectedAnio" 
+              (onChange)="onFiltersChange()" 
+              styleClass="w-100 p-dropdown-sm"
+              [style]="{'flex': '1', 'min-width': '0'}">
+            </p-dropdown>
+
+            <p-multiSelect 
+              *ngIf="selectedAnio == -1"
+              [options]="anosDisponibles" 
+              [(ngModel)]="selectedAniosSolapados" 
+              (onChange)="onFiltersChange()"
+              defaultLabel="Años"
+              selectedItemsLabel="{0} años"
+              [maxSelectedLabels]="1"
+              styleClass="w-100 p-multiselect-sm"
+              [style]="{'flex': '1', 'min-width': '0'}">
+            </p-multiSelect>
+          </div>
         </div>
 
         <div class="col-md-2 col-lg-5 text-end mt-md-4 pt-md-2">
