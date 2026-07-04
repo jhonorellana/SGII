@@ -61,6 +61,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
   totalConsolidado = 0;
   totalLunes = 0;
 
+  public barChartPlugins = [ChartDataLabels];
+
   // Configuración del gráfico
   public barChartOptions: any = {
     responsive: true,
@@ -73,7 +75,10 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
         left: 5
       }
     },
-    plugins: [ChartDataLabels, {
+    plugins: {
+      datalabels: {
+        display: false
+      },
       legend: {
         position: 'top',
         labels: {
@@ -90,50 +95,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       },
       tooltip: {
         mode: 'index',
-        intersect: false,
-        displayColors: false,
-        callbacks: {
-          title: function(context: any) {
-            return context[0].label;
-          },
-          label: function(context: any) {
-            if (context.datasetIndex === 0) {
-              const index = context.dataIndex;
-              const datasets = context.chart.data.datasets;
-
-              const capital = Number(datasets[0].data[index]) || 0;
-              const interes = Number(datasets[1].data[index]) || 0;
-              const premio = Number(datasets[2].data[index]) || 0;
-              const total = capital + interes + premio;
-
-              const formatCurrency = (value: number) => {
-                return new Intl.NumberFormat('es-ES', {
-                  style: 'currency',
-                  currency: 'USD',
-                  minimumFractionDigits: 2,
-                  useGrouping: true
-                }).format(value);
-              };
-
-              const alignRight = (text: string, width: number) => {
-                return ' '.repeat(Math.max(0, width - text.length)) + text;
-              };
-
-              const labels = [
-                `Capital:  ${alignRight(formatCurrency(capital), 11)}`,
-                `Interés:   ${alignRight(formatCurrency(interes), 11)}`,
-                `Premio:    ${alignRight(formatCurrency(premio), 11)}`,
-                `─`.repeat(22),
-                `Total:     ${alignRight(formatCurrency(total), 11)}`
-              ];
-
-              return labels;
-            }
-            return '';
-          }
-        }
+        intersect: false
       }
-    }],
+    },
     scales: {
       x: {
         stacked: true,
@@ -371,8 +335,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1,
           order: 1,
-          barPercentage: 0.95,
-          categoryPercentage: 0.95,
+          barPercentage: 0.5,
+          categoryPercentage: 0.5,
           datalabels: {
             display: false
           }
@@ -384,21 +348,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1,
           order: 2,
-          barPercentage: 0.95,
-          categoryPercentage: 0.95,
-          datalabels: {
-            display: false
-          }
-        },
-        {
-          label: 'Premio',
-          data: premio,
-          backgroundColor: 'rgba(75, 192, 192, 0.8)',
-          borderColor: 'rgba(75, 192, 192, 1)',
-          borderWidth: 1,
-          order: 3,
-          barPercentage: 0.95,
-          categoryPercentage: 0.95,
+          barPercentage: 0.5,
+          categoryPercentage: 0.5,
           datalabels: {
             display: true,
             anchor: 'end',
@@ -409,8 +360,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
               const capital = Number(datasets[0].data[index]) || 0;
               const interes = Number(datasets[1].data[index]) || 0;
-              const premio = Number(datasets[2].data[index]) || 0;
-              const total = capital + interes + premio;
+              const total = capital + interes;
 
               return new Intl.NumberFormat('es-CO', {
                 minimumFractionDigits: 2,
