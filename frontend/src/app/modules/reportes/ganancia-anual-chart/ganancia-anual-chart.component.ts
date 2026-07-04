@@ -1,13 +1,10 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, ChangeDetectorRef, OnDestroy, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
-import { RecuperacionAnualService, RecuperacionAnualItem } from '../../../core/recuperacion-anual.service';
+import { GananciaAnualService, GananciaAnualItem } from '../../../core/ganancia-anual.service';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
-import { CardModule } from 'primeng/card';
-import { TabViewModule } from 'primeng/tabview';
-import { GananciaAnualChartComponent } from '../ganancia-anual-chart/ganancia-anual-chart.component';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { LayoutService } from '../../../core/layout.service';
@@ -17,82 +14,91 @@ Chart.register(...registerables);
 Chart.register(ChartDataLabels);
 
 @Component({
-  selector: 'app-proyeccion-interes-anual',
+  selector: 'app-ganancia-anual-chart',
   standalone: true,
   imports: [
     CommonModule,
     ToastModule,
     ButtonModule,
-    ProgressSpinnerModule,
-    CardModule,
-    TabViewModule,
-    GananciaAnualChartComponent
+    ProgressSpinnerModule
   ],
   providers: [MessageService],
-  templateUrl: './proyeccion-interes-anual.component.html',
-  styleUrls: ['./proyeccion-interes-anual.component.css']
+  templateUrl: './ganancia-anual-chart.component.html',
+  styleUrls: ['./ganancia-anual-chart.component.css']
 })
-export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, OnDestroy {
+export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDestroy {
   loading = false;
-  datos: RecuperacionAnualItem[] = [];
-
-  activeTabIndex: number = 0;
+  datos: GananciaAnualItem[] = [];
 
   chartData: any;
   chartOptions: any;
   chart: any;
+
+  @Input() active: boolean = false; // To know if the tab is active
+  private hasInitialized: boolean = false;
 
   @ViewChild('chartCanvas') chartCanvas!: ElementRef<HTMLCanvasElement>;
 
   private layoutSubscription: Subscription | null = null;
 
   constructor(
-    private recuperacionAnualService: RecuperacionAnualService,
+    private gananciaAnualService: GananciaAnualService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
     private layoutService: LayoutService
   ) {}
 
   ngOnInit(): void {
-    this.loadDatos();
     this.setupLayoutListener();
   }
-
-  setupLayoutListener(): void {
-    this.layoutSubscription = this.layoutService.sidebarCollapsed$.subscribe(() => {
-      // Wait for the sidebar transition to complete before resizing the chart
+  
+  // Expose a method to be called when the tab becomes active
+  public onTabActivate(): void {
+    if (!this.hasInitialized) {
+      this.loadDatos();
+      this.hasInitialized = true;
+    } else {
       setTimeout(() => {
         if (this.chart) {
           this.chart.resize();
         }
-      }, 350); // 350ms to account for the 300ms transition + buffer
+      }, 100);
+    }
+  }
+
+  setupLayoutListener(): void {
+    this.layoutSubscription = this.layoutService.sidebarCollapsed$.subscribe(() => {
+      setTimeout(() => {
+        if (this.chart) {
+          this.chart.resize();
+        }
+      }, 350);
     });
   }
 
   ngAfterViewInit(): void {
-    this.tryInitChart();
+    if (this.active) {
+      this.onTabActivate();
+    }
   }
 
   tryInitChart(): void {
     if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
       return;
     }
-
     if (!this.datos || this.datos.length === 0) {
       return;
     }
-
     this.initChart();
   }
 
   loadDatos(): void {
     this.loading = true;
-    this.recuperacionAnualService.getRecuperacionAnual(1).subscribe({
+    this.gananciaAnualService.getGananciaAnual().subscribe({
       next: (data) => {
         this.datos = data;
         this.loading = false;
 
-        // Esperar a que Angular pinte el canvas antes de crear el gráfico
         this.cdr.detectChanges();
         setTimeout(() => {
           this.tryInitChart();
@@ -103,7 +109,7 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'Error al cargar datos de proyección de interés anual'
+          detail: 'Error al cargar datos de ganancia anual'
         });
         this.loading = false;
       }
@@ -112,30 +118,24 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
 
   initChart(): void {
     if (!this.chartCanvas || !this.chartCanvas.nativeElement) {
-      console.error('Canvas no disponible');
       return;
     }
 
     const canvas = this.chartCanvas.nativeElement;
     const ctx = canvas.getContext('2d');
-
-    if (!ctx) {
-      console.error('No se pudo obtener contexto 2D del canvas');
-      return;
-    }
+    if (!ctx) return;
 
     const labels = this.datos.map(item => item.anio);
-    const interesData = this.datos.map(item => item.interes);
+    const gananciaData = this.datos.map(item => item.ganancia);
 
-    // Generar colores diferentes para cada barra
     const colors = this.generateColors(labels.length);
 
     this.chartData = {
       labels: labels,
       datasets: [
         {
-          label: 'Interés',
-          data: interesData,
+          label: 'Ganancia/Pérdida',
+          data: gananciaData,
           backgroundColor: colors,
           borderColor: colors.map(color => this.darkenColor(color, 20)),
           borderWidth: 1,
@@ -150,27 +150,15 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
       maintainAspectRatio: false,
       layout: {
         autoPadding: false,
-        padding: {
-          top: 20,
-          right: 5,
-          bottom: 5,
-          left: 5
-        }
+        padding: { top: 20, right: 5, bottom: 5, left: 5 }
       },
       plugins: {
-        legend: {
-          display: false
-        },
+        legend: { display: false },
         datalabels: {
-          anchor: 'end',
-          align: 'top',
-          formatter: (value: number) => {
-            return this.formatCurrencyShort(value);
-          },
-          font: {
-            weight: 'bold',
-            size: 12
-          },
+          anchor: (context: any) => context.dataset.data[context.dataIndex] >= 0 ? 'end' : 'start',
+          align: (context: any) => context.dataset.data[context.dataIndex] >= 0 ? 'top' : 'bottom',
+          formatter: (value: number) => this.formatCurrencyShort(value),
+          font: { weight: 'bold', size: 12 },
           color: '#333',
           offset: 2
         },
@@ -178,9 +166,7 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
           callbacks: {
             label: (context: any) => {
               let label = context.dataset.label || '';
-              if (label) {
-                label += ': ';
-              }
+              if (label) label += ': ';
               label += this.formatCurrency(context.raw);
               return label;
             }
@@ -189,49 +175,21 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
       },
       scales: {
         x: {
-          title: {
-            display: true,
-            text: 'Año',
-            font: {
-              size: 13,
-              weight: 'bold'
-            },
-            padding: { top: 4 }
-          },
-          grid: {
-            display: false
-          },
-          ticks: {
-            font: {
-              size: 12
-            },
-            padding: 4
-          }
+          title: { display: true, text: 'Año', font: { size: 13, weight: 'bold' }, padding: { top: 4 } },
+          grid: { display: false },
+          ticks: { font: { size: 12 }, padding: 4 }
         },
         y: {
-          title: {
-            display: true,
-            text: 'Valor (US$)',
-            font: {
-              size: 13,
-              weight: 'bold'
-            },
-            padding: { bottom: 4 }
-          },
-          grid: {
-            color: '#e5e7eb'
-          },
+          title: { display: true, text: 'Valor (US$)', font: { size: 13, weight: 'bold' }, padding: { bottom: 4 } },
+          grid: { color: '#e5e7eb' },
           ticks: {
-            callback: (value: number) => {
-              return this.formatCurrencyShort(value);
-            },
-            font: {
-              size: 11
-            },
+            callback: (value: number) => this.formatCurrencyShort(value),
+            font: { size: 11 },
             padding: 4
           },
           beginAtZero: true,
-          suggestedMax: this.datos.length > 0 ? Math.max(...this.datos.map(d => d.interes)) * 1.1 : 60000
+          suggestedMax: this.datos.length > 0 ? Math.max(...this.datos.map(d => Number(d.ganancia))) * 1.1 : 60000,
+          suggestedMin: this.datos.length > 0 ? Math.min(0, Math.min(...this.datos.map(d => Number(d.ganancia))) * 1.1) : 0
         }
       }
     };
@@ -252,26 +210,15 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
   }
 
   formatCurrency(value: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   }
 
   formatCurrencyShort(value: number): string {
-    return new Intl.NumberFormat('es-ES', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
+    return new Intl.NumberFormat('es-ES', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
   }
 
   generateColors(count: number): string[] {
-    const colors = [
-      '#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6',
-      '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
-    ];
+    const colors = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'];
     const result: string[] = [];
     for (let i = 0; i < count; i++) {
       result.push(colors[i % colors.length]);
@@ -285,16 +232,15 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
     const R = (num >> 16) - amt;
     const G = (num >> 8 & 0x00FF) - amt;
     const B = (num & 0x0000FF) - amt;
-    return '#' + (0x1000000 +
-      (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-      (B < 255 ? B < 1 ? 0 : B : 255)
-    ).toString(16).slice(1);
+    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 + (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
   }
 
   ngOnDestroy(): void {
     if (this.layoutSubscription) {
       this.layoutSubscription.unsubscribe();
+    }
+    if (this.chart) {
+      this.chart.destroy();
     }
   }
 }

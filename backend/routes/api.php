@@ -141,7 +141,10 @@ Route::get('reportes/flujo-capital/exportar/excel', [FlujoCapitalController::cla
 Route::get('reportes/flujo-capital/exportar/pdf', [FlujoCapitalController::class, 'exportarPDF']);
 
 // Rutas de Reportes de Recuperación Anual
-Route::get('reportes/recuperacion-anual', [RecuperacionAnualController::class, 'getRecuperacionAnual']);
+Route::get('reportes/recuperacion-anual', [App\Http\Controllers\API\RecuperacionAnualController::class, 'getRecuperacionAnual']);
+
+// Rutas de Reportes de Ganancia Anual
+Route::get('reportes/ganancia-anual', [App\Http\Controllers\API\GananciaAnualController::class, 'getGananciaAnual']);
 
 // Rutas de Reportes de Historial de Acciones
 Route::get('reportes/historico-acciones', [SharesHistoryController::class, 'getHistoricoAcciones']);

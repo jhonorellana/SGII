@@ -1,0 +1,28 @@
+<p-toast></p-toast>
+<div class="card p-4">
+    <div class="flex justify-content-between align-items-center mb-4">
+        <div>
+            <p class="text-color-secondary mt-1 m-0">Visualización histórica de la ganancia y pérdida en las ventas a lo largo de los años.</p>
+        </div>
+        <div>
+            <button pButton pRipple type="button" icon="pi pi-refresh" label="Actualizar" 
+                class="p-button-outlined" (click)="loadDatos()" [disabled]="loading">
+            </button>
+        </div>
+    </div>
+
+    <div class="chart-container" [style.height.px]="450">
+        <div *ngIf="loading" class="flex justify-content-center align-items-center h-full">
+            <p-progressSpinner></p-progressSpinner>
+        </div>
+        
+        <div *ngIf="!loading && (!datos || datos.length === 0)" class="flex flex-column justify-content-center align-items-center h-full text-color-secondary">
+            <i class="pi pi-info-circle text-4xl mb-3"></i>
+            <p class="m-0">No hay datos de ganancia anual disponibles para mostrar.</p>
+        </div>
+        
+        <div [class.hidden]="loading || !datos || datos.length === 0" class="h-full w-full">
+            <canvas #chartCanvas></canvas>
+        </div>
+    </div>
+</div>

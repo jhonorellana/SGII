@@ -1,0 +1,16 @@
+.chart-container {
+    position: relative;
+    width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+canvas {
+    /* Prevents canvas from becoming blurry on high DPI screens */
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    image-rendering: pixelated;
+}

@@ -1,22 +1,33 @@
 <div class="container-fluid">
   <p-toast></p-toast>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Reporte de Proyección de Interés Anual</h2>
-    <button class="btn btn-outline-primary" (click)="loadDatos()">
-      <i class="bi bi-arrow-clockwise"></i> Actualizar
-    </button>
-  </div>
+  <p-tabView [(activeIndex)]="activeTabIndex">
+    <p-tabPanel header="Proyección de Intereses">
+      <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+        <h2>Reporte de Proyección de Interés Anual</h2>
+        <button class="btn btn-outline-primary" (click)="loadDatos()">
+          <i class="bi bi-arrow-clockwise"></i> Actualizar
+        </button>
+      </div>
 
-  <p-progressSpinner *ngIf="loading" [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
+      <p-progressSpinner *ngIf="loading" [style]="{'width': '50px', 'height': '50px'}" strokeWidth="4"></p-progressSpinner>
 
-  <div class="p-card" *ngIf="!loading">
-    <p class="text-muted mb-4">
-      Visualización histórica de los intereses generados por las inversiones a lo largo de los años.
-    </p>
+      <div class="p-card" *ngIf="!loading">
+        <p class="text-muted mb-4" style="padding: 1rem 1rem 0 1rem;">
+          Visualización histórica de los intereses generados por las inversiones a lo largo de los años.
+        </p>
 
-    <div class="chart-container">
-      <canvas #chartCanvas></canvas>
-    </div>
-  </div>
+        <div class="chart-container" style="padding: 0 1rem 1rem 1rem;">
+          <canvas #chartCanvas></canvas>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <p-tabPanel header="Ganancias/Pérdidas de Ventas">
+      <div class="mt-2">
+        <h2>Reporte de Ganancia y Pérdida Anual</h2>
+        <app-ganancia-anual-chart [active]="activeTabIndex === 1"></app-ganancia-anual-chart>
+      </div>
+    </p-tabPanel>
+  </p-tabView>
 </div>
