@@ -131,22 +131,29 @@ body {
   background-color: #dc3545;
   border-color: #dc3545;
 }
-
 /* PrimeNG TabView Styles - Global */
 .p-tabview {
   background: transparent !important;
 }
 
 .p-tabview .p-tabview-nav {
-  background-color: #f0fdf4 !important; /* Verde muy sutil */
-  border: 1px solid #dcfce7 !important;
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%) !important;
+  border: 1px solid #15803d !important;
   border-radius: 8px 8px 0 0 !important;
-  padding: 0 0.5rem !important;
+  padding: 8px 0.5rem 0 0.5rem !important;
   margin-bottom: 20px !important;
 }
 
-.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+.p-tabview .p-tabview-nav li {
+  background: transparent !important;
   border: none !important;
+  margin-right: 6px !important; /* Espacio entre pestañas */
+}
+
+.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  border-radius: 6px 6px 0 0 !important;
+  border: none !important;
+  box-shadow: none !important;
   background: transparent !important;
   font-weight: 600 !important;
   padding: 12px 18px !important;
@@ -166,12 +173,16 @@ body {
   border-bottom: 2px solid #86efac !important;
 }
 
-/* Pestaña activa con color sólido verde */
+/* Pestaña activa con color sólido blanco */
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  background: #bbf7d0 !important; /* Verde sólido en lugar de degradado */
-  border-bottom: 3px solid #22c55e !important;
+  background: #ffffff !important; /* Blanco sólido */
+  border-top: 3px solid #22c55e !important;
+  border-bottom: none !important;
   font-weight: 700 !important;
   color: #166534 !important;
+  padding: 12px 18px !important;
+  font-size: 0.95rem !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
 /* --- APP CUSTOM HEADER & MODAL STYLES --- */
@@ -182,8 +193,12 @@ body {
   padding: 16px 20px !important;
 }
 
+.app-custom-header h1,
+.app-custom-header h2,
+.app-custom-header h3,
 .app-custom-header h4,
 .app-custom-header h5,
+.app-custom-header h6,
 .app-custom-header .title,
 .app-custom-modal .p-dialog-title {
   color: #ffffff !important;
@@ -193,10 +208,14 @@ body {
 }
 
 /* For secondary texts inside header */
+.app-custom-header p,
+.app-custom-header span,
 .app-custom-header small,
-.app-custom-header .subtitle {
+.app-custom-header .subtitle,
+.app-custom-header .text-muted {
   color: #f0fdf4 !important;
-  opacity: 0.9;
+  opacity: 0.9 !important;
+  margin: 4px 0 0 0 !important;
 }
 
 .app-custom-header i,

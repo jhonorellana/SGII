@@ -124,37 +124,7 @@
   color: #212529;
 }
 
-/* TabView styling */
-::ng-deep .p-tabview {
-  background: transparent !important;
-}
 
-::ng-deep .p-tabview .p-tabview-nav {
-  background: transparent !important;
-  border-bottom: 2px solid #dee2e6 !important;
-  margin-bottom: 20px !important;
-}
-
-::ng-deep .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-  background: transparent !important;
-  border: none !important;
-  color: #6c757d !important;
-  font-weight: 600 !important;
-  padding: 12px 18px !important;
-  font-size: 0.9rem !important;
-  transition: color 0.15s ease !important;
-}
-
-::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  color: #28a745 !important; /* Destaque verde para portafolio */
-  border-bottom: 3px solid #28a745 !important;
-  margin-bottom: -2px !important;
-}
-
-::ng-deep .p-tabview .p-tabview-panels {
-  background: transparent !important;
-  padding: 0 !important;
-}
 
 /* Table Search and Layout */
 .search-container {
