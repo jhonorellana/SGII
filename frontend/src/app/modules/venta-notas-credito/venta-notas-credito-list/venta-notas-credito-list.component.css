@@ -1,0 +1,465 @@
+.venta-inversion-container {
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.text-center {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+}
+
+.error-message {
+  background: #fee;
+  color: #c33;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border: 1px solid #fcc;
+}
+
+/* Form Grid - Bootstrap compatible */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-field.half-width {
+  grid-column: span 1;
+}
+
+.form-field.third-width {
+  grid-column: span 1;
+}
+
+.form-field label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-field label strong {
+  color: #22c55e;
+}
+
+/* Modal Header Background - Green Gradient */
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header {
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  border-bottom: 2px solid #15803d;
+  padding: 16px 20px;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header-close {
+  color: #ffffff;
+}
+
+:host ::ng-deep .venta-agrupada-modal .p-dialog-header-close:hover {
+  color: #f0fdf4;
+}
+
+/* Custom Modal Header Content */
+.modal-header-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* AutoComplete Styles */
+:host ::ng-deep .p-autocomplete {
+  width: 100%;
+}
+
+:host ::ng-deep .p-autocomplete .p-autocomplete-input {
+  width: 100%;
+}
+
+:host ::ng-deep .p-autocomplete .p-autocomplete-panel {
+  max-height: 300px;
+  overflow-y: auto;
+  max-width: 600px;
+}
+
+/* Input Group Styles */
+.input-group {
+  display: flex;
+  width: 100%;
+}
+
+.input-group .form-control {
+  flex: 1;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.input-group .btn {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  border-left: none;
+}
+
+/* Posicion Selector Styles */
+.posicion-selector-container {
+  padding: 16px;
+}
+
+.posicion-filters {
+  background-color: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+:host ::ng-deep .p-table .p-datatable-thead > tr > th {
+  background-color: #22c55e;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid #166534;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr > td {
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr:hover {
+  background-color: #f0f9ff;
+}
+
+:host ::ng-deep .p-table .p-datatable-tbody > tr.p-highlight {
+  background-color: #e8f5e9;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Posicion Item Styles */
+.posicion-item {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.posicion-item:hover {
+  background-color: #f5f5f5;
+}
+
+.posicion-item:last-child {
+  border-bottom: none;
+}
+
+.posicion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.posicion-propietario {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.posicion-id {
+  font-size: 12px;
+  color: #666;
+  background-color: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.posicion-body {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.posicion-instrumento {
+  font-weight: 500;
+  color: #495057;
+  font-size: 13px;
+}
+
+.posicion-emisor {
+  color: #6c757d;
+  font-size: 12px;
+}
+
+.posicion-footer {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.posicion-valor {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.posicion-cantidad {
+  color: #6c757d;
+}
+
+/* Modal Footer Spacing */
+:host ::ng-deep .p-dialog-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 20px;
+}
+
+/* Inversiones Asociadas Section */
+.inversiones-asociadas-section {
+  margin-top: 24px;
+  margin-bottom: 24px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.inversiones-asociadas-section.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Acordeón Styles */
+:host ::ng-deep .p-accordion .p-accordion-header {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-header .p-accordion-header-link {
+  color: #333;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-header:not(.p-disabled).p-highlight {
+  background-color: #e8f5e9;
+  border-color: #22c55e;
+}
+
+:host ::ng-deep .p-accordion .p-accordion-content {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  padding: 16px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #22c55e;
+}
+
+/* Resumen Compacto */
+.resumen-compacto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 12px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.resumen-item-text {
+  color: #495057;
+}
+
+.resumen-separator {
+  color: #6c757d;
+  margin: 0 4px;
+}
+
+.resumen-compacto strong {
+  color: #212529;
+}
+
+.inversiones-table {
+  font-size: 13px;
+  margin-top: 16px;
+  width: 100%;
+  table-layout: auto;
+}
+
+.inversiones-table th {
+  background-color: #22c55e;
+  color: #ffffff;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid #166534;
+  white-space: nowrap;
+}
+
+.inversiones-table td {
+  padding: 8px 12px;
+  border: 1px solid #dee2e6;
+  vertical-align: middle;
+}
+
+.inversiones-table tbody tr:hover {
+  background-color: #f0f9ff;
+}
+
+.badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.bg-success {
+  background-color: #22c55e;
+  color: #ffffff;
+}
+
+.bg-danger {
+  background-color: #dc3545;
+  color: #ffffff;
+}
+
+.bg-warning {
+  background-color: #ffc107;
+  color: #000000;
+}
+
+.bg-secondary {
+  background-color: #6c757d;
+  color: #ffffff;
+}
+
+.bg-info {
+  background-color: #0dcaf0;
+  color: #000000;
+}
+
+/* Detail Section Styles */
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Totals row styling */
+:host ::ng-deep .totals-row {
+  background-color: #f0f9ff !important;
+  font-weight: 700;
+  border-top: 2px solid #0ea5e9;
+}
+
+:host ::ng-deep .totals-row td {
+  padding: 12px 10px;
+}
+
+/* Ajustes para la grilla del selector de posiciones de acuerdo a la imagen de Previsualización */
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-thead > tr > th {
+  background-color: #f8f9fa !important;
+  color: #374151 !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 8px 10px !important;
+  border: 1px solid #dee2e6 !important;
+  text-align: left;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-thead > tr > th p-sorticon .pi {
+  color: #6b7280 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr > td {
+  font-size: 13px !important;
+  padding: 6px 10px !important;
+  border: 1px solid #dee2e6 !important;
+  color: #4b5563 !important;
+}
+
+/* Fila seleccionada con mayor contraste y persistencia de color en hover */
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight {
+  background-color: #bbf7d0 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight td {
+  background-color: #bbf7d0 !important;
+  color: #14532d !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight:hover,
+:host ::ng-deep .posicion-selector-container .p-datatable .p-datatable-tbody > tr.p-highlight:hover td {
+  background-color: #86efac !important;
+  color: #14532d !important;
+}
+
+/* Estilos para campos autocalculados (bloqueados) */
+input[readonly] {
+  background-color: #f3f4f6 !important;
+  color: #4b5563 !important;
+  cursor: not-allowed;
+  border: 1px solid #d1d5db !important;
+}

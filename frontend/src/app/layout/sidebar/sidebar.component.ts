@@ -54,11 +54,6 @@ export class SidebarComponent implements OnInit {
           title: 'Ventas de Inversiones',
           icon: 'bi-currency-exchange',
           path: '/ventas-inversion'
-        },
-        {
-          title: 'Venta Notas Credito',
-          icon: 'bi-layers',
-          path: '/venta-agrupada'
         }
       ]
     },
@@ -91,6 +86,23 @@ export class SidebarComponent implements OnInit {
           title: 'Análisis de Mercado',
           icon: 'bi-graph-up-arrow',
           path: '/renta-variable/dashboard-mercado'
+        }
+      ]
+    },
+    {
+      title: 'Notas de Crédito',
+      icon: 'bi-receipt',
+      path: '/venta-agrupada',
+      children: [
+        {
+          title: 'Listado de Ventas',
+          icon: 'bi-list-ul',
+          path: '/ventas-notas-credito'
+        },
+        {
+          title: 'Venta Notas Crédito',
+          icon: 'bi-layers',
+          path: '/venta-agrupada'
         }
       ]
     },

@@ -29,7 +29,7 @@ interface CatalogoValor {
 }
 
 @Component({
-  selector: 'app-venta-inversion-list',
+  selector: 'app-venta-notas-credito-list',
   standalone: true,
   imports: [
     CommonModule,
@@ -49,11 +49,11 @@ interface CatalogoValor {
     AccordionModule,
     ModalActionsComponent
   ],
-  templateUrl: './venta-inversion-list.component.html',
-  styleUrl: './venta-inversion-list.component.css',
+  templateUrl: './venta-notas-credito-list.component.html',
+  styleUrl: './venta-notas-credito-list.component.css',
   providers: [ConfirmationService, MessageService]
 })
-export class VentaInversionListComponent implements OnInit {
+export class VentaNotasCreditoListComponent implements OnInit {
   ventas: VentaInversion[] = [];
   inversiones: Inversion[] = [];
   posicionesVendibles: any[] = [];
@@ -154,17 +154,32 @@ export class VentaInversionListComponent implements OnInit {
     this.ventaService.getAll({}).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          // Filtrar ventas de Notas de Crédito (tipo 91)
+          // Filtrar ventas de Notas de Crédito (solo tipo 91)
           const ventasFiltradas = response.data.filter((venta: any) => {
             const idTipo = venta.instrumento?.id_tipo_inversion || venta.inversion?.instrumento?.id_tipo_inversion;
-            return idTipo !== 91;
+            return idTipo === 91;
           });
 
-          this.ventas = ventasFiltradas.map((venta: any) => ({
-            ...venta,
-            inversionDisplay: this.formatInversionDisplay(venta),
-            instrumentoDisplay: this.formatInstrumentoDisplay(venta)
-          }));
+          this.ventas = ventasFiltradas.map((venta: any) => {
+            let valorNominal = 0;
+            let valorCompra = 0;
+            
+            if (venta.detalles && venta.detalles.length > 0) {
+              valorNominal = venta.detalles.reduce((acc: number, d: any) => acc + Number(d.valor_nominal || 0), 0);
+              valorCompra = venta.detalles.reduce((acc: number, d: any) => acc + Number(d.valor_compra || 0), 0);
+            } else if (venta.inversion) {
+              valorNominal = Number(venta.inversion.valor_nominal || 0) * (Number(venta.porcentaje_vendido || 100) / 100);
+              valorCompra = Number(venta.inversion.capital_invertido || 0) * (Number(venta.porcentaje_vendido || 100) / 100);
+            }
+
+            return {
+              ...venta,
+              inversionDisplay: this.formatInversionDisplay(venta),
+              instrumentoDisplay: this.formatInstrumentoDisplay(venta),
+              valorNominalTotal: valorNominal,
+              valorCompraTotal: valorCompra
+            };
+          });
           this.totalRecords = ventasFiltradas.length;
         } else {
           this.error = response.message || 'Error al cargar ventas';
@@ -577,23 +592,7 @@ export class VentaInversionListComponent implements OnInit {
   }
 
   createVenta(): void {
-    this.isEdit = false;
-    this.ventaId = null;
-    this.ventaForm.reset();
-    this.selectedPosicion = null;
-    this.selectedInversion = null;
-    this.pendingInversionId = null;
-    this.clearInstrumentoInfo();
-    this.inversionesAccordionOpen = false;
-    // Establecer fecha actual por defecto
-    const today = new Date();
-    this.ventaForm.patchValue({
-      fecha_venta: this.formatDate(today),
-      tipo_venta: 'TOTAL',
-      retenciones: 0
-    });
-    this.displayDialog = true;
-    this.formError = '';
+    this.router.navigate(['/venta-agrupada']);
   }
 
   hideDialog(): void {
