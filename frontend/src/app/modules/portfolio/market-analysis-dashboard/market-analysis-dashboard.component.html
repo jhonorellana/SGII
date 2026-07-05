@@ -20,7 +20,7 @@
 
   <div *ngIf="!loading && !error" class="market-grid">
     <div *ngFor="let row of indicadores" class="card premium-card glass-panel market-card">
-      <div class="card-header">
+      <div class="card-header app-custom-header text-white">
         <h3 class="emisor-title">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</h3>
         <span class="price-tag">{{ row.precio_mercado | currency:'USD' }}</span>
       </div>

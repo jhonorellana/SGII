@@ -173,3 +173,42 @@ body {
   font-weight: 700 !important;
   color: #166534 !important;
 }
+
+/* --- APP CUSTOM HEADER & MODAL STYLES --- */
+.app-custom-header,
+.app-custom-modal .p-dialog-header {
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%) !important;
+  border-bottom: 2px solid #15803d !important;
+  padding: 16px 20px !important;
+}
+
+.app-custom-header h4,
+.app-custom-header h5,
+.app-custom-header .title,
+.app-custom-modal .p-dialog-title {
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+/* For secondary texts inside header */
+.app-custom-header small,
+.app-custom-header .subtitle {
+  color: #f0fdf4 !important;
+  opacity: 0.9;
+}
+
+.app-custom-header i,
+.app-custom-modal .p-dialog-header i {
+  color: #ffffff !important;
+}
+
+.app-custom-modal .p-dialog-header-close {
+  color: #ffffff !important;
+}
+
+.app-custom-modal .p-dialog-header-close:hover {
+  color: #f0fdf4 !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}

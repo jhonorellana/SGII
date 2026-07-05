@@ -113,7 +113,7 @@
   </p-table>
 
   <!-- Create / Edit Dialog -->
-  <p-dialog [(visible)]="displayDialog" [style]="{width: '650px'}" [header]="isEdit ? 'Editar Operación' : 'Registrar Nueva Operación'" [modal]="true" styleClass="p-fluid rounded-lg shadow-xl" [contentStyle]="{'overflow': 'visible'}">
+  <p-dialog [(visible)]="displayDialog" [style]="{width: '650px'}" [header]="isEdit ? 'Editar Operación' : 'Registrar Nueva Operación'" [modal]="true" styleClass="app-custom-modal" [contentStyle]="{'overflow': 'visible'}">
     <form [formGroup]="operacionForm" (ngSubmit)="save()" class="p-fluid">
       
       <div *ngIf="formError" class="alert alert-danger p-2 mb-3 text-sm">

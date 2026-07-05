@@ -132,7 +132,7 @@
   <!-- Modal para crear/editar -->
   <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Emisor' : 'Nuevo Emisor'"
             [style]="{width: '50vw'}" [modal]="true" [closable]="true"
-            [closeOnEscape]="true" [dismissableMask]="true">
+            [closeOnEscape]="true" [dismissableMask]="true" styleClass="app-custom-modal">
     <div *ngIf="formError" class="alert alert-danger">
       <i class="bi bi-exclamation-triangle"></i> {{ formError }}
     </div>

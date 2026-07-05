@@ -111,7 +111,7 @@
   </p-table>
 
   <!-- Create / Edit Dialog -->
-  <p-dialog [(visible)]="displayDialog" [style]="{width: '700px'}" [header]="isEdit ? 'Editar Dividendo' : 'Registrar Cobro de Dividendo'" [modal]="true" styleClass="p-fluid rounded-lg shadow-xl dividendo-modal" [contentStyle]="{'overflow': 'visible'}">
+  <p-dialog [(visible)]="displayDialog" [style]="{width: '700px'}" [header]="isEdit ? 'Editar Dividendo' : 'Registrar Cobro de Dividendo'" [modal]="true" styleClass="app-custom-modal" [contentStyle]="{'overflow': 'visible'}">
     <form [formGroup]="dividendoForm" (ngSubmit)="save()" class="p-fluid">
 
       <div *ngIf="formError" class="alert alert-danger p-2 mb-3 text-sm">

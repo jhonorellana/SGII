@@ -100,7 +100,7 @@
            [draggable]="false"
            [resizable]="false"
            [closable]="true"
-           styleClass="venta-agrupada-modal"
+           styleClass="app-custom-modal"
            (onHide)="hideDialog()">
     <ng-template pTemplate="header">
       <div class="modal-header-content">
@@ -337,7 +337,7 @@
   </p-dialog>
 
   <!-- Modal de Detalle de Venta -->
-  <p-dialog [(visible)]="displayDetailDialog" [style]="{width: '900px'}" [modal]="true" [closable]="true" header="Detalle de Venta" styleClass="venta-agrupada-modal">
+  <p-dialog [(visible)]="displayDetailDialog" [style]="{width: '900px'}" [modal]="true" [closable]="true" header="Detalle de Venta" styleClass="app-custom-modal">
     <div *ngIf="selectedVenta">
       <div class="detail-section">
         <div class="row mb-3">
@@ -439,7 +439,7 @@
            [resizable]="false"
            [closable]="true"
            header="Seleccionar Posición Vendible"
-           styleClass="venta-agrupada-modal"
+           styleClass="app-custom-modal"
            (onHide)="cerrarSelectorPosicion()">
     <div class="posicion-selector-container">
       <!-- Filtros globales -->

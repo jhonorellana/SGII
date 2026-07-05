@@ -1,7 +1,7 @@
 <div class="container-fluid">
   <!-- Header del Reporte -->
-  <div class="card mb-4">
-    <div class="card-header bg-primary text-white">
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header app-custom-header text-white">
       <h4 class="mb-0">
         <i class="bi bi-cash-coin me-2"></i>
         💰 Flujo de Capital Consolidado
@@ -277,7 +277,7 @@
     [draggable]="false"
     [resizable]="true"
     [style]="{width: '90vw', maxWidth: '1200px'}"
-    styleClass="custom-modal-header"
+    styleClass="app-custom-modal"
     header="Detalle del Flujo de Capital">
 
     <ng-container *ngIf="detalleSeleccionado">

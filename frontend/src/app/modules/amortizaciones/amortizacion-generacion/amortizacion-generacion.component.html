@@ -1,5 +1,5 @@
 <div class="card">
-  <div class="card-header">
+  <div class="card-header app-custom-header text-white">
     <h2>Generación Automática de Tabla de Amortización</h2>
     <p class="text-muted">Complete los parámetros para generar la tabla de amortización de una inversión</p>
   </div>
@@ -428,7 +428,7 @@
     <div class="modal-simple-body" *ngIf="inversionSeleccionada">
       <!-- Información General -->
       <div class="card mb-3">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header app-custom-header text-white">
           <h6 class="mb-0"><i class="bi bi-building me-2"></i>Información General</h6>
         </div>
         <div class="card-body">
@@ -455,7 +455,7 @@
 
       <!-- Datos Financieros -->
       <div class="card mb-3">
-        <div class="card-header bg-success text-white">
+        <div class="card-header app-custom-header text-white">
           <h6 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Datos Financieros</h6>
         </div>
         <div class="card-body">
@@ -508,7 +508,7 @@
 
       <!-- Fechas de Recuperación -->
       <div class="card" *ngIf="inversionSeleccionada.fechas_recuperacion && inversionSeleccionada.fechas_recuperacion.length > 0">
-        <div class="card-header bg-warning text-dark">
+        <div class="card-header app-custom-header text-white">
           <h6 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Fechas de Recuperación de Capital</h6>
         </div>
         <div class="card-body">

@@ -115,7 +115,7 @@
   <p-dialog [(visible)]="displayDialog" [header]="isEdit ? 'Editar Registro de Patrimonio' : 'Nuevo Registro de Patrimonio'"
             [style]="{width: '550px'}" [modal]="true" [closable]="true"
             [closeOnEscape]="true" [dismissableMask]="true" appendTo="body"
-            styleClass="custom-patrimonio-dialog">
+            styleClass="app-custom-modal">
     
     <div *ngIf="formError" class="alert alert-danger shadow-sm">
       <i class="bi bi-exclamation-triangle"></i> {{ formError }}

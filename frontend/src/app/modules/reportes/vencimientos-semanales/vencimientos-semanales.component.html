@@ -1,7 +1,7 @@
 <div class="container-fluid">
   <!-- Header del Reporte -->
   <div class="card mb-4">
-    <div class="card-header custom-modal-header text-white">
+    <div class="card-header app-custom-header text-white">
       <h4 class="mb-0">
         <i class="bi bi-calendar-week me-2"></i>
         🧾 Vencimientos Semanales
@@ -81,7 +81,7 @@
       <div class="row mb-4" *ngIf="!loading && vencimientosSemanales.length > 0">
         <div class="col-12">
           <div class="card">
-            <div class="card-header bg-info text-white">
+            <div class="card-header app-custom-header text-white">
               <h5 class="mb-0">
                 <i class="bi bi-bar-chart-fill me-2"></i>
                 📊 Gráfico de Vencimientos Semanales
@@ -222,7 +222,7 @@
   [draggable]="false"
   [resizable]="true"
   [style]="{width: '90vw', maxWidth: '1200px'}"
-  styleClass="custom-modal-header"
+  styleClass="app-custom-modal"
   header="Detalle de Vencimientos por Día (Consolidado para Conciliación Bancaria)">
 
   <ng-container *ngIf="detalleSeleccionado">
