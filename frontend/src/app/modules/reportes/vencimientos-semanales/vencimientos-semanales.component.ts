@@ -162,8 +162,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
         borderColor: 'rgba(255, 99, 132, 1)',
         borderWidth: 1,
         order: 1,
-        barPercentage: 0.95,
-        categoryPercentage: 0.95,
+        barThickness: 120,
+        maxBarThickness: 140,
         datalabels: {
           display: false
         }
@@ -175,21 +175,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
         borderColor: 'rgba(54, 162, 235, 1)',
         borderWidth: 1,
         order: 2,
-        barPercentage: 0.95,
-        categoryPercentage: 0.95,
-        datalabels: {
-          display: false
-        }
-      },
-      {
-        label: 'Premio',
-        data: [],
-        backgroundColor: 'rgba(75, 192, 192, 0.8)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-        order: 3,
-        barPercentage: 0.95,
-        categoryPercentage: 0.95,
+        barThickness: 120,
+        maxBarThickness: 140,
         datalabels: {
           display: true,
           anchor: 'end',
@@ -200,8 +187,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
 
             const capital = Number(datasets[0].data[index]) || 0;
             const interes = Number(datasets[1].data[index]) || 0;
-            const premio = Number(datasets[2].data[index]) || 0;
-            const total = capital + interes + premio;
+            const total = capital + interes;
 
             return new Intl.NumberFormat('es-CO', {
               minimumFractionDigits: 2,
@@ -335,8 +321,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1,
           order: 1,
-          barPercentage: 0.5,
-          categoryPercentage: 0.5,
+          barThickness: 120,
+          maxBarThickness: 140,
           datalabels: {
             display: false
           }
@@ -348,8 +334,8 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           borderColor: 'rgba(54, 162, 235, 1)',
           borderWidth: 1,
           order: 2,
-          barPercentage: 0.5,
-          categoryPercentage: 0.5,
+          barThickness: 120,
+          maxBarThickness: 140,
           datalabels: {
             display: true,
             anchor: 'end',
