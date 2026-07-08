@@ -565,7 +565,7 @@ export class OperacionListComponent implements OnInit {
       this.getPersonaNombre(op),
       op.instrumento?.nombre || '-',
       this.getTipoOperacionNombre(op),
-      this.formatNumber(op.cantidad, 4),
+      this.formatNumber(op.cantidad, 0),
       this.formatCurrency(op.precio_unitario),
       this.formatCurrency(op.valor_bruto),
       this.formatCurrency(op.total_comisiones),

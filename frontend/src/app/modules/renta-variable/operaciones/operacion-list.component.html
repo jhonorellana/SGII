@@ -88,7 +88,7 @@
         <td>
           <p-tag [severity]="getTipoOperacionClass(op)" [value]="getTipoOperacionNombre(op)"></p-tag>
         </td>
-        <td class="text-right font-medium">{{ formatNumber(op.quantity || op.cantidad, 4) }}</td>
+        <td class="text-right font-medium">{{ formatNumber(op.quantity || op.cantidad, 0) }}</td>
         <td class="text-right">{{ formatCurrency(op.precio_unitario) }}</td>
         <td class="text-right font-semibold">{{ formatCurrency(op.valor_bruto) }}</td>
         <td class="text-right text-muted">{{ formatCurrency(op.total_comisiones) }}</td>

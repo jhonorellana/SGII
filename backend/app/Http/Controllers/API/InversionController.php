@@ -19,6 +19,9 @@ class InversionController extends Controller
     public function index()
     {
         $inversiones = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])
+            ->whereHas('instrumento', function ($query) {
+                $query->where('id_tipo_inversion', '!=', 91); // Excluir Notas de Crédito
+            })
             ->withSum(['amortizaciones as saldo_capital' => function($query) {
                 $query->where('activo', 1)
                       ->where('eliminado', 0)

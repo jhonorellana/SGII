@@ -148,6 +148,7 @@ Route::get('reportes/ganancia-anual', [App\Http\Controllers\API\GananciaAnualCon
 
 // Rutas de Reportes de Historial de Acciones
 Route::get('reportes/historico-acciones', [SharesHistoryController::class, 'getHistoricoAcciones']);
+Route::get('reportes/historico-acciones/detalles', [SharesHistoryController::class, 'getDetallesDiarios']);
 
 // Rutas de Reportes de Resumen Diario de Bolsa
 Route::get('reportes/resumen-diario', [ResumenBolsaController::class, 'obtenerResumenDiario']);

@@ -5,8 +5,9 @@ import { DropdownModule } from 'primeng/dropdown';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { ChartModule } from 'primeng/chart';
 import { TableModule } from 'primeng/table';
+import { DialogModule } from 'primeng/dialog';
 import { CatalogoService, CatalogoValor } from '../../../core/catalogo.service';
-import { SharesHistoryService, SharesHistoryRecord } from '../../../core/shares-history.service';
+import { SharesHistoryService, SharesHistoryRecord, ShareDetailRecord } from '../../../core/shares-history.service';
 import * as XLSX from 'xlsx';
 import 'chartjs-adapter-date-fns';
 import { es } from 'date-fns/locale';
@@ -47,7 +48,8 @@ Chart.register(
     DropdownModule,
     MultiSelectModule,
     ChartModule,
-    TableModule
+    TableModule,
+    DialogModule
   ],
   templateUrl: './historico-acciones.component.html',
   styleUrls: ['./historico-acciones.component.css']
@@ -100,6 +102,18 @@ export class HistoricoAccionesComponent implements OnInit {
   volumenTotal = 0;
   accionesTotales = 0;
   transaccionesTotales = 0;
+
+  // Detalle popup state
+  displayDetalleDialog = false;
+  detalleTransacciones: ShareDetailRecord[] = [];
+  detalleLoading = false;
+  selectedDetalleFecha = '';
+  selectedDetalleEmisor = '';
+  
+  // Totales del popup
+  detalleTotalCantidad = 0;
+  detalleTotalValorEfectivo = 0;
+  detallePrecioPonderado = 0;
 
   // Table options (cached in localStorage)
   rowsPerPage = 10;
@@ -464,7 +478,7 @@ export class HistoricoAccionesComponent implements OnInit {
                 const day = String(dateVal.getDate()).padStart(2, '0');
                 return [
                   `Emisor: ${nombreEmpresa}`,
-                  `Fecha: ${titleYear}-${month}-${day}`
+                  `Fecha: ${day}/${month}/${titleYear}`
                 ];
               }
               return '';
@@ -712,5 +726,49 @@ export class HistoricoAccionesComponent implements OnInit {
         localStorage.setItem('historico_acciones_rows', this.rowsPerPage.toString());
       }
     }
+  }
+
+  onRowSelect(event: any): void {
+    const record = event.data as SharesHistoryRecord;
+    if (!this.selectedEmpresa || !record.fecha) return;
+
+    // Use string manipulation to re-format date from DD/MM/YYYY back to YYYY-MM-DD for the API
+    let apiDate = record.fecha;
+    if (apiDate.includes('/')) {
+      const parts = apiDate.split('/');
+      if (parts.length === 3) {
+        apiDate = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+    }
+
+    this.selectedDetalleFecha = record.fecha;
+    this.selectedDetalleEmisor = record.emisor;
+    this.displayDetalleDialog = true;
+    this.detalleLoading = true;
+    this.detalleTransacciones = [];
+    this.detalleTotalCantidad = 0;
+    this.detalleTotalValorEfectivo = 0;
+    this.detallePrecioPonderado = 0;
+
+    this.sharesHistoryService.getDetallesDiarios(this.selectedEmpresa, apiDate).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.detalleTransacciones = response.data;
+          
+          // Calcular totales
+          this.detalleTotalCantidad = this.detalleTransacciones.reduce((sum, item) => sum + (Number(item.cantidad) || 0), 0);
+          this.detalleTotalValorEfectivo = this.detalleTransacciones.reduce((sum, item) => sum + (Number(item.valor_efectivo) || 0), 0);
+          
+          if (this.detalleTotalCantidad > 0) {
+            this.detallePrecioPonderado = this.detalleTotalValorEfectivo / this.detalleTotalCantidad;
+          }
+        }
+        this.detalleLoading = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar el detalle diario:', err);
+        this.detalleLoading = false;
+      }
+    });
   }
 }

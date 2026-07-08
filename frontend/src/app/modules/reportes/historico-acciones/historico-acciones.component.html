@@ -167,6 +167,8 @@
       <div class="card-body p-0">
         <p-table 
           [value]="historicoRecords" 
+          selectionMode="single"
+          (onRowSelect)="onRowSelect($event)"
           [paginator]="true" 
           [(rows)]="rowsPerPage" 
           [rowsPerPageOptions]="[10, 25, 50, 100]"
@@ -190,7 +192,7 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-record>
-            <tr>
+            <tr [pSelectableRow]="record" style="cursor: pointer;" title="Ver detalle de transacciones">
               <td>{{ record.fecha }}</td>
               <td>{{ record.emisor }}</td>
               <td class="text-end">{{ formatInteger(record.cantidad) }}</td>
@@ -222,3 +224,45 @@
     </div>
   </div>
 </div>
+
+  <!-- Detalle Transacciones Dialog -->
+  <p-dialog [(visible)]="displayDetalleDialog" [modal]="true" [header]="selectedDetalleEmisor + ' (' + selectedDetalleFecha + ')'" [style]="{width: '700px'}" [breakpoints]="{'960px': '75vw', '640px': '95vw'}" styleClass="app-custom-modal">
+    <div class="mt-2">
+      <div *ngIf="detalleLoading" class="text-center p-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+      <p-table *ngIf="!detalleLoading" [value]="detalleTransacciones" styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="text-end" style="width: 20%">Cantidad</th>
+            <th class="text-end" style="width: 25%">Precio</th>
+            <th class="text-end" style="width: 25%">Valor Nominal</th>
+            <th class="text-end" style="width: 30%">Valor Efectivo</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-det>
+          <tr>
+            <td class="text-end">{{ det.cantidad | number:'1.0-0' }}</td>
+            <td class="text-end fw-semibold text-primary">{{ det.precio | currency:'USD':'symbol':'1.2-6' }}</td>
+            <td class="text-end">{{ det.valor_nominal | currency:'USD' }}</td>
+            <td class="text-end text-success fw-semibold">{{ det.valor_efectivo | currency:'USD' }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="footer">
+          <tr>
+            <td class="text-end fw-bold">{{ detalleTotalCantidad | number:'1.0-0' }}</td>
+            <td class="text-end fw-bold text-primary">{{ detallePrecioPonderado | currency:'USD':'symbol':'1.2-6' }}</td>
+            <td class="text-end"></td>
+            <td class="text-end fw-bold text-success">{{ detalleTotalValorEfectivo | currency:'USD' }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center py-4">No se encontraron detalles para la fecha seleccionada.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </p-dialog>
