@@ -406,19 +406,18 @@ class AmortizacionGeneracionController extends Controller
 
             if (in_array($fecha, $fechasPagosCapital)) {
                 if ($tipoAmortizacion === 'A') {
-                    // Amortización alemana - Sistema anterior
-                    // Usar valores fijos para coincidir con sistema legacy
-                    $capitalRetorno = 7910.34;  // Capital fijo en cuotas de capital
-                    $capitalDevueltoCuota = 6795.68;  // Capital devuelto fijo
-                    $premio = 1114.66;  // Descuento fijo
+                    // Amortización alemana
+                    $capitalRetorno = $capitalDevuelto;
+                    $capitalDevueltoCuota = $capitalDevuelto;
+                    $premio = round($montoAmortizacion - $capitalDevuelto, 2);
 
                     // Calcular interés basado en el capital restante antes de la amortización
                     $interesNormal = $capitalRestante * $tasaMensual;
                     $interesNormal = round($interesNormal, 2);
 
                     // En cuotas de capital:
-                    // - interes: interés normal + descuento (1301.48)
-                    // - int_parcial: solo interés normal (186.82)
+                    // - interes: interés normal + descuento
+                    // - int_parcial: solo interés normal
                     $interesParcial = $interesNormal + $premio;
                     $interesParcialParaIntParcial = $interesNormal;  // Solo interés normal para int_parcial
 
@@ -486,21 +485,15 @@ class AmortizacionGeneracionController extends Controller
                 $premio = 0;
             }
 
-            // Calcular el total correctamente
-            if ($esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0) {
-                // Para la primera cuota después de compra, el total incluye el capital ajustado
-                $interesTotal = $interesParcial + $capitalRetorno;
-            } else {
-                // Para las demás cuotas, el cálculo normal
-                $interesTotal = $interesParcial + $premio;
-            }
-
             // Determinar el valor correcto para int_parcial
             $interesParcialParaArray = $interesParcial;
             if (in_array($fecha, $fechasPagosCapital) && $tipoAmortizacion === 'A') {
                 // En cuotas de capital, int_parcial debe ser solo el interés normal
                 $interesParcialParaArray = $interesNormal;
             }
+
+            // Calcular el total de la cuota sumando sus componentes reales
+            $interesTotal = $interesParcialParaArray + $capitalRetorno + $premio;
 
             $cuotas[] = [
                 'numero_cuota' => $numeroCuota,
