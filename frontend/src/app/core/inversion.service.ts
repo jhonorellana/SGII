@@ -56,8 +56,8 @@ export class InversionService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Inversion[]> {
-    return this.http.get<Inversion[]>(this.apiUrl).pipe(
+  getAll(params?: any): Observable<Inversion[]> {
+    return this.http.get<Inversion[]>(this.apiUrl, { params }).pipe(
       map((data: Inversion[]) => data.map((i: Inversion) => ({
         ...i,
         activo: typeof i.activo === 'boolean' ? i.activo : i.activo === 1 || i.activo === '1',

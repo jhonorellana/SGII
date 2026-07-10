@@ -206,7 +206,7 @@ export class VentaAgrupadaComponent implements OnInit {
 
     if (idPersona) {
       // Cargar solo inversiones de la persona seleccionada
-      this.inversionService.getAll().subscribe({
+      this.inversionService.getAll({ tipo_inversion: 91 }).subscribe({
         next: (data) => {
           this.inversiones = data.filter((inv: Inversion) =>
             inv.id_propietario === idPersona &&
@@ -233,7 +233,7 @@ export class VentaAgrupadaComponent implements OnInit {
       });
     } else {
       // Cargar todas las inversiones disponibles (no vendidas) de tipo Notas de Crédito
-      this.inversionService.getAll().subscribe({
+      this.inversionService.getAll({ tipo_inversion: 91 }).subscribe({
         next: (data) => {
           this.inversiones = data.filter((inv: Inversion) =>
             inv.fecha_venta === null &&

@@ -16,16 +16,26 @@ class InversionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $inversiones = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])
-            ->whereHas('instrumento', function ($query) {
-                $query->where('id_tipo_inversion', '!=', 91); // Excluir Notas de Crédito
-            })
-            ->withSum(['amortizaciones as saldo_capital' => function($query) {
-                $query->where('activo', 1)
-                      ->where('eliminado', 0)
-                      ->where('fecha_pago', '>', date('Y-m-d'));
+        $query = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']);
+
+        if ($request->has('tipo_inversion')) {
+            $tipo = $request->query('tipo_inversion');
+            $query->whereHas('instrumento', function ($q) use ($tipo) {
+                $q->where('id_tipo_inversion', $tipo);
+            });
+        } elseif (!$request->boolean('incluir_notas_credito', false)) {
+            // Excluir Notas de Crédito por defecto para pantallas de Renta Fija
+            $query->whereHas('instrumento', function ($q) {
+                $q->where('id_tipo_inversion', '!=', 91);
+            });
+        }
+
+        $inversiones = $query->withSum(['amortizaciones as saldo_capital' => function($q) {
+                $q->where('activo', 1)
+                  ->where('eliminado', 0)
+                  ->where('fecha_pago', '>', date('Y-m-d'));
             }], 'capital')
             ->orderBy('id_inversion', 'desc')
             ->get();
