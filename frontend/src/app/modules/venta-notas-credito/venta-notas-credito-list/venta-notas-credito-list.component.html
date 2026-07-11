@@ -6,7 +6,60 @@
     </button>
   </div>
 
-  <p-table [value]="ventas" [paginator]="true" [rows]="rowsPerPage" [totalRecords]="totalRecords" [loading]="loading" (onPageChange)="onPageChange($event)" [rowsPerPageOptions]="[5,10,25,50]" #dt
+  <div class="kpi-container mb-2">
+    <div class="row g-3">
+      <div class="col-md-2">
+        <div class="card bg-light border-0 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Ventas Seleccionadas</h6>
+            <h3 class="mb-0 fw-bold">{{ totalVentas }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-success border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">V. Nominal Total</h6>
+            <h4 class="mb-0 text-success fw-bold">{{ valorNominalTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-info border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Valor Compra Total</h6>
+            <h4 class="mb-0 text-info fw-bold">{{ valorCompraTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-primary border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Valor Venta</h6>
+            <h4 class="mb-0 text-primary fw-bold">{{ valorVentaTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-warning border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Utilidad Total</h6>
+            <h4 class="mb-0 text-warning fw-bold">{{ utilidadTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="card border-secondary border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">ROI Promedio</h6>
+            <h4 class="mb-0 text-secondary fw-bold">{{ roiPromedioKPI | number:'1.2-2' }}%</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p-table [value]="ventas" [(selection)]="selectedVentas" [paginator]="true" [rows]="rowsPerPage" [totalRecords]="totalRecords" [loading]="loading" (onPageChange)="onPageChange($event)" [rowsPerPageOptions]="[5,10,25,50]" #dt
              [globalFilterFields]="['id_venta_inversion','id_inversion','id_instrumento','fecha_venta']"
              [tableStyle]="{'min-width': '80rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
@@ -23,20 +76,26 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_venta_inversion">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
+        <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+        </th>
         <th pSortableColumn="fecha_venta">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
-        <th pSortableColumn="precio_venta">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
-        <th pSortableColumn="valorNominalTotal">Valor Nominal <p-sortIcon field="valorNominalTotal"></p-sortIcon></th>
-        <th pSortableColumn="valorCompraTotal">Valor Compra <p-sortIcon field="valorCompraTotal"></p-sortIcon></th>
-        <th pSortableColumn="valor_venta_con_comision">Valor con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
-        <th pSortableColumn="utilidad_con_comision">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
-        <th pSortableColumn="roi">ROI Total <p-sortIcon field="roi"></p-sortIcon></th>
-        <th>Acciones</th>
+        <th pSortableColumn="valorNominalTotal" class="text-end">V. Nominal <p-sortIcon field="valorNominalTotal"></p-sortIcon></th>
+        <th pSortableColumn="precioCompraPromedio" class="text-end">Precio Compra <p-sortIcon field="precioCompraPromedio"></p-sortIcon></th>
+        <th pSortableColumn="precio_venta" class="text-end">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
+        <th pSortableColumn="diferenciaPrecio" class="text-end">Dif. Precio <p-sortIcon field="diferenciaPrecio"></p-sortIcon></th>
+        <th pSortableColumn="valorCompraTotal" class="text-end">Valor Compra <p-sortIcon field="valorCompraTotal"></p-sortIcon></th>
+        <th pSortableColumn="valor_venta_con_comision" class="text-end">Valor Venta <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="utilidad_con_comision" class="text-end">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="roi" class="text-end">ROI Total <p-sortIcon field="roi"></p-sortIcon></th>
+        <th class="text-center">Acciones</th>
       </tr>
       <tr>
         <th></th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_venta', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_venta', 'contains')" class="w-100" placeholder="Filtrar precio"/></th>
+        <th></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precioCompraPromedio', 'contains')" class="w-100" placeholder="Filtrar precio C."/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_venta', 'contains')" class="w-100" placeholder="Filtrar precio V."/></th>
         <th></th>
         <th></th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_venta_con_comision', 'contains')" class="w-100" placeholder="Filtrar valor"/></th>
@@ -48,23 +107,31 @@
 
     <ng-template pTemplate="body" let-venta>
       <tr>
-        <td>{{ venta.id_venta_inversion }}</td>
-        <td>{{ venta.fecha_venta }}</td>
-        <td>{{ venta.precio_venta | number:'1.2-4' }}%</td>
-        <td>{{ venta.valorNominalTotal | currency:'USD':'symbol':'1.2-2' }}</td>
-        <td>{{ venta.valorCompraTotal | currency:'USD':'symbol':'1.2-2' }}</td>
-        <td>{{ venta.valor_venta_con_comision | currency:'USD':'symbol':'1.2-2' }}</td>
         <td>
+            <p-tableCheckbox [value]="venta"></p-tableCheckbox>
+        </td>
+        <td>{{ venta.fecha_venta | date:'yyyy-MM-dd':'UTC' }}</td>
+        <td class="text-end">{{ venta.valorNominalTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+        <td class="text-end">{{ venta.precioCompraPromedio | number:'1.2-4' }}%</td>
+        <td class="text-end">{{ venta.precio_venta | number:'1.2-4' }}%</td>
+        <td class="text-end">
+          <span [class]="venta.diferenciaPrecio >= 0 ? 'text-success' : 'text-danger'">
+            <span *ngIf="venta.diferenciaPrecio > 0">+</span>{{ venta.diferenciaPrecio | number:'1.2-4' }}%
+          </span>
+        </td>
+        <td class="text-end">{{ venta.valorCompraTotal | currency:'USD':'symbol':'1.2-2' }}</td>
+        <td class="text-end">{{ venta.valor_venta_con_comision | currency:'USD':'symbol':'1.2-2' }}</td>
+        <td class="text-end">
           <span [class]="venta.utilidad_con_comision >= 0 ? 'text-success' : 'text-danger'">
             {{ venta.utilidad_con_comision | currency:'USD':'symbol':'1.2-2' }}
           </span>
         </td>
-        <td>
+        <td class="text-end">
           <span [class]="venta.roi >= 0 ? 'text-success' : 'text-danger'">
             {{ venta.roi | number:'1.2-2' }}%
           </span>
         </td>
-        <td>
+        <td class="text-center">
           <div class="btn-group" role="group">
             <button class="btn btn-sm btn-outline-info"
                     (click)="viewDetail(venta)"

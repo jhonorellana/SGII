@@ -55,6 +55,7 @@ interface CatalogoValor {
 })
 export class VentaNotasCreditoListComponent implements OnInit {
   ventas: VentaInversion[] = [];
+  selectedVentas: VentaInversion[] = [];
   inversiones: Inversion[] = [];
   posicionesVendibles: any[] = [];
   posicionesFiltradas: any[] = [];
@@ -147,6 +148,36 @@ export class VentaNotasCreditoListComponent implements OnInit {
     return this.ventaForm.controls;
   }
 
+  // KPIs
+  get ventasParaKPI(): VentaInversion[] {
+    return this.selectedVentas && this.selectedVentas.length > 0 ? this.selectedVentas : this.ventas;
+  }
+
+  get totalVentas(): number {
+    return this.ventasParaKPI.length;
+  }
+
+  get valorNominalTotalKPI(): number {
+    return this.ventasParaKPI.reduce((sum, venta) => sum + Number(venta.valorNominalTotal || 0), 0);
+  }
+
+  get valorCompraTotalKPI(): number {
+    return this.ventasParaKPI.reduce((sum, venta) => sum + Number(venta.valorCompraTotal || 0), 0);
+  }
+
+  get valorVentaTotalKPI(): number {
+    return this.ventasParaKPI.reduce((sum, venta) => sum + Number(venta.valor_venta_con_comision || 0), 0);
+  }
+
+  get utilidadTotalKPI(): number {
+    return this.ventasParaKPI.reduce((sum, venta) => sum + Number(venta.utilidad_con_comision || 0), 0);
+  }
+
+  get roiPromedioKPI(): number {
+    if (this.valorCompraTotalKPI === 0) return 0;
+    return (this.utilidadTotalKPI / this.valorCompraTotalKPI) * 100;
+  }
+
   loadVentas(): void {
     this.loading = true;
     this.error = '';
@@ -172,12 +203,24 @@ export class VentaNotasCreditoListComponent implements OnInit {
               valorCompra = Number(venta.inversion.capital_invertido || 0) * (Number(venta.porcentaje_vendido || 100) / 100);
             }
 
+            let precioCompraPromedio = 0;
+            if (valorNominal > 0) {
+              precioCompraPromedio = (valorCompra / valorNominal) * 100;
+            }
+
+            let diferenciaPrecio = 0;
+            if (venta.precio_venta) {
+              diferenciaPrecio = Number(venta.precio_venta) - precioCompraPromedio;
+            }
+
             return {
               ...venta,
               inversionDisplay: this.formatInversionDisplay(venta),
               instrumentoDisplay: this.formatInstrumentoDisplay(venta),
               valorNominalTotal: valorNominal,
-              valorCompraTotal: valorCompra
+              valorCompraTotal: valorCompra,
+              precioCompraPromedio: precioCompraPromedio,
+              diferenciaPrecio: diferenciaPrecio
             };
           });
           this.totalRecords = ventasFiltradas.length;

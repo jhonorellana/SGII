@@ -34,6 +34,14 @@ export interface VentaInversion {
   instrumento?: any;
   tipoVenta?: any;
   detalles?: VentaInversionDetalle[];
+  
+  // UI Display properties
+  valorNominalTotal?: number;
+  valorCompraTotal?: number;
+  precioCompraPromedio?: number;
+  diferenciaPrecio?: number;
+  inversionDisplay?: string;
+  instrumentoDisplay?: string;
 }
 
 export interface VentaInversionDetalle {
