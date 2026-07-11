@@ -17,6 +17,35 @@
     </div>
   </div>
 
+  <div class="kpi-container mb-2">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <div class="card bg-light border-0 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Inversiones Filtradas</h6>
+            <h4 class="mb-0 fw-bold">{{ totalInversionesKPI }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-success border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">V. Nominal Total</h6>
+            <h4 class="mb-0 text-success fw-bold">{{ valorNominalTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-info border-top-0 border-bottom-0 border-end-0 border-3 h-100 shadow-sm">
+          <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+            <h6 class="text-muted mb-2" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Cap. Invertido Total</h6>
+            <h4 class="mb-0 text-info fw-bold">{{ capitalInvertidoTotalKPI | currency:'USD':'symbol':'1.2-2' }}</h4>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Inversiones List con PrimeNG Table -->
   <p-table #dt [value]="inversiones" [paginator]="true" [rows]="rowsPerPage"
            [rowsPerPageOptions]="[10, 20, 50, 100]"
@@ -44,16 +73,16 @@
     <!-- Columnas -->
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
+        <th pSortableColumn="id_inversion" style="width: 70px;">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
         <th pSortableColumn="propietario.nombres">Propietario <p-sortIcon field="propietario.nombres"></p-sortIcon></th>
         <th pSortableColumn="instrumento.emisor.nombre">Emisor <p-sortIcon field="instrumento.emisor.nombre"></p-sortIcon></th>
         <th pSortableColumn="instrumento.tipoInversion.nombre">Tipo Inversión <p-sortIcon field="instrumento.tipoInversion.nombre"></p-sortIcon></th>
-        <th pSortableColumn="valor_nominal">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
-        <th pSortableColumn="capital_invertido">Capital Invertido <p-sortIcon field="capital_invertido"></p-sortIcon></th>
-        <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
-        <th pSortableColumn="instrumento.fecha_emision">Fecha Emision <p-sortIcon field="instrumento.fecha_emision"></p-sortIcon></th>
-        <th pSortableColumn="instrumento.fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="instrumento.fecha_vencimiento"></p-sortIcon></th>
-        <th pSortableColumn="estadoInversion.nombre">Estado <p-sortIcon field="estadoInversion.nombre"></p-sortIcon></th>
+        <th pSortableColumn="valor_nominal" class="text-end" style="width: 100px;">Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+        <th pSortableColumn="capital_invertido" class="text-end" style="width: 100px;">Invertido <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+        <th pSortableColumn="fecha_compra" class="text-center" style="width: 100px;">Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.fecha_emision" class="text-center" style="width: 100px;">Emision <p-sortIcon field="instrumento.fecha_emision"></p-sortIcon></th>
+        <th pSortableColumn="instrumento.fecha_vencimiento" class="text-center" style="width: 100px;">Vencim. <p-sortIcon field="instrumento.fecha_vencimiento"></p-sortIcon></th>
+        <th pSortableColumn="estadoInversion.nombre" class="text-center">Estado <p-sortIcon field="estadoInversion.nombre"></p-sortIcon></th>
         <th class="text-center" style="width: 200px;">Acciones</th>
       </tr>
       <tr>
@@ -61,7 +90,7 @@
         <th>
           <p-dropdown [options]="propietarios" optionLabel="nombre" optionValue="id_persona"
                      (onChange)="dt.filter($event.value, 'id_propietario', 'equals')"
-                     [showClear]="true" placeholder="Todos"
+                     [showClear]="true" placeholder="Todos" appendTo="body"
                      [filter]="true" filterBy="nombre" styleClass="w-100">
           </p-dropdown>
         </th>
@@ -75,7 +104,7 @@
         <th>
           <p-dropdown [options]="estadosInversion" optionLabel="nombre" optionValue="id_catalogo_valor"
                      (onChange)="dt.filter($event.value, 'id_estado_inversion', 'equals')"
-                     [showClear]="true" placeholder="Todos"
+                     [showClear]="true" placeholder="Todos" appendTo="body"
                      [filter]="true" filterBy="nombre" styleClass="w-100">
           </p-dropdown>
         </th>
@@ -101,10 +130,10 @@
         </td>
         <td class="text-end">{{ formatNumber(inversion.valor_nominal) }}</td>
         <td class="text-end">{{ formatNumber(inversion.capital_invertido) }}</td>
-        <td>{{ formatDate(inversion.fecha_compra) }}</td>
-        <td>{{ formatDate(inversion.instrumento?.fecha_emision) }}</td>
-        <td>{{ formatDate(inversion.instrumento?.fecha_vencimiento) }}</td>
-        <td>
+        <td class="text-center">{{ formatDate(inversion.fecha_compra) }}</td>
+        <td class="text-center">{{ formatDate(inversion.instrumento?.fecha_emision) }}</td>
+        <td class="text-center">{{ formatDate(inversion.instrumento?.fecha_vencimiento) }}</td>
+        <td class="text-center">
           <span *ngIf="inversion.estadoInversion">{{ inversion.estadoInversion.nombre }}</span>
           <span *ngIf="!inversion.estadoInversion" class="text-muted">-</span>
         </td>

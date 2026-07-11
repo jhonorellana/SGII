@@ -108,6 +108,26 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     { field: 'acciones', header: 'Acciones' }
   ];
 
+  // KPIs
+  get inversionesParaKPI(): Inversion[] {
+    if (this.dt && this.dt.filteredValue) {
+      return this.dt.filteredValue;
+    }
+    return this.inversiones;
+  }
+
+  get totalInversionesKPI(): number {
+    return this.inversionesParaKPI.length;
+  }
+
+  get valorNominalTotalKPI(): number {
+    return this.inversionesParaKPI.reduce((sum, inv) => sum + Number((inv as any).valor_nominal || 0), 0);
+  }
+
+  get capitalInvertidoTotalKPI(): number {
+    return this.inversionesParaKPI.reduce((sum, inv) => sum + Number(inv.capital_invertido || 0), 0);
+  }
+
   constructor(
     private inversionService: InversionService,
     private amortizacionService: AmortizacionService,
