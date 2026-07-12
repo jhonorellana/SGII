@@ -1,0 +1,14 @@
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACTUALIZAR_AMORTIZACION_MENSUAL`(IN `_FechaInicial` DATE, IN `_FechaFinal` DATE)
+BEGIN
+UPDATE amortizacion set activo=1
+where id_inversion IN (
+select I.id_inversion from amortizacion A, inversion I where fecha_pago between _FechaInicial and _FechaFinal
+and A.id_inversion = I.id_inversion
+and A.eliminado = 0
+and I.eliminado = 0
+and I.fecha_venta is null
+)
+and fecha_pago between _FechaInicial and _FechaFinal;
+END$$
+DELIMITER ;

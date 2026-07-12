@@ -1,0 +1,44 @@
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_VENTA_PARTE_PAPEL_COMERCIAL_DESA`(IN `_valorNominalOriginal` DECIMAL(8,2), IN `_valorNominalVendido` DECIMAL(8,2), IN `_fechaCompra` DATE, IN `_propietario` INT)
+BEGIN
+
+
+SET @valorNominalRestante :=  _valorNominalOriginal-_valorNominalVendido;
+
+select @inv_id := id_inversion from sipro_desa.inversion where fecha_compra=_fechaCompra and valor_nominal = _valorNominalOriginal and id_propietario=1;
+
+select @inv_id;
+
+update sipro_desa.inversion SET 
+     valor_nominal = valor_nominal * (@valorNominalRestante / _valorNominalOriginal),
+     monto_a_negociar = monto_a_negociar * (@valorNominalRestante / _valorNominalOriginal),
+     capital_invertido = capital_invertido * (@valorNominalRestante / _valorNominalOriginal),
+     valor_efectivo = valor_efectivo * (@valorNominalRestante / _valorNominalOriginal),
+     -- valor_interes = valor_interes * (@valorNominalRestante / _valorNominalOriginal),
+     interes_primer_mes = interes_primer_mes * (@valorNominalRestante / _valorNominalOriginal),
+     comision_bolsa = comision_bolsa * (@valorNominalRestante / _valorNominalOriginal),
+     comision_casa_valores = comision_casa_valores * (@valorNominalRestante / _valorNominalOriginal),
+     retencion_fuente = retencion_fuente * (@valorNominalRestante / _valorNominalOriginal),
+     
+     valor_sin_comision = valor_sin_comision * (@valorNominalRestante / _valorNominalOriginal),
+     valor_con_interes = valor_con_interes * (@valorNominalRestante / _valorNominalOriginal),
+     interes_acumulado_previo = interes_acumulado_previo * (@valorNominalRestante / _valorNominalOriginal),
+     total_comisiones = total_comisiones * (@valorNominalRestante / _valorNominalOriginal)
+WHERE id_inversion = @inv_id;
+
+
+
+-- select * from amortizacion where inv_id = @inv_id order by id desc;
+UPDATE sipro_desa.amortizacion SET
+     interes = round(interes * (@valorNominalRestante / _valorNominalOriginal),2),
+     capital = round(capital * (@valorNominalRestante / _valorNominalOriginal),2),
+     descuento = round(descuento * (@valorNominalRestante / _valorNominalOriginal),2),
+     int_parcial = round(int_parcial * (@valorNominalRestante / _valorNominalOriginal),2),
+     total = round(total * (@valorNominalRestante / _valorNominalOriginal),2),
+     retencion = round(retencion * (@valorNominalRestante / _valorNominalOriginal),2)
+WHERE fecha_pago >= curdate()
+and id_inversion = @inv_id;
+
+
+END$$
+DELIMITER ;

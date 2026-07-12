@@ -1,0 +1,10 @@
+SELECT A.id_amortizacion, I.id_inversion, I.id_instrumento, Ins.nombre, I.fecha_venta
+FROM amortizacion A
+INNER JOIN inversion I
+    ON A.id_inversion = I.id_inversion
+INNER JOIN instrumento Ins
+    ON I.id_instrumento = Ins.id_instrumento
+WHERE A.activo = 1
+  AND A.pagada = 0
+  AND A.fecha_pago < CURDATE()
+ORDER BY A.fecha_pago;

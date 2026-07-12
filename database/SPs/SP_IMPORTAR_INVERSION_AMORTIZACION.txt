@@ -1,0 +1,159 @@
+DELIMITER $$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_IMPORTAR_INVERSION_AMORTIZACION`(IN `_fecha_compra` DATE)
+BEGIN
+
+drop table inversion_backup_migracion;
+CREATE TABLE IF NOT EXISTS `inversion_backup_migracion` AS 
+SELECT * FROM `inversion`;
+
+update inversion.inversion
+set inv_instrumento = 'SRI 2034-12-31',
+    id_instrumento = 222
+where inv_emisor = 'SRI 2034-12-31';
+
+-- Importar con mapeo completo entre estructuras diferentes
+-- MAPEO: Origen (inversion.inversion) → Destino (SIPRO_DESA.inversion)
+
+INSERT INTO `inversion` (
+    id_inversion,                    -- id (origen)
+    id_grupo_familiar,               -- Valor por defecto: 1 (Orellana Cepeda)
+    id_instrumento,                  -- id_instrumento (convertir a int)
+    id_propietario,                  -- Mapear inv_propietario (texto) → id_persona
+    id_aportante,                     -- Por defecto: 1 (Jhon)
+    liquidacion,                      -- inv_liquidacion
+    id_estado_inversion,              -- Basado en is_active: 1=128 (ACTIVA), 0=132 (INACTIVA)
+    fecha_compra,                     -- inv_fecha_compra
+    fecha_venta,                      -- inv_fecha_venta
+    valor_nominal,                    -- inv_valor_nominal
+    monto_a_negociar,                 -- inv_monto_a_negociar
+    capital_invertido,                -- inv_capital_invertido
+    tasa_interes,                     -- inv_tasa_interes
+    rendimiento_nominal,             -- inv_rendimiento_nominal
+    rendimiento_efectivo,             -- inv_rendimiento_efectivo
+    valor_efectivo,                   -- inv_valor_efectivo
+    valor_sin_comision,               -- inv_valor_sin_comision
+    valor_con_interes,                -- inv_valor_con_interes
+    interes_acumulado_previo,         -- inv_interes_acumulado_previo
+    interes_mensual,                  -- inv_valor_interes
+    interes_primer_mes,              -- inv_interes_primer_mes
+    total_comisiones,                 -- inv_total_comisiones
+    tasa_mensual_real,                -- inv_tasa_mensual_real
+    fecha_primer_pago,                -- inv_fecha_primer_pago
+    precio_compra,                    -- inv_precio_comprado
+    precio_neto_compra,               -- inv_precio_neto_comprado
+    comision_bolsa,                   -- inv_comision_bolsa
+    comision_casa_valores,            -- inv_comision_operador
+    retencion_fuente,                 -- inv_retencion
+    observacion,                      -- NULL por ahora
+    expirado,                         -- inv_expirado
+    activo,                           -- is_active
+    eliminado,                        -- is_deleted
+    fecha_creacion,                   -- created_at
+    fecha_actualizacion               -- updated_at
+)
+SELECT 
+    id as id_inversion,
+    1 as id_grupo_familiar,  -- Por defecto: Orellana Cepeda
+    id_instrumento,  -- Convertir varchar a int
+    CASE inv_propietario
+        WHEN 'Jhon' THEN 1
+        WHEN 'Cristian' THEN 2
+        WHEN 'Isabel' THEN 3
+        WHEN 'Jaime' THEN 4
+        WHEN 'Argentina' THEN 5
+        ELSE 1  -- Por defecto Jhon si no coincide
+    END as id_propietario,
+    1 as id_aportante,  -- Por defecto: Jhon
+    inv_liquidacion as liquidacion,
+    CASE is_active
+        WHEN 1 THEN 128  -- ACTIVA
+        WHEN 0 THEN 132  -- INACTIVA
+        ELSE 128  -- Por defecto ACTIVA si es NULL
+    END as id_estado_inversion,
+    inv_fecha_compra as fecha_compra,
+    inv_fecha_venta as fecha_venta,
+    inv_valor_nominal as valor_nominal,
+    inv_monto_a_negociar as monto_a_negociar,
+    inv_capital_invertido as capital_invertido,
+    inv_tasa_interes as tasa_interes,
+    inv_rendimiento_nominal as rendimiento_nominal,
+    inv_rendimiento_efectivo as rendimiento_efectivo,
+    inv_valor_efectivo as valor_efectivo,
+    inv_valor_sin_comision as valor_sin_comision,
+    inv_valor_con_interes as valor_con_interes,
+    inv_interes_acumulado_previo as interes_acumulado_previo,
+    inv_valor_interes as interes_mensual,
+    inv_interes_primer_mes as interes_primer_mes,
+    inv_total_comisiones as total_comisiones,
+    inv_tasa_mensual_real as tasa_mensual_real,
+    inv_fecha_primer_pago as fecha_primer_pago,
+    inv_precio_comprado as precio_compra,
+    inv_precio_neto_comprado as precio_neto_compra,
+    inv_comision_bolsa as comision_bolsa,
+    inv_comision_operador as comision_casa_valores,
+    inv_retencion as retencion_fuente,
+    NULL as observacion,  -- Sin equivalente en origen
+    inv_expirado as expirado,
+    is_active as activo,
+    is_deleted as eliminado,
+    created_at as fecha_creacion,
+    updated_at as fecha_actualizacion
+FROM `inversion`.`inversion`
+where inv_fecha_compra = _fecha_compra;
+-- and inv_tipo = 91;
+
+SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE `amortizacion`;
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+INSERT INTO `amortizacion` (
+    id_amortizacion,
+    id_inversion,
+    numero_cuota,           -- NULL por ahora (campo nuevo)
+    fecha_pago,
+    interes,
+    capital,
+    descuento,
+    total,
+    int_parcial,            -- Mapeado de am_int_parcial
+    retencion,
+    id_estado_amortizacion, -- Basado en lógica de estados
+    pagada,                 -- am_pagada
+    activo,                 -- is_active
+    eliminado,              -- is_deleted
+    fecha_creacion,         -- Timestamp actual
+    fecha_actualizacion     -- Timestamp actual
+)
+SELECT 
+    A.id as id_amortizacion,
+    inv_id as id_inversion,
+    NULL as numero_cuota,   -- Nuevo campo - NULL por ahora
+    am_fecha_pago as fecha_pago,
+    am_interes as interes,
+    am_capital as capital,
+    am_descuento as descuento,
+    am_total as total,
+    am_int_parcial as int_parcial,  -- Campo preservado
+    am_retencion as retencion,
+    CASE 
+        WHEN A.is_deleted = 1 THEN 137  -- ANULADA
+        WHEN am_pagada = 1 THEN 135   -- PAGADA
+        WHEN am_pagada = 2 THEN 136   -- MOROSA
+        WHEN am_pagada = 0 AND A.is_active = 1 THEN 134  -- PENDIENTE
+        ELSE 134  -- Por defecto PENDIENTE
+    END as id_estado_amortizacion,
+    am_pagada as pagada,
+    A.is_active as activo,
+    A.is_deleted as eliminado,
+    NOW() as fecha_creacion,
+    NOW() as fecha_actualizacion
+FROM `inversion`.`amortizacion` A, `inversion`.`inversion` I 
+where 
+      I.id = A.inv_id
+--      AND I.inv_fecha_compra = _fecha_compra;
+;
+
+
+END$$
+DELIMITER ;
