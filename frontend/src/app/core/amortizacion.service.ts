@@ -14,9 +14,7 @@ export interface Amortizacion {
   int_parcial?: number;
   retencion?: number;
   id_estado_amortizacion: number;
-  pagada?: boolean;
-  activo: boolean;
-  eliminado?: boolean;
+  eliminado: boolean;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
   inversion?: any;
@@ -36,8 +34,6 @@ export class AmortizacionService {
     return this.http.get<Amortizacion[]>(this.apiUrl).pipe(
       map((data: Amortizacion[]) => data.map((a: Amortizacion) => ({
         ...a,
-        pagada: typeof a.pagada === 'boolean' ? a.pagada : a.pagada === 1 || a.pagada === '1',
-        activo: typeof a.activo === 'boolean' ? a.activo : a.activo === 1 || a.activo === '1',
         eliminado: typeof a.eliminado === 'boolean' ? a.eliminado : a.eliminado === 1 || a.eliminado === '1'
       })))
     );
@@ -51,8 +47,6 @@ export class AmortizacionService {
     return this.http.get<Amortizacion[]>(`${this.apiUrl}/inversion/${idInversion}`).pipe(
       map((data: Amortizacion[]) => data.map((a: Amortizacion) => ({
         ...a,
-        pagada: typeof a.pagada === 'boolean' ? a.pagada : a.pagada === 1 || a.pagada === '1',
-        activo: typeof a.activo === 'boolean' ? a.activo : a.activo === 1 || a.activo === '1',
         eliminado: typeof a.eliminado === 'boolean' ? a.eliminado : a.eliminado === 1 || a.eliminado === '1'
       })))
     );

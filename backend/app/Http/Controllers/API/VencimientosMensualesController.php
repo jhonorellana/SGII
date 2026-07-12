@@ -73,30 +73,30 @@ class VencimientosMensualesController extends Controller
             \DB::raw('YEAR(fecha_pago) as anio'),
             \DB::raw('MONTH(fecha_pago) as mes'),
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) as interes
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN interes ELSE 0 END) as interes
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as capital
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN capital ELSE 0 END) as capital
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN descuento ELSE 0 END) as descuento
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN descuento ELSE 0 END) as descuento
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada = 2 THEN interes ELSE 0 END) as interes_moroso
+                SUM(CASE WHEN id_estado_amortizacion = 136 THEN interes ELSE 0 END) as interes_moroso
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada = 2 THEN capital ELSE 0 END) as capital_moroso
+                SUM(CASE WHEN id_estado_amortizacion = 136 THEN capital ELSE 0 END) as capital_moroso
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada = 2 THEN descuento ELSE 0 END) as descuento_moroso
+                SUM(CASE WHEN id_estado_amortizacion = 136 THEN descuento ELSE 0 END) as descuento_moroso
             '),
             \DB::raw('SUM(interes) + SUM(capital) as total')
         ])
         ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
         ->whereBetween('fecha_pago', [$fechaInicio, $fechaFin])
         ->where(function($query) {
-            // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
-            $query->where('amortizacion.activo', 1)
+            // Lógica del SP actualizada: cuotas válidas o inversión sin venta
+            $query->whereIn('amortizacion.id_estado_amortizacion', [134, 135, 136])
                   ->orWhereNull('inversion.fecha_venta');
         })
         ->where('amortizacion.eliminado', 0)
@@ -182,21 +182,21 @@ class VencimientosMensualesController extends Controller
     {
         $query = Amortizacion::select([
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN interes ELSE 0 END) as interes
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN interes ELSE 0 END) as interes
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN capital ELSE 0 END) as capital
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN capital ELSE 0 END) as capital
             '),
             \DB::raw('
-                SUM(CASE WHEN pagada IN (1,0) THEN descuento ELSE 0 END) as descuento
+                SUM(CASE WHEN id_estado_amortizacion IN (134, 135) THEN descuento ELSE 0 END) as descuento
             '),
             \DB::raw('SUM(interes) + SUM(capital) as total')
         ])
         ->join('inversion', 'amortizacion.id_inversion', '=', 'inversion.id_inversion')
         ->whereBetween('fecha_pago', [$fechaInicio, $fechaFin])
         ->where(function($query) {
-            // Lógica del SP: (A.is_active = 1 OR I.inv_fecha_venta IS NULL)
-            $query->where('amortizacion.activo', 1)
+            // Lógica del SP actualizada: cuotas válidas o inversión sin venta
+            $query->whereIn('amortizacion.id_estado_amortizacion', [134, 135, 136])
                   ->orWhereNull('inversion.fecha_venta');
         })
         ->where('amortizacion.eliminado', 0)
@@ -205,8 +205,8 @@ class VencimientosMensualesController extends Controller
         // Aplicar filtro según tipo
         switch ($tipo) {
             case 'ejecutado':
-                // ANUAL EJECUTADO: hasta fecha actual y activo = 1
-                $query->where('amortizacion.activo', 1)
+                // ANUAL EJECUTADO: hasta fecha actual y cuotas válidas
+                $query->whereIn('amortizacion.id_estado_amortizacion', [134, 135, 136])
                       ->where('fecha_pago', '<=', Carbon::now()->format('Y-m-d'));
                 break;
             case 'pendiente':

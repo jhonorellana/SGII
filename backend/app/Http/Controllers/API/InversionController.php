@@ -33,7 +33,7 @@ class InversionController extends Controller
         }
 
         $inversiones = $query->withSum(['amortizaciones as saldo_capital' => function($q) {
-                $q->where('activo', 1)
+                $q->whereIn('id_estado_amortizacion', [134, 136]) // Pendiente de pago y morosa
                   ->where('eliminado', 0)
                   ->where('fecha_pago', '>', date('Y-m-d'));
             }], 'capital')

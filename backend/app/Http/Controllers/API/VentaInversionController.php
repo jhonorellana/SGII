@@ -142,7 +142,7 @@ class VentaInversionController extends Controller
                 }
 
                 // Obtener interés recibido (de amortizaciones pagadas)
-                $interesRecibido = $inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0;
+                $interesRecibido = $inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0;
                 $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
 
                 // Calcular ROI (Tasa de Rentabilidad Porcentual) = Rendimiento Total / Capital Invertido
@@ -541,7 +541,7 @@ class VentaInversionController extends Controller
             : 0;
 
         // Obtener interés recibido (de amortizaciones pagadas)
-        $interesRecibido = $inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0;
+        $interesRecibido = $inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0;
         $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
 
         // Paso 1: Actualizar estado de la inversión
@@ -737,7 +737,7 @@ class VentaInversionController extends Controller
             : 0;
 
         // Obtener interés recibido (proporcional al porcentaje vendido)
-        $interesRecibido = (($inversion->amortizaciones->where('pagada', true)->sum('interes') ?? 0) * $porcentajeVender) / 100;
+        $interesRecibido = (($inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0) * $porcentajeVender / 100);
         $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
         $valorRecibido = $valorVentaConComision + $interesPrevioVenta;
  
@@ -924,8 +924,6 @@ class VentaInversionController extends Controller
                     'int_parcial' => $intParcialVendido,
                     'retencion' => $retencionVendido,
                     'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
-                    'pagada' => $amortizacionOriginal->pagada,
-                    'activo' => $amortizacionOriginal->activo,
                     'eliminado' => $amortizacionOriginal->eliminado,
                     'fecha_creacion' => now(),
                     'fecha_actualizacion' => now()
@@ -944,8 +942,6 @@ class VentaInversionController extends Controller
                 'int_parcial' => $intParcialRemanente,
                 'retencion' => $retencionRemanente,
                 'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
-                'pagada' => $amortizacionOriginal->pagada,
-                'activo' => $amortizacionOriginal->activo,
                 'eliminado' => $amortizacionOriginal->eliminado,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()
@@ -956,7 +952,6 @@ class VentaInversionController extends Controller
         \App\Models\Amortizacion::where('id_inversion', $inversionOriginal->id_inversion)
             ->update([
                 'id_estado_amortizacion' => 200,
-                'activo' => false,
                 'fecha_actualizacion' => now()
             ]);
     }

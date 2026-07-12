@@ -23,8 +23,6 @@ class Amortizacion extends Model
         'int_parcial',
         'retencion',
         'id_estado_amortizacion',
-        'pagada',
-        'activo',
         'eliminado',
         'fecha_creacion',
         'fecha_actualizacion'
@@ -38,8 +36,7 @@ class Amortizacion extends Model
         'int_parcial' => 'decimal:2',
         'retencion' => 'decimal:2',
         'fecha_pago' => 'date',
-        'pagada' => 'boolean',
-        'activo' => 'boolean',
+        'id_estado_amortizacion' => 'integer',
         'eliminado' => 'boolean'
     ];
 
@@ -51,6 +48,6 @@ class Amortizacion extends Model
 
     public function estadoAmortizacion()
     {
-        return $this->belongsTo(CatalogoValor::class, 'id_estado_amortizacion');
+        return $this->belongsTo(CatalogoValor::class, 'id_estado_amortizacion', 'id_catalogo_valor');
     }
 }

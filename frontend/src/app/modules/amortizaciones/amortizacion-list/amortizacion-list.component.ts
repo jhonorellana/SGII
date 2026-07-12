@@ -56,8 +56,7 @@ export class AmortizacionListComponent implements OnInit {
     id_inversion: 0,
     fecha_pago: '',
     id_estado_amortizacion: 0,
-    pagada: false,
-    activo: true
+    eliminado: false
   };
 
   originalAmortizacionStr: string = '';
@@ -71,8 +70,7 @@ export class AmortizacionListComponent implements OnInit {
     capital: '',
     descuento: '',
     total: '',
-    estado: '',
-    activo: ''
+    estado: ''
   };
 
   selectedAmortizaciones: Amortizacion[] = [];
@@ -89,7 +87,6 @@ export class AmortizacionListComponent implements OnInit {
     { field: 'descuento', header: 'Descuento' },
     { field: 'total', header: 'Total' },
     { field: 'estado_amortizacion', header: 'Estado' },
-    { field: 'activo', header: 'Activo' },
     { field: 'acciones', header: 'Acciones' }
   ];
 
@@ -178,8 +175,7 @@ export class AmortizacionListComponent implements OnInit {
       id_inversion: 0,
       fecha_pago: '',
       id_estado_amortizacion: this.estadosAmortizacion.length > 0 ? this.estadosAmortizacion[0].id_catalogo_valor : 134,
-      pagada: false,
-      activo: true
+      eliminado: false
     };
     this.displayDialog = true;
   }
@@ -384,8 +380,7 @@ export class AmortizacionListComponent implements OnInit {
       Capital: amortizacion.capital,
       Descuento: amortizacion.descuento,
       Total: amortizacion.total,
-      Estado: amortizacion.estado_amortizacion?.nombre || '',
-      Activo: amortizacion.activo ? 'Sí' : 'No'
+      Estado: amortizacion.estado_amortizacion?.nombre || ''
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -424,12 +419,11 @@ export class AmortizacionListComponent implements OnInit {
       amortizacion.capital,
       amortizacion.descuento,
       amortizacion.total,
-      amortizacion.estado_amortizacion?.nombre || '',
-      amortizacion.activo ? 'Sí' : 'No'
+      amortizacion.estado_amortizacion?.nombre || ''
     ]);
 
     autoTable(doc, {
-      head: [['ID', 'Inversión', 'Emisor', 'Propietario', 'Fecha Pago', 'Interés', 'Capital', 'Descuento', 'Total', 'Estado', 'Activo']],
+      head: [['ID', 'Inversión', 'Emisor', 'Propietario', 'Fecha Pago', 'Interés', 'Capital', 'Descuento', 'Total', 'Estado']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 9 },

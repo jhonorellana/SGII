@@ -88,6 +88,7 @@
         <th pSortableColumn="valor_venta_con_comision" class="text-end">Valor Venta <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
         <th pSortableColumn="utilidad_con_comision" class="text-end">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
         <th pSortableColumn="roi" class="text-end">ROI Total <p-sortIcon field="roi"></p-sortIcon></th>
+        <th pSortableColumn="ganancia_anual" class="text-end">% Anual <p-sortIcon field="ganancia_anual"></p-sortIcon></th>
         <th class="text-center">Acciones</th>
       </tr>
       <tr>
@@ -99,6 +100,7 @@
         <th></th>
         <th></th>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_venta_con_comision', 'contains')" class="w-100" placeholder="Filtrar valor"/></th>
+        <th></th>
         <th></th>
         <th></th>
         <th></th>
@@ -129,6 +131,11 @@
         <td class="text-end">
           <span [class]="venta.roi >= 0 ? 'text-success' : 'text-danger'">
             {{ venta.roi | number:'1.2-2' }}%
+          </span>
+        </td>
+        <td class="text-end">
+          <span [class]="venta.ganancia_anual >= 0 ? 'text-success' : 'text-danger'">
+            {{ venta.ganancia_anual | number:'1.2-2' }}%
           </span>
         </td>
         <td class="text-center">

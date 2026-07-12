@@ -174,9 +174,8 @@ class Inversion extends Model
 
         $today = date('Y-m-d');
         return (float) $this->amortizaciones()
-            ->where('activo', 1)
+            ->whereIn('id_estado_amortizacion', [134, 136]) // 134 = Pendiente de pago, 136 = Morosa
             ->where('eliminado', 0)
-            ->where('fecha_pago', '>', $today)
             ->sum('capital');
     }
 }

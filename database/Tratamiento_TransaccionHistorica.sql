@@ -210,4 +210,8 @@ select * from transaccion_historica where titulo = 'PapelComercial'
 
 select * from inversion where id_instrumento = 223
 
-select * from 
+select * from sipro_desa.venta_inversion
+select distinct(id_tipo_venta) from sipro_desa.venta_inversion
+
+select * from catalogo_valor where id_catalogo_valor in (148, 195)
+select * from catalogo_valor where id_catalogo = 8

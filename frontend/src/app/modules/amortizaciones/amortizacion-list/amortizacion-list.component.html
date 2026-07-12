@@ -49,7 +49,6 @@
         <th pSortableColumn="descuento">Descuento <p-sortIcon field="descuento"></p-sortIcon></th>
         <th pSortableColumn="total">Total <p-sortIcon field="total"></p-sortIcon></th>
         <th pSortableColumn="estado_amortizacion">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
-        <th pSortableColumn="activo">Activo <p-sortIcon field="activo"></p-sortIcon></th>
         <th class="text-center" style="width: 120px;">Acciones</th>
       </tr>
       <tr>
@@ -66,13 +65,6 @@
           <select [(ngModel)]="filterValues.estado" (change)="triggerSearch()" class="form-select form-select-sm" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
             <option value="">Todos</option>
             <option *ngFor="let estado of estadosAmortizacion" [value]="estado.nombre">{{ estado.nombre }}</option>
-          </select>
-        </th>
-        <th>
-          <select [(ngModel)]="filterValues.activo" (change)="triggerSearch()" class="form-select form-select-sm" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
-            <option value="">Todos</option>
-            <option value="true">Sí</option>
-            <option value="false">No</option>
           </select>
         </th>
         <th class="text-center p-1">
@@ -121,9 +113,6 @@
             </ng-container>
             <ng-container *ngSwitchCase="'estado_amortizacion'">
               <p-tag [value]="amortizacion.estado_amortizacion?.nombre || '-'" [severity]="getSeverity(amortizacion.estado_amortizacion?.nombre)"></p-tag>
-            </ng-container>
-            <ng-container *ngSwitchCase="'activo'">
-              <p-tag [value]="amortizacion.activo ? 'Sí' : 'No'" [severity]="amortizacion.activo ? 'success' : 'danger'"></p-tag>
             </ng-container>
             <ng-container *ngSwitchCase="'acciones'">
               <div class="btn-group justify-content-center">
@@ -195,17 +184,6 @@
         <div class="col-md-12 mb-3">
           <label for="total">Total</label>
           <input type="number" id="total" [(ngModel)]="amortizacion.total" class="form-control" step="0.01">
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6 mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="pagada" [(ngModel)]="amortizacion.pagada">
-          <label class="form-check-label" for="pagada">Pagada</label>
-        </div>
-        <div class="col-md-6 mb-3 form-check">
-          <input type="checkbox" class="form-check-input" id="activo" [(ngModel)]="amortizacion.activo">
-          <label class="form-check-label" for="activo">Activo</label>
         </div>
       </div>
     </div>

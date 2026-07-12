@@ -37,9 +37,7 @@ class AmortizacionController extends Controller
             'total' => 'nullable|numeric',
             'int_parcial' => 'nullable|numeric',
             'retencion' => 'nullable|numeric',
-            'id_estado_amortizacion' => 'required|exists:catalogo_valor,id_catalogo_valor',
-            'pagada' => 'boolean',
-            'activo' => 'boolean'
+            'id_estado_amortizacion' => 'required|exists:catalogo_valor,id_catalogo_valor'
         ]);
 
         if ($validator->fails()) {
@@ -57,8 +55,6 @@ class AmortizacionController extends Controller
             'int_parcial' => $request->int_parcial,
             'retencion' => $request->retencion,
             'id_estado_amortizacion' => $request->id_estado_amortizacion,
-            'pagada' => $request->has('pagada') ? $request->pagada : false,
-            'activo' => $request->has('activo') ? $request->activo : true,
             'eliminado' => false,
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
@@ -102,9 +98,7 @@ class AmortizacionController extends Controller
             'total' => 'nullable|numeric',
             'int_parcial' => 'nullable|numeric',
             'retencion' => 'nullable|numeric',
-            'id_estado_amortizacion' => 'required|exists:catalogo_valor,id_catalogo_valor',
-            'pagada' => 'boolean',
-            'activo' => 'boolean'
+            'id_estado_amortizacion' => 'required|exists:catalogo_valor,id_catalogo_valor'
         ]);
 
         if ($validator->fails()) {
@@ -122,8 +116,6 @@ class AmortizacionController extends Controller
             'int_parcial' => $request->int_parcial,
             'retencion' => $request->retencion,
             'id_estado_amortizacion' => $request->id_estado_amortizacion,
-            'pagada' => $request->has('pagada') ? $request->pagada : $amortizacion->pagada,
-            'activo' => $request->has('activo') ? $request->activo : $amortizacion->activo,
             'fecha_actualizacion' => now()
         ]);
 
@@ -142,7 +134,7 @@ class AmortizacionController extends Controller
         }
 
         $amortizacion->update([
-            'activo' => false,
+            'id_estado_amortizacion' => 137, // Anulada
             'eliminado' => true,
             'fecha_actualizacion' => now()
         ]);

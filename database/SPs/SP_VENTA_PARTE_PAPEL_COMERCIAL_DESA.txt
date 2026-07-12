@@ -37,6 +37,7 @@ UPDATE sipro_desa.amortizacion SET
      total = round(total * (@valorNominalRestante / _valorNominalOriginal),2),
      retencion = round(retencion * (@valorNominalRestante / _valorNominalOriginal),2)
 WHERE fecha_pago >= curdate()
+and id_estado_amortizacion IN (134, 136)
 and id_inversion = @inv_id;
 
 

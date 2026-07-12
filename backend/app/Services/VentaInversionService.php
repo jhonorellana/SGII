@@ -40,7 +40,7 @@ class VentaInversionService
             ]);
 
             // Paso 2: Inactivar amortizaciones futuras
-            $this->inactivarAmortizacionesFuturas($idInversion, $datosVenta['fecha_venta']);
+            $this->inactivarAmortizacionesFuturas($idInversion, $datosVenta['fecha_venta'], 227);
 
             // Paso 3: Crear registro en venta_inversion
             $venta = VentaInversion::create($datosVenta);
@@ -109,7 +109,7 @@ class VentaInversionService
             ]);
 
             // Paso 2: Inactivar amortizaciones futuras
-            $this->inactivarAmortizacionesFuturas($idInversion, $datosVenta['fecha_venta']);
+            $this->inactivarAmortizacionesFuturas($idInversion, $datosVenta['fecha_venta'], 200);
 
             // Paso 3: Crear inversión PARTE_VENDIDA
             $inversionVendida = $this->crearInversionDerivada(
@@ -286,12 +286,12 @@ class VentaInversionService
     /**
      * Inactivar amortizaciones futuras
      */
-    protected function inactivarAmortizacionesFuturas(int $idInversion, string $fechaVenta): void
+    protected function inactivarAmortizacionesFuturas(int $idInversion, string $fechaVenta, int $estadoTarget): void
     {
         Amortizacion::where('id_inversion', $idInversion)
             ->where('fecha_pago', '>=', $fechaVenta)
             ->update([
-                'activo' => false,
+                'id_estado_amortizacion' => $estadoTarget,
                 'fecha_actualizacion' => now()
             ]);
     }
@@ -302,7 +302,7 @@ class VentaInversionService
     protected function crearAmortizacionRemanente(int $idInversionOriginal, int $idInversionRemanente, float $porcentajeRemanente): void
     {
         $amortizacionesOriginales = Amortizacion::where('id_inversion', $idInversionOriginal)
-            ->where('activo', true)
+            ->whereNotIn('id_estado_amortizacion', [137, 200, 227]) // Solo cuotas válidas
             ->where('eliminado', false)
             ->get();
 
@@ -319,9 +319,7 @@ class VentaInversionService
                 'total' => round($amortizacionOriginal->total * $factor, 2),
                 'int_parcial' => round($amortizacionOriginal->int_parcial * $factor, 2),
                 'retencion' => round($amortizacionOriginal->retencion * $factor, 2),
-                'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
-                'pagada' => false,
-                'activo' => true,
+                'id_estado_amortizacion' => 134, // Pendiente de pago
                 'eliminado' => false,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()

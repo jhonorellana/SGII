@@ -471,3 +471,24 @@ input[readonly] {
   cursor: not-allowed;
   border: 1px solid #d1d5db !important;
 }
+
+:host ::ng-deep .p-datatable > .p-datatable-wrapper > table > thead > tr > th, 
+:host ::ng-deep .p-datatable > .p-datatable-wrapper > table > tbody > tr > td {
+  font-size: 0.8rem !important;
+  padding: 0.4rem 0.5rem !important;
+}
+
+:host ::ng-deep .p-datatable th input.p-inputtext,
+:host ::ng-deep .p-datatable th .p-dropdown {
+  padding: 0.2rem 0.4rem !important;
+  font-size: 0.75rem !important;
+  height: 28px !important;
+  line-height: 1.2 !important;
+  font-family: inherit !important;
+}
+
+:host ::ng-deep .p-datatable th .p-dropdown .p-dropdown-label {
+  padding: 0.1rem 0.4rem !important;
+  line-height: 24px !important;
+  font-family: inherit !important;
+}

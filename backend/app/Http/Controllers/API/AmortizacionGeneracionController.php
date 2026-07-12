@@ -207,9 +207,7 @@ class AmortizacionGeneracionController extends Controller
                 'total' => $interesParaGuardar + $cuota['capital_retorno'] + $cuota['premio'], // Calcular total como suma de interes + capital + descuento
                 'int_parcial' => $cuota['interes_parcial'],
                 'retencion' => 0,
-                'id_estado_amortizacion' => 1, // Pendiente
-                'pagada' => false,
-                'activo' => $esActiva, // Activo basado en fecha límite
+                'id_estado_amortizacion' => 134, // Pendiente de pago
                 'eliminado' => false,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()

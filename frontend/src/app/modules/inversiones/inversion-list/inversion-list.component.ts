@@ -75,6 +75,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   // Propiedades para modal de amortización
   displayAmortizacionDialog: boolean = false;
   amortizaciones: any[] = [];
+  loading: boolean = true;
   loadingAmortizacion: boolean = false;
 
   inversion: Inversion = {
@@ -178,11 +179,14 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   }
 
   loadInversiones(): void {
+    this.loading = true;
     this.inversionService.getAll().subscribe({
       next: (data) => {
         const rawData = Array.isArray(data) ? data : (data as any).data || [];
         // Transformar fechas a formato YYYY-MM-DD sin hora
-        this.inversiones = rawData.map((inv: any) => ({
+        this.inversiones = rawData
+          .filter((inv: any) => inv.instrumento?.id_tipo_inversion !== 203)
+          .map((inv: any) => ({
           ...inv,
           fecha_compra: this.formatDate(inv.fecha_compra),
           instrumento: inv.instrumento ? {
@@ -193,11 +197,13 @@ export class InversionListComponent implements OnInit, AfterViewInit {
         }));
         this.inversionesFiltradas = [...this.inversiones];
         this.totalRecords = this.inversiones.length;
+        this.loading = false;
       },
       error: (error) => {
         this.inversiones = [];
         this.inversionesFiltradas = [];
         this.totalRecords = 0;
+        this.loading = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar inversiones' });
       }
     });

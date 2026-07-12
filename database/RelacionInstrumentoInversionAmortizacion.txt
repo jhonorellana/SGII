@@ -8,3 +8,13 @@ WHERE A.activo = 1
   AND A.pagada = 0
   AND A.fecha_pago < CURDATE()
 ORDER BY A.fecha_pago;
+
+
+SELECT I.id_inversion, I.id_instrumento, Ins.nombre, I.fecha_compra, I.fecha_venta
+FROM Inversion I
+INNER JOIN instrumento Ins
+    ON I.id_instrumento = Ins.id_instrumento
+WHERE 
+  id_estado_inversion=132
+ORDER BY I.fecha_compra;
+

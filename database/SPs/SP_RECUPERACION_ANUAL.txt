@@ -9,6 +9,7 @@ BEGIN
        FROM amortizacion A, inversion I
        WHERE 
                    I.fecha_venta IS NULL
+                   and A.id_estado_amortizacion IN (134, 135, 136)
 		          and A.eliminado = 0
                   and I.eliminado = 0
                   and A.id_inversion = I.id_inversion
@@ -26,7 +27,7 @@ BEGIN
 		   A.eliminado = 0
            and I.eliminado = 0
            and A.id_inversion = I.id_inversion
-		   and (A.activo = 1 OR I.fecha_venta IS NULL)
+		   and (A.id_estado_amortizacion IN (134, 135, 136) OR I.fecha_venta IS NULL)
        GROUP BY anio 
        ORDER BY anio ASC;
        

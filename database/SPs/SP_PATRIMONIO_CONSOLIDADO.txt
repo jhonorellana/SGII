@@ -10,7 +10,7 @@ BEGIN
     WHERE A.fecha_pago > p_fecha_inicio
       AND A.fecha_pago <= p_fecha_fin
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -41,7 +41,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -58,7 +58,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -75,7 +75,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -92,7 +92,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -109,7 +109,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -156,7 +156,7 @@ BEGIN
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
       AND I.fecha_venta IS NULL
-      AND A.activo = 1
+      AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -188,7 +188,7 @@ BEGIN
                WHERE A.fecha_pago > p_fecha_inicio
                  AND A.fecha_pago <= p_fecha_fin
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -212,7 +212,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -227,7 +227,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -241,7 +241,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -255,7 +255,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -269,7 +269,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
@@ -311,7 +311,7 @@ BEGIN
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
                  AND I.fecha_venta IS NULL
-                 AND A.activo = 1
+                 AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0
                  AND I.eliminado = 0
                  AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
