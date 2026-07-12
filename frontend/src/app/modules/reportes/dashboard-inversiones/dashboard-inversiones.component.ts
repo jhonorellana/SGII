@@ -125,7 +125,7 @@ export class DashboardInversionesComponent implements OnInit {
     }).subscribe({
       next: ({ rentaFija, rentaVariable }) => {
         // 1. Procesar Renta Fija
-        const fijas = (rentaFija || []).filter(i => !i.eliminado && i.activo && !i.fecha_venta).map(i => {
+        const fijas = (rentaFija || []).filter(i => !i.eliminado && i.id_estado_inversion === 128 && !i.fecha_venta).map(i => {
           if (i.saldo_capital !== undefined) {
             i.capital_invertido = i.saldo_capital;
           }
@@ -147,7 +147,6 @@ export class DashboardInversionesComponent implements OnInit {
               capital_invertido: pos.capital_invertido || 0,
               tasa_interes: 0,
               rendimiento_nominal: 0,
-              activo: true,
               eliminado: false,
               propietario: {
                 nombre: pos.persona,

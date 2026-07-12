@@ -85,8 +85,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     fecha_compra: '',
     capital_invertido: 0,
     retencion_fuente: 0,
-    expirado: false,
-    activo: true,
     liquidacion: ''
   };
 
@@ -105,7 +103,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     { field: 'instrumento.fecha_emision', header: 'Fecha Emision' },
     { field: 'instrumento.fecha_vencimiento', header: 'Fecha Vencimiento' },
     { field: 'estadoInversion.nombre', header: 'Estado' },
-    { field: 'activo', header: 'Activo' },
     { field: 'acciones', header: 'Acciones' }
   ];
 
@@ -165,7 +162,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {
     setTimeout(() => {
       if (this.table) {
-        this.table.filter(true, 'activo', 'equals');
+        this.table.filter(128, 'id_estado_inversion', 'equals');
       }
     }, 100);
   }
@@ -300,8 +297,6 @@ export class InversionListComponent implements OnInit, AfterViewInit {
       fecha_compra: '',
       capital_invertido: 0,
       retencion_fuente: 0,
-      expirado: false,
-      activo: true,
       liquidacion: ''
     };
     this.setFechaActual();
@@ -572,15 +567,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     }
   }
 
-  onActivoFilterChange(value: string): void {
-    if (value === '') {
-      this.table.filter('', 'activo', 'equals');
-    } else if (value === 'true') {
-      this.table.filter(true, 'activo', 'equals');
-    } else {
-      this.table.filter(false, 'activo', 'equals');
-    }
-  }
+
 
   onFechaFilterChange(field: string, value: string): void {
     if (!value || value === '') {
@@ -711,8 +698,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
       'Fecha Compra': this.formatDate(i.fecha_compra),
       'Fecha Emision': this.formatDate(i.instrumento?.fecha_emision),
       'Fecha Vencimiento': this.formatDate(i.instrumento?.fecha_vencimiento),
-      'Estado': i.estadoInversion?.nombre || '',
-      'Activo': i.activo ? 'Activo' : 'Inactivo'
+      'Estado': i.estadoInversion?.nombre || ''
     }));
 
     const csv = this.convertToCSV(data);
@@ -734,8 +720,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
       'Fecha Compra': this.formatDate(i.fecha_compra),
       'Fecha Emision': this.formatDate(i.instrumento?.fecha_emision),
       'Fecha Vencimiento': this.formatDate(i.instrumento?.fecha_vencimiento),
-      'Estado': i.estadoInversion?.nombre || '',
-      'Activo': i.activo ? 'Activo' : 'Inactivo'
+      'Estado': i.estadoInversion?.nombre || ''
     }));
 
     let content = '<table style="width:100%; border-collapse: collapse;">';

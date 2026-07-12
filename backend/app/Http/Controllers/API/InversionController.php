@@ -77,9 +77,7 @@ class InversionController extends Controller
             'comision_bolsa' => 'nullable|numeric',
             'comision_casa_valores' => 'nullable|numeric',
             'retencion_fuente' => 'nullable|numeric',
-            'observacion' => 'nullable|string',
-            'expirado' => 'boolean',
-            'activo' => 'boolean'
+            'observacion' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -118,8 +116,6 @@ class InversionController extends Controller
                 'comision_casa_valores' => $request->comision_casa_valores,
                 'retencion_fuente' => $request->retencion_fuente,
                 'observacion' => $request->observacion,
-                'expirado' => $request->has('expirado') ? $request->expirado : false,
-                'activo' => $request->has('activo') ? $request->activo : true,
                 'eliminado' => false,
                 'fecha_creacion' => now(),
                 'fecha_actualizacion' => now()
@@ -195,9 +191,7 @@ class InversionController extends Controller
             'comision_bolsa' => 'nullable|numeric',
             'comision_casa_valores' => 'nullable|numeric',
             'retencion_fuente' => 'nullable|numeric',
-            'observacion' => 'nullable|string',
-            'expirado' => 'boolean',
-            'activo' => 'boolean'
+            'observacion' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
@@ -234,8 +228,6 @@ class InversionController extends Controller
             'comision_casa_valores' => $request->comision_casa_valores,
             'retencion_fuente' => $request->retencion_fuente,
             'observacion' => $request->observacion,
-            'expirado' => $request->has('expirado') ? $request->expirado : $inversion->expirado,
-            'activo' => $request->has('activo') ? $request->activo : $inversion->activo,
             'fecha_actualizacion' => now()
         ]);
 
@@ -258,7 +250,7 @@ class InversionController extends Controller
         }
 
         $inversion->update([
-            'activo' => false,
+            'id_estado_inversion' => 132,
             'eliminado' => true,
             'fecha_actualizacion' => now()
         ]);

@@ -1,0 +1,63 @@
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_accion_posicion`
+-- (Véase abajo para la vista actual)
+--
+DROP VIEW IF EXISTS `vw_accion_posicion`;
+CREATE TABLE `vw_accion_posicion` (
+`id_persona` int(11)
+,`persona` varchar(301)
+,`id_instrumento` int(11)
+,`instrumento` varchar(200)
+,`id_emisor` int(11)
+,`fecha_primera_operacion` date
+,`fecha_ultima_operacion` date
+,`cantidad_actual` decimal(40,6)
+,`precio_ultimo` decimal(18,6)
+,`fecha_ultimo_precio` date
+,`valor_mercado` decimal(49,2)
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `vw_posiciones_vendibles`
+-- (Véase abajo para la vista actual)
+--
+DROP VIEW IF EXISTS `vw_posiciones_vendibles`;
+CREATE TABLE `vw_posiciones_vendibles` (
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_accion_posicion`
+--
+DROP TABLE IF EXISTS `vw_accion_posicion`;
+
+DROP VIEW IF EXISTS `vw_accion_posicion`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_accion_posicion`  AS SELECT `ao`.`id_persona` AS `id_persona`, concat(`p`.`nombres`,' ',`p`.`apellidos`) AS `persona`, `ao`.`id_instrumento` AS `id_instrumento`, `i`.`nombre` AS `instrumento`, `i`.`id_emisor` AS `id_emisor`, min(`ao`.`fecha_operacion`) AS `fecha_primera_operacion`, max(`ao`.`fecha_operacion`) AS `fecha_ultima_operacion`, sum(case when `ao`.`id_tipo_operacion` in (204,206,207,212) then `ao`.`cantidad` when `ao`.`id_tipo_operacion` in (205,208) then -`ao`.`cantidad` else 0 end) AS `cantidad_actual`, `aup`.`precio_ultimo` AS `precio_ultimo`, `aup`.`fecha_ultimo_precio` AS `fecha_ultimo_precio`, round(sum(case when `ao`.`id_tipo_operacion` in (204,206,207,212) then `ao`.`cantidad` when `ao`.`id_tipo_operacion` in (205,208) then -`ao`.`cantidad` else 0 end) * ifnull(`aup`.`precio_ultimo`,0),2) AS `valor_mercado` FROM (((`accion_operacion` `ao` join `persona` `p` on(`p`.`id_persona` = `ao`.`id_persona`)) join `instrumento` `i` on(`i`.`id_instrumento` = `ao`.`id_instrumento`)) left join `accion_ultimo_precio` `aup` on(`aup`.`id_emisor` = `i`.`id_emisor`)) WHERE `ao`.`activo` = 1 AND `ao`.`eliminado` = 0 GROUP BY `ao`.`id_persona`, `p`.`nombres`, `p`.`apellidos`, `ao`.`id_instrumento`, `i`.`nombre`, `i`.`id_emisor`, `aup`.`precio_ultimo`, `aup`.`fecha_ultimo_precio` HAVING `cantidad_actual` <> 0 ;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `vw_posiciones_vendibles`
+--
+DROP TABLE IF EXISTS `vw_posiciones_vendibles`;
+
+DROP VIEW IF EXISTS `vw_posiciones_vendibles`;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_posiciones_vendibles`  AS SELECT `i`.`id_instrumento` AS `id_instrumento`, `i`.`nombre` AS `nombre_instrumento`, `i`.`fecha_emision` AS `fecha_emision`, `i`.`fecha_vencimiento` AS `fecha_vencimiento`, `i`.`tasa_referencial` AS `tasa_referencial`, `i`.`activo` AS `instrumento_activo`, `e`.`id_emisor` AS `id_emisor`, `e`.`nombre` AS `nombre_emisor`, `cv`.`id_catalogo_valor` AS `id_tipo_inversion`, `cv`.`nombre` AS `nombre_tipo_inversion`, `p`.`id_persona` AS `id_propietario`, concat(`p`.`nombres`,' ',`p`.`apellidos`) AS `nombre_propietario`, count(`inv`.`id_inversion`) AS `cantidad_inversiones`, sum(`inv`.`valor_nominal`) AS `valor_nominal_total`, sum(`inv`.`capital_invertido`) AS `capital_invertido_total`, avg(`inv`.`rendimiento_efectivo`) AS `rendimiento_promedio`, min(`inv`.`fecha_compra`) AS `fecha_compra_minima`, max(`inv`.`fecha_compra`) AS `fecha_compra_maxima`, group_concat(distinct `inv`.`liquidacion` order by `inv`.`liquidacion` ASC separator ', ') AS `liquidaciones` FROM (((((`instrumento` `i` left join `emisor` `e` on(`i`.`id_emisor` = `e`.`id_emisor`)) left join `catalogo_valor` `cv` on(`i`.`id_tipo_inversion` = `cv`.`id_catalogo_valor`)) left join `inversion` `inv` on(`i`.`id_instrumento` = `inv`.`id_instrumento` and `inv`.`id_estado_inversion` = 128)) left join `persona` `p` on(`inv`.`id_propietario` = `p`.`id_persona`)) left join `catalogo_valor` `ei` on(`inv`.`id_estado_inversion` = `ei`.`id_catalogo_valor`)) WHERE `i`.`activo` = 1 AND (`inv`.`id_inversion` is null OR `ei`.`codigo` = 'ACTIVA') AND `p`.`id_persona` is not null GROUP BY `i`.`id_instrumento`, `i`.`nombre`, `i`.`fecha_emision`, `i`.`fecha_vencimiento`, `i`.`tasa_referencial`, `i`.`activo`, `e`.`id_emisor`, `e`.`nombre`, `cv`.`id_catalogo_valor`, `cv`.`nombre`, `p`.`id_persona`, `p`.`nombres`, `p`.`apellidos` HAVING `cantidad_inversiones` > 0 ORDER BY `p`.`nombres` ASC, `p`.`apellidos` ASC, `i`.`nombre` ASC ;
+
+--
+-- Índices para tablas volcadas
+--
+
+--
+-- Indices de la tabla `accion_posicion`
+--
+ALTER TABLE `accion_posicion`
+  ADD PRIMARY KEY (`id_accion_posicion`),
+  ADD UNIQUE KEY `uk_accion_posicion_persona_instrumento` (`id_persona`,`id_instrumento`),
+  ADD KEY `idx_accion_posicion_instrumento` (`id_instrumento`),
+  ADD KEY `idx_accion_posicion_persona` (`id_persona`);

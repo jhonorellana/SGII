@@ -40,8 +40,6 @@ class Inversion extends Model
         'comision_casa_valores',
         'retencion_fuente',
         'observacion',
-        'expirado',
-        'activo',
         'eliminado',
         'fecha_creacion',
         'fecha_actualizacion'
@@ -70,8 +68,6 @@ class Inversion extends Model
         'fecha_compra' => 'date',
         'fecha_venta' => 'date',
         'fecha_primer_pago' => 'date',
-        'expirado' => 'boolean',
-        'activo' => 'boolean',
         'eliminado' => 'boolean'
     ];
 
@@ -177,5 +173,10 @@ class Inversion extends Model
             ->whereIn('id_estado_amortizacion', [134, 136]) // 134 = Pendiente de pago, 136 = Morosa
             ->where('eliminado', 0)
             ->sum('capital');
+    }
+
+    public function scopeActivas($query)
+    {
+        return $query->where('id_estado_inversion', 128);
     }
 }

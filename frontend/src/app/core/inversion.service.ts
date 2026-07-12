@@ -35,8 +35,6 @@ export interface Inversion {
   comision_casa_valores?: number;
   retencion_fuente?: number;
   observacion?: string;
-  expirado?: boolean;
-  activo: boolean;
   eliminado?: boolean;
   fecha_creacion?: string;
   fecha_actualizacion?: string;
@@ -60,8 +58,6 @@ export class InversionService {
     return this.http.get<Inversion[]>(this.apiUrl, { params }).pipe(
       map((data: Inversion[]) => data.map((i: Inversion) => ({
         ...i,
-        activo: typeof i.activo === 'boolean' ? i.activo : i.activo === 1 || i.activo === '1',
-        expirado: typeof i.expirado === 'boolean' ? i.expirado : i.expirado === 1 || i.expirado === '1',
         eliminado: typeof i.eliminado === 'boolean' ? i.eliminado : i.eliminado === 1 || i.eliminado === '1',
         saldo_capital: typeof i.saldo_capital === 'string' ? parseFloat(i.saldo_capital) : (i.saldo_capital || 0)
       })))
@@ -85,11 +81,9 @@ export class InversionService {
   }
 
   getActivasParaVenta(): Observable<Inversion[]> {
-    return this.http.get<Inversion[]>(`${this.apiUrl}?activo=true&eliminado=false`).pipe(
+    return this.http.get<Inversion[]>(`${this.apiUrl}?id_estado_inversion=128&eliminado=false`).pipe(
       map((data: Inversion[]) => data.filter((i: Inversion) => !i.fecha_venta).map((i: Inversion) => ({
         ...i,
-        activo: typeof i.activo === 'boolean' ? i.activo : i.activo === 1 || i.activo === '1',
-        expirado: typeof i.expirado === 'boolean' ? i.expirado : i.expirado === 1 || i.expirado === '1',
         eliminado: typeof i.eliminado === 'boolean' ? i.eliminado : i.eliminado === 1 || i.eliminado === '1',
         valor_nominal: typeof i.valor_nominal === 'string' ? parseFloat(i.valor_nominal) : (i.valor_nominal || 0),
         capital_invertido: typeof i.capital_invertido === 'string' ? parseFloat(i.capital_invertido) : (i.capital_invertido || 0),

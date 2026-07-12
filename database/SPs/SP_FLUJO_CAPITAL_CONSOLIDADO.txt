@@ -21,7 +21,7 @@ BEGIN
     INNER JOIN instrumento inst ON i.id_instrumento = inst.id_instrumento
     INNER JOIN emisor e ON inst.id_emisor = e.id_emisor
     WHERE a.fecha_pago BETWEEN _initialDate AND _finalDate
-        AND i.activo = 1
+        AND i.id_estado_inversion = 128
         AND i.eliminado = 0
         AND a.id_estado_amortizacion IN (134, 135, 136)
         AND a.eliminado = 0
@@ -48,7 +48,7 @@ BEGIN
     FROM amortizacion a
     INNER JOIN inversion i ON a.id_inversion = i.id_inversion
     WHERE a.fecha_pago BETWEEN _initialDate AND _finalDate
-        AND i.activo = 1
+        AND i.id_estado_inversion = 128
         AND i.eliminado = 0
         AND a.id_estado_amortizacion IN (134, 135, 136)
         AND a.eliminado = 0

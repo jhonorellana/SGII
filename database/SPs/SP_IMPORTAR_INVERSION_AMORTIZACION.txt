@@ -45,8 +45,6 @@ INSERT INTO `inversion` (
     comision_casa_valores,            -- inv_comision_operador
     retencion_fuente,                 -- inv_retencion
     observacion,                      -- NULL por ahora
-    expirado,                         -- inv_expirado
-    activo,                           -- is_active
     eliminado,                        -- is_deleted
     fecha_creacion,                   -- created_at
     fecha_actualizacion               -- updated_at
@@ -93,8 +91,6 @@ SELECT
     inv_comision_operador as comision_casa_valores,
     inv_retencion as retencion_fuente,
     NULL as observacion,  -- Sin equivalente en origen
-    inv_expirado as expirado,
-    is_active as activo,
     is_deleted as eliminado,
     created_at as fecha_creacion,
     updated_at as fecha_actualizacion

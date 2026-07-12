@@ -303,7 +303,7 @@ class VentaInversionController extends Controller
             'emisor',
             'tipoInversion',
             'inversiones' => function($query) use ($idPropietario) {
-                $query->where('activo', true)
+                $query->activas()
                       ->where('id_propietario', $idPropietario)
                       ->with('propietario', 'estadoInversion');
             }
@@ -366,7 +366,7 @@ class VentaInversionController extends Controller
             'emisor',
             'tipoInversion',
             'inversiones' => function($query) {
-                $query->where('activo', true)
+                $query->activas()
                       ->with('propietario', 'estadoInversion');
             }
         ])->find($idInstrumento);
@@ -446,7 +446,7 @@ class VentaInversionController extends Controller
 
             // Obtener inversiones activas del instrumento
             $query = Inversion::where('id_instrumento', $request->id_instrumento)
-                ->where('activo', true)
+                ->activas()
                 ->with('propietario', 'amortizaciones');
 
             if ($request->has('id_propietario') && $request->id_propietario) {
@@ -548,7 +548,6 @@ class VentaInversionController extends Controller
         $inversion->update([
             'fecha_venta' => $request->fecha_venta,
             'id_estado_inversion' => $this->getEstadoVendidaTotal(),
-            'activo' => false,
             'fecha_actualizacion' => now()
         ]);
 
@@ -556,7 +555,7 @@ class VentaInversionController extends Controller
         \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
             ->where('fecha_pago', '>=', $request->fecha_venta)
             ->update([
-                'activo' => false,
+                'id_estado_amortizacion' => 200,
                 'fecha_actualizacion' => now()
             ]);
 
@@ -862,8 +861,6 @@ class VentaInversionController extends Controller
             'comision_casa_valores' => ($inversionOriginal->comision_casa_valores * $porcentaje) / 100,
             'retencion_fuente' => ($inversionOriginal->retencion_fuente * $porcentaje) / 100,
             'observacion' => 'Inversión derivada de venta parcial - ' . $estado,
-            'expirado' => $inversionOriginal->expirado,
-            'activo' => $estado === 'ACTIVA',
             'eliminado' => false,
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
@@ -1439,13 +1436,21 @@ class VentaInversionController extends Controller
                     'fecha_actualizacion' => now()
                 ]);
 
-                // Actualizar estado de la inversión
+                // Actualizar estado de la inversión y anular cuotas futuras
                 $inversion = Inversion::find($detalle['id_inversion']);
                 if ($inversion) {
                     $inversion->update([
                         'fecha_venta' => $request->fecha_venta,
+                        'id_estado_inversion' => $this->getEstadoVendidaTotal(),
                         'fecha_actualizacion' => now()
                     ]);
+                    
+                    \App\Models\Amortizacion::where('id_inversion', $inversion->id_inversion)
+                        ->where('fecha_pago', '>=', $request->fecha_venta)
+                        ->update([
+                            'id_estado_amortizacion' => 200,
+                            'fecha_actualizacion' => now()
+                        ]);
                 }
             }
 
