@@ -147,4 +147,78 @@ where id_inversion in (
 175,
 188) and id_estado_inversion=132
 
-select * from venta_inversion
+select * from inversion where expirado = 1 and id_estado_inversion <> 131
+select distinct(id_estado_inversion) from inversion where activo_old = 0
+select * from inversion where activo_old = 0 and id_estado_inversion = 128
+select distinct(id_instrumento) from inversion where activo_old = 0 
+and id_estado_inversion = 128
+
+
+select * from instrumento where id_instrumento in(
+196,
+98,
+192,
+194,
+117,
+221,
+224)
+
+update inversion set id_estado_inversion = 132 where id_instrumento in(
+196,
+98,
+192,
+194,
+117,
+221,
+224)
+
+select * from inversion where id_instrumento in(
+196,
+98,
+192,
+194,
+117,
+221,
+224) and id_estado_inversion <> 128SP_FLUJO_CAPITAL_CONSOLIDADO
+
+select * from inversion where id_inversion in (299,300,309)
+
+
+select * from inversion where id_inversion = 138
+select * from inversion.inversion where id = 138
+select * from inversion.bonos where inv_id = 138
+select * from inversion where valor_nominal = 0 and id_estado_inversion = 128
+
+select * from instrumento where id_instrumento in(
+select distinct(id_instrumento) from inversion where valor_nominal = 0 and id_estado_inversion = 128)
+
+select * from inversion.bonos where inv_id in(
+select id_inversion from inversion where valor_nominal = 0 and id_estado_inversion = 128
+)
+
+update inversion set id_estado_inversion=132 where valor_nominal = 0 and id_estado_inversion = 128
+
+
+select * from inversion where id_inversion = 136
+select * from instrumento where id_instrumento = 34
+
+
+SELECT I.id_inversion, I.id_instrumento, Ins.nombre, I.fecha_compra, I.fecha_venta, Ins.fecha_vencimiento
+FROM Inversion I
+INNER JOIN instrumento Ins
+    ON I.id_instrumento = Ins.id_instrumento
+WHERE 
+  id_estado_inversion=128
+  and Ins.fecha_vencimiento < curdate()
+ORDER BY I.fecha_compra;
+
+
+UPDATE Inversion I
+INNER JOIN instrumento Ins
+    ON I.id_instrumento = Ins.id_instrumento
+SET 
+    I.id_estado_inversion = 131,
+    I.fecha_actualizacion = NOW()
+WHERE 
+    I.id_estado_inversion = 128
+    AND Ins.fecha_vencimiento < CURDATE();

@@ -144,9 +144,9 @@ class FlujoCapitalController extends Controller
                 INNER JOIN instrumento inst ON i.id_instrumento = inst.id_instrumento
                 INNER JOIN emisor e ON inst.id_emisor = e.id_emisor
                 WHERE a.fecha_pago = ?
-                AND a.activo = 1
+                AND a.id_estado_amortizacion IN (134, 135, 136)
                 AND a.eliminado = 0
-                AND i.activo = 1
+                AND i.id_estado_inversion = 128
                 AND i.eliminado = 0";
 
             $params = [$fecha];

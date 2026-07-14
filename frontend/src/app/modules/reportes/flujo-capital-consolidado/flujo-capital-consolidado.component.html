@@ -145,23 +145,7 @@
                 <td class="text-end">{{ formatCurrency(item.capital_moroso) }}</td>
                 <td class="text-end">{{ formatCurrency(item.descuento_moroso) }}</td>
                 <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
-              </tr>
-
-                  <!-- Filas de datos -->
-                  <tr *ngFor="let item of flujoCapital" class="fila-dato clickable-row" (click)="mostrarDetalle(item)">
-                    <td class="text-center">{{ item.fecha }}</td>
-                    <td class="text-left">{{ item.propietario }}</td>
-                    <td class="text-left">{{ item.empresa }}</td>
-                    <td class="text-end">{{ formatCurrency(item.interes) }}</td>
-                    <td class="text-end">{{ formatCurrency(item.capital) }}</td>
-                    <td class="text-end">{{ formatCurrency(item.descuento) }}</td>
-                    <td class="text-end">{{ formatCurrency(item.interes_moroso) }}</td>
-                    <td class="text-end">{{ formatCurrency(item.capital_moroso) }}</td>
-                    <td class="text-end">{{ formatCurrency(item.descuento_moroso) }}</td>
-                    <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
-                  </tr>
-
-                  <!-- Fila de totales -->
+              </tr>                  <!-- Fila de totales -->
                   <tr class="fila-totales fw-bold">
                     <td colspan="3" class="text-center">TOTALES</td>
                     <td class="text-end">{{ formatCurrency(totales.interes) }}</td>
