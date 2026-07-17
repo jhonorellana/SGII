@@ -43,14 +43,14 @@
     <!-- Columnas -->
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_instrumento">ID <p-sortIcon field="id_instrumento"></p-sortIcon></th>
-        <th pSortableColumn="nombre">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
+        <th pSortableColumn="id_instrumento" style="width: 100px;">ID <p-sortIcon field="id_instrumento"></p-sortIcon></th>
+        <th pSortableColumn="nombre" style="min-width: 300px;">Nombre <p-sortIcon field="nombre"></p-sortIcon></th>
         <th pSortableColumn="emisor.nombre">Emisor <p-sortIcon field="emisor.nombre"></p-sortIcon></th>
         <th pSortableColumn="tipoInversion.nombre">Tipo Inversión <p-sortIcon field="tipoInversion.nombre"></p-sortIcon></th>
-        <th pSortableColumn="tasa_referencial">Tasa Referencial <p-sortIcon field="tasa_referencial"></p-sortIcon></th>
-        <th pSortableColumn="calificacion_riesgo">Calificación Riesgo <p-sortIcon field="calificacion_riesgo"></p-sortIcon></th>
-        <th pSortableColumn="fecha_emision">Fecha Emisión <p-sortIcon field="fecha_emision"></p-sortIcon></th>
-        <th pSortableColumn="fecha_vencimiento">Fecha Vencimiento <p-sortIcon field="fecha_vencimiento"></p-sortIcon></th>
+        <th pSortableColumn="tasa_referencial" class="text-end">Tasa Referencial <p-sortIcon field="tasa_referencial"></p-sortIcon></th>
+        <th pSortableColumn="calificacion_riesgo" style="width: 140px;">Riesgo <p-sortIcon field="calificacion_riesgo"></p-sortIcon></th>
+        <th pSortableColumn="fecha_emision" style="width: 120px;">Emisión <p-sortIcon field="fecha_emision"></p-sortIcon></th>
+        <th pSortableColumn="fecha_vencimiento" style="width: 120px;">Vencim. <p-sortIcon field="fecha_vencimiento"></p-sortIcon></th>
         <th>Estado</th>
         <th>Acciones</th>
       </tr>
@@ -90,7 +90,7 @@
     <ng-template pTemplate="body" let-instrumento>
       <tr>
         <td>{{ instrumento.id_instrumento }}</td>
-        <td><strong>{{ instrumento.nombre }}</strong></td>
+        <td>{{ instrumento.nombre }}</td>
         <td>
           <span *ngIf="instrumento.emisor">{{ instrumento.emisor.nombre }}</span>
           <span *ngIf="!instrumento.emisor" class="text-muted">-</span>
@@ -99,7 +99,7 @@
           <span *ngIf="instrumento.tipoInversion">{{ instrumento.tipoInversion.nombre }}</span>
           <span *ngIf="!instrumento.tipoInversion" class="text-muted">- ({{ instrumento.id_tipo_inversion }})</span>
         </td>
-        <td>{{ instrumento.tasa_referencial ? instrumento.tasa_referencial + '%' : '-' }}</td>
+        <td class="text-end">{{ instrumento.tasa_referencial ? instrumento.tasa_referencial + '%' : '-' }}</td>
         <td>{{ instrumento.calificacion_riesgo || '-' }}</td>
         <td>{{ formatDate(instrumento.fecha_emision) }}</td>
         <td>{{ formatDate(instrumento.fecha_vencimiento) }}</td>

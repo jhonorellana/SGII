@@ -135,7 +135,7 @@
             [style]="{width: '50vw'}" [modal]="true" [closable]="true"
             [closeOnEscape]="true" [dismissableMask]="true" styleClass="app-custom-modal">
     <ng-template pTemplate="header">
-      <h5 class="m-0 text-primary font-weight-bold">
+      <h5 class="m-0 text-white font-weight-bold">
         <i class="bi" [ngClass]="isEdit ? 'bi-pencil-square' : 'bi-plus-circle'"></i> 
         {{ isEdit ? ' Editar Amortización' : ' Nueva Amortización' }}
       </h5>
@@ -144,7 +144,7 @@
       <div class="row">
         <div class="col-md-6 mb-3">
           <label for="id_inversion">Inversión <span class="text-danger">*</span></label>
-          <p-dropdown id="id_inversion" [(ngModel)]="amortizacion.id_inversion" [options]="inversiones" optionLabel="id_inversion" optionValue="id_inversion"
+          <p-dropdown id="id_inversion" [(ngModel)]="amortizacion.id_inversion" [options]="inversiones" optionLabel="displayLabel" optionValue="id_inversion"
             placeholder="Seleccione Inversión" [style]="{'width': '100%'}" [filter]="true" required></p-dropdown>
         </div>
         <div class="col-md-6 mb-3">

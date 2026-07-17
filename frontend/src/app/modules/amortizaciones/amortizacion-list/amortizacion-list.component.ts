@@ -148,7 +148,21 @@ export class AmortizacionListComponent implements OnInit {
   loadInversiones(): void {
     this.inversionService.getAll().subscribe({
       next: (data) => {
-        this.inversiones = Array.isArray(data) ? data : [];
+        if (Array.isArray(data)) {
+          this.inversiones = data.map(inv => {
+            const id = inv.id_inversion || '';
+            const liquidacion = inv.liquidacion || '';
+            const emisor = inv.instrumento?.emisor?.nombre || '';
+            const propietario = inv.propietario?.nombres || '';
+            let label = `${id}`;
+            if (liquidacion) label += ` - ${liquidacion}`;
+            if (emisor) label += ` - ${emisor}`;
+            if (propietario) label += ` (${propietario})`;
+            return { ...inv, displayLabel: label };
+          });
+        } else {
+          this.inversiones = [];
+        }
       },
       error: (error) => {
         this.inversiones = [];
