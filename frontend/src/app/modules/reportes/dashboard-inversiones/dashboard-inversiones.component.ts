@@ -120,7 +120,7 @@ export class DashboardInversionesComponent implements OnInit {
 
   loadInversiones(): void {
     forkJoin({
-      rentaFija: this.inversionService.getAll(),
+      rentaFija: this.inversionService.getAll({ incluir_notas_credito: true }),
       rentaVariable: this.accionPosicionService.getPosiciones()
     }).subscribe({
       next: ({ rentaFija, rentaVariable }) => {
@@ -308,7 +308,8 @@ export class DashboardInversionesComponent implements OnInit {
     const params = {
       fecha_inicio: dateInicioStr,
       fecha_fin: dateFinStr,
-      id_propietario: this.selectedPropietario || undefined
+      id_propietario: this.selectedPropietario || undefined,
+      incluir_dividendos: true
     };
 
     this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
@@ -345,6 +346,8 @@ export class DashboardInversionesComponent implements OnInit {
       item.detalle !== 'Total Corriente' &&
       item.detalle !== 'Intereses esperados' &&
       item.detalle !== 'Bonos vencimiento próximo' &&
+      item.detalle !== 'Bonos vencimiento prximo' &&
+      !item.detalle.includes('vencimiento pr') &&
       item.valor > 0
     );
 

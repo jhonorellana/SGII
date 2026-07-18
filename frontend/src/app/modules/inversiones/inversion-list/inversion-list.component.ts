@@ -55,6 +55,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
   propietarios: any[] = [];
   aportantes: any[] = [];
   estadosInversion: any[] = [];
+  tiposInversion: any[] = [];
   totalRecords: number = 0;
 
   fechaCompraFilter: string = '';
@@ -149,6 +150,7 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.loadPropietarios();
     this.loadAportantes();
     this.loadEstadosInversion();
+    this.loadTiposInversion();
     this.setFechaActual();
 
     // Verificar si se debe abrir el modal de creación
@@ -246,12 +248,13 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.personaService.getAll().subscribe({
       next: (data: any) => {
         const personasArray = Array.isArray(data) ? data : (data as any).data || [];
-        this.propietarios = personasArray
+        const mappedPersonas = personasArray
           .filter((p: any) => p.activo === true || p.activo === 1)
           .map((p: any) => ({
             ...p,
             nombre: `${p.nombres} ${p.apellidos}`.trim()
           }));
+        this.propietarios = [{ id_persona: null, nombre: 'Todos' }, ...mappedPersonas];
       },
       error: (error: any) => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar propietarios' });
@@ -280,13 +283,30 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.catalogoService.getValoresByCatalogo(4).subscribe({
       next: (data: any) => {
         const estadosArray = Array.isArray(data) ? data : (data as any).data || [];
-        this.estadosInversion = estadosArray.filter((e: any) => e.activo === true || e.activo === 1);
+        const mappedEstados = estadosArray.filter((e: any) => e.activo === true || e.activo === 1);
+        this.estadosInversion = [{ id_catalogo_valor: null, nombre: 'Todos' }, ...mappedEstados];
       },
       error: (error: any) => {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar estados de inversión' });
       }
     });
   }
+
+  loadTiposInversion(): void {
+    this.catalogoService.getValoresByCodigo('TIPO_INVERSION').subscribe({
+      next: (data: any) => {
+        const tiposArray = Array.isArray(data) ? data : (data as any).data || [];
+        const mappedTipos = tiposArray
+          .filter((t: any) => t.activo === true || t.activo === 1)
+          .map((t: any) => ({ ...t, valorFiltro: t.nombre }));
+        this.tiposInversion = [{ nombre: 'Todos', valorFiltro: null }, ...mappedTipos];
+      },
+      error: (error: any) => {
+        console.error('Error al cargar tipos de inversión', error);
+      }
+    });
+  }
+
 
   openNew(): void {
     this.isEdit = false;

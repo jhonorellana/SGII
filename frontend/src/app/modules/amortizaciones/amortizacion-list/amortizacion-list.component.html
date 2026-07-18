@@ -17,10 +17,12 @@
     </div>
   </div>
 
-  <p-table #table [value]="amortizaciones" [columns]="cols" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [rowsPerPageOptions]="[10, 25, 50]"
+  <p-table #table [value]="amortizaciones" [columns]="cols" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)" [rowsPerPageOptions]="[10, 25, 50, 100]"
             [globalFilterFields]="['id_amortizacion', 'inversion.id_inversion', 'fecha_pago', 'interes', 'capital', 'total']"
+            styleClass="p-datatable-sm p-datatable-gridlines"
             [(selection)]="selectedAmortizaciones" dataKey="id_amortizacion"
             [totalRecords]="totalRecords"
+            [loading]="loading"
             showCurrentPageReport="true"
             stateStorage="session" stateKey="amortizaciones-table-state"
             paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
@@ -39,30 +41,30 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_amortizacion">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
-        <th pSortableColumn="inversion.id_inversion">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
-        <th pSortableColumn="inversion.instrumento.emisor.nombre">Emisor <p-sortIcon field="inversion.instrumento.emisor.nombre"></p-sortIcon></th>
-        <th pSortableColumn="inversion.propietario.nombres">Propietario <p-sortIcon field="inversion.propietario.nombres"></p-sortIcon></th>
-        <th pSortableColumn="fecha_pago">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
-        <th pSortableColumn="interes">Interés <p-sortIcon field="interes"></p-sortIcon></th>
-        <th pSortableColumn="capital">Capital <p-sortIcon field="capital"></p-sortIcon></th>
-        <th pSortableColumn="descuento">Descuento <p-sortIcon field="descuento"></p-sortIcon></th>
-        <th pSortableColumn="total">Total <p-sortIcon field="total"></p-sortIcon></th>
-        <th pSortableColumn="estado_amortizacion">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
-        <th class="text-center" style="width: 120px;">Acciones</th>
+        <th pSortableColumn="id_amortizacion" class="text-center" style="width: 70px;">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
+        <th pSortableColumn="inversion.id_inversion" class="text-center" style="width: 140px;">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
+        <th pSortableColumn="inversion.instrumento.emisor.nombre" class="text-center">Emisor <p-sortIcon field="inversion.instrumento.emisor.nombre"></p-sortIcon></th>
+        <th pSortableColumn="inversion.propietario.nombres" class="text-center">Propietario <p-sortIcon field="inversion.propietario.nombres"></p-sortIcon></th>
+        <th pSortableColumn="fecha_pago" class="text-center" style="width: 110px;">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
+        <th pSortableColumn="interes" class="text-end">Interés <p-sortIcon field="interes"></p-sortIcon></th>
+        <th pSortableColumn="capital" class="text-end">Capital <p-sortIcon field="capital"></p-sortIcon></th>
+        <th pSortableColumn="descuento" class="text-end">Descuento <p-sortIcon field="descuento"></p-sortIcon></th>
+        <th pSortableColumn="total" class="text-end">Total <p-sortIcon field="total"></p-sortIcon></th>
+        <th pSortableColumn="estado_amortizacion" class="text-center" style="width: 140px;">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
+        <th class="text-center" style="width: 90px;">Acciones</th>
       </tr>
       <tr>
         <th></th>
-        <th><input pInputText type="text" [(ngModel)]="filterValues.inversion" (keyup.enter)="triggerSearch()" placeholder="Código o Liquidación" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" [(ngModel)]="filterValues.emisor" (keyup.enter)="triggerSearch()" placeholder="Emisor" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" [(ngModel)]="filterValues.propietario" (keyup.enter)="triggerSearch()" placeholder="Propietario" style="width: 120px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="text" [(ngModel)]="filterValues.fecha_pago" (keyup.enter)="triggerSearch()" placeholder="YYYY-MM-DD" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" [(ngModel)]="filterValues.interes" (keyup.enter)="triggerSearch()" placeholder="Interés" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" [(ngModel)]="filterValues.capital" (keyup.enter)="triggerSearch()" placeholder="Capital" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" [(ngModel)]="filterValues.descuento" (keyup.enter)="triggerSearch()" placeholder="Descuento" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
-        <th><input pInputText type="number" [(ngModel)]="filterValues.total" (keyup.enter)="triggerSearch()" placeholder="Total" class="text-right" style="width: 90px; font-size: 0.9rem; padding: 6px 10px; height: 36px;"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.inversion" (keyup.enter)="triggerSearch()" placeholder="Código o Liq" class="w-100"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.emisor" (keyup.enter)="triggerSearch()" placeholder="Emisor" class="w-100"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.propietario" (keyup.enter)="triggerSearch()" placeholder="Propietario" class="w-100"/></th>
+        <th><input pInputText type="text" [(ngModel)]="filterValues.fecha_pago" (keyup.enter)="triggerSearch()" placeholder="YYYY-MM-DD" class="w-100 text-center"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.interes" (keyup.enter)="triggerSearch()" placeholder="Interés" class="w-100 text-end"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.capital" (keyup.enter)="triggerSearch()" placeholder="Capital" class="w-100 text-end"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.descuento" (keyup.enter)="triggerSearch()" placeholder="Descuento" class="w-100 text-end"/></th>
+        <th><input pInputText type="number" [(ngModel)]="filterValues.total" (keyup.enter)="triggerSearch()" placeholder="Total" class="w-100 text-end"/></th>
         <th>
-          <select [(ngModel)]="filterValues.estado" (change)="triggerSearch()" class="form-select form-select-sm" style="width: 110px; font-size: 0.9rem; padding: 6px 10px; height: 36px;">
+          <select [(ngModel)]="filterValues.estado" (change)="triggerSearch()" class="form-select form-select-sm w-100">
             <option value="">Todos</option>
             <option *ngFor="let estado of estadosAmortizacion" [value]="estado.nombre">{{ estado.nombre }}</option>
           </select>
@@ -82,7 +84,10 @@
 
     <ng-template pTemplate="body" let-amortizacion let-columns="columns">
       <tr>
-        <td *ngFor="let col of columns" [ngClass]="{'text-right': ['interes', 'capital', 'descuento', 'total'].includes(col.field)}">
+        <td *ngFor="let col of columns" [ngClass]="{
+          'text-end': ['interes', 'capital', 'descuento', 'total'].includes(col.field),
+          'text-center': ['id_amortizacion', 'inversion.id_inversion', 'inversion.instrumento.emisor.nombre', 'inversion.propietario.nombres', 'fecha_pago', 'estado_amortizacion', 'acciones'].includes(col.field)
+        }">
           <ng-container [ngSwitch]="col.field">
             <ng-container *ngSwitchCase="'id_amortizacion'">
               {{amortizacion.id_amortizacion}}

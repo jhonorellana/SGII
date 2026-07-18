@@ -16,6 +16,9 @@ class AmortizacionController extends Controller
     public function index()
     {
         $amortizaciones = Amortizacion::with(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion'])
+            ->whereHas('inversion.instrumento', function ($query) {
+                $query->whereNotIn('id_tipo_inversion', [91, 203]);
+            })
             ->orderBy('id_amortizacion', 'desc')
             ->get();
 

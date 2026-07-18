@@ -1,4 +1,4 @@
-<div class="renta-variable-container">
+<div class="container-fluid">
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
@@ -64,17 +64,17 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th style="width: 4rem; text-align: center;">ID</th>
-        <th pSortableColumn="fecha_pago" style="width: 8rem;">Fecha Pago <i class="pi pi-sort-amount-down-alt"></i></th>
-        <th>Socio</th>
-        <th>Acción / Instrumento</th>
-        <th style="width: 10rem;">Tipo</th>
-        <th class="text-right" style="width: 9rem;">Acciones Base</th>
-        <th class="text-right" style="width: 8rem;">Div/Acción</th>
-        <th class="text-right" style="width: 9rem;">Neto Efectivo</th>
-        <th class="text-right" style="width: 9rem;">Acc. Recibidas</th>
-        <th class="text-right" style="width: 9rem;">Valor Ref. Acc.</th>
-        <th style="width: 6rem; text-align: center;">Acciones</th>
+        <th class="text-center" style="width: 4rem;">ID</th>
+        <th pSortableColumn="fecha_pago" class="text-center" style="width: 8rem;">Fecha Pago <i class="pi pi-sort-amount-down-alt"></i></th>
+        <th class="text-center">Socio</th>
+        <th class="text-center">Acción / Instrumento</th>
+        <th class="text-center" style="width: 10rem;">Tipo</th>
+        <th class="text-end" style="width: 9rem;">Acciones Base</th>
+        <th class="text-end" style="width: 8rem;">Div/Acción</th>
+        <th class="text-end" style="width: 9rem;">Neto Efectivo</th>
+        <th class="text-end" style="width: 9rem;">Acc. Recibidas</th>
+        <th class="text-end" style="width: 9rem;">Valor Ref. Acc.</th>
+        <th class="text-center" style="width: 6rem;">Acciones</th>
       </tr>
     </ng-template>
 
@@ -87,15 +87,19 @@
         <td>
           <p-tag [severity]="getTipoDividendoClass(div)" [value]="getTipoDividendoNombre(div)"></p-tag>
         </td>
-        <td class="text-right font-medium">{{ formatNumber(div.cantidad_acciones_base, 2) }}</td>
-        <td class="text-right">{{ formatCurrency(div.dividendo_por_accion) }}</td>
-        <td class="text-right font-bold text-success">{{ formatCurrency(div.valor_neto) }}</td>
-        <td class="text-right text-info font-medium">{{ div.acciones_recibidas ? formatNumber(div.acciones_recibidas, 4) : '-' }}</td>
-        <td class="text-right text-muted">{{ div.valor_referencial_acciones ? formatCurrency(div.valor_referencial_acciones) : '-' }}</td>
+        <td class="text-end font-medium">{{ formatNumber(div.cantidad_acciones_base, 0) }}</td>
+        <td class="text-end">{{ formatCurrency(div.dividendo_por_accion) }}</td>
+        <td class="text-end font-bold text-success">{{ formatCurrency(div.valor_neto) }}</td>
+        <td class="text-end text-info font-medium">{{ div.acciones_recibidas ? formatNumber(div.acciones_recibidas, 0) : '-' }}</td>
+        <td class="text-end text-muted">{{ div.valor_referencial_acciones ? formatCurrency(div.valor_referencial_acciones) : '-' }}</td>
         <td class="text-center">
           <div class="d-flex justify-content-center gap-1">
-            <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm" (click)="openEditDialog(div)" pTooltip="Editar dividendo" tooltipPosition="top"></button>
-            <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm" (click)="deleteDividendo(div)" pTooltip="Eliminar dividendo" tooltipPosition="top"></button>
+            <button class="btn btn-sm btn-outline-primary" (click)="openEditDialog(div)" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteDividendo(div)" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
         </td>
       </tr>

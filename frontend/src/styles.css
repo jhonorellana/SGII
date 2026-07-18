@@ -66,6 +66,13 @@ body {
   font-weight: 600;
 }
 
+/* Compact padding for sm tables */
+.p-datatable-sm .p-datatable-thead > tr > th,
+.p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 0.4rem 0.5rem !important;
+  font-size: 0.85rem !important;
+}
+
 .p-datatable .p-datatable-tbody > tr:nth-child(odd) {
   background-color: var(--table-row-odd) !important;
 }
@@ -230,4 +237,49 @@ body {
 .app-custom-modal .p-dialog-header-close:hover {
   color: #f0fdf4 !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* === ESTILOS GLOBALES PARA TABLAS DE LA APLICACIÓN (Excluye Popups) === */
+
+/* Disminuir altura de las filas y tamaño de fuente */
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
+    padding: 0.1rem 0.5rem !important;
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
+    padding: 0.2rem 0.5rem !important;
+    font-size: 0.85rem;
+}
+
+/* Disminuir tamaño de botones y tags en la tabla para no ensanchar las filas */
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td .btn-sm {
+    padding: 0.1rem 0.35rem;
+    font-size: 0.75rem;
+}
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td .p-tag {
+    padding: 0.1rem 0.4rem;
+    font-size: 0.7rem;
+}
+
+/* Disminuir tamaño de letras y cajas de texto de los filtros */
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-thead > tr > th input.p-inputtext,
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-thead > tr > th select.form-select {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.5rem;
+    height: auto;
+}
+
+.container-fluid .p-datatable.p-datatable-sm .p-datatable-thead > tr > th .p-dropdown .p-dropdown-label {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.5rem;
+    height: auto;
+    display: flex;
+    align-items: center;
+}
+
+/* Tamaño de fuente para las opciones internas de los combos desplegables */
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.75rem;
 }

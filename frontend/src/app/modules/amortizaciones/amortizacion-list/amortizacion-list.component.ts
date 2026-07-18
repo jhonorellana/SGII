@@ -48,6 +48,7 @@ export class AmortizacionListComponent implements OnInit {
   inversiones: any[] = [];
   estadosAmortizacion: any[] = [];
   totalRecords: number = 0;
+  loading: boolean = false;
 
   displayDialog: boolean = false;
   isEdit: boolean = false;
@@ -132,14 +133,17 @@ export class AmortizacionListComponent implements OnInit {
   }
 
   loadAmortizaciones(): void {
+    this.loading = true;
     this.amortizacionService.getAll().subscribe({
       next: (data) => {
         this.amortizaciones = Array.isArray(data) ? data : [];
         this.totalRecords = this.amortizaciones.length;
+        this.loading = false;
       },
       error: (error) => {
         this.amortizaciones = [];
         this.totalRecords = 0;
+        this.loading = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar amortizaciones' });
       }
     });

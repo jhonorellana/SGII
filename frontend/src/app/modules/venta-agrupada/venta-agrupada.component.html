@@ -1,4 +1,4 @@
-<div class="venta-agrupada-container">
+<div class="container-fluid">
   <p-toast></p-toast>
 
   <!-- Resumen de Selección -->
@@ -55,12 +55,14 @@
   </div>
 
   <!-- Tabla de inversiones -->
-  <p-card header="Inversiones Disponibles" styleClass="compact-card inversiones-card">
+  <div class="mt-4">
+    <h5 class="mb-3 font-semibold" style="color: #333;">Inversiones Disponibles</h5>
     <p-table #dt [value]="inversiones" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
              [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
              [tableStyle]="{'min-width': '80rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
+             stateStorage="session" stateKey="ventas-agrupada-table-state"
              [loading]="loading"
              responsiveLayout="scroll"
              showCurrentPageReport="true"
@@ -88,23 +90,23 @@
               (onChange)="onSeleccionarTodas($event.checked)">
             </p-checkbox>
           </th>
-          <th>Persona</th>
-          <th pSortableColumn="id_inversion">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
-          <th pSortableColumn="instrumento.nombre">Instrumento <p-sortIcon field="instrumento.nombre"></p-sortIcon></th>
-          <th pSortableColumn="fecha_compra">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
-          <th pSortableColumn="valor_nominal" class="text-right">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
-          <th pSortableColumn="capital_invertido" class="text-right">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
-          <th pSortableColumn="porcentaje_compra" class="text-right">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
+          <th class="text-center">Persona</th>
+          <th pSortableColumn="id_inversion" class="text-center">ID <p-sortIcon field="id_inversion"></p-sortIcon></th>
+          <th pSortableColumn="instrumento.nombre" class="text-center">Instrumento <p-sortIcon field="instrumento.nombre"></p-sortIcon></th>
+          <th pSortableColumn="fecha_compra" class="text-center">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
+          <th pSortableColumn="valor_nominal" class="text-end">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+          <th pSortableColumn="capital_invertido" class="text-end">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+          <th pSortableColumn="porcentaje_compra" class="text-end">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
         </tr>
         <tr>
           <th></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietario.nombre', 'contains')" class="w-100" placeholder="Filtrar persona"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.nombre', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
-          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" class="w-100 text-right" placeholder="Filtrar nominal"/></th>
-          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" class="w-100 text-right" placeholder="Filtrar compra"/></th>
-          <th class="text-right"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" class="w-100 text-right" placeholder="Filtrar %"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietario.nombre', 'contains')" [value]="$any(dt.filters['propietario.nombre'])?.value || ''" class="w-100" placeholder="Filtrar persona"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_inversion', 'contains')" [value]="$any(dt.filters['id_inversion'])?.value || ''" class="w-100" placeholder="Filtrar ID"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumento.nombre', 'contains')" [value]="$any(dt.filters['instrumento.nombre'])?.value || ''" class="w-100" placeholder="Filtrar instrumento"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" [value]="$any(dt.filters['fecha_compra'])?.value || ''" class="w-100" placeholder="Filtrar fecha"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" [value]="$any(dt.filters['valor_nominal'])?.value || ''" class="w-100 text-end" placeholder="Filtrar nominal"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" [value]="$any(dt.filters['capital_invertido'])?.value || ''" class="w-100 text-end" placeholder="Filtrar compra"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" [value]="$any(dt.filters['porcentaje_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar %"/></th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-inversion>
@@ -116,13 +118,13 @@
               (onChange)="onInversionSeleccionada(inversion.id_inversion!, $event.checked)">
             </p-checkbox>
           </td>
-          <td>{{ inversion.propietario?.nombre || (inversion.propietario?.nombres + ' ' + inversion.propietario?.apellidos) || '-' }}</td>
-          <td>{{ inversion.id_inversion }} - {{ inversion.liquidacion || '-' }}</td>
-          <td>{{ inversion.instrumento?.nombre || '-' }}</td>
-          <td>{{ formatDateDisplay(inversion.fecha_compra) }}</td>
-          <td class="text-right">{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
-          <td class="text-right">{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
-          <td class="text-right">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
+          <td class="text-center">{{ inversion.propietario?.nombre || (inversion.propietario?.nombres + ' ' + inversion.propietario?.apellidos) || '-' }}</td>
+          <td class="text-center">{{ inversion.id_inversion }} - {{ inversion.liquidacion || '-' }}</td>
+          <td class="text-center">{{ inversion.instrumento?.nombre || '-' }}</td>
+          <td class="text-center">{{ formatDateDisplay(inversion.fecha_compra) }}</td>
+          <td class="text-end">{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
+          <td class="text-end">{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
+          <td class="text-end">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
         </tr>
       </ng-template>
 
@@ -136,7 +138,7 @@
         </tr>
       </ng-template>
     </p-table>
-  </p-card>
+  </div>
 </div>
 
 <!-- Modal de Venta -->

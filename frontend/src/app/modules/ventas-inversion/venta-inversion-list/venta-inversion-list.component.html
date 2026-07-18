@@ -1,4 +1,4 @@
-<div class="venta-inversion-container">
+<div class="container-fluid venta-inversion-container">
   <div class="header">
     <h1>Ventas de Inversiones</h1>
     <button class="btn btn-primary" (click)="createVenta()">
@@ -6,12 +6,13 @@
     </button>
   </div>
 
-  <p-table [value]="ventas" [paginator]="true" [rows]="rowsPerPage" [totalRecords]="totalRecords" [loading]="loading" (onPageChange)="onPageChange($event)" [rowsPerPageOptions]="[5,10,25,50]" #dt
-             [globalFilterFields]="['id_venta_inversion','id_inversion','id_instrumento','fecha_venta']"
+  <p-table [value]="ventas" [paginator]="true" [rows]="rowsPerPage" [totalRecords]="totalRecords" [loading]="loading" (onPageChange)="onPageChange($event)" [rowsPerPageOptions]="[5,10,25,50,100]" #dt
+             [globalFilterFields]="['id_venta_inversion','liquidacion_venta','instrumentoDisplay','fecha_venta','precio_venta','valor_venta_con_comision','valor_recibido','utilidad_con_comision','rendimiento_total','dias_transcurridos','roi','ganancia_anual']"
              [tableStyle]="{'min-width': '80rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
              responsiveLayout="scroll"
              showCurrentPageReport="true"
+             stateStorage="session" stateKey="ventas-inversion-table-state"
              paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
              currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
              (onFilter)="onFilter($event)">
@@ -23,22 +24,34 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_venta_inversion">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
-        <th pSortableColumn="liquidacion_venta">Liquidación <p-sortIcon field="liquidacion_venta"></p-sortIcon></th>
-        <th pSortableColumn="id_instrumento">Instrumento <p-sortIcon field="id_instrumento"></p-sortIcon></th>
-        <th pSortableColumn="fecha_venta">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
-        <th pSortableColumn="precio_venta">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
-        <th pSortableColumn="valor_venta_con_comision">Valor Venta con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
-        <th>Tipo</th>
-        <th>Acciones</th>
+        <th pSortableColumn="id_venta_inversion" class="text-center" style="width: 60px;">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
+        <th pSortableColumn="liquidacion_venta" class="text-center" style="width: 140px;">Liquidación <p-sortIcon field="liquidacion_venta"></p-sortIcon></th>
+        <th pSortableColumn="id_instrumento" style="width: 250px;">Instrumento <p-sortIcon field="id_instrumento"></p-sortIcon></th>
+        <th pSortableColumn="fecha_venta" class="text-center" style="width: 100px;">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
+        <th pSortableColumn="precio_venta" class="text-end" style="width: 90px;">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
+        <th pSortableColumn="valor_venta_con_comision" class="text-end" style="width: 110px;">Valor Venta con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="valor_recibido" class="text-end" style="width: 110px;">Valor Recibido <p-sortIcon field="valor_recibido"></p-sortIcon></th>
+        <th pSortableColumn="utilidad_con_comision" class="text-end" style="width: 110px;">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="rendimiento_total" class="text-end" style="width: 110px;">Rendimiento Total <p-sortIcon field="rendimiento_total"></p-sortIcon></th>
+        <th pSortableColumn="dias_transcurridos" class="text-center" style="width: 90px;">Días Transcurridos <p-sortIcon field="dias_transcurridos"></p-sortIcon></th>
+        <th pSortableColumn="roi" class="text-end" style="width: 80px;">ROI <p-sortIcon field="roi"></p-sortIcon></th>
+        <th pSortableColumn="ganancia_anual" class="text-end" style="width: 100px;">Ganancia Anual <p-sortIcon field="ganancia_anual"></p-sortIcon></th>
+        <th class="text-center" style="width: 80px;">Tipo</th>
+        <th class="text-center" style="width: 100px;">Acciones</th>
       </tr>
       <tr>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_venta_inversion', 'contains')" class="w-100" placeholder="Filtrar ID"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'liquidacion_venta', 'contains')" class="w-100" placeholder="Filtrar liquidación"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumentoDisplay', 'contains')" class="w-100" placeholder="Filtrar instrumento"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_venta', 'contains')" class="w-100" placeholder="Filtrar fecha"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_venta', 'contains')" class="w-100" placeholder="Filtrar precio"/></th>
-        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_venta_con_comision', 'contains')" class="w-100" placeholder="Filtrar valor con comisión"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_venta_inversion', 'contains')" [value]="$any(dt.filters['id_venta_inversion'])?.value || ''" class="w-100" placeholder="Filtrar ID"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'liquidacion_venta', 'contains')" [value]="$any(dt.filters['liquidacion_venta'])?.value || ''" class="w-100" placeholder="Filtrar liquidación"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'instrumentoDisplay', 'contains')" [value]="$any(dt.filters['instrumentoDisplay'])?.value || ''" class="w-100" placeholder="Filtrar instrumento"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_venta', 'contains')" [value]="$any(dt.filters['fecha_venta'])?.value || ''" class="w-100" placeholder="Filtrar fecha"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_venta', 'contains')" [value]="$any(dt.filters['precio_venta'])?.value || ''" class="w-100" placeholder="Filtrar precio"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_venta_con_comision', 'contains')" [value]="$any(dt.filters['valor_venta_con_comision'])?.value || ''" class="w-100" placeholder="Filtrar valor con comisión"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_recibido', 'contains')" [value]="$any(dt.filters['valor_recibido'])?.value || ''" class="w-100" placeholder="Filtrar v. recibido"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'utilidad_con_comision', 'contains')" [value]="$any(dt.filters['utilidad_con_comision'])?.value || ''" class="w-100" placeholder="Filtrar utilidad"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'rendimiento_total', 'contains')" [value]="$any(dt.filters['rendimiento_total'])?.value || ''" class="w-100" placeholder="Filtrar rend. total"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'dias_transcurridos', 'contains')" [value]="$any(dt.filters['dias_transcurridos'])?.value || ''" class="w-100" placeholder="Filtrar días"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'roi', 'contains')" [value]="$any(dt.filters['roi'])?.value || ''" class="w-100" placeholder="Filtrar ROI"/></th>
+        <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'ganancia_anual', 'contains')" [value]="$any(dt.filters['ganancia_anual'])?.value || ''" class="w-100" placeholder="Filtrar g. anual"/></th>
         <th></th>
         <th></th>
       </tr>
@@ -46,16 +59,22 @@
 
     <ng-template pTemplate="body" let-venta>
       <tr>
-        <td>{{ venta.id_venta_inversion }}</td>
-        <td>{{ venta.liquidacion_venta || '-' }}</td>
+        <td class="text-center">{{ venta.id_venta_inversion }}</td>
+        <td class="text-center">{{ venta.liquidacion_venta || '-' }}</td>
         <td>{{ venta.instrumentoDisplay }}</td>
-        <td>{{ formatDate(venta.fecha_venta) }}</td>
-        <td>{{ formatPrecioVenta(venta.precio_venta) }}</td>
-        <td>{{ formatCurrency(venta.valor_venta_con_comision) }}</td>
-        <td>
+        <td class="text-center">{{ formatDate(venta.fecha_venta) }}</td>
+        <td class="text-end">{{ formatPrecioVenta(venta.precio_venta) }}</td>
+        <td class="text-end">{{ formatCurrency(venta.valor_venta_con_comision) }}</td>
+        <td class="text-end">{{ formatCurrency(venta.valor_recibido) }}</td>
+        <td class="text-end">{{ formatCurrency(venta.utilidad_con_comision) }}</td>
+        <td class="text-end">{{ formatCurrency(venta.rendimiento_total) }}</td>
+        <td class="text-center">{{ venta.dias_transcurridos != null ? venta.dias_transcurridos : '-' }}</td>
+        <td class="text-end">{{ venta.roi != null ? (venta.roi | number:'1.2-2') + '%' : '-' }}</td>
+        <td class="text-end">{{ venta.ganancia_anual != null ? (venta.ganancia_anual | number:'1.2-2') + '%' : '-' }}</td>
+        <td class="text-center">
           <p-tag [value]="venta.tipoVenta?.nombre || (venta.id_tipo_venta === 1 ? 'Total' : 'Parcial')" [severity]="venta.id_tipo_venta === 1 ? 'success' : 'info'"></p-tag>
         </td>
-        <td>
+        <td class="text-center">
           <div class="btn-group" role="group">
             <button class="btn btn-sm btn-outline-info"
                     (click)="viewDetail(venta)"
@@ -82,7 +101,7 @@
 
     <ng-template pTemplate="emptymessage">
       <tr>
-        <td colspan="8" class="text-center py-4">
+        <td colspan="14" class="text-center py-4">
           <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
           <p class="mt-2">No hay ventas registradas</p>
         </td>

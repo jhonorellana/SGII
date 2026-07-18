@@ -2,13 +2,7 @@
   padding: 20px;
 }
 
-:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-  padding: 0.25rem 0.5rem;
-}
 
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-  padding: 0.5rem;
-}
 
 .header {
   display: flex;
@@ -152,27 +146,7 @@
   border: 1px solid #e0e0e0;
 }
 
-:host ::ng-deep .p-table .p-datatable-thead > tr > th {
-  background-color: #22c55e;
-  color: #ffffff;
-  font-weight: 600;
-  text-align: left;
-  padding: 12px;
-  border: 1px solid #166534;
-}
 
-:host ::ng-deep .p-table .p-datatable-tbody > tr > td {
-  padding: 10px 12px;
-  border: 1px solid #dee2e6;
-}
-
-:host ::ng-deep .p-table .p-datatable-tbody > tr:hover {
-  background-color: #f0f9ff;
-}
-
-:host ::ng-deep .p-table .p-datatable-tbody > tr.p-highlight {
-  background-color: #e8f5e9;
-}
 
 .text-right {
   text-align: right;
@@ -472,11 +446,6 @@ input[readonly] {
   border: 1px solid #d1d5db !important;
 }
 
-:host ::ng-deep .p-datatable > .p-datatable-wrapper > table > thead > tr > th, 
-:host ::ng-deep .p-datatable > .p-datatable-wrapper > table > tbody > tr > td {
-  font-size: 0.8rem !important;
-  padding: 0.4rem 0.5rem !important;
-}
 
 :host ::ng-deep .p-datatable th input.p-inputtext,
 :host ::ng-deep .p-datatable th .p-dropdown {

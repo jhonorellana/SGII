@@ -97,21 +97,7 @@
   cursor: not-allowed;
 }
 
-/* Table spacing */
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 600;
-}
 
-:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-  padding: 6px 10px;
-  font-size: 13px;
-}
-
-:host ::ng-deep .p-datatable .p-paginator {
-  padding: 6px 10px;
-}
 
 /* Search box alignment */
 :host ::ng-deep .p-datatable .p-datatable-caption {
@@ -127,11 +113,7 @@
   padding: 6px 10px 6px 30px;
 }
 
-/* Filter inputs */
-:host ::ng-deep .p-datatable .p-datatable-thead > tr:nth-child(2) > th input {
-  font-size: 12px;
-  padding: 4px 8px;
-}
+
 
 /* Form Grid */
 .form-grid {
@@ -464,15 +446,12 @@
   font-weight: 600;
 }
 
-/* Right alignment for numeric values */
-.text-right {
-  text-align: right !important;
-}
+
 
 /* Tabular numbers for financial data */
 .resumen-value,
 .calculated-value,
-:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td.text-right {
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td.text-end {
   font-family: 'Courier New', 'Consolas', monospace;
   font-variant-numeric: tabular-nums;
 }

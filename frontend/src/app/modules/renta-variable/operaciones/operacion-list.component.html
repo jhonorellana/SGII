@@ -1,4 +1,4 @@
-<div class="renta-variable-container">
+<div class="container-fluid">
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 
@@ -64,18 +64,18 @@
     
     <ng-template pTemplate="header">
       <tr>
-        <th style="width: 4rem; text-align: center;">ID</th>
-        <th pSortableColumn="fecha_operacion" style="width: 8rem;">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
-        <th>Socio</th>
-        <th>Acción / Instrumento</th>
-        <th style="width: 10rem;">Tipo</th>
-        <th class="text-right" style="width: 8rem;">Cantidad</th>
-        <th class="text-right" style="width: 8rem;">P. Unitario</th>
-        <th class="text-right" style="width: 9rem;">V. Bruto</th>
-        <th class="text-right" style="width: 8rem;">Comisiones</th>
-        <th class="text-right" style="width: 9rem;">V. Neto</th>
-        <th style="width: 8rem;">Liquidación</th>
-        <th style="width: 6rem; text-align: center;">Acciones</th>
+        <th class="text-center" style="width: 4rem;">ID</th>
+        <th pSortableColumn="fecha_operacion" class="text-center" style="width: 8rem;">Fecha <i class="pi pi-sort-amount-down-alt"></i></th>
+        <th class="text-center">Socio</th>
+        <th class="text-center">Acción / Instrumento</th>
+        <th class="text-center" style="width: 10rem;">Tipo</th>
+        <th class="text-end" style="width: 8rem;">Cantidad</th>
+        <th class="text-end" style="width: 8rem;">P. Unitario</th>
+        <th class="text-end" style="width: 9rem;">V. Bruto</th>
+        <th class="text-end" style="width: 8rem;">Comisiones</th>
+        <th class="text-end" style="width: 9rem;">V. Neto</th>
+        <th class="text-center" style="width: 8rem;">Liquidación</th>
+        <th class="text-center" style="width: 6rem;">Acciones</th>
       </tr>
     </ng-template>
 
@@ -88,16 +88,20 @@
         <td>
           <p-tag [severity]="getTipoOperacionClass(op)" [value]="getTipoOperacionNombre(op)"></p-tag>
         </td>
-        <td class="text-right font-medium">{{ formatNumber(op.quantity || op.cantidad, 0) }}</td>
-        <td class="text-right">{{ formatCurrency(op.precio_unitario) }}</td>
-        <td class="text-right font-semibold">{{ formatCurrency(op.valor_bruto) }}</td>
-        <td class="text-right text-muted">{{ formatCurrency(op.total_comisiones) }}</td>
-        <td class="text-right font-bold text-success">{{ formatCurrency(op.valor_neto) }}</td>
-        <td><span class="badge bg-light text-dark">{{ op.liquidacion || '-' }}</span></td>
+        <td class="text-end font-medium">{{ formatNumber(op.quantity || op.cantidad, 0) }}</td>
+        <td class="text-end">{{ formatCurrency(op.precio_unitario) }}</td>
+        <td class="text-end font-semibold">{{ formatCurrency(op.valor_bruto) }}</td>
+        <td class="text-end text-muted">{{ formatCurrency(op.total_comisiones) }}</td>
+        <td class="text-end font-bold text-success">{{ formatCurrency(op.valor_neto) }}</td>
+        <td class="text-center"><span class="badge bg-light text-dark">{{ op.liquidacion || '-' }}</span></td>
         <td class="text-center">
           <div class="d-flex justify-content-center gap-1">
-            <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-sm" (click)="openEditDialog(op)" pTooltip="Editar operación" tooltipPosition="top"></button>
-            <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm" (click)="deleteOperacion(op)" pTooltip="Eliminar operación" tooltipPosition="top"></button>
+            <button class="btn btn-sm btn-outline-primary" (click)="openEditDialog(op)" title="Editar">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" (click)="deleteOperacion(op)" title="Eliminar">
+              <i class="bi bi-trash"></i>
+            </button>
           </div>
         </td>
       </tr>

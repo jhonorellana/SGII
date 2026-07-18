@@ -1,18 +1,1 @@
-/* No se necesitan estilos específicos, se usan Bootstrap classes */
-
-/* Disminuir altura de las filas */
-:host ::ng-deep .p-datatable.p-datatable-sm .p-datatable-tbody > tr > td {
-    padding: 0.25rem 0.5rem;
-}
-:host ::ng-deep .p-datatable.p-datatable-sm .p-datatable-thead > tr > th {
-    padding: 0.25rem 0.5rem;
-}
-
-/* Disminuir tamaño de letras y cajas de texto de los filtros */
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th input.p-inputtext,
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th .p-dropdown .p-dropdown-label,
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th select.form-select {
-    font-size: 0.75rem;
-    padding: 0.35rem 0.5rem;
-    height: auto;
-}
+/* No se necesitan estilos específicos, se usan Bootstrap classes o estilos globales */

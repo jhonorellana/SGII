@@ -109,6 +109,9 @@
         </td>
         <td>
           <div class="btn-group">
+            <button class="btn btn-sm btn-outline-primary" (click)="viewInversiones(instrumento)" title="Ver Inversiones">
+              <i class="bi bi-eye"></i>
+            </button>
             <button class="btn btn-sm btn-outline-info" (click)="openEdit(instrumento)">
               <i class="bi bi-pencil"></i>
             </button>
@@ -221,5 +224,79 @@
         (onSave)="save()">
       </app-modal-actions>
     </ng-template>
+  </p-dialog>
+
+  <!-- Modal para ver inversiones asociadas -->
+  <p-dialog [(visible)]="displayInversionesDialog" header="Inversiones de {{ instrumentoSeleccionado?.nombre }}"
+            [style]="{width: '60vw'}" [modal]="true" [closable]="true"
+            [closeOnEscape]="true" [dismissableMask]="true" styleClass="app-custom-modal">
+    <div *ngIf="loadingInversiones" class="text-center py-4">
+      <div class="spinner-border text-primary" role="status"></div>
+      <p class="mt-2">Cargando inversiones...</p>
+    </div>
+    
+    <p-table *ngIf="!loadingInversiones" [value]="inversionesAsociadas" [paginator]="true" [rows]="10" styleClass="p-datatable-sm p-datatable-gridlines" #dtInv
+             [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} inversiones" [rowsPerPageOptions]="[10,20,50,100]">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>ID</th>
+          <th>Propietario</th>
+          <th>Liquidación</th>
+          <th class="text-center">Fecha Compra</th>
+          <th class="text-end">Valor Nominal</th>
+          <th class="text-end">Capital Invertido</th>
+          <th class="text-center" style="width: 110px;">Estado</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>
+            <select (change)="dtInv.filter($any($event.target).value, 'propietario.nombres', 'equals')" class="form-select form-select-sm w-100">
+              <option value="">Todos</option>
+              <option *ngFor="let p of uniquePropietarios" [value]="p">{{ p }}</option>
+            </select>
+          </th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th>
+            <select (change)="dtInv.filter($any($event.target).value, 'estadoInversion.nombre', 'equals')" class="form-select form-select-sm w-100">
+              <option value="">Todos</option>
+              <option value="Activa">Activa</option>
+              <option value="Vendida totalmente">Vend. Total</option>
+              <option value="Vendida parcialmente">Vend. Parcial</option>
+              <option value="Vencida">Vencida</option>
+              <option value="Cancelada">Cancelada</option>
+            </select>
+          </th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-inv>
+        <tr>
+          <td>{{ inv.id_inversion }}</td>
+          <td>{{ inv.propietario?.nombres }}</td>
+          <td>{{ inv.liquidacion || '-' }}</td>
+          <td class="text-center">{{ formatDate(inv.fecha_compra) }}</td>
+          <td class="text-end">{{ inv.valor_nominal | currency:'USD' }}</td>
+          <td class="text-end">{{ inv.capital_invertido | currency:'USD' }}</td>
+          <td class="text-center">
+            <p-tag [value]="inv.estadoInversion?.nombre" [severity]="'info'"></p-tag>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer">
+        <tr class="totals-row">
+          <td colspan="4" class="text-end">Totales:</td>
+          <td class="text-end">{{ getTotalValorNominal(dtInv) | currency:'USD' }}</td>
+          <td class="text-end">{{ getTotalCapitalInvertido(dtInv) | currency:'USD' }}</td>
+          <td></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center py-3">No hay inversiones registradas para este instrumento.</td>
+        </tr>
+      </ng-template>
+    </p-table>
   </p-dialog>
 </div>

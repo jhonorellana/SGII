@@ -12,6 +12,7 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { FormsModule } from '@angular/forms';
 import { InstrumentoService, Instrumento } from '../../../core/instrumento.service';
+import { InversionService } from '../../../core/inversion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { EmisorService } from '../../../core/emisor.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
@@ -47,6 +48,12 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
   displayDialog: boolean = false;
   isEdit: boolean = false;
 
+  displayInversionesDialog: boolean = false;
+  inversionesAsociadas: any[] = [];
+  uniquePropietarios: string[] = [];
+  loadingInversiones: boolean = false;
+  instrumentoSeleccionado: Instrumento | null = null;
+
   instrumento: Instrumento = {
     id_emisor: 0,
     id_tipo_inversion: 0,
@@ -77,6 +84,7 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
 
   constructor(
     private instrumentoService: InstrumentoService,
+    private inversionService: InversionService,
     private emisorService: EmisorService,
     private catalogoService: CatalogoService,
     private confirmationService: ConfirmationService,
@@ -136,6 +144,49 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar tipos de inversión' });
       }
     });
+  }
+
+  viewInversiones(instrumento: Instrumento): void {
+    this.instrumentoSeleccionado = instrumento;
+    this.displayInversionesDialog = true;
+    this.loadingInversiones = true;
+    this.inversionesAsociadas = [];
+
+    this.inversionService.getAll({ id_instrumento: instrumento.id_instrumento, incluir_notas_credito: true }).subscribe({
+      next: (data) => {
+        this.inversionesAsociadas = data;
+        this.uniquePropietarios = Array.from(new Set(data.map((i: any) => i.propietario?.nombres))).filter(Boolean) as string[];
+        this.loadingInversiones = false;
+      },
+      error: (err) => {
+        this.loadingInversiones = false;
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar inversiones asociadas' });
+      }
+    });
+  }
+
+  getTotalValorNominal(dt: any): number {
+    const data = dt?.filteredValue || this.inversionesAsociadas || [];
+    return data.reduce((acc: number, inv: any) => acc + (parseFloat(inv.valor_nominal) || 0), 0);
+  }
+
+  getTotalCapitalInvertido(dt: any): number {
+    const data = dt?.filteredValue || this.inversionesAsociadas || [];
+    return data.reduce((acc: number, inv: any) => acc + (parseFloat(inv.capital_invertido) || 0), 0);
+  }
+
+  hideDialog(): void {
+    this.displayDialog = false;
+    this.instrumento = {
+      id_emisor: 0,
+      id_tipo_inversion: 0,
+      codigo_titulo: '',
+      nombre: '',
+      fecha_emision: '',
+      fecha_vencimiento: '',
+      calificacion_riesgo: '',
+      activo: true
+    };
   }
 
   openNew(): void {

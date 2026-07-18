@@ -20,6 +20,10 @@ class InversionController extends Controller
     {
         $query = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']);
 
+        if ($request->has('id_instrumento')) {
+            $query->where('id_instrumento', $request->query('id_instrumento'));
+        }
+
         if ($request->has('tipo_inversion')) {
             $tipo = $request->query('tipo_inversion');
             $query->whereHas('instrumento', function ($q) use ($tipo) {
