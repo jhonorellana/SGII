@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { FlujoCapitalService } from '../../../core/flujo-capital.service';
@@ -57,6 +57,9 @@ export interface FlujoCapitalItem {
   styleUrls: ['./flujo-capital-consolidado.component.css']
 })
 export class FlujoCapitalConsolidadoComponent implements OnInit {
+  @Input() isModal: boolean = false;
+  @Input() paramsModal: any = null;
+
   reporteForm!: FormGroup;
   flujoCapital: FlujoCapitalItem[] = [];
   totales: FlujoCapitalItem = {
@@ -116,10 +119,23 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     this.loadCurrentUser();
     this.loadInitialData();
 
-    // Generar reporte automáticamente después de cargar los datos iniciales
-    setTimeout(() => {
-      this.generarReporte();
-    }, 1000);
+    if (this.isModal && this.paramsModal) {
+      this.reporteForm.patchValue({
+        fecha_inicio: new Date(this.paramsModal.fecha_inicio + 'T00:00:00'),
+        fecha_fin: new Date(this.paramsModal.fecha_fin + 'T00:00:00'),
+        id_grupo_familiar: this.paramsModal.id_grupo_familiar,
+        id_propietario: this.paramsModal.id_propietario
+      });
+      // Delay so form updates properly
+      setTimeout(() => {
+        this.generarReporte();
+      }, 500);
+    } else {
+      // Generar reporte automáticamente después de cargar los datos iniciales
+      setTimeout(() => {
+        this.generarReporte();
+      }, 1000);
+    }
   }
 
   loadCurrentUser(): void {

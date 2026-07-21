@@ -19,6 +19,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
 import { LayoutService } from '../../../core/layout.service';
+import { DialogModule } from 'primeng/dialog';
+import { FlujoCapitalConsolidadoComponent } from '../flujo-capital-consolidado/flujo-capital-consolidado.component';
 
 @Component({
   selector: 'app-vencimientos-mensuales',
@@ -33,7 +35,9 @@ import { LayoutService } from '../../../core/layout.service';
     ProgressSpinnerModule,
     TableModule,
     CardModule,
-    NgChartsModule
+    NgChartsModule,
+    DialogModule,
+    FlujoCapitalConsolidadoComponent
   ],
   providers: [MessageService],
   templateUrl: './vencimientos-mensuales.component.html',
@@ -45,6 +49,10 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   vencimientosMensuales: VencimientoMensual[] = [];
   resumenAnual: ResumenAnual[] = [];
   loading = false;
+
+  mostrarModalDetalleMes = false;
+  paramsModalDetalle: any = null;
+  mesSeleccionado = '';
 
   // Configuración del gráfico
   public barChartOptions: any = {
@@ -277,6 +285,34 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         }
       }, 350);
     });
+  }
+
+  abrirDetalleMes(item: VencimientoMensual): void {
+    if (!item || !item.nombre_mes) return;
+    const parts = item.nombre_mes.split('-');
+    if (parts.length < 2) return;
+    const mesStr = parts[0];
+    const year = parts[1];
+    
+    const meses: any = {'Ene': '01', 'Feb': '02', 'Mar': '03', 'Abr': '04', 'May': '05', 'Jun': '06', 'Jul': '07', 'Ago': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dic': '12'};
+    const mesNum = meses[mesStr];
+    if (!mesNum) return;
+    
+    const fecha_fin = new Date(Number(year), Number(mesNum), 0);
+    const lastDay = String(fecha_fin.getDate()).padStart(2, '0');
+    
+    this.mesSeleccionado = item.nombre_mes;
+    this.paramsModalDetalle = {
+      fecha_inicio: `${year}-${mesNum}-01`,
+      fecha_fin: `${year}-${mesNum}-${lastDay}`,
+      id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
+      id_propietario: this.reporteForm.get('id_propietario')?.value
+    };
+    
+    this.mostrarModalDetalleMes = false;
+    setTimeout(() => {
+      this.mostrarModalDetalleMes = true;
+    }, 0);
   }
 
   ngOnDestroy(): void {

@@ -1,7 +1,7 @@
-<div class="container-fluid">
+<div class="container-fluid" [ngClass]="{'px-0': isModal}">
   <!-- Header del Reporte -->
-  <div class="card shadow-sm border-0 mb-4">
-    <div class="card-header app-custom-header text-white">
+  <div class="card shadow-sm border-0 mb-4" [ngClass]="{'mb-0 shadow-none': isModal}">
+    <div *ngIf="!isModal" class="card-header app-custom-header text-white">
       <h4 class="mb-0">
         <i class="bi bi-cash-coin me-2"></i>
         💰 Flujo de Capital Consolidado
@@ -10,14 +10,14 @@
         Flujo de capital consolidado por día y propietario entre fechas
       </small>
     </div>
-    <div class="card-body">
-      <p class="text-muted mb-4">
+    <div class="card-body" [ngClass]="{'p-0': isModal}">
+      <p *ngIf="!isModal" class="text-muted mb-4">
         Visualice de forma clara las recuperaciones de capital, ingresos por intereses,
         premios obtenidos y el flujo financiero diario consolidado de inversiones.
       </p>
 
       <!-- Filtros -->
-      <form [formGroup]="reporteForm">
+      <form *ngIf="!isModal" [formGroup]="reporteForm">
         <div class="row mb-4">
           <div class="col-md-2">
             <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
@@ -112,7 +112,7 @@
       </div>
 
       <!-- Tabla de Resultados -->
-      <div *ngIf="!loading && flujoCapital.length > 0">
+      <div *ngIf="!loading && flujoCapital.length > 0" [ngClass]="{'mt-3': isModal}">
         <p-tabView>
           <!-- Pestaña 1: Detallado -->
           <p-tabPanel header="Detallado">
@@ -208,7 +208,7 @@
         </p-tabView>
 
     <!-- Resumen en Cards -->
-        <div class="row mt-4">
+        <div *ngIf="!isModal" class="row mt-4">
           <div class="col-md-3">
             <div class="card border-primary">
               <div class="card-body text-center">

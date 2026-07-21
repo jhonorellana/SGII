@@ -128,7 +128,9 @@
               <tr
                 *ngFor="let item of vencimientosMensuales"
                 [class.table-active]="item.es_mes_actual"
-                class="fila-mensual">
+                class="fila-mensual"
+                style="cursor: pointer;"
+                (click)="abrirDetalleMes(item)">
                 <td class="text-left">
                   <strong>{{ item.nombre_mes }}</strong>
                   <span *ngIf="item.es_mes_actual" class="badge bg-warning ms-2">Actual</span>
@@ -215,5 +217,24 @@
     </div>
   </div>
 </div>
+
+<!-- Modal Detalle Mensual -->
+<p-dialog
+  [(visible)]="mostrarModalDetalleMes"
+  [modal]="true"
+  appendTo="body"
+  [header]="'Detalle de ' + mesSeleccionado"
+  [style]="{width: '95vw', 'max-width': '1400px'}"
+  [baseZIndex]="10000"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="app-custom-modal">
+  <div *ngIf="mostrarModalDetalleMes" style="min-height: 500px;">
+    <app-flujo-capital-consolidado
+      [isModal]="true"
+      [paramsModal]="paramsModalDetalle">
+    </app-flujo-capital-consolidado>
+  </div>
+</p-dialog>
 
 <p-toast></p-toast>
