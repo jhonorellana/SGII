@@ -12,7 +12,6 @@ class VentaAgrupadaCalculator
     public function calcularResumenCompra(array $idsInversiones, ?int $idPersonaSeleccionada = null): array
     {
         $inversiones = Inversion::whereIn('id_inversion', $idsInversiones)
-            ->where('activo', true)
             ->where('eliminado', false)
             ->with('propietario')
             ->get();
@@ -116,6 +115,7 @@ class VentaAgrupadaCalculator
 
         // Distribuir proporcionalmente
         $detallesDistribucion = [];
+        $maxDiasTranscurridos = 0;
         foreach ($data['detalles'] as $detalle) {
             $proporcion = $valorCompraTotal > 0
                 ? ($detalle['valor_compra'] / $valorCompraTotal)
@@ -137,6 +137,16 @@ class VentaAgrupadaCalculator
                 ? ($valorVentaAsignado / $detalle['valor_nominal']) * 100
                 : 0;
 
+            // Ganancia Anual individual
+            $diasTranscurridos = $this->calcularDiasTranscurridos($detalle['fecha_compra'] ?? null);
+            $gananciaAnualIndividual = $diasTranscurridos > 0
+                ? ($rendimientoIndividual * 365 / $diasTranscurridos)
+                : 0;
+            
+            if ($diasTranscurridos > $maxDiasTranscurridos) {
+                $maxDiasTranscurridos = $diasTranscurridos;
+            }
+
             $detallesDistribucion[] = [
                 'id_inversion' => $detalle['id_inversion'],
                 'propietario_nombre' => $detalle['propietario_nombre'],
@@ -147,12 +157,15 @@ class VentaAgrupadaCalculator
                 'porcentaje_venta' => $porcentajeVentaIndividual,
                 'utilidad' => $utilidadIndividual,
                 'rendimiento' => $rendimientoIndividual,
+                'ganancia_anual' => $gananciaAnualIndividual,
                 'proporcion' => $proporcion * 100,
                 'requiere_reasignacion' => $detalle['requiere_reasignacion'] ?? false,
                 'id_propietario_anterior' => $detalle['id_propietario_anterior'] ?? null,
                 'id_propietario_nuevo' => $detalle['id_propietario_nuevo'] ?? null
             ];
         }
+
+        $gananciaAnualTotal = $maxDiasTranscurridos > 0 ? ($roiTotal * 365 / $maxDiasTranscurridos) : 0;
 
         return [
             'success' => true,
@@ -165,6 +178,7 @@ class VentaAgrupadaCalculator
                 'valor_neto_recibido' => $valorNetoRecibido,
                 'utilidad_total' => $utilidadTotal,
                 'roi_total' => $roiTotal,
+                'ganancia_anual_total' => $gananciaAnualTotal,
                 'detalles_distribucion' => $detallesDistribucion,
                 'inversiones_reasignar' => $data['inversiones_reasignar'] ?? []
             ]

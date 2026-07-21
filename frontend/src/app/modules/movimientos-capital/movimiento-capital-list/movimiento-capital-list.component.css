@@ -4,9 +4,10 @@
 
 /* Summary Cards */
 .summary-cards {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  width: 100%;
 }
 
 @media (max-width: 1500px) {
@@ -34,6 +35,8 @@
   border-radius: 8px;
   position: relative;
   z-index: 1;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .summary-card ::ng-deep .p-card {
@@ -42,7 +45,7 @@
 }
 
 .summary-card ::ng-deep .p-card-body {
-  padding: 5px 8px !important;
+  padding: 4px 6px !important;
 }
 
 .summary-card ::ng-deep .p-card-content {
@@ -63,7 +66,7 @@
 }
 
 .card-label {
-  font-size: 0.65rem;
+  font-size: 0.60rem;
   color: #666;
   margin-bottom: 2px;
   font-weight: 500;
@@ -73,7 +76,7 @@
 }
 
 .card-value {
-  font-size: 0.85rem;
+  font-size: 0.80rem;
   font-weight: bold;
   color: #333;
 }

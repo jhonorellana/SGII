@@ -141,6 +141,18 @@ export class VentaAgrupadaComponent implements OnInit {
     return (this.valorTotalRecibido / this.valorNominalTotalModal) * 100;
   }
 
+  get precioCompraPonderado(): number {
+    if (this.valorNominalTotalModal === 0) return 0;
+    const sumaPonderada = this.inversionesSeleccionadasArray.reduce((sum, i) => sum + (this.parseNumber(i.precio_compra) * this.parseNumber(i.valor_nominal)), 0);
+    return sumaPonderada / this.valorNominalTotalModal;
+  }
+
+  get precioCompraNetoPonderado(): number {
+    if (this.valorNominalTotalModal === 0) return 0;
+    const sumaPonderada = this.inversionesSeleccionadasArray.reduce((sum, i) => sum + (this.parseNumber(i.precio_neto_compra) * this.parseNumber(i.valor_nominal)), 0);
+    return sumaPonderada / this.valorNominalTotalModal;
+  }
+
   get utilidadSinComision(): number {
     return this.valorEfectivo - this.capitalInvertidoTotalModal;
   }
@@ -631,6 +643,13 @@ export class VentaAgrupadaComponent implements OnInit {
       return '0.00%';
     }
     return `${value.toFixed(2)}%`;
+  }
+
+  formatPrecio6Decimales(value: any): string {
+    if (value === null || value === undefined || isNaN(this.parseNumber(value))) {
+      return '0.000000';
+    }
+    return Number(value).toFixed(6);
   }
 
   get inversionesSeleccionadasCount(): number {

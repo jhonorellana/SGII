@@ -2,55 +2,66 @@
   <p-toast></p-toast>
 
   <!-- Resumen de Selección -->
-  <div class="row mb-4 align-items-center mt-2">
-    <div class="col-lg-2 col-md-4 mb-2">
+  <div class="d-flex flex-row flex-nowrap gap-2 mb-4 align-items-stretch mt-2 w-100 overflow-hidden">
+    <div class="flex-fill" style="min-width: 0;">
       <div class="card border-primary h-100 shadow-sm" style="border-radius: 8px;">
-        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center h-100">
           <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Inversiones Seleccionadas</h6>
           <h3 class="text-primary mb-0 fw-bold">{{ inversionesSeleccionadasCount }}</h3>
         </div>
       </div>
     </div>
-    <div class="col-lg-3 col-md-4 mb-2">
+    <div class="flex-fill" style="min-width: 0;">
       <div class="card border-success h-100 shadow-sm" style="border-radius: 8px;">
-        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center h-100">
           <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Valor Nominal Total</h6>
           <h4 class="text-success mb-0 fw-bold">{{ formatCurrency(valorNominalTotal) }}</h4>
         </div>
       </div>
     </div>
-    <div class="col-lg-3 col-md-4 mb-2">
+    <div class="flex-fill" style="min-width: 0;">
       <div class="card border-info h-100 shadow-sm" style="border-radius: 8px;">
-        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center h-100">
           <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Capital Invertido</h6>
           <h4 class="text-info mb-0 fw-bold">{{ formatCurrency(valorCompraTotal) }}</h4>
         </div>
       </div>
     </div>
-    <div class="col-lg-2 col-md-6 mb-2">
+    <div class="flex-fill" style="min-width: 0;">
       <div class="card border-warning h-100 shadow-sm" style="border-radius: 8px;">
-        <div class="card-body text-center p-3 d-flex flex-column justify-content-center">
+        <div class="card-body text-center p-3 d-flex flex-column justify-content-center h-100">
           <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.70rem; font-weight: 600;">Diferencia</h6>
           <h4 class="text-warning mb-0 fw-bold">{{ formatCurrency(valorNominalTotal - valorCompraTotal) }}</h4>
         </div>
       </div>
     </div>
-    <div class="col-lg-2 col-md-6 mb-2 text-end">
-      <div class="d-flex flex-column align-items-end justify-content-center h-100">
-        <span *ngIf="inversionesSeleccionadasCount === 0" class="text-muted mb-2 text-end" style="font-size: 0.75rem; font-style: italic; line-height: 1.1;">
-          Seleccione una o más notas de crédito<br>para habilitar la venta agrupada.
-        </span>
-        <button
-          pButton
-          type="button"
-          label="Realizar Venta"
-          icon="pi pi-check-circle"
-          [disabled]="inversionesSeleccionadasCount === 0"
-          (click)="abrirDialogoVenta()"
-          class="p-button-success p-button-lg shadow-sm w-100"
-          style="border-radius: 8px;">
-        </button>
+    <div class="flex-fill" style="min-width: 0;">
+      <div class="card border-secondary h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-2 d-flex flex-column justify-content-center h-100">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 600;">Precio Compra Pond.</h6>
+          <h4 class="text-secondary mb-0 fw-bold" style="font-size: 1.1rem;">{{ formatPrecio6Decimales(precioCompraPonderado) }}</h4>
+        </div>
       </div>
+    </div>
+    <div class="flex-fill" style="min-width: 0;">
+      <div class="card border-dark h-100 shadow-sm" style="border-radius: 8px;">
+        <div class="card-body text-center p-2 d-flex flex-column justify-content-center h-100">
+          <h6 class="text-muted text-uppercase mb-1" style="font-size: 0.65rem; font-weight: 600;">Precio Neto Pond.</h6>
+          <h4 class="text-dark mb-0 fw-bold" style="font-size: 1.1rem;">{{ formatPrecio6Decimales(precioCompraNetoPonderado) }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="flex-fill d-flex flex-column justify-content-center" style="min-width: 0;">
+      <button
+        pButton
+        type="button"
+        label="Realizar Venta"
+        icon="pi pi-check-circle"
+        [disabled]="inversionesSeleccionadasCount === 0"
+        (click)="abrirDialogoVenta()"
+        class="p-button-success shadow-sm w-100 h-100 p-0"
+        style="border-radius: 8px; font-size: 0.95rem; font-weight: bold; min-height: 60px; white-space: normal;">
+      </button>
     </div>
   </div>
 
@@ -96,7 +107,9 @@
           <th pSortableColumn="fecha_compra" class="text-center">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
           <th pSortableColumn="valor_nominal" class="text-end">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
           <th pSortableColumn="capital_invertido" class="text-end">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
-          <th pSortableColumn="porcentaje_compra" class="text-end">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
+          <th pSortableColumn="porcentaje_compra" class="text-end" *ngIf="false">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
+          <th pSortableColumn="precio_compra" class="text-end">Precio Compra <p-sortIcon field="precio_compra"></p-sortIcon></th>
+          <th pSortableColumn="precio_neto_compra" class="text-end">Precio Compra Neto <p-sortIcon field="precio_neto_compra"></p-sortIcon></th>
         </tr>
         <tr>
           <th></th>
@@ -106,7 +119,9 @@
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" [value]="$any(dt.filters['fecha_compra'])?.value || ''" class="w-100" placeholder="Filtrar fecha"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" [value]="$any(dt.filters['valor_nominal'])?.value || ''" class="w-100 text-end" placeholder="Filtrar nominal"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" [value]="$any(dt.filters['capital_invertido'])?.value || ''" class="w-100 text-end" placeholder="Filtrar compra"/></th>
-          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" [value]="$any(dt.filters['porcentaje_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar %"/></th>
+          <th class="text-end" *ngIf="false"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" [value]="$any(dt.filters['porcentaje_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar %"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_compra', 'contains')" [value]="$any(dt.filters['precio_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar precio"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_neto_compra', 'contains')" [value]="$any(dt.filters['precio_neto_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar precio neto"/></th>
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-inversion>
@@ -124,7 +139,9 @@
           <td class="text-center">{{ formatDateDisplay(inversion.fecha_compra) }}</td>
           <td class="text-end">{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
           <td class="text-end">{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
-          <td class="text-end">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
+          <td class="text-end" *ngIf="false">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
+          <td class="text-end">{{ formatPrecio6Decimales(inversion.precio_compra) }}</td>
+          <td class="text-end">{{ formatPrecio6Decimales(inversion.precio_neto_compra) }}</td>
         </tr>
       </ng-template>
 
@@ -360,6 +377,12 @@
           <label>ROI Total</label>
           <span class="resumen-value" [ngClass]="(previsualizacion?.roi_total || 0) >= 0 ? 'text-success' : 'text-danger'">
             {{ formatPercent(previsualizacion?.roi_total || 0) }}
+          </span>
+        </div>
+        <div class="resumen-item">
+          <label>Porcentaje Anual</label>
+          <span class="resumen-value" [ngClass]="(previsualizacion?.ganancia_anual_total || 0) >= 0 ? 'text-success' : 'text-danger'">
+            {{ formatPercent(previsualizacion?.ganancia_anual_total || 0) }}
           </span>
         </div>
       </div>
