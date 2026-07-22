@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { createStackedTooltipOptions } from '../../../core/utils/chart-options.util';
 import { LayoutService } from '../../../core/layout.service';
 import { Subscription, forkJoin } from 'rxjs';
 
@@ -227,16 +228,7 @@ export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, On
           font: { weight: 'bold', size: 12 },
           color: '#333'
         },
-        tooltip: {
-          callbacks: {
-            label: (context: any) => {
-              let label = context.dataset.label || '';
-              if (label) label += ': ';
-              label += this.formatCurrency(context.raw);
-              return label;
-            }
-          }
-        }
+        tooltip: createStackedTooltipOptions('US$')
       },
       scales: {
         x: {

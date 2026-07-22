@@ -11,6 +11,7 @@ import { GananciaAnualChartComponent } from '../ganancia-anual-chart/ganancia-an
 import { ConsolidadoAnualChartComponent } from '../consolidado-anual-chart/consolidado-anual-chart.component';
 import { Chart, registerables } from 'chart.js/auto';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { createStackedTooltipOptions } from '../../../core/utils/chart-options.util';
 import { LayoutService } from '../../../core/layout.service';
 import { Subscription } from 'rxjs';
 
@@ -176,18 +177,7 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
           color: '#333',
           offset: 2
         },
-        tooltip: {
-          callbacks: {
-            label: (context: any) => {
-              let label = context.dataset.label || '';
-              if (label) {
-                label += ': ';
-              }
-              label += this.formatCurrency(context.raw);
-              return label;
-            }
-          }
-        }
+        tooltip: createStackedTooltipOptions('US$')
       },
       scales: {
         x: {

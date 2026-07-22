@@ -21,6 +21,7 @@ import 'jspdf-autotable';
 import { LayoutService } from '../../../core/layout.service';
 import { DialogModule } from 'primeng/dialog';
 import { FlujoCapitalConsolidadoComponent } from '../flujo-capital-consolidado/flujo-capital-consolidado.component';
+import { createStackedTooltipOptions } from '../../../core/utils/chart-options.util';
 
 @Component({
   selector: 'app-vencimientos-mensuales',
@@ -54,6 +55,8 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
   paramsModalDetalle: any = null;
   mesSeleccionado = '';
 
+  public barChartPlugins = [ChartDataLabels];
+
   // Configuración del gráfico
   public barChartOptions: any = {
     responsive: true,
@@ -66,7 +69,7 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
         left: 5
       }
     },
-    plugins: [ChartDataLabels, {
+    plugins: {
       legend: {
         position: 'top',
         labels: {
@@ -74,59 +77,15 @@ export class VencimientosMensualesComponent implements OnInit, OnDestroy {
           font: {
             size: 11
           },
-          boxWidth: 5,
+          boxWidth: 10,
           usePointStyle: true
         }
       },
       title: {
         display: false
       },
-      tooltip: {
-        mode: 'index',
-        intersect: false,
-        displayColors: false,
-        callbacks: {
-          title: function(context: any) {
-            return context[0].label;
-          },
-          label: function(context: any) {
-            if (context.datasetIndex === 0) {
-              const index = context.dataIndex;
-              const datasets = context.chart.data.datasets;
-
-              const capital = Number(datasets[0].data[index]) || 0;
-              const interes = Number(datasets[1].data[index]) || 0;
-              const premio = Number(datasets[2].data[index]) || 0;
-              const total = capital + interes + premio;
-
-              const formatCurrency = (value: number) => {
-                return new Intl.NumberFormat('es-ES', {
-                  style: 'currency',
-                  currency: 'USD',
-                  minimumFractionDigits: 2,
-                  useGrouping: true
-                }).format(value);
-              };
-
-              const alignRight = (text: string, width: number) => {
-                return ' '.repeat(Math.max(0, width - text.length)) + text;
-              };
-
-              const labels = [
-                `Capital:  ${alignRight(formatCurrency(capital), 11)}`,
-                `Interés:   ${alignRight(formatCurrency(interes), 11)}`,
-                `Premio:    ${alignRight(formatCurrency(premio), 11)}`,
-                `─`.repeat(22),
-                `Total:     ${alignRight(formatCurrency(total), 11)}`
-              ];
-
-              return labels;
-            }
-            return '';
-          }
-        }
-      }
-    }],
+      tooltip: createStackedTooltipOptions('US$')
+    },
     scales: {
       x: {
         stacked: true,

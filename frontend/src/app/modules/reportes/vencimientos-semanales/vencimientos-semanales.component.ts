@@ -21,6 +21,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'jspdf-autotable';
 import { LayoutService } from '../../../core/layout.service';
+import { createStackedTooltipOptions } from '../../../core/utils/chart-options.util';
 
 @Component({
   selector: 'app-vencimientos-semanales',
@@ -93,10 +94,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       title: {
         display: false
       },
-      tooltip: {
-        mode: 'index',
-        intersect: false
-      }
+      tooltip: createStackedTooltipOptions('US$')
     },
     scales: {
       x: {

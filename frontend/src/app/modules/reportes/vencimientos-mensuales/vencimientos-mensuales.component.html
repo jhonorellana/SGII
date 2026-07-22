@@ -93,7 +93,7 @@
             </div>
             <div class="card-body">
               <div class="chart-container">
-                <canvas #chartCanvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType">
+                <canvas #chartCanvas baseChart [data]="barChartData" [options]="barChartOptions" [plugins]="barChartPlugins" [type]="barChartType">
                 </canvas>
               </div>
               <div class="mt-3 text-center">
