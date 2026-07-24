@@ -5,7 +5,7 @@
       <i class="bi bi-graph-up-arrow"></i>
       <span class="logo-text" *ngIf="!isCollapsed">SGII</span>
     </div>
-    <button class="toggle-btn" (click)="toggleSidebar()">
+    <button class="toggle-btn" (click)="toggleSidebar()" [attr.title]="isCollapsed ? 'Expandir menú' : 'Colapsar menú'">
       <i class="bi" [class.bi-chevron-left]="!isCollapsed" [class.bi-chevron-right]="isCollapsed"></i>
     </button>
   </div>

@@ -391,7 +391,7 @@
     <!-- Distribución por Inversión -->
     <div class="distribucion">
       <h3>Distribución por Inversión</h3>
-      <p-table [value]="previsualizacion.detalles_distribucion" [paginator]="true" [rows]="rowsPerPageModal" (onPage)="onPageChangeModal($event)" [showCurrentPageReport]="true" [rowsPerPageOptions]="[5, 10, 20, 50]" [currentPageReportTemplate]="'Mostrando {first} a {last} de {totalRecords} registros'" [paginatorDropdownAppendTo]="'body'">
+      <p-table [value]="previsualizacion.detalles_distribucion" styleClass="p-datatable-sm p-datatable-gridlines" responsiveLayout="scroll" [paginator]="true" [rows]="rowsPerPageModal" (onPage)="onPageChangeModal($event)" [showCurrentPageReport]="true" [rowsPerPageOptions]="[5, 10, 20, 50]" [currentPageReportTemplate]="'Mostrando {first} a {last} de {totalRecords} registros'" [paginatorDropdownAppendTo]="'body'">
         <ng-template pTemplate="header">
           <tr>
             <th>ID</th>
