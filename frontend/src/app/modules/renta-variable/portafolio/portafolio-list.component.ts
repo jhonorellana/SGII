@@ -144,7 +144,7 @@ export class PortafolioListComponent implements OnInit {
       next: (data: any) => {
         const instrumentosArray = Array.isArray(data) ? data : data?.data || [];
         this.instrumentos = instrumentosArray
-          .filter((i: any) => i.activo === true || i.activo === 1)
+          .filter((i: any) => (i.activo === true || i.activo === 1) && i.id_tipo_inversion === 203)
           .map((i: any) => ({
             value: i.id_instrumento,
             label: i.nombre || i.codigo_titulo
