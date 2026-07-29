@@ -42,25 +42,25 @@ BEGIN
         SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
                  WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_posicion,
         CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad END) = 0 THEN NULL
-             ELSE ROUND(
-                 SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) /
+             ELSE TRUNCATE(
+                 SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) /
                  SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad END)
                 ,6) END AS costo_promedio,
         ap.precio_ultimo AS precio_mercado,
-        (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
-                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0)) AS valor_mercado,
-        ( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
+        TRUNCATE((SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
+                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0)), 6) AS valor_mercado,
+        TRUNCATE(( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
                     WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
-          - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) ) AS pl_no_realizado,
-        CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) = 0 THEN NULL
-             ELSE ROUND(
+          - SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) ), 6) AS pl_no_realizado,
+        CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario END) = 0 THEN NULL
+             ELSE TRUNCATE(
                  ( ( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
                                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
-                    - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
-                   / SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
-        ROUND(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 4 PRECEDING AND CURRENT ROW), 6) AS sma_5,
-        ROUND(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 19 PRECEDING AND CURRENT ROW), 6) AS sma_20,
-        ROUND(ap.volumen_ultimo_dia /
+                    - SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
+                   / SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
+        TRUNCATE(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 4 PRECEDING AND CURRENT ROW), 6) AS sma_5,
+        TRUNCATE(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 19 PRECEDING AND CURRENT ROW), 6) AS sma_20,
+        TRUNCATE(ap.volumen_ultimo_dia /
         NULLIF( (SELECT AVG(volumen_ultimo_dia)
                  FROM accion_ultimo_precio a2
                  WHERE a2.id_emisor = i.id_emisor

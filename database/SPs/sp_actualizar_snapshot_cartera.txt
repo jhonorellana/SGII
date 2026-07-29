@@ -1,5 +1,5 @@
-DELIMITER $$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `sp_actualizar_snapshot_cartera`()
+DROP PROCEDURE IF EXISTS sp_actualizar_snapshot_cartera;
+CREATE PROCEDURE sp_actualizar_snapshot_cartera()
 BEGIN
     DECLARE v_unreal_up   DECIMAL(6,2);
     DECLARE v_unreal_down DECIMAL(6,2);
@@ -40,7 +40,7 @@ BEGIN
         SELECT 
             m.id_emisor, 
             s.SHA_DATE, 
-            AVG(s.SHA_PRICE) AS daily_avg_price,
+            AVG(CAST(s.SHA_PRICE AS DECIMAL(18,6))) AS daily_avg_price,
             SUM(s.SHA_NUMBER) AS daily_volume,
             ROW_NUMBER() OVER(PARTITION BY m.id_emisor ORDER BY s.SHA_DATE DESC) as rn
         FROM inversion.shares s
@@ -50,9 +50,9 @@ BEGIN
     sma_data AS (
         SELECT 
             id_emisor,
-            AVG(CASE WHEN rn <= 5 THEN daily_avg_price END) AS sma_5,
-            AVG(CASE WHEN rn <= 20 THEN daily_avg_price END) AS sma_20,
-            AVG(CASE WHEN rn <= 30 THEN daily_volume END) AS avg_vol_30
+            TRUNCATE(AVG(CASE WHEN rn <= 5 THEN daily_avg_price END), 6) AS sma_5,
+            TRUNCATE(AVG(CASE WHEN rn <= 20 THEN daily_avg_price END), 6) AS sma_20,
+            TRUNCATE(AVG(CASE WHEN rn <= 30 THEN daily_volume END), 6) AS avg_vol_30
         FROM daily_prices
         WHERE rn <= 30
         GROUP BY id_emisor
@@ -60,28 +60,28 @@ BEGIN
     SELECT
         i.id_emisor,
         CURDATE() AS fecha,
-        SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
-                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_posicion,
+        TRUNCATE(SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
+                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END), 6) AS cantidad_posicion,
         CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad END) = 0 THEN NULL
-             ELSE ROUND(
-                 SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) /
+             ELSE TRUNCATE(
+                 SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) /
                  SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad END)
                 ,6) END AS costo_promedio,
         ap.precio_ultimo AS precio_mercado,
-        (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
-                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0)) AS valor_mercado,
-        ( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
+        TRUNCATE((SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
+                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0)), 6) AS valor_mercado,
+        TRUNCATE(( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
                     WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
-          - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) ) AS pl_no_realizado,
-        CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) = 0 THEN NULL
-             ELSE ROUND(
+          - SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) ), 6) AS pl_no_realizado,
+        CASE WHEN SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario END) = 0 THEN NULL
+             ELSE TRUNCATE(
                  ( ( (SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad
                                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
-                    - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
-                   / SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
-        ROUND(sma.sma_5, 6) AS sma_5,
-        ROUND(sma.sma_20, 6) AS sma_20,
-        ROUND(ap.volumen_ultimo_dia / NULLIF(sma.avg_vol_30, 0), 2) AS vr,
+                    - SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
+                   / SUM(CASE WHEN ao.id_tipo_operacion IN (204) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
+        sma.sma_5,
+        sma.sma_20,
+        TRUNCATE(ap.volumen_ultimo_dia / NULLIF(sma.avg_vol_30, 0), 2) AS vr,
         ap.dias_sin_negociacion,
         CONCAT('[',
             CONCAT_WS(',',
@@ -109,5 +109,4 @@ BEGIN
     LEFT JOIN sma_data sma ON sma.id_emisor = i.id_emisor
     WHERE ao.activo = 1 AND ao.eliminado = 0 AND i.id_tipo_inversion IN (203,73)
     GROUP BY i.id_emisor;
-END$$
-DELIMITER ;
+END;

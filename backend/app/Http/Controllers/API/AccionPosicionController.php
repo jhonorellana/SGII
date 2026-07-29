@@ -159,16 +159,16 @@ class AccionPosicionController extends Controller
             $cant = (float)$op->cantidad;
             $neto = (float)$op->valor_neto;
 
-            // Compra (204), Bonificación/Acciones gratis (206), Ajuste Positivo (207)
-            if ($tipoOp === 204 || $tipoOp === 206 || $tipoOp === 207) {
+            // Compra (204): aumenta cantidad y suma capital desembolsado real
+            if ($tipoOp === 204) {
                 $costos[$key]['cantidad_acumulada'] += $cant;
                 $costos[$key]['costo_total_acumulado'] += $neto;
                 if ($costos[$key]['cantidad_acumulada'] > 0) {
                     $costos[$key]['costo_promedio_unitario'] = $costos[$key]['costo_total_acumulado'] / $costos[$key]['cantidad_acumulada'];
                 }
             }
-            // Split (212)
-            elseif ($tipoOp === 212) {
+            // Dividendo en Acciones/Bonificación (206), Ajuste Positivo (207), Split (212): aumenta cantidad sin desembolso de dinero ($0)
+            elseif ($tipoOp === 206 || $tipoOp === 207 || $tipoOp === 212) {
                 $costos[$key]['cantidad_acumulada'] += $cant;
                 if ($costos[$key]['cantidad_acumulada'] > 0) {
                     $costos[$key]['costo_promedio_unitario'] = $costos[$key]['costo_total_acumulado'] / $costos[$key]['cantidad_acumulada'];
