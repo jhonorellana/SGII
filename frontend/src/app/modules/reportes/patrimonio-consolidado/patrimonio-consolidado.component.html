@@ -84,6 +84,13 @@
               <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_dividendos')?.value ? 'Sí' : 'No' }}</span>
             </div>
           </div>
+          <div class="col-auto mb-3">
+            <label for="incluir_plusvalia" class="form-label d-block text-truncate" title="Incluir plusvalía de mercado de las acciones">Inc. Plusvalía Acciones</label>
+            <div class="d-flex align-items-center" style="height: 42px;">
+              <p-inputSwitch id="incluir_plusvalia" formControlName="incluir_plusvalia"></p-inputSwitch>
+              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_plusvalia')?.value ? 'Sí' : 'No' }}</span>
+            </div>
+          </div>
           <div class="col-auto ms-auto mb-3 d-flex flex-wrap gap-2">
             <button
               pButton
@@ -192,13 +199,60 @@
           </div>
         </div>
 
-        <!-- Resumen en Card -->
-        <div class="row mt-4">
-          <div class="col-md-12">
-            <div class="card border-success">
-              <div class="card-body text-center">
-                <h6 class="card-title text-success">Patrimonio Consolidado Total</h6>
-                <h3 class="text-success">{{ formatCurrency(total) }}</h3>
+        <!-- Resumen en Cards KPI -->
+        <div class="row mt-4 g-3">
+          <div class="col-xl-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #475569 !important;">
+              <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #475569;">Patrimonio Base (Costo)</small>
+                  <h4 class="fw-bold mb-0 mt-1" style="color: #334155;">{{ formatCurrency(baseTotal) }}</h4>
+                </div>
+                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(71, 85, 105, 0.15);">
+                  <i class="bi bi-bank fs-5" style="color: #475569;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a !important;">
+              <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #15803d;">Dividendos en Acciones</small>
+                  <h4 class="fw-bold mb-0 mt-1" style="color: #166534;">{{ formatCurrency(dividendosTotal) }}</h4>
+                </div>
+                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(22, 163, 74, 0.15);">
+                  <i class="bi bi-gift fs-5" style="color: #16a34a;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #2563eb !important;">
+              <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #1d4ed8;">Plusvalía Acciones</small>
+                  <h4 class="fw-bold mb-0 mt-1" style="color: #1e40af;">{{ formatCurrency(plusvaliaTotal) }}</h4>
+                </div>
+                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(37, 99, 235, 0.15);">
+                  <i class="bi bi-graph-up-arrow fs-5" style="color: #2563eb;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-xl-3 col-md-6">
+            <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #ccfbf1 100%); border-left: 4px solid #0f766e !important;">
+              <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #0f766e;">Patrimonio Consolidado Total</small>
+                  <h4 class="fw-bold mb-0 mt-1" style="color: #0f766e;">{{ formatCurrency(totalCompleto) }}</h4>
+                </div>
+                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(15, 118, 110, 0.15);">
+                  <i class="bi bi-wallet2 fs-5" style="color: #0f766e;"></i>
+                </div>
               </div>
             </div>
           </div>

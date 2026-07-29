@@ -37,7 +37,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Instrumentos',
-          icon: 'bi-graph-up',
+          icon: 'bi-collection',
           path: '/instrumentos'
         },
         {
@@ -64,7 +64,7 @@ export class SidebarComponent implements OnInit {
     },
     {
       title: 'Renta Variable',
-      icon: 'bi-graph-up-arrow',
+      icon: 'bi-activity',
       path: '/renta-variable',
       children: [
         {
@@ -89,12 +89,12 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Análisis de Mercado',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-pie-chart',
           path: '/renta-variable/dashboard-mercado'
         },
         {
           title: 'Historial de acciones',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-clock-history',
           path: '/reportes/historico-acciones'
         }
       ]
@@ -139,6 +139,11 @@ export class SidebarComponent implements OnInit {
       path: '/reportes',
       children: [
         {
+          title: 'Patrimonio Consolidado',
+          icon: 'bi-wallet2',
+          path: '/reportes/patrimonio-consolidado'
+        },
+        {
           title: 'Vencimientos Semanales',
           icon: 'bi-calendar-week',
           path: '/reportes/vencimientos-semanales'
@@ -147,11 +152,6 @@ export class SidebarComponent implements OnInit {
           title: 'Vencimientos Mensuales',
           icon: 'bi-calendar-month',
           path: '/reportes/vencimientos-mensuales'
-        },
-        {
-          title: 'Patrimonio Consolidado',
-          icon: 'bi-wallet2',
-          path: '/reportes/patrimonio-consolidado'
         },
         {
           title: 'Flujo Capital',

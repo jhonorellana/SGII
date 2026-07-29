@@ -1,6 +1,5 @@
-DELIMITER $$
-DROP PROCEDURE IF EXISTS `SP_PATRIMONIO_CONSOLIDADO`$$
-CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_PATRIMONIO_CONSOLIDADO`(IN `p_fecha_inicio` VARCHAR(10), IN `p_fecha_fin` VARCHAR(10), IN `p_id_grupo_familiar` INT, IN `p_id_propietario` INT, IN `p_incluir_dividendos` TINYINT(1))
+DROP PROCEDURE IF EXISTS `SP_PATRIMONIO_CONSOLIDADO`;
+CREATE PROCEDURE `SP_PATRIMONIO_CONSOLIDADO`(IN `p_fecha_inicio` VARCHAR(10), IN `p_fecha_fin` VARCHAR(10), IN `p_id_grupo_familiar` INT, IN `p_id_propietario` INT, IN `p_incluir_dividendos` TINYINT(1), IN `p_incluir_plusvalia` TINYINT(1))
 BEGIN
     -- Intereses esperados
     SELECT 'Intereses esperados' as detalle,
@@ -157,6 +156,39 @@ BEGIN
           FROM sipro_desa.grupo_familiar_persona gfp 
           WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
       ))
+
+    UNION ALL
+
+    -- Plusvalía Acciones (Diferencial de Precio de Mercado)
+    SELECT 'Plusvalía Acciones' as detalle,
+           CASE 
+               WHEN p_incluir_plusvalia = 1 THEN
+                   COALESCE((
+                       SELECT SUM(
+                           (pe.cantidad_actual * IFNULL(aup.precio_ultimo, 0))
+                           - pe.costo_desembolsado
+                           - (CASE WHEN p_incluir_dividendos = 1 THEN pe.valor_dividendos_acciones ELSE 0 END)
+                       )
+                       FROM (
+                           SELECT 
+                               i.id_emisor,
+                               SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_actual,
+                               SUM(CASE WHEN ao.id_tipo_operacion = 204 THEN ao.valor_neto WHEN ao.id_tipo_operacion = 205 THEN -ao.valor_neto ELSE 0 END) AS costo_desembolsado,
+                               SUM(CASE WHEN ao.id_tipo_operacion IN (206,207) THEN ao.valor_neto ELSE 0 END) AS valor_dividendos_acciones
+                           FROM sipro_desa.accion_operacion ao
+                           JOIN sipro_desa.instrumento i ON i.id_instrumento = ao.id_instrumento
+                           WHERE ao.activo = 1 AND ao.eliminado = 0 AND ao.fecha_operacion <= p_fecha_fin
+                             AND (p_id_propietario IS NULL OR ao.id_persona = p_id_propietario)
+                             AND (p_id_grupo_familiar IS NULL OR ao.id_persona IN (
+                                 SELECT gfp.id_persona FROM sipro_desa.grupo_familiar_persona gfp WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
+                             ))
+                           GROUP BY i.id_emisor
+                           HAVING cantidad_actual > 0
+                       ) pe
+                       LEFT JOIN sipro_desa.accion_ultimo_precio aup ON aup.id_emisor = pe.id_emisor
+                   ), 0)
+               ELSE 0
+           END as valor
 
     UNION ALL
 
@@ -322,6 +354,36 @@ BEGIN
                      FROM sipro_desa.grupo_familiar_persona gfp 
                      WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
                  ))
+           ) +
+           (
+                SELECT CASE 
+                    WHEN p_incluir_plusvalia = 1 THEN
+                        COALESCE((
+                            SELECT SUM(
+                                (pe.cantidad_actual * IFNULL(aup.precio_ultimo, 0))
+                                - pe.costo_desembolsado
+                                - (CASE WHEN p_incluir_dividendos = 1 THEN pe.valor_dividendos_acciones ELSE 0 END)
+                            )
+                            FROM (
+                                SELECT 
+                                    i.id_emisor,
+                                    SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_actual,
+                                    SUM(CASE WHEN ao.id_tipo_operacion = 204 THEN ao.valor_neto WHEN ao.id_tipo_operacion = 205 THEN -ao.valor_neto ELSE 0 END) AS costo_desembolsado,
+                                    SUM(CASE WHEN ao.id_tipo_operacion IN (206,207) THEN ao.valor_neto ELSE 0 END) AS valor_dividendos_acciones
+                                FROM sipro_desa.accion_operacion ao
+                                JOIN sipro_desa.instrumento i ON i.id_instrumento = ao.id_instrumento
+                                WHERE ao.activo = 1 AND ao.eliminado = 0 AND ao.fecha_operacion <= p_fecha_fin
+                                  AND (p_id_propietario IS NULL OR ao.id_persona = p_id_propietario)
+                                  AND (p_id_grupo_familiar IS NULL OR ao.id_persona IN (
+                                      SELECT gfp.id_persona FROM sipro_desa.grupo_familiar_persona gfp WHERE gfp.id_grupo_familiar = p_id_grupo_familiar
+                                  ))
+                                GROUP BY i.id_emisor
+                                HAVING cantidad_actual > 0
+                            ) pe
+                            LEFT JOIN sipro_desa.accion_ultimo_precio aup ON aup.id_emisor = pe.id_emisor
+                        ), 0)
+                    ELSE 0
+                END
            ) +
            (
                SELECT COALESCE(SUM(A.capital), 0)

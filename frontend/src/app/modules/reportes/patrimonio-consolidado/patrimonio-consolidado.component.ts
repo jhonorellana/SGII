@@ -44,6 +44,10 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   reporteForm!: FormGroup;
   patrimonio: PatrimonioItem[] = [];
   total: number = 0;
+  baseTotal: number = 0;
+  dividendosTotal: number = 0;
+  plusvaliaTotal: number = 0;
+  totalCompleto: number = 0;
   loading = false;
 
   // Gráfico
@@ -153,7 +157,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: [fechaFin, Validators.required],
       id_grupo_familiar: [null],
       id_propietario: [null],
-      incluir_dividendos: [false]
+      incluir_dividendos: [false],
+      incluir_plusvalia: [false]
     });
 
     // Establecer valores por defecto basados en el usuario actual
@@ -224,7 +229,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
       id_propietario: this.reporteForm.get('id_propietario')?.value,
-      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value,
+      incluir_plusvalia: this.reporteForm.get('incluir_plusvalia')?.value
     };
 
     this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
@@ -232,6 +238,10 @@ export class PatrimonioConsolidadoComponent implements OnInit {
         if (response.success) {
           this.patrimonio = response.data.patrimonio;
           this.total = response.data.total;
+          this.baseTotal = response.data.base_total || 0;
+          this.dividendosTotal = response.data.dividendos_total || 0;
+          this.plusvaliaTotal = response.data.plusvalia_total || 0;
+          this.totalCompleto = response.data.total_completo || (this.baseTotal + this.dividendosTotal + this.plusvaliaTotal);
           this.loading = false;
 
           // Actualizar gráfico
@@ -265,7 +275,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
       id_propietario: this.reporteForm.get('id_propietario')?.value,
-      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value,
+      incluir_plusvalia: this.reporteForm.get('incluir_plusvalia')?.value
     };
 
     this.patrimonioService.exportarExcel(params).subscribe({
@@ -297,7 +308,8 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
       id_propietario: this.reporteForm.get('id_propietario')?.value,
-      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value
+      incluir_dividendos: this.reporteForm.get('incluir_dividendos')?.value,
+      incluir_plusvalia: this.reporteForm.get('incluir_plusvalia')?.value
     };
 
     this.patrimonioService.exportarPDF(params).subscribe({

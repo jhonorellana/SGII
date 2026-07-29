@@ -20,6 +20,7 @@ class PatrimonioController extends Controller
         $idGrupoFamiliar = $request->input('id_grupo_familiar');
         $idPropietario = $request->input('id_propietario');
         $incluirDividendos = $request->input('incluir_dividendos') ? 1 : 0;
+        $incluirPlusvalia = $request->input('incluir_plusvalia') ? 1 : 0;
 
         // Validar fechas
         if (!$fechaInicio || !$fechaFin) {
@@ -38,36 +39,58 @@ class PatrimonioController extends Controller
         }
 
         try {
-            // Ejecutar stored procedure
-            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, ?)', [
+            // Ejecutar stored procedure con 1, 1 para obtener siempre los rubros estáticos completos
+            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, 1, 1)', [
                 $fechaInicio,
                 $fechaFin,
                 $idGrupoFamiliar,
-                $idPropietario,
-                $incluirDividendos
+                $idPropietario
             ]);
 
-            // Formatear resultados
             $patrimonio = [];
-            $total = 0;
+            $dividendosTotal = 0.0;
+            $plusvaliaTotal = 0.0;
+            $totalCompleto = 0.0;
 
             foreach ($resultados as $row) {
+                $val = (float) $row->valor;
+                if ($row->detalle === 'Dividendos en Acciones') {
+                    $dividendosTotal = $val;
+                } elseif ($row->detalle === 'Plusvalía Acciones') {
+                    $plusvaliaTotal = $val;
+                } elseif ($row->detalle === 'TOTAL') {
+                    $totalCompleto = $val;
+                }
+            }
+
+            $baseTotal = $totalCompleto - $dividendosTotal - $plusvaliaTotal;
+            $totalFinal = $baseTotal + ($incluirDividendos ? $dividendosTotal : 0.0) + ($incluirPlusvalia ? $plusvaliaTotal : 0.0);
+
+            foreach ($resultados as $row) {
+                $val = (float) $row->valor;
+                if ($row->detalle === 'Dividendos en Acciones' && !$incluirDividendos) {
+                    $val = 0.0;
+                } elseif ($row->detalle === 'Plusvalía Acciones' && !$incluirPlusvalia) {
+                    $val = 0.0;
+                } elseif ($row->detalle === 'TOTAL') {
+                    $val = $totalFinal;
+                }
+
                 $patrimonio[] = [
                     'detalle' => $row->detalle,
-                    'valor' => (float) $row->valor
+                    'valor' => $val
                 ];
-
-                // Guardar el total para separarlo
-                if ($row->detalle === 'TOTAL') {
-                    $total = (float) $row->valor;
-                }
             }
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'patrimonio' => $patrimonio,
-                    'total' => $total
+                    'total' => $totalFinal,
+                    'base_total' => $baseTotal,
+                    'dividendos_total' => $dividendosTotal,
+                    'plusvalia_total' => $plusvaliaTotal,
+                    'total_completo' => $totalCompleto
                 ]
             ]);
 
