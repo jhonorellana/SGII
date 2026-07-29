@@ -6,16 +6,11 @@
         <i class="bi bi-wallet2 me-2"></i>
         💰 Patrimonio Consolidado
       </h4>
-      <small class="text-white-50">
-        Consolidado patrimonial con inversiones, saldos bancarios y otros valores financieros
+      <small class="text-white-50 d-block mt-1">
+        Visualice el patrimonio total consolidado del usuario dentro de un período determinado, integrando inversiones, cuentas bancarias, saldos disponibles, deudas y otros valores financieros.
       </small>
     </div>
     <div class="card-body">
-      <p class="text-muted mb-4">
-        Visualice el patrimonio total consolidado del usuario dentro de un período determinado,
-        integrando inversiones, cuentas bancarias, saldos disponibles, deudas y otros valores financieros.
-      </p>
-
       <!-- Filtros -->
       <form [formGroup]="reporteForm">
         <div class="row mb-3 align-items-end">
@@ -78,14 +73,21 @@
             </p-dropdown>
           </div>
           <div class="col-auto mb-3">
-            <label for="incluir_dividendos" class="form-label d-block text-truncate" title="Incluir dividendos en acciones">Inc. Div. Acciones</label>
+            <label for="proyeccion_un_ano" class="form-label d-block text-truncate" title="Proyección a un año">Proyección un año</label>
+            <div class="d-flex align-items-center" style="height: 42px;">
+              <p-inputSwitch id="proyeccion_un_ano" formControlName="proyeccion_un_ano"></p-inputSwitch>
+              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('proyeccion_un_ano')?.value ? 'Sí' : 'No' }}</span>
+            </div>
+          </div>
+          <div class="col-auto mb-3">
+            <label for="incluir_dividendos" class="form-label d-block text-truncate" title="Dividendos en acciones">Div. Acciones</label>
             <div class="d-flex align-items-center" style="height: 42px;">
               <p-inputSwitch id="incluir_dividendos" formControlName="incluir_dividendos"></p-inputSwitch>
               <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_dividendos')?.value ? 'Sí' : 'No' }}</span>
             </div>
           </div>
           <div class="col-auto mb-3">
-            <label for="incluir_plusvalia" class="form-label d-block text-truncate" title="Incluir plusvalía de mercado de las acciones">Inc. Plusvalía Acciones</label>
+            <label for="incluir_plusvalia" class="form-label d-block text-truncate" title="Plusvalía de mercado de las acciones">Plusvalía Acciones</label>
             <div class="d-flex align-items-center" style="height: 42px;">
               <p-inputSwitch id="incluir_plusvalia" formControlName="incluir_plusvalia"></p-inputSwitch>
               <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_plusvalia')?.value ? 'Sí' : 'No' }}</span>
@@ -200,57 +202,71 @@
         </div>
 
         <!-- Resumen en Cards KPI -->
-        <div class="row mt-4 g-3">
-          <div class="col-xl-3 col-md-6">
+        <div class="row mt-4 g-3 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
+          <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #475569 !important;">
               <div class="card-body d-flex align-items-center justify-content-between p-3">
                 <div>
-                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #475569;">Patrimonio Base (Costo)</small>
-                  <h4 class="fw-bold mb-0 mt-1" style="color: #334155;">{{ formatCurrency(baseTotal) }}</h4>
+                  <small class="text-uppercase fw-semibold d-block text-truncate" title="Patrimonio Base (Costo)" style="font-size: 0.68rem; letter-spacing: 0.5px; color: #475569;">Patrimonio Base (Costo)</small>
+                  <h5 class="fw-bold mb-0 mt-1" style="color: #334155;">{{ formatCurrency(baseTotal) }}</h5>
                 </div>
-                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(71, 85, 105, 0.15);">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 40px; height: 40px; background-color: rgba(71, 85, 105, 0.15);">
                   <i class="bi bi-bank fs-5" style="color: #475569;"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="col-xl-3 col-md-6">
+          <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-left: 4px solid #16a34a !important;">
               <div class="card-body d-flex align-items-center justify-content-between p-3">
                 <div>
-                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #15803d;">Dividendos en Acciones</small>
-                  <h4 class="fw-bold mb-0 mt-1" style="color: #166534;">{{ formatCurrency(dividendosTotal) }}</h4>
+                  <small class="text-uppercase fw-semibold d-block text-truncate" title="Dividendos en Acciones" style="font-size: 0.68rem; letter-spacing: 0.5px; color: #15803d;">Dividendos en Acciones</small>
+                  <h5 class="fw-bold mb-0 mt-1" style="color: #166534;">{{ formatCurrency(dividendosTotal) }}</h5>
                 </div>
-                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(22, 163, 74, 0.15);">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 40px; height: 40px; background-color: rgba(22, 163, 74, 0.15);">
                   <i class="bi bi-gift fs-5" style="color: #16a34a;"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="col-xl-3 col-md-6">
+          <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-left: 4px solid #2563eb !important;">
               <div class="card-body d-flex align-items-center justify-content-between p-3">
                 <div>
-                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #1d4ed8;">Plusvalía Acciones</small>
-                  <h4 class="fw-bold mb-0 mt-1" style="color: #1e40af;">{{ formatCurrency(plusvaliaTotal) }}</h4>
+                  <small class="text-uppercase fw-semibold d-block text-truncate" title="Plusvalía Acciones" style="font-size: 0.68rem; letter-spacing: 0.5px; color: #1d4ed8;">Plusvalía Acciones</small>
+                  <h5 class="fw-bold mb-0 mt-1" style="color: #1e40af;">{{ formatCurrency(plusvaliaTotal) }}</h5>
                 </div>
-                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(37, 99, 235, 0.15);">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 40px; height: 40px; background-color: rgba(37, 99, 235, 0.15);">
                   <i class="bi bi-graph-up-arrow fs-5" style="color: #2563eb;"></i>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="col-xl-3 col-md-6">
+          <div class="col">
+            <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-left: 4px solid #8b5cf6 !important;">
+              <div class="card-body d-flex align-items-center justify-content-between p-3">
+                <div>
+                  <small class="text-uppercase fw-semibold d-block text-truncate" title="Div. + Plusvalía Acciones" style="font-size: 0.68rem; letter-spacing: 0.5px; color: #6d28d9;">Div. + Plusvalía Acciones</small>
+                  <h5 class="fw-bold mb-0 mt-1" style="color: #5b21b6;">{{ formatCurrency(gananciaTotalAcciones) }}</h5>
+                </div>
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 40px; height: 40px; background-color: rgba(139, 92, 246, 0.15);">
+                  <i class="bi bi-award fs-5" style="color: #8b5cf6;"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #ccfbf1 100%); border-left: 4px solid #0f766e !important;">
               <div class="card-body d-flex align-items-center justify-content-between p-3">
                 <div>
-                  <small class="text-uppercase fw-semibold" style="font-size: 0.72rem; letter-spacing: 0.5px; color: #0f766e;">Patrimonio Consolidado Total</small>
-                  <h4 class="fw-bold mb-0 mt-1" style="color: #0f766e;">{{ formatCurrency(totalCompleto) }}</h4>
+                  <small class="text-uppercase fw-semibold d-block text-truncate" title="Patrimonio Consolidado Total" style="font-size: 0.68rem; letter-spacing: 0.5px; color: #0f766e;">Patrimonio Consolidado Total</small>
+                  <h5 class="fw-bold mb-0 mt-1" style="color: #0f766e;">{{ formatCurrency(totalCompleto) }}</h5>
                 </div>
-                <div class="rounded-circle p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; background-color: rgba(15, 118, 110, 0.15);">
+                <div class="rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0 ms-2" style="width: 40px; height: 40px; background-color: rgba(15, 118, 110, 0.15);">
                   <i class="bi bi-wallet2 fs-5" style="color: #0f766e;"></i>
                 </div>
               </div>

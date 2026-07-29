@@ -50,6 +50,10 @@ export class PatrimonioConsolidadoComponent implements OnInit {
   totalCompleto: number = 0;
   loading = false;
 
+  get gananciaTotalAcciones(): number {
+    return (this.dividendosTotal || 0) + (this.plusvaliaTotal || 0);
+  }
+
   // Gráfico
   chartData: ChartData<'doughnut'> = {
     labels: [],
@@ -157,8 +161,32 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: [fechaFin, Validators.required],
       id_grupo_familiar: [null],
       id_propietario: [null],
+      proyeccion_un_ano: [true],
       incluir_dividendos: [false],
       incluir_plusvalia: [false]
+    });
+
+    // Escuchar cambios en el switch 'Proyección un año'
+    this.reporteForm.get('proyeccion_un_ano')?.valueChanges.subscribe((isProyeccion: boolean) => {
+      this.actualizarFechaFinSegunProyeccion(isProyeccion);
+      this.generarReporte();
+    });
+
+    // Escuchar cambios en los switches 'Div. Acciones' y 'Plusvalía Acciones'
+    this.reporteForm.get('incluir_dividendos')?.valueChanges.subscribe(() => {
+      this.generarReporte();
+    });
+
+    this.reporteForm.get('incluir_plusvalia')?.valueChanges.subscribe(() => {
+      this.generarReporte();
+    });
+
+    // Escuchar cambios en Fecha Inicio para recalcular Fecha Fin según el switch
+    this.reporteForm.get('fecha_inicio')?.valueChanges.subscribe(() => {
+      const isProyeccion = this.reporteForm.get('proyeccion_un_ano')?.value;
+      if (isProyeccion !== null && isProyeccion !== undefined) {
+        this.actualizarFechaFinSegunProyeccion(isProyeccion);
+      }
     });
 
     // Establecer valores por defecto basados en el usuario actual
@@ -181,6 +209,22 @@ export class PatrimonioConsolidadoComponent implements OnInit {
         this.generarReporte();
       }, 600);
     }, 500);
+  }
+
+  actualizarFechaFinSegunProyeccion(isProyeccion: boolean): void {
+    const fechaInicioVal = this.reporteForm.get('fecha_inicio')?.value;
+    if (!fechaInicioVal) return;
+
+    const fechaInicio = new Date(fechaInicioVal);
+    let nuevaFechaFin: Date;
+
+    if (isProyeccion) {
+      nuevaFechaFin = new Date(fechaInicio.getFullYear(), fechaInicio.getMonth() + 12, 0);
+    } else {
+      nuevaFechaFin = new Date(fechaInicio);
+    }
+
+    this.reporteForm.get('fecha_fin')?.setValue(nuevaFechaFin, { emitEvent: false });
   }
 
   loadInitialData(): void {
