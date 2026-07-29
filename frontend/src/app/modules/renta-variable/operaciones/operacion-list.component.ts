@@ -494,11 +494,30 @@ export class OperacionListComponent implements OnInit {
     return `${op.persona.nombres || ''} ${op.persona.apellidos || ''}`.trim() || '-';
   }
 
-  getTipoOperacionClass(op: AccionOperacion): 'success' | 'danger' | 'info' | 'warning' | 'secondary' | 'contrast' {
+  getTipoOperacionClass(op: AccionOperacion): string {
     const cod = op.tipo_operacion?.codigo || op.tipoOperacion?.codigo;
-    if (cod === 'COMPRA_ACCION' || cod === 'AJUS_POS_ACC' || cod === 'BONIF_ACCIONES') return 'success';
-    if (cod === 'VENTA_ACCION' || cod === 'AJUS_NEG_ACC') return 'danger';
-    return 'info'; // Split
+    const idTipo = op.id_tipo_operacion;
+    const nombre = (op.tipo_operacion?.nombre || op.tipoOperacion?.nombre || '').toUpperCase();
+
+    if (cod === 'COMPRA_ACCION' || idTipo === 204 || nombre.includes('COMPRA')) {
+      return 'tag-compra';
+    }
+    if (cod === 'DIVIDENDO_ACCIONES' || cod === 'DIVIDENDO_ACC' || idTipo === 207 || nombre.includes('DIVIDENDO')) {
+      return 'tag-dividendo';
+    }
+    if (cod === 'BONIF_ACCIONES' || idTipo === 206 || nombre.includes('BONIF') || nombre.includes('LIBERADA')) {
+      return 'tag-bonificacion';
+    }
+    if (cod === 'AJUS_POS_ACC' || idTipo === 209 || nombre.includes('POSITIVO')) {
+      return 'tag-ajuste-pos';
+    }
+    if (cod === 'VENTA_ACCION' || idTipo === 205 || nombre.includes('VENTA')) {
+      return 'tag-venta';
+    }
+    if (cod === 'AJUS_NEG_ACC' || idTipo === 208 || nombre.includes('NEGATIVO')) {
+      return 'tag-ajuste-neg';
+    }
+    return 'tag-split';
   }
 
   getTipoOperacionNombre(op: AccionOperacion): string {

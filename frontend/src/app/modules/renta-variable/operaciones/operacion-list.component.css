@@ -82,3 +82,53 @@
 .text-xs {
   font-size: 0.75rem;
 }
+
+/* Badges de Tipo de Operación en Renta Variable */
+::ng-deep .tipo-tag-fixed {
+  width: 145px !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  padding: 0.28rem 0.5rem !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Distintos tonos de verde para los tipos positivos */
+::ng-deep .tipo-tag-fixed.tag-compra {
+  background-color: #16a34a !important; /* Verde Esmeralda para Compra de Acciones */
+  color: #ffffff !important;
+}
+
+::ng-deep .tipo-tag-fixed.tag-dividendo {
+  background-color: #0d9488 !important; /* Verde Menta / Teal para Dividendo Acciones */
+  color: #ffffff !important;
+}
+
+::ng-deep .tipo-tag-fixed.tag-bonificacion {
+  background-color: #65a30d !important; /* Verde Lima / Olivo para Bonificación de Acciones */
+  color: #ffffff !important;
+}
+
+::ng-deep .tipo-tag-fixed.tag-ajuste-pos {
+  background-color: #047857 !important; /* Verde Bosque para Ajuste Positivo */
+  color: #ffffff !important;
+}
+
+/* Tipos negativos y otros */
+::ng-deep .tipo-tag-fixed.tag-venta {
+  background-color: #dc2626 !important; /* Rojo Carmesí para Venta de Acciones */
+  color: #ffffff !important;
+}
+
+::ng-deep .tipo-tag-fixed.tag-ajuste-neg {
+  background-color: #ea580c !important; /* Naranja Ámbar para Ajuste Negativo */
+  color: #ffffff !important;
+}
+
+::ng-deep .tipo-tag-fixed.tag-split {
+  background-color: #0284c7 !important; /* Azul Celeste para Split */
+  color: #ffffff !important;
+}

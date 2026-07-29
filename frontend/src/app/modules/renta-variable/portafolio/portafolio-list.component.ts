@@ -10,6 +10,7 @@ import { TabViewModule } from 'primeng/tabview';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
+import { InputSwitchModule } from 'primeng/inputswitch';
 
 import { AccionPosicionService } from '../../../core/accion-posicion.service';
 import { AccionDividendoService } from '../../../core/accion-dividendo.service';
@@ -36,7 +37,8 @@ import autoTable from 'jspdf-autotable';
     TabViewModule,
     InputTextModule,
     TooltipModule,
-    TagModule
+    TagModule,
+    InputSwitchModule
   ],
   templateUrl: './portafolio-list.component.html',
   styleUrl: './portafolio-list.component.css'
@@ -44,6 +46,8 @@ import autoTable from 'jspdf-autotable';
 export class PortafolioListComponent implements OnInit {
   posiciones: AccionPosicion[] = [];
   filteredPosiciones: AccionPosicion[] = [];
+  displayPosiciones: AccionPosicion[] = [];
+  modoConsolidado = false;
   dividendos: AccionDividendo[] = [];
 
   // Dropdown list options
@@ -117,8 +121,10 @@ export class PortafolioListComponent implements OnInit {
   ngOnInit(): void {
     const savedSocio = localStorage.getItem('portafolio_selected_socio');
     const savedInstrumento = localStorage.getItem('portafolio_selected_instrumento');
+    const savedConsolidado = localStorage.getItem('portafolio_modo_consolidado');
     this.selectedSocio = savedSocio ? Number(savedSocio) : null;
     this.selectedInstrumento = savedInstrumento ? Number(savedInstrumento) : null;
+    this.modoConsolidado = savedConsolidado === 'true';
 
     this.loadFiltros();
     this.loadData();
@@ -192,6 +198,7 @@ export class PortafolioListComponent implements OnInit {
               return true;
             });
 
+            this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
             this.loading = false;
             this.cdr.detectChanges();
@@ -211,6 +218,7 @@ export class PortafolioListComponent implements OnInit {
               return true;
             });
 
+            this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
             this.loading = false;
             this.cdr.detectChanges();
@@ -239,6 +247,8 @@ export class PortafolioListComponent implements OnInit {
       localStorage.removeItem('portafolio_selected_instrumento');
     }
 
+    localStorage.setItem('portafolio_modo_consolidado', this.modoConsolidado.toString());
+
     // Filtrar posiciones en memoria
     this.filteredPosiciones = this.posiciones.filter(pos => {
       if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
@@ -250,20 +260,71 @@ export class PortafolioListComponent implements OnInit {
       return true;
     });
 
+    this.updateDisplayPosiciones();
     this.calculateMetricsAndCharts();
   }
 
   clearFilters(): void {
     this.selectedSocio = null;
     this.selectedInstrumento = null;
+    this.modoConsolidado = false;
     localStorage.removeItem('portafolio_selected_socio');
     localStorage.removeItem('portafolio_selected_instrumento');
+    localStorage.removeItem('portafolio_modo_consolidado');
     this.globalSearchQuery = '';
     if (this.dt) {
       this.dt.reset();
     }
     this.filteredPosiciones = [...this.posiciones];
+    this.updateDisplayPosiciones();
     this.calculateMetricsAndCharts();
+  }
+
+  updateDisplayPosiciones(): void {
+    if (this.modoConsolidado) {
+      this.displayPosiciones = this.consolidarPosiciones(this.filteredPosiciones);
+    } else {
+      this.displayPosiciones = [...this.filteredPosiciones];
+    }
+  }
+
+  consolidarPosiciones(list: AccionPosicion[]): AccionPosicion[] {
+    const mapa = new Map<number, AccionPosicion[]>();
+    
+    list.forEach(pos => {
+      const key = pos.id_instrumento;
+      if (!mapa.has(key)) {
+        mapa.set(key, []);
+      }
+      mapa.get(key)!.push(pos);
+    });
+
+    const resultado: AccionPosicion[] = [];
+
+    mapa.forEach((items, idInst) => {
+      const cantTotal = items.reduce((sum, p) => sum + (p.cantidad_actual || 0), 0);
+      const capInvertidoTotal = items.reduce((sum, p) => sum + (p.capital_invertido || 0), 0);
+      const valorMercadoTotal = items.reduce((sum, p) => sum + (p.valor_mercado || 0), 0);
+      const costoPromUnitario = cantTotal > 0 ? capInvertidoTotal / cantTotal : 0;
+      const utilidadPerdida = valorMercadoTotal - capInvertidoTotal;
+
+      resultado.push({
+        id_instrumento: idInst,
+        id_emisor: items[0].id_emisor,
+        id_persona: 0,
+        persona: 'TODOS (Consolidado)',
+        instrumento: items[0].instrumento,
+        cantidad_actual: cantTotal,
+        costo_promedio_unitario: costoPromUnitario,
+        capital_invertido: capInvertidoTotal,
+        precio_ultimo: items[0].precio_ultimo,
+        fecha_ultimo_precio: items[0].fecha_ultimo_precio,
+        valor_mercado: valorMercadoTotal,
+        utilidad_perdida_no_realizada: utilidadPerdida
+      });
+    });
+
+    return resultado.sort((a, b) => (a.instrumento || '').localeCompare(b.instrumento || ''));
   }
 
   calculateMetricsAndCharts(): void {
@@ -460,7 +521,7 @@ export class PortafolioListComponent implements OnInit {
   }
 
   exportToExcel(): void {
-    const dataToExport = this.dt?.filteredValue || this.filteredPosiciones;
+    const dataToExport = this.dt?.filteredValue || this.displayPosiciones;
     const exportData = dataToExport.map(pos => ({
       Socio: pos.persona || '-',
       Acción: pos.instrumento || '-',
@@ -485,7 +546,7 @@ export class PortafolioListComponent implements OnInit {
   }
 
   exportToPDF(): void {
-    const dataToExport = this.dt?.filteredValue || this.filteredPosiciones;
+    const dataToExport = this.dt?.filteredValue || this.displayPosiciones;
     const doc = new jsPDF('landscape');
 
     doc.setFontSize(18);

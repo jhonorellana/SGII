@@ -58,13 +58,13 @@ BEGIN
                                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
                     - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
                    / SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
-        AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS sma_5,
-        AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 19 PRECEDING AND CURRENT ROW) AS sma_20,
-        ap.volumen_ultimo_dia /
+        ROUND(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 4 PRECEDING AND CURRENT ROW), 6) AS sma_5,
+        ROUND(AVG(ap.precio_ultimo) OVER (PARTITION BY i.id_emisor ORDER BY ap.fecha_ultimo_precio ROWS BETWEEN 19 PRECEDING AND CURRENT ROW), 6) AS sma_20,
+        ROUND(ap.volumen_ultimo_dia /
         NULLIF( (SELECT AVG(volumen_ultimo_dia)
                  FROM accion_ultimo_precio a2
                  WHERE a2.id_emisor = i.id_emisor
-                   AND a2.fecha_ultimo_precio BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()), 0) AS vr,
+                   AND a2.fecha_ultimo_precio BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()), 0), 2) AS vr,
         ap.dias_sin_negociacion,
         CONCAT('[',
             CONCAT_WS(',',

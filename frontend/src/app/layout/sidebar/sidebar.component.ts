@@ -54,6 +54,11 @@ export class SidebarComponent implements OnInit {
           title: 'Ventas de Inversiones',
           icon: 'bi-currency-exchange',
           path: '/ventas-inversion'
+        },
+        {
+          title: 'Resumen Diario de la Bolsa',
+          icon: 'bi-journal-check',
+          path: '/reportes/resumen-diario-bolsa'
         }
       ]
     },
@@ -86,6 +91,11 @@ export class SidebarComponent implements OnInit {
           title: 'Análisis de Mercado',
           icon: 'bi-graph-up-arrow',
           path: '/renta-variable/dashboard-mercado'
+        },
+        {
+          title: 'Historial de acciones',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/historico-acciones'
         }
       ]
     },
@@ -170,23 +180,7 @@ export class SidebarComponent implements OnInit {
         }
       ]
     },
-    {
-      title: 'Reportes de la Bolsa',
-      icon: 'bi-graph-up',
-      path: '/reportes-bolsa',
-      children: [
-        {
-          title: 'Historial de acciones',
-          icon: 'bi-graph-up-arrow',
-          path: '/reportes/historico-acciones'
-        },
-        {
-          title: 'Resumen Diario de la Bolsa',
-          icon: 'bi-journal-check',
-          path: '/reportes/resumen-diario-bolsa'
-        }
-      ]
-    },
+
     {
       title: 'Datos Maestros',
       icon: 'bi-database',

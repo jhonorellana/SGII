@@ -79,9 +79,9 @@ BEGIN
                                 WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) * IFNULL(ap.precio_ultimo,0))
                     - SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario ELSE 0 END) )
                    / SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad * ao.precio_unitario END) ) * 100,2) END AS porcentaje_no_realizado,
-        sma.sma_5,
-        sma.sma_20,
-        ap.volumen_ultimo_dia / NULLIF(sma.avg_vol_30, 0) AS vr,
+        ROUND(sma.sma_5, 6) AS sma_5,
+        ROUND(sma.sma_20, 6) AS sma_20,
+        ROUND(ap.volumen_ultimo_dia / NULLIF(sma.avg_vol_30, 0), 2) AS vr,
         ap.dias_sin_negociacion,
         CONCAT('[',
             CONCAT_WS(',',

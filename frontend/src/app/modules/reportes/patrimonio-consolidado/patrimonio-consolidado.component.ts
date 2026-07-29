@@ -153,7 +153,7 @@ export class PatrimonioConsolidadoComponent implements OnInit {
       fecha_fin: [fechaFin, Validators.required],
       id_grupo_familiar: [null],
       id_propietario: [null],
-      incluir_dividendos: [true]
+      incluir_dividendos: [false]
     });
 
     // Establecer valores por defecto basados en el usuario actual

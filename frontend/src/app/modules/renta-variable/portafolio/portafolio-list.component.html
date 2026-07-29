@@ -30,6 +30,19 @@
         </p-dropdown>
       </div>
 
+      <div class="filter-field">
+        <label>Unir Valores (Consolidado)</label>
+        <div class="d-flex align-items-center gap-2" style="height: 38px;">
+          <p-inputSwitch
+            [(ngModel)]="modoConsolidado"
+            (onChange)="onFilterChange()">
+          </p-inputSwitch>
+          <span class="font-semibold text-sm" [ngClass]="modoConsolidado ? 'text-success' : 'text-secondary'">
+            {{ modoConsolidado ? 'Sí (Consolidado por Acción)' : 'No (Desglosado por Socio)' }}
+          </span>
+        </div>
+      </div>
+
       <div class="filter-field filter-actions">
         <button class="btn btn-outline-secondary w-100" (click)="clearFilters()">
           <i class="pi pi-refresh"></i> Limpiar Filtros
@@ -61,46 +74,43 @@
         {{ utilidadNoRealizada >= 0 ? '📈' : '📉' }}
       </div>
       <div class="stat-info">
-        <span class="stat-label">Plusvalía / Minusvalía</span>
-        <span class="stat-value font-bold d-flex align-items-center gap-2">
-          {{ formatCurrency(utilidadNoRealizada) }}
-          <p-tag 
-            [severity]="utilidadNoRealizada >= 0 ? 'success' : 'danger'" 
-            [value]="(utilidadNoRealizada >= 0 ? '+' : '') + formatNumber(porcentajeRendimiento, 2) + '%'">
-          </p-tag>
-        </span>
+        <span class="stat-label">Plusvalía / Minusvalía Latente</span>
+        <div class="d-flex align-items-baseline gap-2">
+          <span class="stat-value font-bold">{{ formatCurrency(utilidadNoRealizada) }}</span>
+          <span class="badge" [ngClass]="utilidadNoRealizada >= 0 ? 'bg-emerald' : 'bg-red'">
+            {{ porcentajeRendimiento >= 0 ? '+' : '' }}{{ formatNumber(porcentajeRendimiento, 2) }}%
+          </span>
+        </div>
       </div>
     </div>
 
-    <div class="stat-card dividendos-kpi">
-      <div class="stat-icon bg-amber-light text-amber">💰</div>
+    <div class="stat-card nominal">
+      <div class="stat-icon bg-purple-light text-purple">💰</div>
       <div class="stat-info">
         <span class="stat-label">Dividendos Cobrados (Efectivo)</span>
-        <span class="stat-value font-bold text-amber-dark">{{ formatCurrency(totalDividendosCobrados) }}</span>
+        <span class="stat-value font-bold">{{ formatCurrency(totalDividendosCobrados) }}</span>
       </div>
     </div>
   </div>
 
-  <!-- Pestañas de Navegación -->
+  <!-- Pestañas de Vista: Tabla y Gráficos -->
   <p-tabView>
-    <!-- Pestaña 1: Portafolio de Acciones -->
+    <!-- Pestaña 1: Tabla de Portafolio -->
     <p-tabPanel header="Portafolio de Acciones" leftIcon="pi pi-list">
-      <div class="card p-3">
-        <!-- Barra de búsqueda y botones de exportación -->
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
-          <div class="search-container">
-            <span class="p-input-icon-left w-100">
-              <i class="pi pi-search"></i>
-              <input 
-                pInputText 
-                type="text" 
-                [(ngModel)]="globalSearchQuery"
-                (input)="onGlobalFilter($event)" 
-                placeholder="Buscar socio, acción o emisor..." 
-                class="p-inputtext-sm w-100" />
-            </span>
+      <div class="table-card">
+        <!-- Buscador Global y Acciones -->
+        <div class="table-toolbar d-flex justify-content-between align-items-center mb-3">
+          <div class="p-input-icon-left search-box">
+            <i class="pi pi-search"></i>
+            <input 
+              pInputText 
+              type="text" 
+              [(ngModel)]="globalSearchQuery"
+              (input)="dt.filterGlobal($any($event.target).value, 'contains')" 
+              placeholder="Buscar socio, acción o emisor..." 
+              class="p-inputtext-sm w-100" />
           </div>
-          
+
           <div class="export-buttons d-flex gap-2">
             <button 
               pButton 
@@ -128,7 +138,7 @@
         <!-- Tabla de posiciones -->
         <p-table 
           #dt 
-          [value]="filteredPosiciones" 
+          [value]="displayPosiciones" 
           [columns]="cols"
           [loading]="loading" 
           [rows]="10" 
@@ -157,7 +167,12 @@
                 
                 <!-- Socio / Persona -->
                 <span *ngIf="col.field === 'persona'" class="font-semibold text-gray-800">
-                  {{ row.persona || '-' }}
+                  <span *ngIf="row.persona === 'TODOS (Consolidado)'" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.8rem;">
+                    <i class="pi pi-users me-1"></i> TODOS (Consolidado)
+                  </span>
+                  <span *ngIf="row.persona !== 'TODOS (Consolidado)'">
+                    {{ row.persona || '-' }}
+                  </span>
                 </span>
 
                 <!-- Instrumento / Acción -->

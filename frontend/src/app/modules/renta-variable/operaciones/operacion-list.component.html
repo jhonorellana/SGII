@@ -86,7 +86,7 @@
         <td>{{ getPersonaNombre(op) }}</td>
         <td><span class="font-medium text-primary">{{ op.instrumento?.nombre || op.instrumento?.codigo_titulo || '-' }}</span></td>
         <td>
-          <p-tag [severity]="getTipoOperacionClass(op)" [value]="getTipoOperacionNombre(op)"></p-tag>
+          <p-tag [styleClass]="'tipo-tag-fixed ' + getTipoOperacionClass(op)" [value]="getTipoOperacionNombre(op)"></p-tag>
         </td>
         <td class="text-end font-medium">{{ formatNumber(op.quantity || op.cantidad, 0) }}</td>
         <td class="text-end">{{ formatCurrency(op.precio_unitario) }}</td>

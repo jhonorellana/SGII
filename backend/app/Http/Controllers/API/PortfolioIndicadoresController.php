@@ -14,6 +14,13 @@ class PortfolioIndicadoresController extends Controller
     public function index(Request $request)
     {
         try {
+            // Refrescar snapshot para garantizar cantidades consolidadas en tiempo real
+            try {
+                \Illuminate\Support\Facades\DB::statement('CALL sp_actualizar_snapshot_cartera()');
+            } catch (\Exception $ex) {
+                \Illuminate\Support\Facades\Log::warning('Error en sp_actualizar_snapshot_cartera: ' . $ex->getMessage());
+            }
+
             // Get today's snapshot for the user's holdings (where cantidad_posicion > 0)
             $snapshots = SnapshotCarteraDiaria::with('emisor')
                 ->where('cantidad_posicion', '>', 0)
