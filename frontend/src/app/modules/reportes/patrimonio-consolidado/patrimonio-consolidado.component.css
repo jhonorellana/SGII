@@ -1,5 +1,65 @@
 .container-fluid {
-  padding: 20px;
+  padding-top: 0 !important;
+  padding-bottom: 10px !important;
+}
+
+.small-label {
+  font-size: 0.75rem !important;
+  font-weight: 600;
+  margin-bottom: 2px !important;
+  color: #495057;
+  white-space: nowrap;
+}
+
+.filter-row-compact {
+  padding-bottom: 2px;
+}
+
+.filter-item-compact {
+  flex: 1 1 125px;
+  max-width: 145px;
+  min-width: 110px;
+}
+
+.switch-item-compact {
+  flex: 0 0 auto;
+}
+
+.switch-box {
+  height: 32px;
+}
+
+.small-switch-text {
+  font-size: 0.78rem !important;
+}
+
+.button-group-compact {
+  flex: 0 0 auto;
+}
+
+/* Estilos compactos para PrimeNG inputs en filtros */
+::ng-deep .filter-item-compact .p-inputtext {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.8rem !important;
+}
+
+::ng-deep .filter-item-compact .p-dropdown {
+  height: 32px !important;
+}
+
+::ng-deep .filter-item-compact .p-dropdown .p-dropdown-label {
+  padding: 0.3rem 0.5rem !important;
+  font-size: 0.8rem !important;
+  line-height: 1.2;
+}
+
+::ng-deep .filter-item-compact .p-calendar {
+  height: 32px !important;
+}
+
+::ng-deep .button-group-compact .p-button {
+  padding: 0.3rem 0.65rem !important;
+  font-size: 0.8rem !important;
 }
 
 .card-header {
@@ -31,11 +91,11 @@
 .card {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .card-body {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
 }
 
 .chart-card .card-body {
@@ -152,7 +212,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 260px;
 }
 
 .chart-center-text {
@@ -186,14 +246,14 @@
 .leyenda-container {
   flex: 1;
   overflow-y: auto;
-  padding-right: 5px;
+  padding-right: 4px;
 }
 
 .leyenda-item {
   display: flex;
   align-items: center;
-  margin-bottom: 6px;
-  padding: 5px;
+  margin-bottom: 4px;
+  padding: 4px 6px;
   border-radius: 3px;
   background-color: #f8f9fa;
   transition: background-color 0.2s ease;
@@ -271,4 +331,32 @@
 
 .leyenda-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Estilo destacado para la fila final de PATRIMONIO TOTAL en la leyenda */
+.leyenda-total-item {
+  background-color: #f0fdf4 !important;
+  border: 1px solid #bbf7d0 !important;
+  border-left: 4px solid #16a34a !important;
+  margin-top: 4px !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+}
+
+.leyenda-total-item .leyenda-label {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #166534 !important;
+  letter-spacing: 0.5px;
+}
+
+.leyenda-total-item .leyenda-valor {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #166534 !important;
+}
+
+.leyenda-total-item .leyenda-porcentaje {
+  font-size: 11px !important;
+  font-weight: 700 !important;
 }

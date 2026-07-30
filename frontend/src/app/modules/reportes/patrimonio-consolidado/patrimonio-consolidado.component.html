@@ -1,6 +1,6 @@
-<div class="container-fluid">
+<div class="container-fluid pt-0">
   <!-- Header del Reporte -->
-  <div class="card mb-4">
+  <div class="card mb-2">
     <div class="card-header app-custom-header text-white">
       <h4 class="mb-0 text-white">
         <i class="bi bi-wallet2 me-2"></i>
@@ -10,12 +10,12 @@
         Visualice el patrimonio total consolidado del usuario dentro de un período determinado, integrando inversiones, cuentas bancarias, saldos disponibles, deudas y otros valores financieros.
       </small>
     </div>
-    <div class="card-body">
-      <!-- Filtros -->
+    <div class="card-body py-2">
+      <!-- Filtros superior -->
       <form [formGroup]="reporteForm">
-        <div class="row mb-3 align-items-end">
-          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
-            <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
+        <div class="row mb-1 align-items-end">
+          <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+            <label for="fecha_inicio" class="form-label fw-semibold small mb-1">Fecha Inicio *</label>
             <p-calendar
               id="fecha_inicio"
               formControlName="fecha_inicio"
@@ -30,8 +30,9 @@
               styleClass="w-100">
             </p-calendar>
           </div>
-          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
-            <label for="fecha_fin" class="form-label">Fecha Fin *</label>
+
+          <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+            <label for="fecha_fin" class="form-label fw-semibold small mb-1">Fecha Fin *</label>
             <p-calendar
               id="fecha_fin"
               formControlName="fecha_fin"
@@ -46,8 +47,9 @@
               styleClass="w-100">
             </p-calendar>
           </div>
-          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
-            <label for="id_grupo_familiar" class="form-label">Grupo Familiar</label>
+
+          <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+            <label for="id_grupo_familiar" class="form-label fw-semibold small mb-1">Grupo Familiar</label>
             <p-dropdown
               id="id_grupo_familiar"
               [options]="gruposFamiliares"
@@ -59,8 +61,9 @@
               styleClass="w-100">
             </p-dropdown>
           </div>
-          <div class="col-xl-2 col-lg-2 col-md-4 col-sm-6 mb-3">
-            <label for="id_propietario" class="form-label">Propietario</label>
+
+          <div class="col-xl-2 col-lg-2 col-md-3 col-sm-6 mb-1">
+            <label for="id_propietario" class="form-label fw-semibold small mb-1">Propietario</label>
             <p-dropdown
               id="id_propietario"
               [options]="personas"
@@ -72,34 +75,15 @@
               styleClass="w-100">
             </p-dropdown>
           </div>
-          <div class="col-auto mb-3">
-            <label for="proyeccion_un_ano" class="form-label d-block text-truncate" title="Proyección a un año">Proyección un año</label>
-            <div class="d-flex align-items-center" style="height: 42px;">
-              <p-inputSwitch id="proyeccion_un_ano" formControlName="proyeccion_un_ano"></p-inputSwitch>
-              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('proyeccion_un_ano')?.value ? 'Sí' : 'No' }}</span>
-            </div>
-          </div>
-          <div class="col-auto mb-3">
-            <label for="incluir_dividendos" class="form-label d-block text-truncate" title="Dividendos en acciones">Div. Acciones</label>
-            <div class="d-flex align-items-center" style="height: 42px;">
-              <p-inputSwitch id="incluir_dividendos" formControlName="incluir_dividendos"></p-inputSwitch>
-              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_dividendos')?.value ? 'Sí' : 'No' }}</span>
-            </div>
-          </div>
-          <div class="col-auto mb-3">
-            <label for="incluir_plusvalia" class="form-label d-block text-truncate" title="Plusvalía de mercado de las acciones">Plusvalía Acciones</label>
-            <div class="d-flex align-items-center" style="height: 42px;">
-              <p-inputSwitch id="incluir_plusvalia" formControlName="incluir_plusvalia"></p-inputSwitch>
-              <span class="ms-2 text-muted" style="font-size: 0.85rem;">{{ reporteForm.get('incluir_plusvalia')?.value ? 'Sí' : 'No' }}</span>
-            </div>
-          </div>
-          <div class="col-auto ms-auto mb-3 d-flex flex-wrap gap-2">
+
+          <!-- Botones a la derecha con tamaño normal y vistoso -->
+          <div class="col-auto ms-auto mb-1 d-flex gap-2">
             <button
               pButton
               type="button"
               label="Generar"
               icon="pi pi-search"
-              class="p-button-primary"
+              class="p-button-primary px-3 py-2 fw-semibold"
               (click)="generarReporte()"
               [disabled]="loading">
             </button>
@@ -108,7 +92,7 @@
               type="button"
               label="Excel"
               icon="pi pi-file-excel"
-              class="p-button-success"
+              class="p-button-success px-3 py-2 fw-semibold"
               (click)="exportarExcel()"
               [disabled]="patrimonio.length === 0">
             </button>
@@ -117,81 +101,95 @@
               type="button"
               label="PDF"
               icon="pi pi-file-pdf"
-              class="p-button-danger"
+              class="p-button-danger px-3 py-2 fw-semibold"
               (click)="exportarPDF()"
               [disabled]="patrimonio.length === 0">
             </button>
           </div>
         </div>
-      </form>
 
-      <!-- Loading -->
-      <div *ngIf="loading" class="text-center py-5">
-        <p-progressSpinner></p-progressSpinner>
-        <p class="mt-2">Generando reporte...</p>
-      </div>
+        <!-- Loading -->
+        <div *ngIf="loading" class="text-center py-5">
+          <p-progressSpinner></p-progressSpinner>
+          <p class="mt-2">Generando reporte...</p>
+        </div>
 
-      <!-- Tabla y Gráfico de Resultados -->
-      <div *ngIf="!loading && patrimonio.length > 0">
-        <div class="row dashboard-row">
-          <!-- Tabla a la izquierda -->
-          <div class="col-md-4">
-            <div class="table-card">
-              <div class="table-responsive">
-                <table class="table table-bordered table-hover reporte-table">
-                  <thead class="table-dark">
-                    <tr>
-                      <th class="text-left">Detalle</th>
-                      <th class="text-end">Valor</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr
-                      *ngFor="let item of patrimonio"
-                      [class.table-success]="isTotal(item)"
-                      [class.fw-bold]="isTotal(item)">
-                      <td class="text-left">
-                        {{ item.detalle }}
-                        <span *ngIf="isTotal(item)" class="badge bg-success ms-2">TOTAL</span>
-                      </td>
-                      <td class="text-end">{{ formatCurrency(item.valor) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+        <!-- Tabla y Gráfico de Resultados -->
+        <div *ngIf="!loading && patrimonio.length > 0">
+          <div class="row dashboard-row align-items-stretch">
+            
+            <!-- Panel de Switches a la Izquierda del Gráfico -->
+            <div class="col-xl-2 col-lg-2 col-md-3 mb-1">
+              <div class="card h-100 border-0 shadow-sm p-3 bg-light rounded-3 d-flex flex-column justify-content-start gap-3">
+                <div class="switch-block border-bottom pb-3">
+                  <label for="proyeccion_un_ano" class="form-label small fw-semibold text-muted d-block mb-2" style="font-size: 0.8rem;">Proyección un año</label>
+                  <div class="d-flex align-items-center">
+                    <p-inputSwitch id="proyeccion_un_ano" formControlName="proyeccion_un_ano"></p-inputSwitch>
+                    <span class="ms-2 fw-semibold text-secondary small">{{ reporteForm.get('proyeccion_un_ano')?.value ? 'Sí' : 'No' }}</span>
+                  </div>
+                </div>
 
-          <!-- Gráfico en el centro -->
-          <div class="col-md-5">
-            <div class="card chart-card">
-              <div class="card-body">
-                <h6 class="card-title text-center mb-2">Distribución del Patrimonio</h6>
-                <div class="chart-container">
-                  <p-chart type="doughnut" [data]="chartData" [options]="chartOptions"></p-chart>
-                  <!-- Texto central del donut -->
-                  <div *ngIf="total > 0" class="chart-center-text">
-                    <small class="text-muted d-block">PATRIMONIO TOTAL</small>
-                    <strong class="text-primary">{{ formatCurrency(total) }}</strong>
+                <div class="switch-block border-bottom pb-3">
+                  <label for="incluir_dividendos" class="form-label small fw-semibold text-muted d-block mb-2" style="font-size: 0.8rem;">Div. Acciones</label>
+                  <div class="d-flex align-items-center">
+                    <p-inputSwitch id="incluir_dividendos" formControlName="incluir_dividendos"></p-inputSwitch>
+                    <span class="ms-2 fw-semibold text-secondary small">{{ reporteForm.get('incluir_dividendos')?.value ? 'Sí' : 'No' }}</span>
+                  </div>
+                </div>
+
+                <div class="switch-block pb-1">
+                  <label for="incluir_plusvalia" class="form-label small fw-semibold text-muted d-block mb-2" style="font-size: 0.8rem;">Plusvalía Acciones</label>
+                  <div class="d-flex align-items-center">
+                    <p-inputSwitch id="incluir_plusvalia" formControlName="incluir_plusvalia"></p-inputSwitch>
+                    <span class="ms-2 fw-semibold text-secondary small">{{ reporteForm.get('incluir_plusvalia')?.value ? 'Sí' : 'No' }}</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Leyenda de colores a la derecha -->
-          <div class="col-md-3">
-            <div class="card legend-card">
-              <div class="card-body">
-                <h6 class="card-title text-center mb-2">Leyenda</h6>
-                <div class="leyenda-container">
-                  <div *ngFor="let item of leyendaColores" class="leyenda-item">
-                    <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
-                    <div class="leyenda-info">
-                      <div class="leyenda-label">{{ item.label }}</div>
-                      <div class="leyenda-stats">
-                        <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
-                        <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+            <!-- Gráfico en el centro -->
+            <div class="col-xl-5 col-lg-5 col-md-9 mb-1">
+              <div class="card chart-card h-100">
+                <div class="card-body py-2">
+                  <h6 class="card-title text-center mb-2 fw-bold">Distribución del Patrimonio</h6>
+                  <div class="chart-container">
+                    <p-chart type="doughnut" [data]="chartData" [options]="chartOptions"></p-chart>
+                    <!-- Texto central del donut -->
+                    <div *ngIf="total > 0" class="chart-center-text">
+                      <small class="text-muted d-block">PATRIMONIO TOTAL</small>
+                      <strong class="text-primary">{{ formatCurrency(total) }}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Componentes Patrimonio a la derecha -->
+            <div class="col-xl-5 col-lg-5 col-md-12 mb-1">
+              <div class="card legend-card h-100">
+                <div class="card-body py-2">
+                  <h6 class="card-title text-center mb-2 fw-bold">Componentes Patrimonio</h6>
+                  <div class="leyenda-container">
+                    <div *ngFor="let item of leyendaColores" class="leyenda-item">
+                      <div class="leyenda-color" [style.backgroundColor]="item.color"></div>
+                      <div class="leyenda-info">
+                        <div class="leyenda-label">{{ item.label }}</div>
+                        <div class="leyenda-stats">
+                          <span class="leyenda-valor">{{ formatCurrency(item.valor) }}</span>
+                          <span class="leyenda-porcentaje">{{ item.porcentaje }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Fila final con PATRIMONIO TOTAL -->
+                    <div class="leyenda-item leyenda-total-item">
+                      <div class="leyenda-color bg-success rounded-circle"></div>
+                      <div class="leyenda-info">
+                        <div class="leyenda-label">PATRIMONIO TOTAL</div>
+                        <div class="leyenda-stats">
+                          <span class="leyenda-valor">{{ formatCurrency(total) }}</span>
+                          <span class="leyenda-porcentaje bg-success text-white">100%</span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -199,10 +197,9 @@
               </div>
             </div>
           </div>
-        </div>
 
         <!-- Resumen en Cards KPI -->
-        <div class="row mt-4 g-3 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
+        <div class="row mt-1 g-2 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-5">
           <div class="col">
             <div class="card h-100 border-0 shadow-sm rounded-3" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-left: 4px solid #475569 !important;">
               <div class="card-body d-flex align-items-center justify-content-between p-3">
@@ -281,6 +278,7 @@
         <h5 class="text-muted mt-3">No hay datos disponibles</h5>
         <p class="text-muted">Seleccione las fechas y haga clic en "Generar Reporte"</p>
       </div>
+      </form>
     </div>
   </div>
 </div>
