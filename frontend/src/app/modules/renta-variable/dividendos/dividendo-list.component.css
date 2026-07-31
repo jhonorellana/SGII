@@ -14,6 +14,53 @@
   font-size: 0.9rem;
 }
 
+::ng-deep .container-fluid {
+  padding-top: 0 !important;
+}
+
+.search-card ::ng-deep .p-card-body {
+  padding: 0.75rem 1rem !important;
+}
+
+.small-label {
+  font-size: 0.78rem !important;
+  color: #475569;
+}
+
+/* Altura uniforme de 34px para todos los controles y botones */
+.filter-item-compact ::ng-deep .p-dropdown,
+.filter-item-compact ::ng-deep .p-calendar,
+.filter-item-compact ::ng-deep .p-inputtext {
+  height: 34px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.filter-item-compact ::ng-deep .p-dropdown .p-dropdown-label {
+  display: flex !important;
+  align-items: center !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.filter-item-compact ::ng-deep .p-calendar .p-button {
+  height: 34px !important;
+}
+
+.filter-btn-compact {
+  height: 34px !important;
+  padding: 0 14px !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+}
+
 .search-card {
   border-radius: 8px;
   border: 1px solid #e2e8f0;
@@ -97,6 +144,26 @@
 
 .text-xs {
   font-size: 0.75rem;
+}
+
+/* Badges de Tipo de Dividendo con ancho amplio idéntico en 1 sola línea */
+::ng-deep .tipo-tag-fixed {
+  width: 165px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+  padding: 0.28rem 0.5rem !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Alta visibilidad y alto contraste para Acciones Recibidas */
+.acc-recibidas-val {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
 }
 
 .border-bottom {

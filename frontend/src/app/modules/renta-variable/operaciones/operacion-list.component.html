@@ -3,10 +3,10 @@
   <p-confirmDialog></p-confirmDialog>
 
   <!-- Top bar -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
       <h2 class="module-title">Operaciones de Renta Variable</h2>
-      <p class="text-muted subtitle">Registro y control de compras, ventas y ajustes de acciones</p>
+      <p class="text-muted subtitle mb-0">Registro y control de compras, ventas y ajustes de acciones</p>
     </div>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-success" (click)="exportToExcel()" [disabled]="loading || operaciones.length === 0">
@@ -21,33 +21,38 @@
     </div>
   </div>
 
-  <!-- Filters panel -->
-  <p-card class="mb-4 search-card">
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label font-semibold">Socio / Propietario</label>
-        <p-dropdown [options]="personas" [(ngModel)]="filters.id_persona" [filter]="true" filterBy="label" placeholder="Seleccione un socio" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+  <!-- Filters panel en una sola fila -->
+  <p-card class="mb-3 search-card">
+    <div class="d-flex align-items-end justify-content-between flex-nowrap gap-2 filter-row-compact">
+      <div class="filter-item-compact" style="flex: 1 1 150px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Socio / Propietario</label>
+        <p-dropdown [options]="personas" [(ngModel)]="filters.id_persona" [filter]="true" filterBy="label" placeholder="Seleccione socio" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-3">
-        <label class="form-label font-semibold">Acción / Instrumento</label>
-        <p-dropdown [options]="instrumentos" [(ngModel)]="filters.id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione una acción" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+
+      <div class="filter-item-compact" style="flex: 1 1 150px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Acción / Instrumento</label>
+        <p-dropdown [options]="instrumentos" [(ngModel)]="filters.id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione acción" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Tipo Operación</label>
+
+      <div class="filter-item-compact" style="flex: 0.8 1 125px; min-width: 110px;">
+        <label class="form-label font-semibold small-label mb-1">Tipo Operación</label>
         <p-dropdown [options]="tiposOperacion" [(ngModel)]="filters.id_tipo_operacion" placeholder="Tipo" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Fecha Desde</label>
+
+      <div class="filter-item-compact" style="flex: 0.9 1 135px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Fecha Desde</label>
         <p-calendar [(ngModel)]="filters.fecha_desde" dateFormat="yy-mm-dd" placeholder="Desde" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Fecha Hasta</label>
+
+      <div class="filter-item-compact" style="flex: 0.9 1 135px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Fecha Hasta</label>
         <p-calendar [(ngModel)]="filters.fecha_hasta" dateFormat="yy-mm-dd" placeholder="Hasta" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
       </div>
-    </div>
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <button class="btn btn-secondary btn-sm" (click)="clearFilters()"><i class="bi bi-x-circle"></i> Limpiar</button>
-      <button class="btn btn-primary btn-sm" (click)="applyFilters()"><i class="bi bi-search"></i> Buscar</button>
+
+      <div class="filter-actions-compact d-flex gap-2 flex-shrink-0 ms-auto">
+        <button class="btn btn-secondary filter-btn-compact" (click)="clearFilters()"><i class="bi bi-x-circle me-1"></i> Limpiar</button>
+        <button class="btn btn-primary filter-btn-compact" (click)="applyFilters()"><i class="bi bi-search me-1"></i> Buscar</button>
+      </div>
     </div>
   </p-card>
 

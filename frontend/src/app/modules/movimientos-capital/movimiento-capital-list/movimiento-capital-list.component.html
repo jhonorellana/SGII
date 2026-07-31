@@ -67,10 +67,10 @@
     <ng-container *ngIf="hasSaldosPorPersona()">
       <p-card *ngFor="let item of saldosPorPersona | keyvalue" 
               class="summary-card persona-card" 
-              [ngClass]="item.value.saldo >= 0 ? 'positive' : 'negative'">
+              [ngClass]="item.value.saldo >= -0.005 ? 'positive' : 'negative'">
         <div class="card-content">
           <div class="card-label">{{ item.value.nombre }}</div>
-          <div class="card-value" [ngClass]="item.value.saldo >= 0 ? 'positive' : 'negative'">
+          <div class="card-value" [ngClass]="item.value.saldo >= -0.005 ? 'positive' : 'negative'">
             {{ formatCurrency(item.value.saldo) }}
           </div>
         </div>

@@ -74,7 +74,7 @@ export class HistoricoAccionesComponent implements OnInit {
     { label: '2018', value: 2018 },
     { label: '2017', value: 2017 }
   ];
-  selectedAnio: number = 0;
+  selectedAnio: number = 2026;
 
   anosDisponibles: any[] = [
     { label: '2026', value: 2026 },
@@ -216,10 +216,13 @@ export class HistoricoAccionesComponent implements OnInit {
           codigo: val.codigo
         })).sort((a: any, b: any) => a.label.localeCompare(b.label));
 
-        // Seleccionar por defecto Corporacion La Favorita (id_catalogo_valor = 16) si existe
-        const favorita = this.empresas.find(emp => emp.value === 16);
-        if (favorita) {
-          this.selectedEmpresa = favorita.value;
+        // Seleccionar por defecto Banco Pichincha si existe
+        const pichincha = this.empresas.find(emp => 
+          emp.label.toUpperCase().includes('PICHINCHA') || 
+          (emp.codigo && emp.codigo.toUpperCase().includes('PICHINCHA'))
+        );
+        if (pichincha) {
+          this.selectedEmpresa = pichincha.value;
         } else if (this.empresas.length > 0) {
           this.selectedEmpresa = this.empresas[0].value;
         }

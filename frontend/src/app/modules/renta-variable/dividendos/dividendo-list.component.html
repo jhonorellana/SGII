@@ -3,10 +3,10 @@
   <p-confirmDialog></p-confirmDialog>
 
   <!-- Top bar -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
     <div>
       <h2 class="module-title">Dividendos de Renta Variable</h2>
-      <p class="text-muted subtitle">Registro y control de declaraciones y cobro de dividendos de acciones</p>
+      <p class="text-muted subtitle mb-0">Registro y control de declaraciones y cobro de dividendos de acciones</p>
     </div>
     <div class="d-flex gap-2">
       <button class="btn btn-outline-success" (click)="exportToExcel()" [disabled]="loading || dividendos.length === 0">
@@ -21,33 +21,38 @@
     </div>
   </div>
 
-  <!-- Filters panel -->
-  <p-card class="mb-4 search-card">
-    <div class="row g-3">
-      <div class="col-md-3">
-        <label class="form-label font-semibold">Socio / Propietario</label>
-        <p-dropdown [options]="personas" [(ngModel)]="filters.id_persona" [filter]="true" filterBy="label" placeholder="Seleccione un socio" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+  <!-- Filters panel en una sola fila -->
+  <p-card class="mb-3 search-card">
+    <div class="d-flex align-items-end justify-content-between flex-nowrap gap-2 filter-row-compact">
+      <div class="filter-item-compact" style="flex: 1 1 150px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Socio / Propietario</label>
+        <p-dropdown [options]="personas" [(ngModel)]="filters.id_persona" [filter]="true" filterBy="label" placeholder="Seleccione socio" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-3">
-        <label class="form-label font-semibold">Acción / Instrumento</label>
-        <p-dropdown [options]="instrumentos" [(ngModel)]="filters.id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione una acción" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
+
+      <div class="filter-item-compact" style="flex: 1 1 150px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Acción / Instrumento</label>
+        <p-dropdown [options]="instrumentos" [(ngModel)]="filters.id_instrumento" [filter]="true" filterBy="label" placeholder="Seleccione acción" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Tipo Dividendo</label>
+
+      <div class="filter-item-compact" style="flex: 0.8 1 125px; min-width: 110px;">
+        <label class="form-label font-semibold small-label mb-1">Tipo Dividendo</label>
         <p-dropdown [options]="tiposDividendo" [(ngModel)]="filters.id_tipo_dividendo" placeholder="Tipo" styleClass="w-full p-inputtext-sm" [showClear]="true"></p-dropdown>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Fecha Desde</label>
+
+      <div class="filter-item-compact" style="flex: 0.9 1 135px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Fecha Desde</label>
         <p-calendar [(ngModel)]="filters.fecha_desde" dateFormat="yy-mm-dd" placeholder="Desde" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
       </div>
-      <div class="col-md-2">
-        <label class="form-label font-semibold">Fecha Hasta</label>
+
+      <div class="filter-item-compact" style="flex: 0.9 1 135px; min-width: 120px;">
+        <label class="form-label font-semibold small-label mb-1">Fecha Hasta</label>
         <p-calendar [(ngModel)]="filters.fecha_hasta" dateFormat="yy-mm-dd" placeholder="Hasta" styleClass="w-full p-inputtext-sm" [showIcon]="true" [showClear]="true"></p-calendar>
       </div>
-    </div>
-    <div class="d-flex justify-content-end gap-2 mt-3">
-      <button class="btn btn-secondary btn-sm" (click)="clearFilters()"><i class="bi bi-x-circle"></i> Limpiar</button>
-      <button class="btn btn-primary btn-sm" (click)="applyFilters()"><i class="bi bi-search"></i> Buscar</button>
+
+      <div class="filter-actions-compact d-flex gap-2 flex-shrink-0 ms-auto">
+        <button class="btn btn-secondary filter-btn-compact" (click)="clearFilters()"><i class="bi bi-x-circle me-1"></i> Limpiar</button>
+        <button class="btn btn-primary filter-btn-compact" (click)="applyFilters()"><i class="bi bi-search me-1"></i> Buscar</button>
+      </div>
     </div>
   </p-card>
 
@@ -68,7 +73,7 @@
         <th pSortableColumn="fecha_pago" class="text-center" style="width: 8rem;">Fecha Pago <i class="pi pi-sort-amount-down-alt"></i></th>
         <th class="text-center">Socio</th>
         <th class="text-center">Acción / Instrumento</th>
-        <th class="text-center" style="width: 10rem;">Tipo</th>
+        <th class="text-center" style="width: 11.8rem;">Tipo</th>
         <th class="text-end" style="width: 9rem;">Acciones Base</th>
         <th class="text-end" style="width: 8rem;">Div/Acción</th>
         <th class="text-end" style="width: 9rem;">Neto Efectivo</th>
@@ -85,12 +90,12 @@
         <td>{{ getPersonaNombre(div) }}</td>
         <td><span class="font-medium text-primary">{{ div.instrumento?.nombre || div.instrumento?.codigo_titulo || '-' }}</span></td>
         <td>
-          <p-tag [severity]="getTipoDividendoClass(div)" [value]="getTipoDividendoNombre(div)"></p-tag>
+          <p-tag styleClass="tipo-tag-fixed" [severity]="getTipoDividendoClass(div)" [value]="getTipoDividendoNombre(div)"></p-tag>
         </td>
         <td class="text-end font-medium">{{ formatNumber(div.cantidad_acciones_base, 0) }}</td>
         <td class="text-end">{{ formatCurrency(div.dividendo_por_accion) }}</td>
         <td class="text-end font-bold text-success">{{ formatCurrency(div.valor_neto) }}</td>
-        <td class="text-end text-info font-medium">{{ div.acciones_recibidas ? formatNumber(div.acciones_recibidas, 0) : '-' }}</td>
+        <td class="text-end font-bold acc-recibidas-val">{{ div.acciones_recibidas ? formatNumber(div.acciones_recibidas, 0) : '-' }}</td>
         <td class="text-end text-muted">{{ div.valor_referencial_acciones ? formatCurrency(div.valor_referencial_acciones) : '-' }}</td>
         <td class="text-center">
           <div class="d-flex justify-content-center gap-1">

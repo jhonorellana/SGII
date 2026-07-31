@@ -750,12 +750,16 @@ export class MovimientoCapitalListComponent implements OnInit {
 
   formatCurrency(value: number | null | undefined): string {
     if (value === null || value === undefined || isNaN(value)) return '$0.00';
+    let val = Number(value);
+    if (Math.abs(val) < 0.005) {
+      val = 0;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(value);
+    }).format(val);
   }
 
   calculateSummary(): void {
@@ -779,6 +783,9 @@ export class MovimientoCapitalListComponent implements OnInit {
     });
 
     this.saldoEsperado = this.totalIngresos - this.totalEgresos;
+    if (Math.abs(this.saldoEsperado) < 0.005) {
+      this.saldoEsperado = 0;
+    }
   }
 
   calculateSaldoAcumulado(): void {
@@ -825,6 +832,10 @@ export class MovimientoCapitalListComponent implements OnInit {
         }
         mov.saldo_acumulado = saldoPersona;
       });
+
+      if (Math.abs(saldoPersona) < 0.005) {
+        saldoPersona = 0;
+      }
 
       this.saldosPorPersona[idPersona] = {
         nombre: nombrePersona,

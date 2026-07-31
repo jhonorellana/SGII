@@ -309,7 +309,7 @@ export class DashboardInversionesComponent implements OnInit {
       fecha_inicio: dateInicioStr,
       fecha_fin: dateFinStr,
       id_propietario: this.selectedPropietario || undefined,
-      incluir_dividendos: true
+      incluir_dividendos: false
     };
 
     this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
@@ -348,6 +348,8 @@ export class DashboardInversionesComponent implements OnInit {
       item.detalle !== 'Bonos vencimiento próximo' &&
       item.detalle !== 'Bonos vencimiento prximo' &&
       !item.detalle.includes('vencimiento pr') &&
+      item.detalle !== 'Dividendos en Acciones' &&
+      item.detalle !== 'Plusvalía Acciones' &&
       item.valor > 0
     );
 
