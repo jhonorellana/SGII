@@ -108,6 +108,7 @@ Route::apiResource('historico-patrimonio', HistoricoPatrimonioController::class)
 Route::apiResource('inversiones', InversionController::class);
 
 // Rutas de Amortizaciones (temporalmente sin autenticación para pruebas)
+Route::get('amortizaciones/proximas', [AmortizacionController::class, 'getProximas']);
 Route::apiResource('amortizaciones', AmortizacionController::class);
 Route::get('amortizaciones/inversion/{idInversion}', [AmortizacionController::class, 'getByInversion']);
 Route::post('amortizaciones/desactivar-por-fecha-inversion', [AmortizacionController::class, 'desactivarPorFechaInversion']);

@@ -26,6 +26,31 @@ class AmortizacionController extends Controller
     }
 
     /**
+     * Obtener próximas amortizaciones a vencer (optimizado para Dashboard)
+     */
+    public function getProximas(Request $request)
+    {
+        $limit = (int) $request->input('limit', 5);
+        $hoy = date('Y-m-d');
+
+        $amortizaciones = Amortizacion::with(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion'])
+            ->where('eliminado', 0)
+            ->whereIn('id_estado_amortizacion', [134, 135, 136])
+            ->where('fecha_pago', '>=', $hoy)
+            ->whereHas('inversion', function ($q) {
+                $q->whereNull('fecha_venta')->where('eliminado', 0);
+            })
+            ->whereHas('inversion.instrumento', function ($query) {
+                $query->whereNotIn('id_tipo_inversion', [91, 203]);
+            })
+            ->orderBy('fecha_pago', 'asc')
+            ->limit($limit)
+            ->get();
+
+        return response()->json($amortizaciones, Response::HTTP_OK);
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class PatrimonioController extends Controller
 {
@@ -39,75 +40,85 @@ class PatrimonioController extends Controller
         }
 
         try {
-            // Ejecutar stored procedure pasando los switches reales
-            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, ?, ?)', [
-                $fechaInicio,
-                $fechaFin,
-                $idGrupoFamiliar,
-                $idPropietario,
-                $incluirDividendos,
-                $incluirPlusvalia
-            ]);
+            $cacheKey = "patrimonio_consolidado_{$fechaInicio}_{$fechaFin}_" . 
+                        ($idGrupoFamiliar ?? 'all') . "_" . 
+                        ($idPropietario ?? 'all') . "_" . 
+                        "{$incluirDividendos}_{$incluirPlusvalia}";
 
-            $patrimonio = [];
-            $dividendosTotal = 0.0;
-            $plusvaliaTotal = 0.0;
-            $totalFinal = 0.0;
-
-            foreach ($resultados as $row) {
-                $val = (float) $row->valor;
-                $detLindo = $this->fixUtf8($row->detalle);
-                $detLower = strtolower($detLindo);
-
-                if (str_contains($detLower, 'dividendos en acciones')) {
-                    $dividendosTotal = $val;
-                } elseif (str_contains($detLower, 'plusval')) {
-                    $plusvaliaTotal = $val;
-                } elseif ($row->detalle === 'TOTAL' || $detLindo === 'TOTAL') {
-                    $totalFinal = $val;
-                }
-
-                $patrimonio[] = [
-                    'detalle' => $detLindo,
-                    'valor' => $val
-                ];
-            }
-
-            // Si los switches están en 0, obtener los valores potenciales de plusvalía y dividendos para las tarjetas informativas
-            $plusvaliaPotencial = $plusvaliaTotal;
-            $dividendosPotencial = $dividendosTotal;
-
-            if (!$incluirPlusvalia || !$incluirDividendos) {
-                $fullRes = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, 1, 1)', [
+            return Cache::remember($cacheKey, 60, function () use ($fechaInicio, $fechaFin, $idGrupoFamiliar, $idPropietario, $incluirDividendos, $incluirPlusvalia) {
+                // Ejecutar SP SIEMPRE UNA SOLA VEZ solicitando la versión completa (1, 1) para obtener plusvalía y dividendos potenciales
+                $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, 1, 1)', [
                     $fechaInicio,
                     $fechaFin,
                     $idGrupoFamiliar,
                     $idPropietario
                 ]);
-                foreach ($fullRes as $fRow) {
-                    $fDet = strtolower($fRow->detalle);
-                    if (str_contains($fDet, 'plusval') && !$incluirPlusvalia) {
-                        $plusvaliaPotencial = (float) $fRow->valor;
-                    }
-                    if (str_contains($fDet, 'dividendos en acciones') && !$incluirDividendos) {
-                        $dividendosPotencial = (float) $fRow->valor;
+
+                $patrimonio = [];
+                $dividendosTotal = 0.0;
+                $plusvaliaTotal = 0.0;
+                $totalSumFromSP = 0.0;
+
+                foreach ($resultados as $row) {
+                    $val = (float) $row->valor;
+                    $detLindo = $this->fixUtf8($row->detalle);
+                    $detLower = strtolower($detLindo);
+
+                    if (str_contains($detLower, 'dividendos en acciones')) {
+                        $dividendosTotal = $val;
+                    } elseif (str_contains($detLower, 'plusval')) {
+                        $plusvaliaTotal = $val;
+                    } elseif ($row->detalle === 'TOTAL' || $detLindo === 'TOTAL') {
+                        $totalSumFromSP = $val;
                     }
                 }
-            }
 
-            $baseTotal = $totalFinal - ($incluirDividendos ? $dividendosTotal : 0.0) - ($incluirPlusvalia ? $plusvaliaTotal : 0.0);
+                // Derivar la base limpia en PHP
+                $baseTotal = $totalSumFromSP - $dividendosTotal - $plusvaliaTotal;
 
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'patrimonio' => $patrimonio,
-                    'total' => $totalFinal,
-                    'base_total' => $baseTotal,
-                    'dividendos_total' => $dividendosPotencial,
-                    'plusvalia_total' => $plusvaliaPotencial,
-                    'total_completo' => $baseTotal + $dividendosPotencial + $plusvaliaPotencial
-                ]
-            ]);
+                // Construir la respuesta aplicando los switches en memoria sin volver a consultar MySQL
+                $totalFinal = $baseTotal + ($incluirDividendos ? $dividendosTotal : 0.0) + ($incluirPlusvalia ? $plusvaliaTotal : 0.0);
+
+                foreach ($resultados as $row) {
+                    $val = (float) $row->valor;
+                    $detLindo = $this->fixUtf8($row->detalle);
+                    $detLower = strtolower($detLindo);
+
+                    if ($row->detalle === 'TOTAL' || $detLindo === 'TOTAL') {
+                        $patrimonio[] = [
+                            'detalle' => 'TOTAL',
+                            'valor' => $totalFinal
+                        ];
+                    } elseif (str_contains($detLower, 'dividendos en acciones')) {
+                        $patrimonio[] = [
+                            'detalle' => $detLindo,
+                            'valor' => $incluirDividendos ? $dividendosTotal : 0.0
+                        ];
+                    } elseif (str_contains($detLower, 'plusval')) {
+                        $patrimonio[] = [
+                            'detalle' => $detLindo,
+                            'valor' => $incluirPlusvalia ? $plusvaliaTotal : 0.0
+                        ];
+                    } else {
+                        $patrimonio[] = [
+                            'detalle' => $detLindo,
+                            'valor' => $val
+                        ];
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'patrimonio' => $patrimonio,
+                        'total' => $totalFinal,
+                        'base_total' => $baseTotal,
+                        'dividendos_total' => $dividendosTotal,
+                        'plusvalia_total' => $plusvaliaTotal,
+                        'total_completo' => $baseTotal + $dividendosTotal + $plusvaliaTotal
+                    ]
+                ]);
+            });
 
         } catch (\Exception $e) {
             return response()->json([

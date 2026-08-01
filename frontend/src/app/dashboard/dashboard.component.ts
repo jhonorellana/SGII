@@ -127,7 +127,7 @@ export class DashboardComponent implements OnInit {
       posiciones: this.posicionService.getPosiciones().pipe(catchError(() => of(null))),
       dividendos: this.dividendoService.getAll().pipe(catchError(() => of(null))),
       inversiones: this.inversionService.getAll().pipe(catchError(() => of(null))),
-      amortizaciones: this.amortizacionService.getAll().pipe(catchError(() => of(null)))
+      amortizaciones: this.amortizacionService.getProximas(5).pipe(catchError(() => of(null)))
     }).subscribe({
       next: (res) => {
         // 1. Patrimonio Consolidado Base (tomado con los 3 switches apagados)

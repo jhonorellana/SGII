@@ -39,6 +39,15 @@ export class AmortizacionService {
     );
   }
 
+  getProximas(limit: number = 5): Observable<Amortizacion[]> {
+    return this.http.get<Amortizacion[]>(`${this.apiUrl}/proximas?limit=${limit}`).pipe(
+      map((data: Amortizacion[]) => data.map((a: Amortizacion) => ({
+        ...a,
+        eliminado: typeof a.eliminado === 'boolean' ? a.eliminado : a.eliminado === 1 || a.eliminado === '1'
+      })))
+    );
+  }
+
   getById(id: number): Observable<Amortizacion> {
     return this.http.get<Amortizacion>(`${this.apiUrl}/${id}`);
   }
