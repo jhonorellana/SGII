@@ -19,8 +19,8 @@ class PatrimonioController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $idGrupoFamiliar = $request->input('id_grupo_familiar');
         $idPropietario = $request->input('id_propietario');
-        $incluirDividendos = $request->input('incluir_dividendos') ? 1 : 0;
-        $incluirPlusvalia = $request->input('incluir_plusvalia') ? 1 : 0;
+        $incluirDividendos = filter_var($request->input('incluir_dividendos'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+        $incluirPlusvalia = filter_var($request->input('incluir_plusvalia'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 
         // Validar fechas
         if (!$fechaInicio || !$fechaFin) {
@@ -39,48 +39,63 @@ class PatrimonioController extends Controller
         }
 
         try {
-            // Ejecutar stored procedure con 1, 1 para obtener siempre los rubros estáticos completos
-            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, 1, 1)', [
+            // Ejecutar stored procedure pasando los switches reales
+            $resultados = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, ?, ?)', [
                 $fechaInicio,
                 $fechaFin,
                 $idGrupoFamiliar,
-                $idPropietario
+                $idPropietario,
+                $incluirDividendos,
+                $incluirPlusvalia
             ]);
 
             $patrimonio = [];
             $dividendosTotal = 0.0;
             $plusvaliaTotal = 0.0;
-            $totalCompleto = 0.0;
+            $totalFinal = 0.0;
 
             foreach ($resultados as $row) {
                 $val = (float) $row->valor;
-                if ($row->detalle === 'Dividendos en Acciones') {
+                $detLindo = $this->fixUtf8($row->detalle);
+                $detLower = strtolower($detLindo);
+
+                if (str_contains($detLower, 'dividendos en acciones')) {
                     $dividendosTotal = $val;
-                } elseif ($row->detalle === 'Plusvalía Acciones') {
+                } elseif (str_contains($detLower, 'plusval')) {
                     $plusvaliaTotal = $val;
-                } elseif ($row->detalle === 'TOTAL') {
-                    $totalCompleto = $val;
-                }
-            }
-
-            $baseTotal = $totalCompleto - $dividendosTotal - $plusvaliaTotal;
-            $totalFinal = $baseTotal + ($incluirDividendos ? $dividendosTotal : 0.0) + ($incluirPlusvalia ? $plusvaliaTotal : 0.0);
-
-            foreach ($resultados as $row) {
-                $val = (float) $row->valor;
-                if ($row->detalle === 'Dividendos en Acciones' && !$incluirDividendos) {
-                    $val = 0.0;
-                } elseif ($row->detalle === 'Plusvalía Acciones' && !$incluirPlusvalia) {
-                    $val = 0.0;
-                } elseif ($row->detalle === 'TOTAL') {
-                    $val = $totalFinal;
+                } elseif ($row->detalle === 'TOTAL' || $detLindo === 'TOTAL') {
+                    $totalFinal = $val;
                 }
 
                 $patrimonio[] = [
-                    'detalle' => $row->detalle,
+                    'detalle' => $detLindo,
                     'valor' => $val
                 ];
             }
+
+            // Si los switches están en 0, obtener los valores potenciales de plusvalía y dividendos para las tarjetas informativas
+            $plusvaliaPotencial = $plusvaliaTotal;
+            $dividendosPotencial = $dividendosTotal;
+
+            if (!$incluirPlusvalia || !$incluirDividendos) {
+                $fullRes = DB::select('CALL SP_PATRIMONIO_CONSOLIDADO(?, ?, ?, ?, 1, 1)', [
+                    $fechaInicio,
+                    $fechaFin,
+                    $idGrupoFamiliar,
+                    $idPropietario
+                ]);
+                foreach ($fullRes as $fRow) {
+                    $fDet = strtolower($fRow->detalle);
+                    if (str_contains($fDet, 'plusval') && !$incluirPlusvalia) {
+                        $plusvaliaPotencial = (float) $fRow->valor;
+                    }
+                    if (str_contains($fDet, 'dividendos en acciones') && !$incluirDividendos) {
+                        $dividendosPotencial = (float) $fRow->valor;
+                    }
+                }
+            }
+
+            $baseTotal = $totalFinal - ($incluirDividendos ? $dividendosTotal : 0.0) - ($incluirPlusvalia ? $plusvaliaTotal : 0.0);
 
             return response()->json([
                 'success' => true,
@@ -88,9 +103,9 @@ class PatrimonioController extends Controller
                     'patrimonio' => $patrimonio,
                     'total' => $totalFinal,
                     'base_total' => $baseTotal,
-                    'dividendos_total' => $dividendosTotal,
-                    'plusvalia_total' => $plusvaliaTotal,
-                    'total_completo' => $totalCompleto
+                    'dividendos_total' => $dividendosPotencial,
+                    'plusvalia_total' => $plusvaliaPotencial,
+                    'total_completo' => $baseTotal + $dividendosPotencial + $plusvaliaPotencial
                 ]
             ]);
 
@@ -128,5 +143,27 @@ class PatrimonioController extends Controller
     private function validarFecha($fecha): bool
     {
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) === 1;
+    }
+
+    /**
+     * Sanear cualquier artefacto de codificación UTF-8 / Mojibake
+     */
+    private function fixUtf8(string $str): string
+    {
+        $replacements = [
+            '├®' => 'é',
+            '├│' => 'ó',
+            '├óa' => 'ía',
+            '├í' => 'í',
+            '├¡' => 'í',
+            '├║' => 'ú',
+            '├▒' => 'ñ',
+            'Ã©' => 'é',
+            'Ã³' => 'ó',
+            'Ã\u00ad' => 'í',
+            'Ãº' => 'ú',
+            'Ã±' => 'ñ',
+        ];
+        return strtr($str, $replacements);
     }
 }

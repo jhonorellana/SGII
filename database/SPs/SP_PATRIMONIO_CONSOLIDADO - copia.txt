@@ -1,7 +1,7 @@
 DROP PROCEDURE IF EXISTS `SP_PATRIMONIO_CONSOLIDADO`;
 CREATE PROCEDURE `SP_PATRIMONIO_CONSOLIDADO`(IN `p_fecha_inicio` VARCHAR(10), IN `p_fecha_fin` VARCHAR(10), IN `p_id_grupo_familiar` INT, IN `p_id_propietario` INT, IN `p_incluir_dividendos` TINYINT(1), IN `p_incluir_plusvalia` TINYINT(1))
 BEGIN
-    -- Intereses esperados (ÚNICO RUBRO DINÁMICO QUE DEPENDE DEL SWITCH DE PROYECCIÓN p_fecha_fin)
+    -- Intereses esperados (RANGO DE FECHAS PROYECTADO: p_fecha_inicio a p_fecha_fin)
     SELECT 'Intereses esperados' as detalle,
            COALESCE(SUM(A.interes), 0) as valor
     FROM amortizacion A
@@ -33,14 +33,14 @@ BEGIN
 
     UNION ALL
 
-    -- Bonos vencimiento próximo (CAPITAL EN 12 MESES: SE MANTIENE CONSTANTE ESTÉ O NO APAGADO EL SWITCH DE PROYECCIÓN)
+    -- Bonos vencimiento próximo (Capital a amortizarse en los próximos 12 meses)
     SELECT 'Bonos vencimiento próximo' as detalle,
            COALESCE(SUM(A.capital), 0) as valor
     FROM amortizacion A
     JOIN inversion I ON A.id_inversion = I.id_inversion
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
-      AND A.fecha_pago <= DATE_ADD(STR_TO_DATE(p_fecha_inicio, '%Y-%m-%d'), INTERVAL 1 YEAR)
+      AND A.fecha_pago <= p_fecha_fin
       AND I.fecha_venta IS NULL
       AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0
@@ -252,7 +252,7 @@ BEGIN
                JOIN inversion I ON A.id_inversion = I.id_inversion
                JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
                WHERE A.fecha_pago > p_fecha_inicio
-                 AND A.fecha_pago <= DATE_ADD(STR_TO_DATE(p_fecha_inicio, '%Y-%m-%d'), INTERVAL 1 YEAR)
+                 AND A.fecha_pago <= p_fecha_fin
                  AND I.fecha_venta IS NULL
                  AND A.id_estado_amortizacion IN (134, 135, 136)
                  AND A.eliminado = 0

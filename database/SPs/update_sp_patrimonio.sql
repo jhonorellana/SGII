@@ -1,5 +1,18 @@
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 DROP PROCEDURE IF EXISTS `SP_PATRIMONIO_CONSOLIDADO`;
-CREATE PROCEDURE `SP_PATRIMONIO_CONSOLIDADO`(IN `p_fecha_inicio` VARCHAR(10), IN `p_fecha_fin` VARCHAR(10), IN `p_id_grupo_familiar` INT, IN `p_id_propietario` INT, IN `p_incluir_dividendos` TINYINT(1), IN `p_incluir_plusvalia` TINYINT(1))
+
+DELIMITER $$
+
+CREATE PROCEDURE `SP_PATRIMONIO_CONSOLIDADO`(
+    IN `p_fecha_inicio` VARCHAR(10),
+    IN `p_fecha_fin` VARCHAR(10),
+    IN `p_id_grupo_familiar` INT,
+    IN `p_id_propietario` INT,
+    IN `p_incluir_dividendos` TINYINT(1),
+    IN `p_incluir_plusvalia` TINYINT(1)
+)
 BEGIN
     -- Intereses esperados (ÚNICO RUBRO DINÁMICO QUE DEPENDE DEL SWITCH DE PROYECCIÓN p_fecha_fin)
     SELECT 'Intereses esperados' as detalle,
@@ -33,7 +46,7 @@ BEGIN
 
     UNION ALL
 
-    -- Bonos vencimiento próximo (CAPITAL EN 12 MESES: SE MANTIENE CONSTANTE ESTÉ O NO APAGADO EL SWITCH DE PROYECCIÓN)
+    -- Bonos vencimiento próximo
     SELECT 'Bonos vencimiento próximo' as detalle,
            COALESCE(SUM(A.capital), 0) as valor
     FROM amortizacion A
@@ -401,4 +414,6 @@ BEGIN
                  AND (p_id_grupo_familiar IS NULL OR ov.id_grupo_familiar = p_id_grupo_familiar)
                  AND (p_id_propietario IS NULL OR ov.id_propietario = p_id_propietario)
            ) as valor;
-END
+END$$
+
+DELIMITER ;
