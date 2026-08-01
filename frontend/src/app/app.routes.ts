@@ -81,6 +81,7 @@ export const routes: Routes = [
       { path: 'renta-variable/dividendos', component: DividendoListComponent },
       { path: 'renta-variable/dashboard-portfolio', component: PortfolioDashboardComponent },
       { path: 'renta-variable/dashboard-mercado', component: MarketAnalysisDashboardComponent },
+      { path: 'renta-variable/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

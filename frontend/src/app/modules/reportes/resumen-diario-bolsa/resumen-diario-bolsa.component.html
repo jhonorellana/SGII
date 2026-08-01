@@ -4,8 +4,10 @@
   <!-- Encabezado y Selector de Filtros -->
   <div class="header-section">
     <div class="title-area">
-      <h1>Resumen Diario de Transacciones de Bolsa</h1>
-      <p class="subtitle">Análisis diario de renta fija, renta variable y cotizaciones de cierres del mercado</p>
+      <h1 *ngIf="!isRentaVariableView">Resumen Diario de Transacciones de Bolsa</h1>
+      <h1 *ngIf="isRentaVariableView">Resumen Diario de la Bolsa (Renta Variable)</h1>
+      <p *ngIf="!isRentaVariableView" class="subtitle">Análisis diario de renta fija, renta variable y cotizaciones de cierres del mercado</p>
+      <p *ngIf="isRentaVariableView" class="subtitle">Análisis diario de operaciones de renta variable y cotizaciones de cierres del mercado</p>
     </div>
     
     <div class="filter-controls">
@@ -64,10 +66,10 @@
   </div>
 
   <!-- Dashboard Principal -->
-  <div *ngIf="!cargando && datosCargados && (rentaFijaConsolidada.length > 0 || acciones.length > 0)">
+  <div *ngIf="!cargando && datosCargados && (rentaFijaConsolidada.length > 0 || acciones.length > 0 || cierresAcciones.length > 0)">
     
     <!-- Fila de Tarjetas de Métricas (KPI Cards) -->
-    <div class="kpi-grid">
+    <div class="kpi-grid" *ngIf="!isRentaVariableView">
       <!-- Tarjeta 1: Rendimiento Máx. Corto Plazo -->
       <div class="kpi-card glass">
         <div class="kpi-icon volume" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
@@ -118,7 +120,7 @@
     </div>
 
     <!-- Sección de Gráficos Analíticos -->
-    <div class="charts-grid">
+    <div class="charts-grid" *ngIf="!isRentaVariableView">
       <!-- Gráfico de Dispersión: Curva de Rendimiento -->
       <div class="chart-card glass">
         <h3>Curva de Rendimiento de Renta Fija (Rendimiento % vs Plazo)</h3>
@@ -158,9 +160,9 @@
     <div class="tables-section glass">
       <p-tabView>
         <!-- Pestaña Renta Fija -->
-        <p-tabPanel header="Renta Fija (Deuda)">
+        <p-tabPanel header="Renta Fija (Deuda)" *ngIf="!isRentaVariableView">
           <div class="table-container">
-            <p-table [value]="rentaFijaConsolidada" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRF [globalFilterFields]="['tipo','emisor','plazo','tasa','precio','rendimiento','valor_nominal','valor_efectivo','vencimiento']">
+            <p-table [value]="rentaFijaConsolidada" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRF [globalFilterFields]="['tipo','emisor','plazo','tasa','precio','rendimiento','valor_nominal','valor_efectivo','vencimiento']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Operaciones de Renta Fija</span>
@@ -205,7 +207,7 @@
         <!-- Pestaña Renta Variable -->
         <p-tabPanel header="Renta Variable (Acciones)">
           <div class="table-container">
-            <p-table [value]="acciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
+            <p-table [value]="acciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Operaciones de Renta Variable</span>
@@ -244,7 +246,7 @@
         <!-- Pestaña Cierres de Mercado -->
         <p-tabPanel header="Cierres de Acciones (Mercado)">
           <div class="table-container">
-            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
+            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Cierres de Mercado</span>

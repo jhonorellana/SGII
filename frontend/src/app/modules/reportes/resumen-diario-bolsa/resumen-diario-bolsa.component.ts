@@ -15,6 +15,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import 'chartjs-adapter-date-fns';
 import { es } from 'date-fns/locale';
+import { Router } from '@angular/router';
 import { Chart, TimeScale, TimeSeriesScale } from 'chart.js';
 
 // Register the required temporal scales globally in Chart.js
@@ -54,6 +55,7 @@ export interface RentaFijaConsolidada {
   styleUrls: ['./resumen-diario-bolsa.component.css']
 })
 export class ResumenDiarioBolsaComponent implements OnInit {
+  isRentaVariableView = false;
   fechaInicio: Date = new Date();
   fechaFin: Date = new Date();
   cargando = false;
@@ -88,8 +90,11 @@ export class ResumenDiarioBolsaComponent implements OnInit {
   constructor(
     private resumenService: ResumenBolsaService,
     private messageService: MessageService,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private router: Router
+  ) {
+    this.isRentaVariableView = this.router.url.includes('/renta-variable/');
+  }
 
   ngOnInit(): void {
     this.inicializarFechasPorDefecto();

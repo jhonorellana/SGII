@@ -93,6 +93,11 @@ export class SidebarComponent implements OnInit {
           path: '/renta-variable/dashboard-mercado'
         },
         {
+          title: 'Resumen Diario de la Bolsa',
+          icon: 'bi-journal-check',
+          path: '/renta-variable/resumen-diario-bolsa'
+        },
+        {
           title: 'Historial de acciones',
           icon: 'bi-clock-history',
           path: '/reportes/historico-acciones'

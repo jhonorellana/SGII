@@ -615,3 +615,13 @@
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
   outline: none;
 }
+
+/* Solución para que el menú desplegable del paginador no se recorte */
+.tables-section,
+.table-container {
+  overflow: visible !important;
+}
+
+::ng-deep .p-dropdown-panel {
+  z-index: 99999 !important;
+}
