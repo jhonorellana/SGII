@@ -41,11 +41,6 @@ export class SidebarComponent implements OnInit {
           path: '/instrumentos'
         },
         {
-          title: 'Amortizaciones',
-          icon: 'bi-calculator',
-          path: '/amortizaciones'
-        },
-        {
           title: 'Generación de Tablas',
           icon: 'bi-table',
           path: '/amortizaciones/generacion'
@@ -54,6 +49,11 @@ export class SidebarComponent implements OnInit {
           title: 'Ventas de Inversiones',
           icon: 'bi-currency-exchange',
           path: '/ventas-inversion'
+        },
+        {
+          title: 'Amortizaciones',
+          icon: 'bi-calculator',
+          path: '/amortizaciones'
         },
         {
           title: 'Resumen Diario de la Bolsa',

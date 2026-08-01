@@ -49,6 +49,7 @@ export class AmortizacionListComponent implements OnInit {
   estadosAmortizacion: any[] = [];
   totalRecords: number = 0;
   loading: boolean = false;
+  hasLoadedData: boolean = false;
 
   displayDialog: boolean = false;
   isEdit: boolean = false;
@@ -102,7 +103,7 @@ export class AmortizacionListComponent implements OnInit {
 
   ngOnInit(): void {
     this.rowsPerPage = this.paginationService.getRowsPerPage('amortizaciones', 10);
-    this.loadAmortizaciones();
+    // No cargar amortizaciones automáticamente al inicio para optimizar rendimiento
     this.loadInversiones();
     this.loadEstadosAmortizacion();
     
@@ -110,41 +111,30 @@ export class AmortizacionListComponent implements OnInit {
     const savedInversionFilter = sessionStorage.getItem('amortizaciones-inversion-filter');
     if (savedInversionFilter) {
       this.filterValues.inversion = savedInversionFilter;
-      setTimeout(() => {
-        this.onInversionFilterChange({ target: { value: savedInversionFilter } });
-      }, 500); // Wait for amortizaciones to load
     }
-    
-    // Restore other filters from table state if available
-    setTimeout(() => {
-      if (this.table && this.table.filters) {
-        const f = this.table.filters as any;
-        this.filterValues.emisor = f['inversion.instrumento.emisor.nombre']?.value || f['inversion.instrumento.emisor.nombre']?.[0]?.value || '';
-        this.filterValues.propietario = f['inversion.propietario.nombres']?.value || f['inversion.propietario.nombres']?.[0]?.value || '';
-        this.filterValues.fecha_pago = f['fecha_pago']?.value || f['fecha_pago']?.[0]?.value || '';
-        this.filterValues.interes = f['interes']?.value || f['interes']?.[0]?.value || '';
-        this.filterValues.capital = f['capital']?.value || f['capital']?.[0]?.value || '';
-        this.filterValues.descuento = f['descuento']?.value || f['descuento']?.[0]?.value || '';
-        this.filterValues.total = f['total']?.value || f['total']?.[0]?.value || '';
-        this.filterValues.estado = f['estado_amortizacion.nombre']?.value || f['estado_amortizacion.nombre']?.[0]?.value || '';
-        this.filterValues.activo = f['activo']?.value !== undefined ? f['activo']?.value : (f['activo']?.[0]?.value !== undefined ? f['activo']?.[0]?.value : '');
-      }
-    }, 100);
   }
 
-  loadAmortizaciones(): void {
+  loadAmortizaciones(onComplete?: () => void): void {
     this.loading = true;
     this.amortizacionService.getAll().subscribe({
       next: (data) => {
         this.amortizaciones = Array.isArray(data) ? data : [];
         this.totalRecords = this.amortizaciones.length;
         this.loading = false;
+        this.hasLoadedData = true;
+        if (onComplete) {
+          onComplete();
+        }
       },
       error: (error) => {
         this.amortizaciones = [];
         this.totalRecords = 0;
         this.loading = false;
+        this.hasLoadedData = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar amortizaciones' });
+        if (onComplete) {
+          onComplete();
+        }
       }
     });
   }
@@ -307,6 +297,31 @@ export class AmortizacionListComponent implements OnInit {
   }
 
   triggerSearch(): void {
+    if (!this.hasLoadedData && !this.loading) {
+      this.loadAmortizaciones(() => {
+        this.applyTableFilters();
+      });
+    } else {
+      this.applyTableFilters();
+    }
+  }
+
+  onGlobalSearch(event: any): void {
+    const val = event.target?.value || '';
+    if (!this.hasLoadedData && !this.loading && val) {
+      this.loadAmortizaciones(() => {
+        if (this.table) {
+          this.table.filterGlobal(val, 'contains');
+        }
+      });
+    } else if (this.table) {
+      this.table.filterGlobal(val, 'contains');
+    }
+  }
+
+  applyTableFilters(): void {
+    if (!this.table) return;
+
     this.table.filter(this.filterValues.emisor, 'inversion.instrumento.emisor.nombre', 'contains');
     this.table.filter(this.filterValues.propietario, 'inversion.propietario.nombres', 'contains');
     this.table.filter(this.filterValues.fecha_pago, 'fecha_pago', 'contains');

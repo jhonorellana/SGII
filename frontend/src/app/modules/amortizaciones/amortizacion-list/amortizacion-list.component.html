@@ -32,7 +32,8 @@
         <h5 class="m-0">Lista de Amortizaciones</h5>
         <span class="p-input-icon-left">
           <i class="pi pi-search"></i>
-          <input pInputText type="text" (input)="table.filterGlobal($any($event.target).value, 'contains')"
+          <input pInputText type="text" (input)="onGlobalSearch($event)"
+                 (keyup.enter)="onGlobalSearch($event)"
                  [value]="$any(table.filters['global'])?.value || ''"
                  placeholder="Buscar..." class="w-100"/>
         </span>
@@ -41,17 +42,17 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_amortizacion" class="text-center" style="width: 70px;">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
-        <th pSortableColumn="inversion.id_inversion" class="text-center" style="width: 140px;">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
+        <th pSortableColumn="id_amortizacion" class="text-center" style="width: 60px;">ID <p-sortIcon field="id_amortizacion"></p-sortIcon></th>
+        <th pSortableColumn="inversion.id_inversion" class="text-center" style="width: 130px;">Inversión <p-sortIcon field="inversion.id_inversion"></p-sortIcon></th>
         <th pSortableColumn="inversion.instrumento.emisor.nombre" class="text-center">Emisor <p-sortIcon field="inversion.instrumento.emisor.nombre"></p-sortIcon></th>
         <th pSortableColumn="inversion.propietario.nombres" class="text-center">Propietario <p-sortIcon field="inversion.propietario.nombres"></p-sortIcon></th>
-        <th pSortableColumn="fecha_pago" class="text-center" style="width: 110px;">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
-        <th pSortableColumn="interes" class="text-end">Interés <p-sortIcon field="interes"></p-sortIcon></th>
-        <th pSortableColumn="capital" class="text-end">Capital <p-sortIcon field="capital"></p-sortIcon></th>
-        <th pSortableColumn="descuento" class="text-end">Descuento <p-sortIcon field="descuento"></p-sortIcon></th>
-        <th pSortableColumn="total" class="text-end">Total <p-sortIcon field="total"></p-sortIcon></th>
-        <th pSortableColumn="estado_amortizacion" class="text-center" style="width: 140px;">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
-        <th class="text-center" style="width: 90px;">Acciones</th>
+        <th pSortableColumn="fecha_pago" class="text-center" style="width: 130px;">Fecha Pago <p-sortIcon field="fecha_pago"></p-sortIcon></th>
+        <th pSortableColumn="interes" class="text-end" style="width: 105px;">Interés <p-sortIcon field="interes"></p-sortIcon></th>
+        <th pSortableColumn="capital" class="text-end" style="width: 105px;">Capital <p-sortIcon field="capital"></p-sortIcon></th>
+        <th pSortableColumn="descuento" class="text-end" style="width: 125px;">Descuento <p-sortIcon field="descuento"></p-sortIcon></th>
+        <th pSortableColumn="total" class="text-end" style="width: 110px;">Total <p-sortIcon field="total"></p-sortIcon></th>
+        <th pSortableColumn="estado_amortizacion" class="text-center" style="width: 135px;">Estado <p-sortIcon field="estado_amortizacion"></p-sortIcon></th>
+        <th class="text-center" style="width: 85px;">Acciones</th>
       </tr>
       <tr>
         <th></th>
@@ -130,6 +131,22 @@
               </div>
             </ng-container>
           </ng-container>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="11" class="text-center py-4 text-muted">
+          <div class="py-3" *ngIf="!hasLoadedData && !loading">
+            <i class="bi bi-search display-6 text-success mb-2 d-block"></i>
+            <p class="mb-1 font-semibold text-dark fs-6">Consulte las amortizaciones</p>
+            <small class="text-secondary">Ingrese sus criterios de búsqueda y haga clic en el botón <strong>Buscar</strong> (<i class="bi bi-search"></i>) para cargar la información.</small>
+          </div>
+          <div class="py-3" *ngIf="hasLoadedData && !loading">
+            <i class="bi bi-inbox display-6 text-muted mb-2 d-block"></i>
+            <p class="mb-1 font-semibold text-dark fs-6">No se encontraron amortizaciones</p>
+            <small class="text-secondary">Intente con otros filtros o parámetros de búsqueda.</small>
+          </div>
         </td>
       </tr>
     </ng-template>

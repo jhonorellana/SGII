@@ -1,17 +1,20 @@
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <div class="header-content">
-      <h1 class="dashboard-title">Análisis de Mercado</h1>
-      <p class="dashboard-subtitle">Explora oportunidades de inversión y métricas del mercado</p>
+<div class="container-fluid pt-0">
+  <!-- Header del Dashboard -->
+  <div class="card mb-3 border-0 shadow-sm">
+    <div class="card-header app-custom-header text-white d-flex justify-content-between align-items-center">
+      <h4 class="mb-0 text-white">
+        <i class="bi bi-pie-chart-fill me-2"></i>
+        Análisis de Mercado
+      </h4>
     </div>
-    <div class="header-actions">
-      <!-- Future: Refresh button or filters -->
+    <div class="card-body py-2">
+      <p class="text-muted mb-0 font-medium">Explora oportunidades de inversión y métricas del mercado</p>
     </div>
   </div>
 
   <div *ngIf="loading" class="loading-state">
     <div class="spinner"></div>
-    <p>Cargando datos del mercado...</p>
+    <p>Cargando datos del mercado y portafolio...</p>
   </div>
 
   <div *ngIf="error" class="error-state">
@@ -25,7 +28,47 @@
         <span class="price-tag">{{ row.precio_mercado | currency:'USD' }}</span>
       </div>
       <div class="card-body">
-        <div class="metrics-grid">
+        <!-- Primer Bloque: Mi Posición en Portafolio -->
+        <div class="user-portfolio-summary mb-3 pb-2">
+          <h6 class="portfolio-section-title mb-2 text-primary font-semibold">
+            <i class="bi bi-briefcase-fill me-1"></i> Mi Posición en Portafolio
+          </h6>
+          <div class="portfolio-metrics-grid">
+            <div class="portfolio-metric-item" title="Cantidad total de acciones poseídas actualmente">
+              <span class="p-label">Acciones Poseídas:</span>
+              <span class="p-val font-bold text-dark">{{ (row.myCantidadAcciones || 0) | number:'1.0-0' }} acc.</span>
+            </div>
+            <div class="portfolio-metric-item" title="Capital total invertido en compras de acciones de este emisor">
+              <span class="p-label">Capital Invertido:</span>
+              <span class="p-val font-bold text-dark">{{ (row.myCapitalInvertido || 0) | currency:'USD' }}</span>
+            </div>
+            <div class="portfolio-metric-item" title="Valor actual de las acciones a precio de mercado">
+              <span class="p-label">Valor Actual Acciones:</span>
+              <span class="p-val font-bold text-success">{{ (row.myValorActualAcciones || 0) | currency:'USD' }}</span>
+            </div>
+            <div class="portfolio-metric-item" title="Diferencia entre el Valor Actual a precio de mercado y el Capital Invertido (Ganancia o Pérdida no realizada)">
+              <span class="p-label">Ganancia / Pérdida:</span>
+              <span class="p-val font-bold" [ngClass]="(row.myDiferenciaValVsCapital || 0) >= 0 ? 'text-success' : 'text-danger'">
+                {{ (row.myDiferenciaValVsCapital || 0) | currency:'USD' }}
+              </span>
+            </div>
+            <div class="portfolio-metric-item" title="Cantidad de acciones recibidas por dividendos en acciones">
+              <span class="p-label">Dividendo Acciones (Cant.):</span>
+              <span class="p-val font-bold text-info">{{ (row.myCantidadDivAcciones || 0) | number:'1.0-0' }} acc.</span>
+            </div>
+            <div class="portfolio-metric-item" title="Valor que representan los dividendos en acciones a precio de mercado actual">
+              <span class="p-label">Val. Div. Acc. (Precio Actual):</span>
+              <span class="p-val font-bold text-primary">{{ (row.myValorDivAccionesActual || 0) | currency:'USD' }}</span>
+            </div>
+            <div class="portfolio-metric-item" title="Monto total de dividendos cobrados en efectivo">
+              <span class="p-label">Div. Efectivo Recibidos:</span>
+              <span class="p-val font-bold text-success">{{ (row.myDivEfectivoRecibido || 0) | currency:'USD' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Segundo Bloque: Métricas Técnicas de Mercado -->
+        <div class="metrics-grid mb-3">
           <div class="metric" title="Tendencia del precio frente a la Media Móvil Simple de 5 días">
             <span class="metric-label">SMA 5</span>
             <span class="metric-value">{{ row.sma_5 | currency:'USD' }}</span>
@@ -43,6 +86,8 @@
             <span class="metric-value">{{ row.dias_sin_negociacion }} días</span>
           </div>
         </div>
+
+        <!-- Tercer Bloque: Señales / Alertas -->
         <div class="alerts-container" *ngIf="row.alertas && row.alertas.length > 0">
           <h4 class="alerts-title">Señales:</h4>
           <div class="alerts-badges">
@@ -54,6 +99,7 @@
       </div>
     </div>
   </div>
+
   <!-- Leyenda Explicativa -->
   <div *ngIf="!loading && !error" class="dashboard-legend mt-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6; font-size: 0.85rem;">
     <h5 class="mb-2" style="font-size: 0.95rem; font-weight: 600; color: #495057;">Guía Rápida de Alertas y Métricas</h5>
