@@ -73,6 +73,7 @@ export class DashboardComponent implements OnInit {
   proximasAmortizaciones: Amortizacion[] = [];
   chartData: any = null;
   chartOptions: any = null;
+  leyendaColores: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -167,7 +168,6 @@ export class DashboardComponent implements OnInit {
           this.capitalNotasCreditoConsolidado = getItemValor('Notas Crédito');
 
           this.patrimonioDesglose = items;
-          this.buildChartData();
         }
 
         // 1.b Patrimonio Proyección 1 Año e Intereses Esperados (Proyección un año = Sí)
@@ -188,6 +188,12 @@ export class DashboardComponent implements OnInit {
           this.porcentajeAvanceProyeccion = this.patrimonioProyectadoConsolidadoTotal > 0
             ? Math.min(100, Math.max(0, (this.patrimonioBaseCosto / this.patrimonioProyectadoConsolidadoTotal) * 100))
             : 100;
+
+          // Construir el gráfico del Dashboard usando los datos proyectados en memoria (coincide 100% con el Reporte Consolidado $864.459,58 sin hacer peticiones extra)
+          const itemsProyectados = dP.patrimonio || [];
+          this.buildChartData(itemsProyectados);
+        } else {
+          this.buildChartData(this.patrimonioDesglose);
         }
 
         // 2. Utilidades por Ventas & Notas de Crédito
@@ -258,12 +264,45 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  buildChartData(): void {
-    if (!this.patrimonioDesglose || this.patrimonioDesglose.length === 0) return;
+  buildChartData(itemsList?: PatrimonioItem[]): void {
+    const list = (itemsList && itemsList.length > 0) ? itemsList : this.patrimonioDesglose;
+    if (!list || list.length === 0) return;
 
-    const colores = ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#64748b'];
-    const labels = this.patrimonioDesglose.map(item => item.detalle);
-    const data = this.patrimonioDesglose.map(item => item.valor);
+    // Filtrar la fila 'TOTAL' para que no aparezca como una porción en el gráfico de dona
+    const itemsFiltrados = list.filter(item => item.detalle && item.detalle.toUpperCase() !== 'TOTAL' && Number(item.valor) !== 0);
+
+    const colores = [
+      '#278550', // Capital bonos (Verde)
+      '#2196F3', // Papeles Comerciales (Azul)
+      '#8E24AA', // Obligaciones (Púrpura)
+      '#FF9800', // Acciones Sin Interés (Naranja)
+      '#3F51B5', // Intereses esperados (Azul Índigo)
+      '#9C27B0', // Acciones Pago Interes (Violeta)
+      '#E91E63', // Titularizaciones (Rosa)
+      '#4CAF50', // Notas Crédito (Verde claro)
+      '#FFB74D', // Bonos vencimiento próximo (Amarillo oro)
+      '#FFF176', // Dividendos en Acciones (Amarillo claro)
+      '#4DD0E1', // Plusvalía Acciones (Cyan)
+      '#BA68C8'  // Total Corriente (Morado)
+    ];
+
+    // Ordenar de mayor a menor para la leyenda lateral
+    const datosOrdenados = [...itemsFiltrados].sort((a, b) => Number(b.valor) - Number(a.valor));
+    const totalPositivos = datosOrdenados.reduce((sum, item) => sum + (Number(item.valor) > 0 ? Number(item.valor) : 0), 0);
+
+    this.leyendaColores = datosOrdenados.map((item, index) => {
+      const val = Number(item.valor);
+      const pct = (val > 0 && totalPositivos > 0) ? ((val / totalPositivos) * 100).toFixed(1) : '0.0';
+      return {
+        color: colores[index % colores.length],
+        label: item.detalle,
+        valor: val,
+        porcentaje: pct
+      };
+    });
+
+    const labels = datosOrdenados.map(item => item.detalle);
+    const data = datosOrdenados.map(item => item.valor);
 
     this.chartData = {
       labels: labels,
@@ -281,18 +320,22 @@ export class DashboardComponent implements OnInit {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          position: 'right',
-          labels: {
-            usePointStyle: true,
-            boxWidth: 8,
-            font: {
-              size: 11,
-              family: "'Inter', sans-serif"
+          display: false
+        },
+        datalabels: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context: any) {
+              const label = context.label || '';
+              const value = context.raw || 0;
+              return ` ${label}: $${Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             }
           }
         }
       },
-      cutout: '65%'
+      cutout: '72%'
     };
   }
 
