@@ -3,14 +3,17 @@
   <div class="hero-banner card border-0 shadow-sm p-3 mb-4" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius: 14px;">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 text-white">
       <div>
-        <h3 class="welcome-title mb-1 text-white font-bold">
-          <i class="bi bi-speedometer2 me-2"></i>
+        <h3 class="welcome-title mb-1 text-white font-bold d-flex align-items-center gap-2">
+          <i class="bi bi-speedometer2"></i>
           Centro de Control y Consolidado de Inversiones
         </h3>
         <p class="welcome-subtitle mb-0 text-light opacity-90" style="font-size: 0.9rem;">
           Bienvenido(a), <strong>{{ userName }}</strong>. Visión estratégica en tiempo real de tu patrimonio y activos.
         </p>
       </div>
+      <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
+        <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
+      </a>
     </div>
   </div>
 
@@ -26,37 +29,196 @@
   </div>
 
   <div *ngIf="!loading && !error" class="dashboard-content">
-    <!-- SECCIÓN 1: Tarjetas de Patrimonio Consolidado (Tomadas con los tres switches apagados) -->
-    <div class="card border-0 shadow-sm mb-4">
-      <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 font-bold text-dark">
-          <i class="bi bi-bank text-success me-2"></i> Patrimonio Consolidado (Indicadores Base)
-        </h5>
-        <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-sm btn-outline-success">Ver Reporte Completo</a>
+
+    <!-- NIVEL 1: 🏆 BANNER HERO - LOS 4 PILARES ESTRATÉGICOS DEL PATRIMONIO -->
+    <div class="row g-3 mb-4">
+      <!-- HERO KPI 1: PATRIMONIO BASE (COSTO) -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-hero-card" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: #ffffff; border-radius: 12px;">
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-uppercase font-semibold text-xs tracking-wider opacity-75">Patrimonio Base (Costo)</span>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,255,255,0.15); font-size: 1.1rem;">
+                <i class="bi bi-bank2"></i>
+              </div>
+            </div>
+            <div>
+              <h2 class="mb-1 font-bold text-white tracking-tight" style="font-size: 1.75rem;">{{ patrimonioBaseCosto | currency:'USD' }}</h2>
+              <small class="text-light opacity-75">Costo original de inversiones y bancos</small>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body pt-0">
-        <div class="row g-3">
-          <!-- 1. PATRIMONIO BASE (COSTO) -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-secondary border-4" style="border-left-color: #475569 !important; background-color: #f8fafc;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #e2e8f0; color: #334155;">
-                  <i class="bi bi-bank2"></i>
+
+      <!-- HERO KPI 2: PATRIMONIO CONSOLIDADO TOTAL -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-hero-card" style="background: linear-gradient(135deg, #065f46 0%, #059669 100%); color: #ffffff; border-radius: 12px;">
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-uppercase font-semibold text-xs tracking-wider opacity-75">Patrimonio Consolidado Total</span>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,255,255,0.2); font-size: 1.1rem;">
+                <i class="bi bi-wallet2"></i>
+              </div>
+            </div>
+            <div>
+              <h2 class="mb-1 font-bold text-white tracking-tight" style="font-size: 1.75rem;">{{ patrimonioConsolidadoTotal | currency:'USD' }}</h2>
+              <small class="text-light opacity-85">Base + Dividendos + Plusvalía actual</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO KPI 3: PATRIMONIO TOTAL PROYECTADO (1 AÑO) -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-hero-card" style="background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%); color: #ffffff; border-radius: 12px;">
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-uppercase font-semibold text-xs tracking-wider opacity-75">Patrimonio Total Proyectado (1 Año)</span>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,255,255,0.2); font-size: 1.1rem;">
+                <i class="bi bi-graph-up-arrow"></i>
+              </div>
+            </div>
+            <div>
+              <h2 class="mb-1 font-bold text-white tracking-tight" style="font-size: 1.75rem;">{{ patrimonioProyectadoConsolidadoTotal | currency:'USD' }}</h2>
+              <small class="text-light opacity-85">Proyección a 12 meses + Rendimientos</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HERO KPI 4: TOTAL CORRIENTE (BANCOS) -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-hero-card" style="background: linear-gradient(135deg, #991b1b 0%, #dc2626 100%); color: #ffffff; border-radius: 12px;">
+          <div class="card-body p-3 d-flex flex-column justify-content-between">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="text-uppercase font-semibold text-xs tracking-wider opacity-75">Total Corriente (Bancos)</span>
+              <div class="rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,255,255,0.2); font-size: 1.1rem;">
+                <i class="bi bi-credit-card-2-front"></i>
+              </div>
+            </div>
+            <div>
+              <h2 class="mb-1 font-bold text-white tracking-tight" style="font-size: 1.75rem;">{{ patrimonioTotalCorriente | currency:'USD' }}</h2>
+              <small class="text-light opacity-85">Cuentas bancarias y saldos corrientes</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INDICADOR DE PROGRESO DE LA META PATRIMONIAL PROYECTADA -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-bullseye text-success fs-5"></i>
+            <span class="font-bold text-dark text-sm">Avance del Patrimonio Base hacia el Objetivo Proyectado a 1 Año</span>
+          </div>
+          <span class="badge bg-success-subtle text-success font-bold px-3 py-1 text-sm rounded-pill">
+            {{ porcentajeAvanceProyeccion | number:'1.1-1' }}% Alcanzado
+          </span>
+        </div>
+        <div class="progress" style="height: 10px; border-radius: 6px; background-color: #e2e8f0;">
+          <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+               role="progressbar"
+               [style.width.%]="porcentajeAvanceProyeccion"
+               [attr.aria-valuenow]="porcentajeAvanceProyeccion"
+               aria-valuemin="0"
+               aria-valuemax="100">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NIVEL 2: 📁 PESTAÑAS TEMÁTICAS PARA CATEGORÍAS DE METRICAS -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+      <div class="card-header bg-white border-bottom py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+          <h5 class="mb-0 font-bold text-dark">
+            <i class="bi bi-layers-fill text-success me-2"></i> Desglose Detallado por Categoría
+          </h5>
+          <!-- Botones de Navegación por Pestañas -->
+          <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group">
+            <button type="button"
+                    class="btn rounded-pill font-semibold px-3 py-1"
+                    [ngClass]="activeTab === 'capital' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
+                    (click)="setActiveTab('capital')">
+              <i class="bi bi-briefcase-fill me-1"></i> Distribución de Capital
+            </button>
+            <button type="button"
+                    class="btn rounded-pill font-semibold px-3 py-1"
+                    [ngClass]="activeTab === 'acciones' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
+                    (click)="setActiveTab('acciones')">
+              <i class="bi bi-graph-up-arrow me-1"></i> Rendimientos Accionarios
+            </button>
+            <button type="button"
+                    class="btn rounded-pill font-semibold px-3 py-1"
+                    [ngClass]="activeTab === 'proyeccion' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
+                    (click)="setActiveTab('proyeccion')">
+              <i class="bi bi-hourglass-split me-1"></i> Proyecciones 12 Meses
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-3">
+        <!-- PESTAÑA 1: DISTRIBUCIÓN DE CAPITAL -->
+        <div *ngIf="activeTab === 'capital'" class="row g-3">
+          <!-- 1. CAPITAL RENTA FIJA -->
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-primary" style="background-color: #f0f9ff;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #e0f2fe; color: #0284c7;">
+                  <i class="bi bi-file-earmark-text"></i>
                 </div>
                 <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Patrimonio Base (Costo)</span>
-                  <h3 class="mb-0 font-bold text-dark">{{ patrimonioBaseCosto | currency:'USD' }}</h3>
-                  <small class="text-muted">Inversiones, Bancos y Saldos</small>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Renta Fija</span>
+                  <h3 class="mb-0 font-bold text-dark">{{ capitalRentaFijaConsolidado | currency:'USD' }}</h3>
+                  <small class="text-muted">Bonos, P.Comerciales, Oblig. y Titul.</small>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 2. DIVIDENDOS EN ACCIONES -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-success border-4" style="background-color: #f0fdf4;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #dcfce7; color: #16a34a;">
+          <!-- 2. CAPITAL RENTA VARIABLE -->
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-info" style="background-color: #f5f3ff;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #ede9fe; color: #7c3aed;">
+                  <i class="bi bi-pie-chart"></i>
+                </div>
+                <div>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Renta Variable</span>
+                  <h3 class="mb-0 font-bold" style="color: #6d28d9;">{{ capitalRentaVariableConsolidado | currency:'USD' }}</h3>
+                  <small class="text-muted">Acciones sin y con pago de interés</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. CAPITAL NOTAS DE CRÉDITO -->
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #d97706 !important; background-color: #fffbeb;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #fef3c7; color: #d97706;">
+                  <i class="bi bi-receipt"></i>
+                </div>
+                <div>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Notas de Crédito</span>
+                  <h3 class="mb-0 font-bold" style="color: #b45309;">{{ capitalNotasCreditoConsolidado | currency:'USD' }}</h3>
+                  <small class="text-muted">Saldo en notas de crédito</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PESTAÑA 2: RENDIMIENTOS Y PLUSVALÍAS ACCIONARIAS -->
+        <div *ngIf="activeTab === 'acciones'" class="row g-3">
+          <!-- 1. DIVIDENDOS EN ACCIONES -->
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-success" style="background-color: #f0fdf4;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #dcfce7; color: #16a34a;">
                   <i class="bi bi-gift"></i>
                 </div>
                 <div>
@@ -68,11 +230,11 @@
             </div>
           </div>
 
-          <!-- 3. PLUSVALÍA ACCIONES -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-primary border-4" style="background-color: #eff6ff;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #dbeafe; color: #2563eb;">
+          <!-- 2. PLUSVALÍA ACCIONES -->
+          <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-primary" style="background-color: #eff6ff;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #dbeafe; color: #2563eb;">
                   <i class="bi bi-graph-up-arrow"></i>
                 </div>
                 <div>
@@ -84,160 +246,68 @@
             </div>
           </div>
 
-          <!-- 4. DIV. + PLUSVALÍA ACCIONES -->
-          <div class="col-xl-4 col-md-6">
+          <!-- 3. DIV. + PLUSVALÍA ACCIONES -->
+          <div class="col-md-4">
             <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #9333ea !important; background-color: #faf5ff;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #f3e8ff; color: #9333ea;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #f3e8ff; color: #9333ea;">
                   <i class="bi bi-award"></i>
                 </div>
                 <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Div. + Plusvalía Acciones</span>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Div. + Plusvalía Total</span>
                   <h3 class="mb-0 font-bold" style="color: #9333ea;">{{ patrimonioDivMasPlusvalia | currency:'USD' }}</h3>
-                  <small class="text-muted">Rendimiento total accionario</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 5. PATRIMONIO CONSOLIDADO TOTAL -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-emerald border-4" style="border-left-color: #059669 !important; background-color: #ecfdf5;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #d1fae5; color: #059669;">
-                  <i class="bi bi-wallet2"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Patrimonio Consolidado Total</span>
-                  <h3 class="mb-0 font-bold" style="color: #059669;">{{ patrimonioConsolidadoTotal | currency:'USD' }}</h3>
-                  <small class="text-muted">Base + Dividendos + Plusvalía</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 6. PATRIMONIO PROYECCIÓN 1 AÑO -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #0d9488 !important; background-color: #f0fdf4;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #ccfbf1; color: #0d9488;">
-                  <i class="bi bi-graph-up"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Patrimonio Proyección 1 Año</span>
-                  <h3 class="mb-0 font-bold" style="color: #0f766e;">{{ patrimonioProyeccionUnAnio | currency:'USD' }}</h3>
-                  <small class="text-muted">Proyección a 1 año (+ Intereses)</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 7. INTERESES ESPERADOS (PROYECCIÓN 1 AÑO) -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-warning border-4" style="border-left-color: #eab308 !important; background-color: #fefce8;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #fef08a; color: #a16207;">
-                  <i class="bi bi-piggy-bank"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Intereses Esperados (1 Año)</span>
-                  <h3 class="mb-0 font-bold" style="color: #854d0e;">{{ interesesEsperadosProyeccion | currency:'USD' }}</h3>
-                  <small class="text-muted">Intereses a cobrar en 12 meses</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 8. TOTAL CORRIENTE -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" [style.border-left-color]="patrimonioTotalCorriente >= 0 ? '#0284c7 !important' : '#dc2626 !important'" [style.background-color]="patrimonioTotalCorriente >= 0 ? '#f0f9ff' : '#fef2f2'">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem;" [style.background-color]="patrimonioTotalCorriente >= 0 ? '#e0f2fe' : '#fee2e2'" [style.color]="patrimonioTotalCorriente >= 0 ? '#0284c7' : '#dc2626'">
-                  <i class="bi bi-credit-card font-bold"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Total Corriente</span>
-                  <h3 class="mb-0 font-bold" [ngClass]="patrimonioTotalCorriente >= 0 ? 'text-info-emphasis' : 'text-danger'">{{ patrimonioTotalCorriente | currency:'USD' }}</h3>
-                  <small class="text-muted">Cuentas bancarias y saldos corrientes</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 9. CAPITAL RENTA FIJA -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #0284c7 !important; background-color: #f0f9ff;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #e0f2fe; color: #0284c7;">
-                  <i class="bi bi-file-earmark-text"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Renta Fija</span>
-                  <h3 class="mb-0 font-bold" style="color: #0369a1;">{{ capitalRentaFijaConsolidado | currency:'USD' }}</h3>
-                  <small class="text-muted">Bonos, P.Comerciales, Oblig. y Titul.</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 10. CAPITAL RENTA VARIABLE -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #2563eb !important; background-color: #eff6ff;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #dbeafe; color: #2563eb;">
-                  <i class="bi bi-pie-chart"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Renta Variable</span>
-                  <h3 class="mb-0 font-bold" style="color: #1d4ed8;">{{ capitalRentaVariableConsolidado | currency:'USD' }}</h3>
-                  <small class="text-muted">Acciones sin y con pago de interés</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 11. CAPITAL NOTAS DE CRÉDITO -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #d97706 !important; background-color: #fffbeb;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #fef3c7; color: #d97706;">
-                  <i class="bi bi-receipt"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Notas de Crédito</span>
-                  <h3 class="mb-0 font-bold" style="color: #b45309;">{{ capitalNotasCreditoConsolidado | currency:'USD' }}</h3>
-                  <small class="text-muted">Saldo en notas de crédito</small>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 12. PATRIMONIO TOTAL PROYECTADO (1 AÑO) -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #059669 !important; background-color: #ecfdf5;">
-              <div class="card-body d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.35rem; background-color: #d1fae5; color: #059669;">
-                  <i class="bi bi-graph-up-arrow"></i>
-                </div>
-                <div>
-                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Patrimonio Total Proyectado (1 Año)</span>
-                  <h3 class="mb-0 font-bold" style="color: #047857;">{{ patrimonioProyectadoConsolidadoTotal | currency:'USD' }}</h3>
-                  <small class="text-muted">Proyección 1 año + Div. y Plusvalía</small>
+                  <small class="text-muted">Rendimiento accionario consolidado</small>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- PESTAÑA 3: PROYECCIONES E INTERESES FUTUROS -->
+        <div *ngIf="activeTab === 'proyeccion'" class="row g-3">
+          <!-- 1. PATRIMONIO PROYECCIÓN 1 AÑO -->
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-info" style="background-color: #f0fdfa;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #ccfbf1; color: #0d9488;">
+                  <i class="bi bi-calendar-check"></i>
+                </div>
+                <div>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Patrimonio Proyección 1 Año</span>
+                  <h3 class="mb-0 font-bold" style="color: #0f766e;">{{ patrimonioProyeccionUnAnio | currency:'USD' }}</h3>
+                  <small class="text-muted">Proyección a 1 año (+ Intereses esperados)</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. INTERESES ESPERADOS (1 AÑO) -->
+          <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #eab308 !important; background-color: #fefce8;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #fef08a; color: #ca8a04;">
+                  <i class="bi bi-piggy-bank"></i>
+                </div>
+                <div>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Intereses Esperados (1 Año)</span>
+                  <h3 class="mb-0 font-bold" style="color: #a16207;">{{ interesesEsperadosProyeccion | currency:'USD' }}</h3>
+                  <small class="text-muted">Flujo de intereses a cobrar en 12 meses</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <!-- SECCIÓN 2: Métricas Operativas & Rendimientos -->
+    <!-- NIVEL 3: ⚡ MÉTRICAS OPERATIVAS Y ACCESOS RÁPIDOS -->
     <div class="row g-3 mb-4">
-      <!-- KPI 7: Utilidades por Ventas & Notas de Crédito -->
-      <div class="col-xl-3 col-md-6">
+      <!-- 1. Utilidades por Ventas & NC -->
+      <div class="col-xl-4 col-md-6">
         <div class="card border-0 shadow-sm h-100 kpi-card border-start border-warning border-4">
-          <div class="card-body d-flex align-items-center">
-            <div class="kpi-icon-box bg-warning-subtle text-warning-emphasis rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; font-size: 1.3rem;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="kpi-icon-box bg-warning-subtle text-warning-emphasis rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
               <i class="bi bi-receipt-cutoff"></i>
             </div>
             <div>
@@ -249,11 +319,11 @@
         </div>
       </div>
 
-      <!-- KPI 8: Portafolio Renta Variable -->
-      <div class="col-xl-3 col-md-6">
+      <!-- 2. Portafolio Renta Variable -->
+      <div class="col-xl-4 col-md-6">
         <div class="card border-0 shadow-sm h-100 kpi-card border-start border-info border-4">
-          <div class="card-body d-flex align-items-center">
-            <div class="kpi-icon-box bg-info-subtle text-info rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; font-size: 1.3rem;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="kpi-icon-box bg-info-subtle text-info rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
               <i class="bi bi-pie-chart-fill"></i>
             </div>
             <div>
@@ -267,29 +337,11 @@
         </div>
       </div>
 
-      <!-- KPI 9: Capital Vigente Renta Fija -->
-      <div class="col-xl-3 col-md-6">
-        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-primary border-4">
-          <div class="card-body d-flex align-items-center">
-            <div class="kpi-icon-box bg-primary-subtle text-primary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; font-size: 1.3rem;">
-              <i class="bi bi-journal-bookmark-fill"></i>
-            </div>
-            <div>
-              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Capital Renta Fija</span>
-              <h4 class="mb-0 font-bold text-dark">{{ capitalRentaFijaVigente | currency:'USD' }}</h4>
-              <small class="text-primary font-semibold">
-                Rend. Prom.: {{ rendimientoPromedioRentaFija > 0 ? (rendimientoPromedioRentaFija | number:'1.2-2') + '%' : 'N/A' }}
-              </small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- KPI 10: Dividendos Cobrados (Efectivo) -->
-      <div class="col-xl-3 col-md-6">
+      <!-- 3. Dividendos Cobrados (Efectivo) -->
+      <div class="col-xl-4 col-md-6">
         <div class="card border-0 shadow-sm h-100 kpi-card border-start border-danger border-4">
-          <div class="card-body d-flex align-items-center">
-            <div class="kpi-icon-box bg-danger-subtle text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px; font-size: 1.3rem;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="kpi-icon-box bg-danger-subtle text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
               <i class="bi bi-cash-stack"></i>
             </div>
             <div>
@@ -303,7 +355,7 @@
     </div>
 
     <!-- Sección de Accesos Rápidos Estratégicos -->
-    <div class="card border-0 shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
       <div class="card-header bg-white border-0 py-3">
         <h5 class="mb-0 font-bold text-dark">
           <i class="bi bi-rocket-takeoff-fill text-success me-2"></i> Accesos Rápidos a Módulos Clave
@@ -378,7 +430,7 @@
     <div class="row g-3">
       <!-- Columna 1: Gráfico de Composición del Patrimonio -->
       <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
           <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-bold text-dark">
               <i class="bi bi-pie-chart text-success me-2"></i> Composición del Patrimonio
@@ -398,7 +450,7 @@
 
       <!-- Columna 2: Próximas Amortizaciones a Vencer -->
       <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
           <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
             <h5 class="mb-0 font-bold text-dark">
               <i class="bi bi-calendar-event text-warning me-2"></i> Próximos Cobros de Amortizaciones

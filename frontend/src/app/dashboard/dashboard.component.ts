@@ -44,6 +44,10 @@ export class DashboardComponent implements OnInit {
   patrimonioProyeccionUnAnio = 0;
   interesesEsperadosProyeccion = 0;
   patrimonioProyectadoConsolidadoTotal = 0;
+  porcentajeAvanceProyeccion = 0;
+
+  // Navegación por pestañas ejecutivas
+  activeTab: 'capital' | 'acciones' | 'proyeccion' = 'capital';
 
   // Nuevos KPIs Consolidados
   capitalRentaFijaConsolidado = 0;
@@ -179,6 +183,11 @@ export class DashboardComponent implements OnInit {
 
           // Nuevo KPI: Patrimonio Proyectado Consolidado Total (Proyección 1 Año + Div/Plusvalía Acciones)
           this.patrimonioProyectadoConsolidadoTotal = this.patrimonioProyeccionUnAnio + this.patrimonioDivMasPlusvalia;
+
+          // Porcentaje de avance de la base actual hacia el objetivo proyectado a 1 año
+          this.porcentajeAvanceProyeccion = this.patrimonioProyectadoConsolidadoTotal > 0
+            ? Math.min(100, Math.max(0, (this.patrimonioBaseCosto / this.patrimonioProyectadoConsolidadoTotal) * 100))
+            : 100;
         }
 
         // 2. Utilidades por Ventas & Notas de Crédito
@@ -295,5 +304,9 @@ export class DashboardComponent implements OnInit {
 
   get userRole(): string {
     return this.currentUser ? this.currentUser.rol : 'Sin rol';
+  }
+
+  setActiveTab(tab: 'capital' | 'acciones' | 'proyeccion'): void {
+    this.activeTab = tab;
   }
 }
