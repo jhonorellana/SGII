@@ -228,7 +228,7 @@ export class ConsolidadoAnualChartComponent implements OnInit, AfterViewInit, On
           font: { weight: 'bold', size: 12 },
           color: '#333'
         },
-        tooltip: createStackedTooltipOptions('US$')
+        tooltip: createStackedTooltipOptions('$')
       },
       scales: {
         x: {

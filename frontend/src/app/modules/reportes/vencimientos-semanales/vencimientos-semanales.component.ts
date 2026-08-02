@@ -94,7 +94,7 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
       title: {
         display: false
       },
-      tooltip: createStackedTooltipOptions('US$')
+      tooltip: createStackedTooltipOptions('$')
     },
     scales: {
       x: {

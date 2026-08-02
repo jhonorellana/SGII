@@ -215,15 +215,15 @@
         <!-- PESTAÑA 2: RENDIMIENTOS Y PLUSVALÍAS ACCIONARIAS -->
         <div *ngIf="activeTab === 'acciones'" class="row g-3">
           <!-- 1. DIVIDENDOS EN ACCIONES -->
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-success" style="background-color: #f0fdf4;">
               <div class="card-body p-3 d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #dcfce7; color: #16a34a;">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem; background-color: #dcfce7; color: #16a34a;">
                   <i class="bi bi-gift"></i>
                 </div>
                 <div>
                   <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Dividendos en Acciones</span>
-                  <h3 class="mb-0 font-bold text-success">{{ patrimonioDividendosAcciones | currency:'USD' }}</h3>
+                  <h4 class="mb-0 font-bold text-success">{{ patrimonioDividendosAcciones | currency:'USD' }}</h4>
                   <small class="text-muted">Valor por dividendos en acciones</small>
                 </div>
               </div>
@@ -231,32 +231,48 @@
           </div>
 
           <!-- 2. PLUSVALÍA ACCIONES -->
-          <div class="col-md-4">
+          <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-primary" style="background-color: #eff6ff;">
               <div class="card-body p-3 d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #dbeafe; color: #2563eb;">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem; background-color: #dbeafe; color: #2563eb;">
                   <i class="bi bi-graph-up-arrow"></i>
                 </div>
                 <div>
                   <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Plusvalía Acciones</span>
-                  <h3 class="mb-0 font-bold text-primary">{{ patrimonioPlusvaliaAcciones | currency:'USD' }}</h3>
+                  <h4 class="mb-0 font-bold text-primary">{{ patrimonioPlusvaliaAcciones | currency:'USD' }}</h4>
                   <small class="text-muted">Variación acumulada a mercado</small>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- 3. DIV. + PLUSVALÍA ACCIONES -->
-          <div class="col-md-4">
+          <!-- 3. DIV. + PLUSVALÍA TOTAL -->
+          <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4" style="border-left-color: #9333ea !important; background-color: #faf5ff;">
               <div class="card-body p-3 d-flex align-items-center">
-                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #f3e8ff; color: #9333ea;">
+                <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem; background-color: #f3e8ff; color: #9333ea;">
                   <i class="bi bi-award"></i>
                 </div>
                 <div>
                   <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Div. + Plusvalía Total</span>
-                  <h3 class="mb-0 font-bold" style="color: #9333ea;">{{ patrimonioDivMasPlusvalia | currency:'USD' }}</h3>
+                  <h4 class="mb-0 font-bold" style="color: #9333ea;">{{ patrimonioDivMasPlusvalia | currency:'USD' }}</h4>
                   <small class="text-muted">Rendimiento accionario consolidado</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4. DIVIDENDOS EFECTIVO -->
+          <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-danger border-4" style="background-color: #fff5f5;">
+              <div class="card-body p-3 d-flex align-items-center">
+                <div class="kpi-icon-box bg-danger-subtle text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
+                  <i class="bi bi-cash-stack"></i>
+                </div>
+                <div>
+                  <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Dividendos Efectivo</span>
+                  <h4 class="mb-0 font-bold text-dark">{{ dividendosEfectivo | currency:'USD' }}</h4>
+                  <small class="text-muted">Cobrados en efectivo</small>
                 </div>
               </div>
             </div>
@@ -267,7 +283,7 @@
         <div *ngIf="activeTab === 'proyeccion'" class="row g-3">
           <!-- 1. PATRIMONIO PROYECCIÓN 1 AÑO -->
           <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-4 border-info" style="background-color: #f0fdfa;">
+            <div class="card border-0 shadow-sm h-100 kpi-card border-start border-info border-4" style="background-color: #f0fdfa;">
               <div class="card-body p-3 d-flex align-items-center">
                 <div class="kpi-icon-box rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.25rem; background-color: #ccfbf1; color: #0d9488;">
                   <i class="bi bi-calendar-check"></i>
@@ -384,21 +400,21 @@
           </div>
 
           <div class="col-md-4 col-sm-6">
-            <a routerLink="/amortizaciones" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
-              <i class="bi bi-calculator-fill text-warning fs-3 me-3"></i>
+            <a routerLink="/reportes/flujo-capital-consolidado" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
+              <i class="bi bi-cash-stack text-success fs-3 me-3"></i>
               <div>
-                <strong class="d-block text-dark">Amortizaciones</strong>
-                <small class="text-muted">Calendario y cobro de cuotas</small>
+                <strong class="d-block text-dark">Flujo de Capital Consolidado</strong>
+                <small class="text-muted">Flujo consolidado por día y propietario</small>
               </div>
             </a>
           </div>
 
           <div class="col-md-4 col-sm-6">
-            <a routerLink="/ventas-notas-credito" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
+            <a routerLink="/venta-agrupada" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
               <i class="bi bi-receipt-cutoff text-danger fs-3 me-3"></i>
               <div>
-                <strong class="d-block text-dark">Notas de Crédito & Ventas</strong>
-                <small class="text-muted">Liquidaciones y utilidades</small>
+                <strong class="d-block text-dark">Venta de Notas de Crédito</strong>
+                <small class="text-muted">Ejecución y liquidación de venta de notas de crédito</small>
               </div>
             </a>
           </div>
@@ -407,18 +423,18 @@
             <a routerLink="/renta-variable/resumen-diario-bolsa" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
               <i class="bi bi-journal-check text-info fs-3 me-3"></i>
               <div>
-                <strong class="d-block text-dark">Resumen Diario de la Bolsa</strong>
-                <small class="text-muted">Transacciones y cierres de mercado</small>
+                <strong class="d-block text-dark">Resumen Bolsa - Renta Variable</strong>
+                <small class="text-muted">Transacciones y cierres de renta variable</small>
               </div>
             </a>
           </div>
 
           <div class="col-md-4 col-sm-6">
-            <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
+            <a routerLink="/reportes/resumen-diario-bolsa" class="btn btn-outline-light text-dark text-start w-100 p-3 border shadow-sm rounded-3 hover-card d-flex align-items-center">
               <i class="bi bi-bank text-secondary fs-3 me-3"></i>
               <div>
-                <strong class="d-block text-dark">Patrimonio Consolidado</strong>
-                <small class="text-muted">Reporte completo e histórico</small>
+                <strong class="d-block text-dark">Resumen Bolsa - Renta Fija</strong>
+                <small class="text-muted">Boletín diario y operaciones BVQ/BVG</small>
               </div>
             </a>
           </div>

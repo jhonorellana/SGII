@@ -225,12 +225,12 @@ export class VentaAgrupadaComponent implements OnInit {
             inv.fecha_venta === null &&
             inv.instrumento?.id_tipo_inversion === 91 // Solo Notas de Crédito
           );
-          // Inicializar el mapa de selección
+          // Inicializar el mapa de selección con TRUE por defecto (todas las notas de crédito seleccionadas)
           this.inversiones.forEach(i => {
-            this.inversionSeleccionadaMap[i.id_inversion!] = false;
+            this.inversionSeleccionadaMap[i.id_inversion!] = true;
           });
-          // Limpiar selecciones anteriores
-          this.inversionesSeleccionadas = [];
+          this.inversionesSeleccionadas = this.inversiones.map(i => i.id_inversion!);
+          this.updateCalculos();
           this.loading = false;
         },
         error: (err) => {
@@ -251,12 +251,12 @@ export class VentaAgrupadaComponent implements OnInit {
             inv.fecha_venta === null &&
             inv.instrumento?.id_tipo_inversion === 91 // Solo Notas de Crédito
           );
-          // Inicializar el mapa de selección
+          // Inicializar el mapa de selección con TRUE por defecto (todas las notas de crédito seleccionadas)
           this.inversiones.forEach(i => {
-            this.inversionSeleccionadaMap[i.id_inversion!] = false;
+            this.inversionSeleccionadaMap[i.id_inversion!] = true;
           });
-          // Limpiar selecciones anteriores
-          this.inversionesSeleccionadas = [];
+          this.inversionesSeleccionadas = this.inversiones.map(i => i.id_inversion!);
+          this.updateCalculos();
           this.loading = false;
         },
         error: (err) => {

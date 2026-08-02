@@ -130,8 +130,9 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
     const labels = this.datos.map(item => item.anio);
     const interesData = this.datos.map(item => item.interes);
 
-    // Generar colores diferentes para cada barra
-    const colors = this.generateColors(labels.length);
+    // Usar el color azul uniforme (#3b82f6) para todas las barras
+    const mainColor = '#3b82f6';
+    const borderColor = this.darkenColor(mainColor, 20);
 
     this.chartData = {
       labels: labels,
@@ -139,9 +140,11 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
         {
           label: 'Interés',
           data: interesData,
-          backgroundColor: colors,
-          borderColor: colors.map(color => this.darkenColor(color, 20)),
+          backgroundColor: mainColor,
+          borderColor: borderColor,
           borderWidth: 1,
+          borderRadius: 4,
+          hoverBackgroundColor: '#2563eb',
           barPercentage: 0.95,
           categoryPercentage: 0.95
         }
@@ -177,7 +180,7 @@ export class ProyeccionInteresAnualComponent implements OnInit, AfterViewInit, O
           color: '#333',
           offset: 2
         },
-        tooltip: createStackedTooltipOptions('US$')
+        tooltip: createStackedTooltipOptions('$')
       },
       scales: {
         x: {

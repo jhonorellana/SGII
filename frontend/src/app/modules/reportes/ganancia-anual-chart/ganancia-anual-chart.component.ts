@@ -198,7 +198,7 @@ export class GananciaAnualChartComponent implements OnInit, AfterViewInit, OnDes
           font: { weight: 'bold', size: 12 },
           color: '#333'
         },
-        tooltip: createStackedTooltipOptions('US$')
+        tooltip: createStackedTooltipOptions('$')
       },
       scales: {
         x: {

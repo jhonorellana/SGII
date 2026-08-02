@@ -29,18 +29,22 @@ export function createStackedTooltipOptions(prefix: string = '$') {
         const rawLabel = context.dataset.label || '';
         const label = (rawLabel + ':').padEnd(maxLen + 2, ' ');
         const value = Number(context.raw) || 0;
-        if (value <= 0) return '';
 
         const formatted = (prefix || '$') + new Intl.NumberFormat('en-US', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
           useGrouping: true
         }).format(value);
-        const paddedVal = formatted.padStart(12, ' ');
-        const line = `${label}${paddedVal}`;
+        const paddedVal = formatted.padStart(16, ' ');
+        const line = value > 0 ? `${label}${paddedVal}` : '';
 
-        // Si es el último dataset visible, adjuntar la fila TOTAL como sublínea para mantener alineación vertical perfecta
-        if (context.datasetIndex === datasets.length - 1) {
+        // Buscar si este es el último dataset visible (con valor > 0) para la columna actual
+        const activeIndices = datasets
+          .map((d: any, idx: number) => (Number(d.data[dataIndex]) > 0 ? idx : -1))
+          .filter((idx: number) => idx !== -1);
+        const lastActiveIndex = activeIndices.length > 0 ? activeIndices[activeIndices.length - 1] : datasets.length - 1;
+
+        if (context.datasetIndex === lastActiveIndex) {
           let total = 0;
           datasets.forEach((ds: any) => {
             total += Number(ds.data[dataIndex]) || 0;
@@ -52,10 +56,10 @@ export function createStackedTooltipOptions(prefix: string = '$') {
             maximumFractionDigits: 2,
             useGrouping: true
           }).format(total);
-          const paddedTotal = formattedTotal.padStart(12, ' ');
+          const paddedTotal = formattedTotal.padStart(16, ' ');
           const totalLine = `${totalLabel}${paddedTotal}`;
 
-          return [line, totalLine];
+          return line ? [line, totalLine] : totalLine;
         }
 
         return line;
