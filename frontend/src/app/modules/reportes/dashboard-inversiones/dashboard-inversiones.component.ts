@@ -42,6 +42,7 @@ export class DashboardInversionesComponent implements OnInit {
   totalNominal = 0;
   totalInvertido = 0;
   rendimientoPromedio = 0;
+  tasaReferencialPromedio = 0;
   totalInvertidoPatrimonio = 0;
   totalInvertidoPropietarios = 0;
 
@@ -88,6 +89,7 @@ export class DashboardInversionesComponent implements OnInit {
   totalInvertidoPropietariosTipos = 0;
   totalInvertidoPropietariosBonos = 0;
   totalInvertidoPropietariosOtras = 0;
+  bonosProximoValTemp = 0;
 
   // HSL curated palette
   private colorsList = [
@@ -262,19 +264,25 @@ export class DashboardInversionesComponent implements OnInit {
     let sumNominal = 0;
     let sumInvertido = 0;
     let sumWeightedRendimiento = 0;
+    let sumWeightedTasaReferencial = 0;
     let sumInvertidoForYield = 0;
 
     this.filteredInversiones.forEach(inv => {
       const nominal = Number(inv.valor_nominal || 0);
       const invertido = Number(inv.capital_invertido || 0);
       const rendimiento = Number(inv.rendimiento_nominal || inv.tasa_interes || 0);
+      const tasaRef = Number(inv.instrumento?.tasa_referencial || inv.tasa_interes || rendimiento || 0);
 
       sumNominal += nominal;
       sumInvertido += invertido;
       
-      // Excluir acciones (id_tipo_inversion = 203) del rendimiento promedio
-      if (inv.instrumento?.tipoInversion?.id_tipo_inversion !== 203) {
+      // Excluir Acciones y Notas de Crédito (id_tipo_inversion 73, 203, 91) del rendimiento promedio de renta fija
+      const tipoId = (inv.instrumento as any)?.id_tipo_inversion || inv.instrumento?.tipoInversion?.id_tipo_inversion;
+      const idTipoNum = Number(tipoId || 0);
+      
+      if (![73, 203, 91].includes(idTipoNum)) {
         sumWeightedRendimiento += (rendimiento * invertido);
+        sumWeightedTasaReferencial += (tasaRef * invertido);
         sumInvertidoForYield += invertido;
       }
     });
@@ -282,6 +290,7 @@ export class DashboardInversionesComponent implements OnInit {
     this.totalNominal = sumNominal;
     this.totalInvertido = sumInvertido;
     this.rendimientoPromedio = sumInvertidoForYield > 0 ? (sumWeightedRendimiento / sumInvertidoForYield) : 0;
+    this.tasaReferencialPromedio = sumInvertidoForYield > 0 ? (sumWeightedTasaReferencial / sumInvertidoForYield) : 0;
 
     // 2. Generate Chart Data Sets
     this.loadPatrimonioData();
@@ -341,6 +350,14 @@ export class DashboardInversionesComponent implements OnInit {
   }
 
   private buildInstrumentosFromPatrimonio(patrimonio: any[]): void {
+    const bonosProximoItem = (patrimonio || []).find(item => 
+      item.detalle === 'Bonos vencimiento próximo' || 
+      item.detalle === 'Bonos vencimiento prximo' ||
+      (item.detalle && item.detalle.includes('vencimiento pr'))
+    );
+    const bonosProximoVal = bonosProximoItem ? Number(bonosProximoItem.valor || 0) : 0;
+    this.bonosProximoValTemp = bonosProximoVal;
+
     const filtered = (patrimonio || []).filter(item => 
       item.detalle !== 'TOTAL' && 
       item.detalle !== 'Total Corriente' &&
@@ -351,7 +368,18 @@ export class DashboardInversionesComponent implements OnInit {
       item.detalle !== 'Dividendos en Acciones' &&
       item.detalle !== 'Plusvalía Acciones' &&
       item.valor > 0
-    );
+    ).map(item => {
+      if (item.detalle === 'Capital bonos') {
+        return {
+          ...item,
+          valor: Number(item.valor || 0) + bonosProximoVal
+        };
+      }
+      return {
+        ...item,
+        valor: Number(item.valor || 0)
+      };
+    });
 
     filtered.sort((a, b) => b.valor - a.valor);
 
@@ -379,6 +407,11 @@ export class DashboardInversionesComponent implements OnInit {
       };
     });
 
+    this.generateEmisoresChart();
+    this.generatePropietariosChart();
+    this.generatePropietariosTiposChart();
+    this.generatePropietariosBonosChart();
+    this.generatePropietariosOtrasChart();
     this.cdr.detectChanges();
   }
 
@@ -396,6 +429,14 @@ export class DashboardInversionesComponent implements OnInit {
       const amt = Number(inv.capital_invertido || 0);
       counts.set(emisor, (counts.get(emisor) || 0) + amt);
     });
+
+    // Sumar bonosProximoValTemp a ESTADO ECUATORIANO para reflejar la totalidad del capital bonos
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+      const actualEstado = counts.get('ESTADO ECUATORIANO') || 0;
+      if (actualEstado > 0) {
+        counts.set('ESTADO ECUATORIANO', actualEstado + this.bonosProximoValTemp);
+      }
+    }
 
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,
@@ -460,6 +501,13 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+      const jhonVal = counts.get('Jhon') || 0;
+      if (jhonVal > 0) {
+        counts.set('Jhon', jhonVal + this.bonosProximoValTemp);
+      }
+    }
+
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,
       valor: val
@@ -500,6 +548,13 @@ export class DashboardInversionesComponent implements OnInit {
       const amt = Number(inv.capital_invertido || 0);
       counts.set(label, (counts.get(label) || 0) + amt);
     });
+
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+      const bonoJhonVal = counts.get('Bono del Estado - Jhon') || 0;
+      if (bonoJhonVal > 0) {
+        counts.set('Bono del Estado - Jhon', bonoJhonVal + this.bonosProximoValTemp);
+      }
+    }
 
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,
@@ -559,7 +614,7 @@ export class DashboardInversionesComponent implements OnInit {
 
   private generatePropietariosBonosChart(): void {
     const bonosInversiones = this.filteredInversiones.filter(inv => (inv.instrumento?.tipoInversion?.nombre || '').toUpperCase().includes('BONO'));
-    this.hasBonosData = bonosInversiones.length > 0;
+    this.hasBonosData = bonosInversiones.length > 0 || (this.bonosProximoValTemp > 0);
 
     if (!this.hasBonosData) {
       this.propietariosBonosChartData = null;
@@ -574,6 +629,11 @@ export class DashboardInversionesComponent implements OnInit {
       const amt = Number(inv.capital_invertido || 0);
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
+
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+      const jhonVal = counts.get('Jhon') || 0;
+      counts.set('Jhon', jhonVal + this.bonosProximoValTemp);
+    }
 
     const rawList = Array.from(counts.entries()).map(([label, val]) => ({
       label,

@@ -78,7 +78,7 @@
       <div class="stat-icon">💼</div>
       <div class="stat-info">
         <span class="stat-label">Total Capital Invertido</span>
-        <span class="stat-value">{{ formatCurrency(totalInvertido) }}</span>
+        <span class="stat-value">{{ formatCurrency(totalInvertidoPatrimonio) }}</span>
       </div>
     </div>
 
@@ -87,6 +87,14 @@
       <div class="stat-info">
         <span class="stat-label">Rendimiento Promedio</span>
         <span class="stat-value">{{ formatPercentage(rendimientoPromedio) }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card referencial">
+      <div class="stat-icon">⚖️</div>
+      <div class="stat-info">
+        <span class="stat-label">Tasa Referencial Promed.</span>
+        <span class="stat-value">{{ formatPercentage(tasaReferencialPromedio) }}</span>
       </div>
     </div>
   </div>
@@ -168,7 +176,7 @@
                 <!-- Texto central del donut -->
                 <div class="chart-center-text">
                   <small class="text-muted d-block text-uppercase">Total Invertido</small>
-                  <strong class="text-primary">{{ formatCurrency(totalInvertido) }}</strong>
+                  <strong class="text-primary">{{ formatCurrency(totalInvertidoPatrimonio) }}</strong>
                 </div>
               </div>
               <!-- Leyenda a la derecha -->
@@ -251,7 +259,7 @@
               <!-- Texto central del donut -->
               <div class="chart-center-text">
                 <small class="text-muted d-block text-uppercase">Total Invertido</small>
-                <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietarios) }}</strong>
+                <strong class="text-primary">{{ formatCurrency(totalInvertidoPatrimonio) }}</strong>
               </div>
             </div>
             <!-- Leyenda a la derecha -->
@@ -307,7 +315,7 @@
                 <!-- Texto central del donut -->
                 <div class="chart-center-text">
                   <small class="text-muted d-block text-uppercase">Total Invertido</small>
-                  <strong class="text-primary">{{ formatCurrency(totalInvertidoPropietariosTipos) }}</strong>
+                  <strong class="text-primary">{{ formatCurrency(totalInvertidoPatrimonio) }}</strong>
                 </div>
               </div>
               <!-- Leyenda a la derecha -->

@@ -104,6 +104,11 @@
   color: #ff8f00;
 }
 
+.stat-card.referencial .stat-icon {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
 .stat-info {
   display: flex;
   flex-direction: column;
