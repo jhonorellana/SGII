@@ -13,6 +13,8 @@ import { AccionPosicionService } from '../core/accion-posicion.service';
 import { AccionDividendoService } from '../core/accion-dividendo.service';
 import { InversionService } from '../core/inversion.service';
 import { AmortizacionService, Amortizacion } from '../core/amortizacion.service';
+import { VencimientosSemanalesService, VencimientoSemanal, ResumenSemanal } from '../core/vencimientos-semanales.service';
+import { createStackedTooltipOptions } from '../core/utils/chart-options.util';
 
 @Component({
   selector: 'app-dashboard',
@@ -26,7 +28,8 @@ import { AmortizacionService, Amortizacion } from '../core/amortizacion.service'
     AccionPosicionService,
     AccionDividendoService,
     InversionService,
-    AmortizacionService
+    AmortizacionService,
+    VencimientosSemanalesService
   ]
 })
 export class DashboardComponent implements OnInit {
@@ -75,6 +78,14 @@ export class DashboardComponent implements OnInit {
   chartOptions: any = null;
   leyendaColores: any[] = [];
 
+  // Vencimientos Semanales
+  vencimientosSemanales: VencimientoSemanal[] = [];
+  resumenSemanalTotal = 0;
+  resumenSemanalEjecutado = 0;
+  resumenSemanalPendiente = 0;
+  vencimientosChartData: any = null;
+  vencimientosChartOptions: any = null;
+
   constructor(
     private authService: AuthService,
     private patrimonioService: PatrimonioService,
@@ -82,7 +93,8 @@ export class DashboardComponent implements OnInit {
     private posicionService: AccionPosicionService,
     private dividendoService: AccionDividendoService,
     private inversionService: InversionService,
-    private amortizacionService: AmortizacionService
+    private amortizacionService: AmortizacionService,
+    private vencimientosSemanalesService: VencimientosSemanalesService
   ) {}
 
   ngOnInit(): void {
@@ -128,7 +140,8 @@ export class DashboardComponent implements OnInit {
       posiciones: this.posicionService.getPosiciones().pipe(catchError(() => of(null))),
       dividendos: this.dividendoService.getAll().pipe(catchError(() => of(null))),
       inversiones: this.inversionService.getAll().pipe(catchError(() => of(null))),
-      amortizaciones: this.amortizacionService.getProximas(5).pipe(catchError(() => of(null)))
+      amortizaciones: this.amortizacionService.getProximas(5).pipe(catchError(() => of(null))),
+      vencimientosSemanales: this.vencimientosSemanalesService.getVencimientosSemanales(fechaFinStr).pipe(catchError(() => of(null)))
     }).subscribe({
       next: (res) => {
         // 1. Patrimonio Consolidado Base (tomado con los 3 switches apagados)
@@ -254,6 +267,24 @@ export class DashboardComponent implements OnInit {
             .slice(0, 5);
         }
 
+        // 6. Vencimientos Semanales
+        if (res.vencimientosSemanales && res.vencimientosSemanales.success) {
+          const vData = res.vencimientosSemanales.data;
+          this.vencimientosSemanales = vData.vencimientos || [];
+
+          const resumenList: ResumenSemanal[] = vData.resumen_semanal || [];
+          const getResumenVal = (t: string) => {
+            const found = resumenList.find(r => r.tipo === t);
+            return found ? Number(found.total || 0) : 0;
+          };
+
+          this.resumenSemanalTotal = getResumenVal('TOTAL');
+          this.resumenSemanalEjecutado = getResumenVal('EJECUTADO');
+          this.resumenSemanalPendiente = getResumenVal('PENDIENTE');
+
+          this.buildVencimientosChartData();
+        }
+
         this.loading = false;
       },
       error: (err) => {
@@ -262,6 +293,77 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  buildVencimientosChartData(): void {
+    if (!this.vencimientosSemanales || this.vencimientosSemanales.length === 0) return;
+
+    const labels = this.vencimientosSemanales.map(v => `${v.nombre_dia.slice(0, 3)} ${v.fecha.slice(8, 10)}`);
+    const capitalData = this.vencimientosSemanales.map(v => v.capital);
+    const interesData = this.vencimientosSemanales.map(v => v.interes);
+
+    this.vencimientosChartData = {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Capital',
+          backgroundColor: '#ff7588',
+          data: capitalData
+        },
+        {
+          label: 'Interés',
+          backgroundColor: '#3b82f6',
+          data: interesData
+        }
+      ]
+    };
+
+    this.vencimientosChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: {
+            boxWidth: 10,
+            font: { size: 10, family: "'Inter', sans-serif" }
+          }
+        },
+        tooltip: createStackedTooltipOptions('$'),
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          offset: 2,
+          font: { size: 9, weight: 'bold', family: "'Inter', sans-serif" },
+          color: '#374151',
+          formatter: (value: any, context: any) => {
+            // Mostrar SOLAMENTE el TOTAL diario sobre la parte superior de la barra
+            if (context.datasetIndex === context.chart.data.datasets.length - 1) {
+              const idx = context.dataIndex;
+              let totalDia = 0;
+              context.chart.data.datasets.forEach((ds: any) => {
+                totalDia += Number(ds.data[idx] || 0);
+              });
+              return totalDia > 0 ? `$${totalDia.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '';
+            }
+            return null;
+          }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: { display: false },
+          ticks: { font: { size: 10 } }
+        },
+        y: {
+          stacked: true,
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 10 } },
+          grace: '18%'
+        }
+      }
+    };
   }
 
   buildChartData(itemsList?: PatrimonioItem[]): void {
