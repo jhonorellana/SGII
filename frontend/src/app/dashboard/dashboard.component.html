@@ -317,53 +317,51 @@
       </div>
     </div>
 
-    <!-- NIVEL 3: ⚡ MÉTRICAS OPERATIVAS Y ACCESOS RÁPIDOS -->
+    <!-- NIVEL 3: ⚡ MÉTRICAS DE VENTAS DE NOTAS DE CRÉDITO -->
     <div class="row g-3 mb-4">
-      <!-- 1. Utilidades por Ventas & NC -->
+      <!-- 1. Valor Compra Total (Notas de Crédito) -->
       <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-warning border-4">
-          <div class="card-body p-3 d-flex align-items-center">
-            <div class="kpi-icon-box bg-warning-subtle text-warning-emphasis rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
-              <i class="bi bi-receipt-cutoff"></i>
-            </div>
-            <div>
-              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Utilidades Ventas & NC</span>
-              <h4 class="mb-0 font-bold text-dark">{{ utilidadNotasCreditoVentas | currency:'USD' }}</h4>
-              <small class="text-success font-medium">Ganancias cobradas</small>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. Portafolio Renta Variable -->
-      <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-info border-4">
+        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-info border-4" style="background-color: #f0fdfa;">
           <div class="card-body p-3 d-flex align-items-center">
             <div class="kpi-icon-box bg-info-subtle text-info rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
-              <i class="bi bi-pie-chart-fill"></i>
+              <i class="bi bi-cart-check-fill"></i>
             </div>
             <div>
-              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Portafolio Renta Variable</span>
-              <h4 class="mb-0 font-bold text-dark">{{ valorMercadoAcciones | currency:'USD' }}</h4>
-              <small [ngClass]="gananciaNoRealizadaAcciones >= 0 ? 'text-success font-bold' : 'text-danger font-bold'">
-                Ganancia/Pérdida: {{ gananciaNoRealizadaAcciones | currency:'USD' }}
-              </small>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Valor Compra Total (Notas de Crédito)</span>
+              <h4 class="mb-0 font-bold" style="color: #0284c7;">{{ valorCompraTotalNotasCredito | currency:'USD' }}</h4>
+              <small class="text-muted">Notas de crédito registradas</small>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 3. Dividendos Cobrados (Efectivo) -->
+      <!-- 2. Valor Venta (Notas de Crédito) -->
       <div class="col-xl-4 col-md-6">
-        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-danger border-4">
+        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-secondary border-4" style="background-color: #f8fafc;">
           <div class="card-body p-3 d-flex align-items-center">
-            <div class="kpi-icon-box bg-danger-subtle text-danger rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
-              <i class="bi bi-cash-stack"></i>
+            <div class="kpi-icon-box bg-secondary-subtle text-secondary rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
+              <i class="bi bi-cash-coin"></i>
             </div>
             <div>
-              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Dividendos Efectivo</span>
-              <h4 class="mb-0 font-bold text-dark">{{ dividendosEfectivo | currency:'USD' }}</h4>
-              <small class="text-muted">Cobrados en efectivo</small>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Valor Venta (Notas de Crédito)</span>
+              <h4 class="mb-0 font-bold text-dark">{{ valorVentaTotalNotasCredito | currency:'USD' }}</h4>
+              <small class="text-muted">Total ventas de notas de crédito</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Utilidad Total (Notas de Crédito) -->
+      <div class="col-xl-4 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-card border-start border-warning border-4" style="background-color: #fffbe6;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="kpi-icon-box bg-warning-subtle text-warning-emphasis rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; font-size: 1.2rem;">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider">Utilidad Total (Notas de Crédito)</span>
+              <h4 class="mb-0 font-bold" style="color: #d97706;">{{ utilidadTotalNotasCredito | currency:'USD' }}</h4>
+              <small class="text-success font-medium">Ganancia neta cobrada en NC</small>
             </div>
           </div>
         </div>

@@ -59,6 +59,9 @@ export class DashboardComponent implements OnInit {
 
   patrimonioDesglose: PatrimonioItem[] = [];
   utilidadNotasCreditoVentas = 0;
+  valorCompraTotalNotasCredito = 0;
+  valorVentaTotalNotasCredito = 0;
+  utilidadTotalNotasCredito = 0;
 
   // Métricas Renta Variable
   valorMercadoAcciones = 0;
@@ -209,12 +212,37 @@ export class DashboardComponent implements OnInit {
           this.buildChartData(this.patrimonioDesglose);
         }
 
-        // 2. Utilidades por Ventas & Notas de Crédito
-        if (res.ventas && Array.isArray(res.ventas)) {
-          const ventasActivas = res.ventas.filter((v: any) => v.activo && !v.eliminado);
+        // 2. Utilidades y KPIs por Ventas de Notas de Crédito
+        if (res.ventas) {
+          const rawVentas: any = res.ventas;
+          const ventasList: any[] = Array.isArray(rawVentas) ? rawVentas : (rawVentas.data || []);
+          const ventasActivas = ventasList.filter((v: any) => v.activo && !v.eliminado);
+          
           this.utilidadNotasCreditoVentas = ventasActivas.reduce((sum: number, v: any) => {
             const val = Number(v.utilidad_con_comision ?? v.ganancia_perdida ?? 0);
             return sum + val;
+          }, 0);
+
+          // Filtrar ventas de Notas de Crédito (tipo 91) para calcular exactamente los 3 KPIs de la pantalla Ventas de Notas de Crédito
+          const ventasNC = ventasList.filter((v: any) => {
+            const idTipo = v.instrumento?.id_tipo_inversion || v.inversion?.instrumento?.id_tipo_inversion;
+            return idTipo === 91;
+          });
+
+          this.valorCompraTotalNotasCredito = ventasNC.reduce((sum: number, v: any) => {
+            let valCompra = Number(v.valorCompraTotal || 0);
+            if (valCompra === 0 && v.detalles && v.detalles.length > 0) {
+              valCompra = v.detalles.reduce((acc: number, d: any) => acc + Number(d.valor_compra || 0), 0);
+            }
+            return sum + valCompra;
+          }, 0);
+
+          this.valorVentaTotalNotasCredito = ventasNC.reduce((sum: number, v: any) => {
+            return sum + Number(v.valor_venta_con_comision || 0);
+          }, 0);
+
+          this.utilidadTotalNotasCredito = ventasNC.reduce((sum: number, v: any) => {
+            return sum + Number(v.utilidad_con_comision || 0);
           }, 0);
         }
 
