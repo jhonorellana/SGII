@@ -328,16 +328,34 @@ export class InversionListComponent implements OnInit, AfterViewInit {
     this.displayInstrumentoDialog = true;
   }
 
+  // Metricas de amortizacion
+  capitalRecibido = 0;
+  interesRecibido = 0;
+  premioRecibido = 0;
+  totalRecibido = 0;
+
+  capitalPorRecibir = 0;
+  interesPorRecibir = 0;
+  premioPorRecibir = 0;
+  totalPorRecibir = 0;
+
+  totalCapitalGeneral = 0;
+  totalInteresGeneral = 0;
+  totalPremioGeneral = 0;
+  totalGeneralTotal = 0;
+
   viewAmortizacion(inversion: any): void {
     this.selectedInversion = inversion;
     this.loadingAmortizacion = true;
     this.displayAmortizacionDialog = true;
     this.amortizaciones = [];
+    this.resetMetricasAmortizacion();
 
     this.amortizacionService.getByInversion(inversion.id_inversion).subscribe({
       next: (data) => {
         this.loadingAmortizacion = false;
-        this.amortizaciones = data;
+        this.amortizaciones = data || [];
+        this.calcularMetricasAmortizacion();
       },
       error: (error) => {
         this.loadingAmortizacion = false;
@@ -349,6 +367,116 @@ export class InversionListComponent implements OnInit, AfterViewInit {
         });
       }
     });
+  }
+
+  getEstadoAmortizacionNombre(amortizacion: any): string {
+    if (!amortizacion) return '-';
+    if (amortizacion.estado_amortizacion?.nombre) {
+      return amortizacion.estado_amortizacion.nombre;
+    }
+    if (amortizacion.estadoAmortizacion?.nombre) {
+      return amortizacion.estadoAmortizacion.nombre;
+    }
+    
+    const idEstado = Number(amortizacion.id_estado_amortizacion);
+    switch (idEstado) {
+      case 135: return 'Pagada';
+      case 134: return 'Pendiente de pago';
+      case 136: return 'Morosa';
+      case 137: return 'Anulada';
+      case 227: return 'Venta Anticipada';
+      case 200: return 'AnuladaVentParcial';
+      default: return amortizacion.activo ? 'Pagada' : 'Pendiente de pago';
+    }
+  }
+
+  getEstadoAmortizacionBadgeClass(amortizacion: any): string {
+    const idEstado = Number(amortizacion?.id_estado_amortizacion);
+    const nombre = this.getEstadoAmortizacionNombre(amortizacion).toLowerCase();
+
+    if (idEstado === 135 || nombre.includes('pagad') || nombre.includes('cobrad')) {
+      return 'bg-success text-white';
+    }
+    if (idEstado === 134 || nombre.includes('pendiente')) {
+      return 'bg-warning text-dark';
+    }
+    if (idEstado === 136 || nombre.includes('moros')) {
+      return 'bg-danger text-white';
+    }
+    if (idEstado === 227 || nombre.includes('venta')) {
+      return 'bg-info text-white';
+    }
+    if (idEstado === 137 || idEstado === 200 || nombre.includes('anulad')) {
+      return 'bg-secondary text-white';
+    }
+    return 'bg-secondary text-white';
+  }
+
+  isCuotaCobrada(amortizacion: any): boolean {
+    if (!amortizacion) return false;
+    const idEstado = Number(amortizacion.id_estado_amortizacion);
+    if (idEstado === 135) return true;
+    const nombre = this.getEstadoAmortizacionNombre(amortizacion).toLowerCase();
+    if (nombre.includes('pagad') || nombre.includes('cobrad')) return true;
+    return false;
+  }
+
+  getInteresMasPremio(amortizacion: any): number {
+    if (!amortizacion) return 0;
+    const interes = Number(amortizacion.interes) || 0;
+    const premio = Number(amortizacion.descuento || amortizacion.premio) || 0;
+    return interes + premio;
+  }
+
+  resetMetricasAmortizacion(): void {
+    this.capitalRecibido = 0;
+    this.interesRecibido = 0;
+    this.premioRecibido = 0;
+    this.totalRecibido = 0;
+    this.capitalPorRecibir = 0;
+    this.interesPorRecibir = 0;
+    this.premioPorRecibir = 0;
+    this.totalPorRecibir = 0;
+    this.totalCapitalGeneral = 0;
+    this.totalInteresGeneral = 0;
+    this.totalPremioGeneral = 0;
+    this.totalGeneralTotal = 0;
+  }
+
+  calcularMetricasAmortizacion(): void {
+    this.resetMetricasAmortizacion();
+    if (!this.amortizaciones || this.amortizaciones.length === 0) return;
+
+    this.amortizaciones.forEach(a => {
+      const cap = Number(a.capital) || 0;
+      const int = Number(a.interes) || 0;
+      const pre = Number(a.descuento || a.premio) || 0;
+      const tot = Number(a.total) || (cap + int + pre);
+
+      if (this.isCuotaCobrada(a)) {
+        this.capitalRecibido += cap;
+        this.interesRecibido += int;
+        this.premioRecibido += pre;
+        this.totalRecibido += tot;
+      } else {
+        this.capitalPorRecibir += cap;
+        this.interesPorRecibir += int;
+        this.premioPorRecibir += pre;
+        this.totalPorRecibir += tot;
+      }
+    });
+
+    this.totalCapitalGeneral = this.capitalRecibido + this.capitalPorRecibir;
+    this.totalInteresGeneral = this.interesRecibido + this.interesPorRecibir;
+    this.totalPremioGeneral = this.premioRecibido + this.premioPorRecibir;
+    this.totalGeneralTotal = this.totalRecibido + this.totalPorRecibir;
+  }
+
+  formatCurrency(value: number | string | undefined | null): string {
+    if (value === undefined || value === null || value === '') return '$0.00';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '$0.00';
+    return '$' + this.formatNumber(num);
   }
 
   openVentaModal(inversion: any): void {
