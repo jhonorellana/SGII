@@ -386,6 +386,26 @@ export class VentaNotasCreditoListComponent implements OnInit {
     }
   }
 
+  getSaldoCapitalInv(inv: any): number {
+    if (inv && inv.saldo_capital !== undefined && inv.saldo_capital !== null) {
+      return Number(inv.saldo_capital);
+    }
+    return Number(inv?.capital_invertido || 0);
+  }
+
+  getSaldoNominalInv(inv: any): number {
+    if (inv && inv.saldo_nominal !== undefined && inv.saldo_nominal !== null) {
+      return Number(inv.saldo_nominal);
+    }
+    const capInv = Number(inv?.capital_invertido || 0);
+    const valNom = Number(inv?.valor_nominal || 0);
+    const salCap = this.getSaldoCapitalInv(inv);
+    if (capInv > 0) {
+      return (salCap / capInv) * valNom;
+    }
+    return valNom;
+  }
+
   loadPosicionInfo(idInstrumento: number, idPropietario: number): void {
     this.ventaService.getInfoPosicion(idInstrumento, idPropietario).subscribe({
       next: (response) => {
@@ -393,7 +413,7 @@ export class VentaNotasCreditoListComponent implements OnInit {
           const data = response.data as any;
           this.selectedInstrumentoInfo = data.instrumento;
           this.selectedPropietarioInfo = data.propietario;
-          this.inversionesAsociadas = data.instrumento?.inversiones || [];
+          this.inversionesAsociadas = data.inversiones || data.instrumento?.inversiones || [];
           this.resumenInversiones = data.resumen;
           console.log('Info posición:', response.data);
 
@@ -489,13 +509,40 @@ export class VentaNotasCreditoListComponent implements OnInit {
     }
   }
 
+  getSumValorNominalOrig(): number {
+    if (this.resumenInversiones && this.resumenInversiones.valor_nominal_acumulado !== undefined) {
+      return Number(this.resumenInversiones.valor_nominal_acumulado);
+    }
+    return (this.inversionesAsociadas || []).reduce((acc, inv) => acc + Number(inv.valor_nominal || 0), 0);
+  }
+
+  getSumValorNominalDisp(): number {
+    if (this.resumenInversiones && this.resumenInversiones.valor_nominal_disponible_acumulado !== undefined) {
+      return Number(this.resumenInversiones.valor_nominal_disponible_acumulado);
+    }
+    return (this.inversionesAsociadas || []).reduce((acc, inv) => acc + this.getSaldoNominalInv(inv), 0);
+  }
+
+  getSumCapitalInvertidoOrig(): number {
+    if (this.resumenInversiones && this.resumenInversiones.capital_invertido_acumulado !== undefined) {
+      return Number(this.resumenInversiones.capital_invertido_acumulado);
+    }
+    return (this.inversionesAsociadas || []).reduce((acc, inv) => acc + Number(inv.capital_invertido || 0), 0);
+  }
+
+  getSumCapitalInvertidoDisp(): number {
+    if (this.resumenInversiones && this.resumenInversiones.capital_invertido_disponible_acumulado !== undefined) {
+      return Number(this.resumenInversiones.capital_invertido_disponible_acumulado);
+    }
+    return (this.inversionesAsociadas || []).reduce((acc, inv) => acc + this.getSaldoCapitalInv(inv), 0);
+  }
+
   getAccordionHeader(): string {
     if (!this.resumenInversiones) {
       return 'Inversiones asociadas';
     }
     const cantidad = this.resumenInversiones.cantidad_inversiones || 0;
-    const valorNominal = this.formatCurrency(this.resumenInversiones.valor_nominal_acumulado || 0);
-    return `Inversiones asociadas (${cantidad} inversiones | Valor nominal acumulado: ${valorNominal})`;
+    return `Inversiones asociadas (${cantidad} inversiones)`;
   }
 
   loadTiposVenta(): void {
@@ -681,6 +728,146 @@ export class VentaNotasCreditoListComponent implements OnInit {
     this.formError = '';
   }
 
+  displayPreviewDialog: boolean = false;
+  excedeDisponible: boolean = false;
+
+  getAvailableNominalBase(): number {
+    if (this.selectedInversion) {
+      return this.getSaldoNominalInv(this.selectedInversion);
+    }
+    return this.getSumValorNominalDisp();
+  }
+
+  getAvailableCapitalBase(): number {
+    if (this.selectedInversion) {
+      return this.getSaldoCapitalInv(this.selectedInversion);
+    }
+    return this.getSumCapitalInvertidoDisp();
+  }
+
+  getCapitalInvertidoOriginalBase(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.capital_invertido || 0);
+    }
+    return Number(this.resumenInversiones?.capital_invertido_acumulado || 0);
+  }
+
+  getRendimientoNominalAnual(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.rendimiento_nominal || this.selectedInversion.tasa_interes || 0);
+    }
+    return Number(this.resumenInversiones?.rendimiento_promedio || 0);
+  }
+
+  // Cobros recibidos hasta la fecha
+  getCobrosCapital(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.capital_cobrado || 0);
+    }
+    return Number(this.resumenInversiones?.capital_cobrado_acumulado || 0);
+  }
+
+  getCobrosInteres(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.interes_cobrado || 0);
+    }
+    return Number(this.resumenInversiones?.interes_cobrado_acumulado || 0);
+  }
+
+  getCobrosPremio(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.premio_cobrado || 0);
+    }
+    return Number(this.resumenInversiones?.premio_cobrado_acumulado || 0);
+  }
+
+  getCobrosInteresMasPremio(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.interes_mas_premio_cobrado || (this.getCobrosInteres() + this.getCobrosPremio()));
+    }
+    return Number(this.resumenInversiones?.interes_mas_premio_cobrado_acumulado || (this.getCobrosInteres() + this.getCobrosPremio()));
+  }
+
+  getCobrosTotalFlujo(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.total_flujo_cobrado || (this.getCobrosCapital() + this.getCobrosInteresMasPremio()));
+    }
+    return Number(this.resumenInversiones?.total_flujo_cobrado_acumulado || (this.getCobrosCapital() + this.getCobrosInteresMasPremio()));
+  }
+
+  // Intereses y premios futuros pendientes (Costo de oportunidad dejado de ganar)
+  getInteresFuturoPendiente(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.interes_pendiente || 0);
+    }
+    return Number(this.resumenInversiones?.interes_pendiente_acumulado || 0);
+  }
+
+  getPremioFuturoPendiente(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.premio_pendiente || 0);
+    }
+    return Number(this.resumenInversiones?.premio_pendiente_acumulado || 0);
+  }
+
+  getInteresMasPremioFuturoPendiente(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.interes_mas_premio_pendiente || (this.getInteresFuturoPendiente() + this.getPremioFuturoPendiente()));
+    }
+    return Number(this.resumenInversiones?.interes_mas_premio_pendiente_acumulado || (this.getInteresFuturoPendiente() + this.getPremioFuturoPendiente()));
+  }
+
+  // Comisiones
+  getComisionesCompra(): number {
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.total_comisiones_compra || (Number(this.selectedInversion.comision_casa_valores || 0) + Number(this.selectedInversion.comision_bolsa || 0)));
+    }
+    return Number(this.resumenInversiones?.total_comisiones_compra_acumulado || 0);
+  }
+
+  getComisionesVenta(): number {
+    const comOp = Number(this.ventaForm.get('comision_operador')?.value) || 0;
+    const comBolsa = Number(this.ventaForm.get('comision_bolsa')?.value) || 0;
+    return comOp + comBolsa;
+  }
+
+  getTotalComisionesAcumuladas(): number {
+    return this.getComisionesCompra() + this.getComisionesVenta();
+  }
+
+  // Utilidad y ROI Transacción Venta
+  getUtilidadEstimadaVenta(): number {
+    const totalNeto = Number(this.ventaForm.get('total_vendedor_neto')?.value) || 0;
+    const capitalBase = this.getAvailableCapitalBase();
+    return totalNeto - capitalBase;
+  }
+
+  getRendimientoEstimadoVenta(): number {
+    const capitalBase = this.getAvailableCapitalBase();
+    if (capitalBase <= 0) return 0;
+    const utilidad = this.getUtilidadEstimadaVenta();
+    return (utilidad / capitalBase) * 100;
+  }
+
+  // Utilidad y ROI Global del Ciclo de Vida Completo (Flujos + Venta - Capital Invertido Original)
+  getUtilidadTotalHistorica(): number {
+    const totalNetoVenta = Number(this.ventaForm.get('total_vendedor_neto')?.value) || 0;
+    const flujosCobrados = this.getCobrosTotalFlujo();
+    const capitalOrig = this.getCapitalInvertidoOriginalBase();
+    return (flujosCobrados + totalNetoVenta) - capitalOrig;
+  }
+
+  getRoiTotalHistorico(): number {
+    const capitalOrig = this.getCapitalInvertidoOriginalBase();
+    if (capitalOrig <= 0) return 0;
+    const utilidadTotal = this.getUtilidadTotalHistorica();
+    return (utilidadTotal / capitalOrig) * 100;
+  }
+
+  previsualizarVenta(): void {
+    this.save();
+  }
+
   save(): void {
     // Validar posición seleccionada
     if (!this.selectedPosicion) {
@@ -705,6 +892,30 @@ export class VentaNotasCreditoListComponent implements OnInit {
       return;
     }
 
+    const nominalDisponibleBase = this.getAvailableNominalBase();
+    const valNomVendido = Number(this.ventaForm.get('valor_nominal_vendido')?.value) || 0;
+    const valSinComision = Number(this.ventaForm.get('valor_venta_sin_comision')?.value) || 0;
+    const precioVenta = Number(this.ventaForm.get('precio_venta')?.value) || 100;
+
+    if (valNomVendido > nominalDisponibleBase + 0.01 || (valSinComision > (nominalDisponibleBase * (precioVenta / 100)) + 0.01 && precioVenta > 100)) {
+      this.formError = `El valor de venta sin comisión ($${valSinComision.toFixed(2)}) o nominal a vender sobrepasa el valor nominal disponible ($${nominalDisponibleBase.toFixed(2)}).`;
+      this.excedeDisponible = true;
+      return;
+    }
+
+    this.excedeDisponible = false;
+    this.formError = '';
+
+    // Abrir modal de previsualización antes de guardar definitivamente
+    this.displayPreviewDialog = true;
+  }
+
+  confirmarSaveDefinitivo(): void {
+    this.displayPreviewDialog = false;
+    this.ejecutarSaveVenta();
+  }
+
+  ejecutarSaveVenta(): void {
     this.formLoading = true;
     this.formError = '';
 

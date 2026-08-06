@@ -317,11 +317,66 @@ class VentaInversionController extends Controller
         }
 
         $inversiones = $instrumento->inversiones;
-        $valorNominalTotal = $inversiones->sum('valor_nominal');
-        $capitalInvertidoTotal = $inversiones->sum('capital_invertido');
+
+        $inversionesData = $inversiones->map(function($inv) {
+            $saldoCap = (float) $inv->getSaldoCapital();
+            $capInv = (float) $inv->capital_invertido;
+            $valNom = (float) $inv->valor_nominal;
+            $ratio = ($capInv > 0) ? ($saldoCap / $capInv) : 1;
+            $saldoNom = (float) round($valNom * $ratio, 2);
+
+            // Cargar cuotas pagadas (id_estado_amortizacion = 135)
+            $cuotasPagadas = $inv->amortizaciones()
+                ->where('eliminado', 0)
+                ->where('id_estado_amortizacion', 135)
+                ->get();
+
+            $capitalCobrado = (float) $cuotasPagadas->sum('capital');
+            $interesCobrado = (float) $cuotasPagadas->sum('interes');
+            $premioCobrado = (float) $cuotasPagadas->sum('premio');
+            $interesMasPremioCobrado = $interesCobrado + $premioCobrado;
+            $totalFlujoCobrado = $capitalCobrado + $interesMasPremioCobrado;
+
+            // Cargar cuotas pendientes por cobrar (id_estado_amortizacion = 134 o 136)
+            $cuotasPendientes = $inv->amortizaciones()
+                ->where('eliminado', 0)
+                ->whereIn('id_estado_amortizacion', [134, 136])
+                ->get();
+
+            $interesPendiente = (float) $cuotasPendientes->sum('interes');
+            $premioPendiente = (float) $cuotasPendientes->sum('premio');
+            $interesMasPremioPendiente = $interesPendiente + $premioPendiente;
+
+            $comisionOperadorCompra = (float) ($inv->comision_casa_valores ?? 0);
+            $comisionBolsaCompra = (float) ($inv->comision_bolsa ?? 0);
+            $comisionesCompraTotal = (float) ($inv->total_comisiones ?? ($comisionOperadorCompra + $comisionBolsaCompra));
+
+            $arr = $inv->toArray();
+            $arr['saldo_capital'] = $saldoCap;
+            $arr['saldo_nominal'] = $saldoNom;
+            $arr['capital_cobrado'] = $capitalCobrado;
+            $arr['interes_cobrado'] = $interesCobrado;
+            $arr['premio_cobrado'] = $premioCobrado;
+            $arr['interes_mas_premio_cobrado'] = $interesMasPremioCobrado;
+            $arr['total_flujo_cobrado'] = $totalFlujoCobrado;
+            $arr['interes_pendiente'] = $interesPendiente;
+            $arr['premio_pendiente'] = $premioPendiente;
+            $arr['interes_mas_premio_pendiente'] = $interesMasPremioPendiente;
+            $arr['comision_operador_compra'] = $comisionOperadorCompra;
+            $arr['comision_bolsa_compra'] = $comisionBolsaCompra;
+            $arr['total_comisiones_compra'] = $comisionesCompraTotal;
+
+            return $arr;
+        });
+
+        $valorNominalTotal = $inversionesData->sum('valor_nominal');
+        $valorNominalDisponibleTotal = $inversionesData->sum('saldo_nominal');
+        $capitalInvertidoTotal = $inversionesData->sum('capital_invertido');
+        $capitalInvertidoDisponibleTotal = $inversionesData->sum('saldo_capital');
+
         $rendimientoPromedio = $valorNominalTotal > 0
-            ? ($inversiones->sum(function($inv) {
-                return $inv->valor_nominal * $inv->rendimiento_nominal;
+            ? ($inversionesData->sum(function($inv) {
+                return $inv['valor_nominal'] * ($inv['rendimiento_nominal'] ?? 0);
             }) / $valorNominalTotal)
             : 0;
 
@@ -330,11 +385,23 @@ class VentaInversionController extends Controller
             'data' => [
                 'instrumento' => $instrumento,
                 'propietario' => $inversiones->first()->propietario ?? null,
+                'inversiones' => $inversionesData,
                 'resumen' => [
                     'valor_nominal_acumulado' => $valorNominalTotal,
+                    'valor_nominal_disponible_acumulado' => $valorNominalDisponibleTotal,
                     'capital_invertido_acumulado' => $capitalInvertidoTotal,
+                    'capital_invertido_disponible_acumulado' => $capitalInvertidoDisponibleTotal,
                     'rendimiento_promedio' => $rendimientoPromedio,
-                    'cantidad_inversiones' => $inversiones->count()
+                    'cantidad_inversiones' => $inversionesData->count(),
+                    'capital_cobrado_acumulado' => $inversionesData->sum('capital_cobrado'),
+                    'interes_cobrado_acumulado' => $inversionesData->sum('interes_cobrado'),
+                    'premio_cobrado_acumulado' => $inversionesData->sum('premio_cobrado'),
+                    'interes_mas_premio_cobrado_acumulado' => $inversionesData->sum('interes_mas_premio_cobrado'),
+                    'total_flujo_cobrado_acumulado' => $inversionesData->sum('total_flujo_cobrado'),
+                    'interes_pendiente_acumulado' => $inversionesData->sum('interes_pendiente'),
+                    'premio_pendiente_acumulado' => $inversionesData->sum('premio_pendiente'),
+                    'interes_mas_premio_pendiente_acumulado' => $inversionesData->sum('interes_mas_premio_pendiente'),
+                    'total_comisiones_compra_acumulado' => $inversionesData->sum('total_comisiones_compra')
                 ]
             ]
         ], Response::HTTP_OK);
