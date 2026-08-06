@@ -147,7 +147,7 @@
           [showCurrentPageReport]="true"
           currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
           paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
-          [globalFilterFields]="['persona', 'instrumento']"
+          [globalFilterFields]="['persona', 'instrumento', 'fecha_ultimo_precio']"
           [rowHover]="true"
           styleClass="p-datatable-sm p-datatable-striped"
           responsiveLayout="scroll">
@@ -162,7 +162,7 @@
           </ng-template>
 
           <ng-template pTemplate="body" let-row let-columns="columns">
-            <tr>
+            <tr (click)="onRowSelect(row)" style="cursor: pointer;" class="hover-row-highlight">
               <td *ngFor="let col of columns" [style.textAlign]="col.field === 'fecha_ultimo_precio' ? 'center' : (col.field !== 'persona' && col.field !== 'instrumento' ? 'right' : 'left')">
                 
                 <!-- Socio / Persona -->
@@ -208,6 +208,11 @@
                 <!-- Valor de Mercado -->
                 <span *ngIf="col.field === 'valor_mercado'" class="font-bold text-primary">
                   {{ formatCurrency(row.valor_mercado) }}
+                </span>
+
+                <!-- Diferencia (Valor Mercado Actual - Capital Invertido) -->
+                <span *ngIf="col.field === 'diferencia'" class="font-semibold" [ngClass]="(row.valor_mercado - row.capital_invertido) >= 0 ? 'text-success' : 'text-danger'">
+                  {{ (row.valor_mercado - row.capital_invertido) >= 0 ? '+' : '' }}{{ formatCurrency(row.valor_mercado - row.capital_invertido) }}
                 </span>
 
                 <!-- Plusvalía / Minusvalía -->
@@ -308,3 +313,113 @@
     </p-tabPanel>
   </p-tabView>
 </div>
+
+<!-- Modal Detalle de Operaciones -->
+<p-dialog
+  header="Detalle de Operaciones de Renta Variable"
+  [(visible)]="displayDetalleOperacionesDialog"
+  [modal]="true"
+  styleClass="app-custom-modal"
+  [style]="{ width: '90vw', maxWidth: '1100px' }"
+  [draggable]="false"
+  [resizable]="false"
+  [dismissableMask]="true">
+  
+  <div *ngIf="selectedPosicionRow" class="mb-3 p-3 bg-light rounded border d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+    <div>
+      <strong class="d-block text-dark fs-5">{{ selectedPosicionRow.instrumento }}</strong>
+      <span class="text-muted small">
+        <i class="pi pi-user me-1"></i>
+        {{ selectedPosicionRow.persona }}
+      </span>
+    </div>
+    <div class="d-flex gap-4 text-end">
+      <div>
+        <small class="text-muted d-block">Acciones Poseídas</small>
+        <strong class="text-dark">{{ formatNumber(selectedPosicionRow.cantidad_actual, 2) }}</strong>
+      </div>
+      <div>
+        <small class="text-muted d-block">Capital Invertido</small>
+        <strong class="text-primary">{{ formatCurrency(selectedPosicionRow.capital_invertido) }}</strong>
+      </div>
+      <div>
+        <small class="text-muted d-block">Valor Actual</small>
+        <strong class="text-success">{{ formatCurrency(selectedPosicionRow.valor_mercado) }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Spinner de carga -->
+  <div *ngIf="loadingDetalleOperaciones" class="text-center py-5">
+    <i class="pi pi-spin pi-spinner text-primary fs-1 d-block mb-2"></i>
+    <span class="text-muted">Cargando historial de operaciones...</span>
+  </div>
+
+  <!-- Tabla de Operaciones relacionadas -->
+  <div *ngIf="!loadingDetalleOperaciones">
+    <p-table
+      [value]="detalleOperaciones"
+      [paginator]="true"
+      [rows]="5"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [paginatorDropdownAppendTo]="'body'"
+      showCurrentPageReport="true"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines">
+      
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="text-center" pSortableColumn="fecha_operacion">Fecha <p-sortIcon field="fecha_operacion"></p-sortIcon></th>
+          <th>Socio</th>
+          <th>Tipo Operación</th>
+          <th class="text-center" pSortableColumn="liquidacion">Liquidación <p-sortIcon field="liquidacion"></p-sortIcon></th>
+          <th class="text-end" pSortableColumn="cantidad">Cantidad <p-sortIcon field="cantidad"></p-sortIcon></th>
+          <th class="text-end" pSortableColumn="precio_unitario">Precio <p-sortIcon field="precio_unitario"></p-sortIcon></th>
+          <th class="text-end" pSortableColumn="valor_neto">Monto Neto <p-sortIcon field="valor_neto"></p-sortIcon></th>
+          <th>Observación</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-op>
+        <tr>
+          <td class="text-center font-mono text-muted">{{ op.fecha_operacion | date:'yyyy-MM-dd' }}</td>
+          <td class="font-medium text-dark">{{ getPersonaNombre(op) }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'bg-success': getTipoOperacionNombre(op).toUpperCase().includes('COMPRA'),
+              'bg-danger': getTipoOperacionNombre(op).toUpperCase().includes('VENTA'),
+              'bg-info': getTipoOperacionNombre(op).toUpperCase().includes('DIVIDENDO'),
+              'bg-secondary': !getTipoOperacionNombre(op).toUpperCase().includes('COMPRA') && !getTipoOperacionNombre(op).toUpperCase().includes('VENTA') && !getTipoOperacionNombre(op).toUpperCase().includes('DIVIDENDO')
+            }">
+              {{ getTipoOperacionNombre(op) }}
+            </span>
+          </td>
+          <td class="text-center font-mono text-muted">{{ formatFechaLiquidacion(op.liquidacion) }}</td>
+          <td class="text-end font-mono">{{ formatNumber(op.cantidad, 2) }}</td>
+          <td class="text-end font-mono">{{ formatCurrency(op.precio_unitario) }}</td>
+          <td class="text-end font-mono font-bold">{{ formatCurrency(op.valor_neto || (op.cantidad * op.precio_unitario)) }}</td>
+          <td class="text-muted col-obs" style="font-size: 0.68rem; line-height: 1.1; max-width: 220px;">{{ op.observacion || '-' }}</td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center p-4 text-muted">
+            <i class="pi pi-info-circle fs-3 d-block mb-2"></i>
+            No se encontraron registros de operaciones directas para este emisor y socio.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <app-modal-actions
+      [showSaveButton]="false"
+      cancelText="Cerrar"
+      (cancel)="displayDetalleOperacionesDialog = false">
+    </app-modal-actions>
+  </ng-template>
+</p-dialog>

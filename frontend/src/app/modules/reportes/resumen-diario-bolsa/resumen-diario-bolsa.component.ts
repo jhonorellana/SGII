@@ -10,6 +10,7 @@ import { ToastModule } from 'primeng/toast';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { ResumenBolsaService, DatosResumenDiario, CierreAccionRecord, AccionRecord } from '../../../core/resumen-bolsa.service';
+import { PaginationService } from '../../../core/pagination.service';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -65,6 +66,11 @@ export class ResumenDiarioBolsaComponent implements OnInit {
   acciones: AccionRecord[] = [];
   cierresAcciones: CierreAccionRecord[] = [];
 
+  // Paginación persistente
+  rowsPerPageRF = 10;
+  rowsPerPageRV = 10;
+  rowsPerPageCierres = 10;
+
   // Métricas de inversión (KPIs)
   volumenEfectivoTotal = 0;
   rendimientoMaxCortoPlazo = 0;
@@ -91,14 +97,33 @@ export class ResumenDiarioBolsaComponent implements OnInit {
     private resumenService: ResumenBolsaService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
-    private router: Router
+    private router: Router,
+    private paginationService: PaginationService
   ) {
     this.isRentaVariableView = this.router.url.includes('/renta-variable/');
   }
 
   ngOnInit(): void {
+    this.rowsPerPageRF = this.paginationService.getRowsPerPage('resumenBolsaRF', 10);
+    this.rowsPerPageRV = this.paginationService.getRowsPerPage('resumenBolsaRV', 10);
+    this.rowsPerPageCierres = this.paginationService.getRowsPerPage('resumenBolsaCierres', 10);
     this.inicializarFechasPorDefecto();
     this.cargarDatos();
+  }
+
+  onPageChangeRF(event: any): void {
+    this.rowsPerPageRF = event.rows;
+    this.paginationService.setRowsPerPage('resumenBolsaRF', event.rows);
+  }
+
+  onPageChangeRV(event: any): void {
+    this.rowsPerPageRV = event.rows;
+    this.paginationService.setRowsPerPage('resumenBolsaRV', event.rows);
+  }
+
+  onPageChangeCierres(event: any): void {
+    this.rowsPerPageCierres = event.rows;
+    this.paginationService.setRowsPerPage('resumenBolsaCierres', event.rows);
   }
 
   inicializarFechasPorDefecto(): void {

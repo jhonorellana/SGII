@@ -397,3 +397,24 @@
   white-space: nowrap !important;
   display: inline-block !important;
 }
+
+/* Custom compact styles for detail modal table ("Disminuir alto") */
+::ng-deep .app-custom-modal .p-dialog-content {
+  padding: 1rem 1.25rem !important;
+}
+
+::ng-deep .app-custom-modal .p-datatable-sm .p-datatable-tbody > tr > td {
+  padding: 4px 10px !important;
+  font-size: 0.78rem !important;
+}
+
+::ng-deep .app-custom-modal .p-datatable-sm .p-datatable-thead > tr > th {
+  padding: 6px 10px !important;
+  font-size: 0.775rem !important;
+}
+
+::ng-deep .app-custom-modal .badge {
+  padding: 3px 8px !important;
+  font-size: 0.725rem !important;
+  font-weight: 600 !important;
+}

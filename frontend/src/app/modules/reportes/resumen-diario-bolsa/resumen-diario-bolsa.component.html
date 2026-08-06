@@ -162,7 +162,7 @@
         <!-- Pestaña Renta Fija -->
         <p-tabPanel header="Renta Fija (Deuda)" *ngIf="!isRentaVariableView">
           <div class="table-container">
-            <p-table [value]="rentaFijaConsolidada" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRF [globalFilterFields]="['tipo','emisor','plazo','tasa','precio','rendimiento','valor_nominal','valor_efectivo','vencimiento']">
+            <p-table [value]="rentaFijaConsolidada" [paginator]="true" [rows]="rowsPerPageRF" (onPage)="onPageChangeRF($event)" stateStorage="session" stateKey="resumen-bolsa-rf-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRF [globalFilterFields]="['tipo','emisor','plazo','tasa','precio','rendimiento','valor_nominal','valor_efectivo','vencimiento']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Operaciones de Renta Fija</span>
@@ -197,7 +197,7 @@
                   <td class="text-right font-mono font-bold text-success">{{ item.rendimiento | number:'1.2-2' }}%</td>
                   <td class="text-right font-mono">{{ formatearMoneda(item.valor_nominal) }}</td>
                   <td class="text-right font-mono font-bold">{{ formatearMoneda(item.valor_efectivo) }}</td>
-                  <td class="text-center font-mono text-muted">{{ item.vencimiento | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-center font-mono text-muted">{{ item.vencimiento | date:'yyyy-MM-dd' }}</td>
                 </tr>
               </ng-template>
             </p-table>
@@ -207,7 +207,7 @@
         <!-- Pestaña Renta Variable -->
         <p-tabPanel header="Renta Variable (Acciones)">
           <div class="table-container">
-            <p-table [value]="acciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
+            <p-table [value]="acciones" [paginator]="true" [rows]="rowsPerPageRV" (onPage)="onPageChangeRV($event)" stateStorage="session" stateKey="resumen-bolsa-rv-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['fecha','emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Operaciones de Renta Variable</span>
@@ -219,6 +219,7 @@
               </ng-template>
               <ng-template pTemplate="header">
                 <tr>
+                  <th pSortableColumn="fecha" class="text-center">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
                   <th pSortableColumn="emisor">Emisor <p-sortIcon field="emisor"></p-sortIcon></th>
                   <th pSortableColumn="tipo">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
                   <th pSortableColumn="valor_nominal" class="text-right">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
@@ -230,6 +231,7 @@
               </ng-template>
               <ng-template pTemplate="body" let-item>
                 <tr>
+                  <td class="text-center font-mono text-muted">{{ item.fecha | date:'yyyy-MM-dd' }}</td>
                   <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
                   <td>{{ item.tipo }}</td>
                   <td class="text-right font-mono">{{ formatearMoneda(item.valor_nominal) }}</td>
@@ -246,7 +248,7 @@
         <!-- Pestaña Cierres de Mercado -->
         <p-tabPanel header="Cierres de Acciones (Mercado)">
           <div class="table-container">
-            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
+            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="rowsPerPageCierres" (onPage)="onPageChangeCierres($event)" stateStorage="session" stateKey="resumen-bolsa-cierres-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
               <ng-template pTemplate="caption">
                 <div class="d-flex justify-content-between align-items-center table-header-caption">
                   <span class="table-caption-title">Cierres de Mercado</span>
@@ -268,7 +270,7 @@
               <ng-template pTemplate="body" let-item>
                 <tr>
                   <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
-                  <td class="text-center font-mono text-muted">{{ item.fecha_maxima | date:'dd/MM/yyyy' }}</td>
+                  <td class="text-center font-mono text-muted">{{ item.fecha_maxima | date:'yyyy-MM-dd' }}</td>
                   <td class="text-right font-mono text-danger">{{ formatearMoneda(item.precio_maximo) }}</td>
                   <td class="text-right font-mono text-success">{{ formatearMoneda(item.precio_minimo) }}</td>
                   <td class="text-right font-mono font-bold text-dark">{{ formatearMoneda(item.precio_promedio) }}</td>

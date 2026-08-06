@@ -11,17 +11,21 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { DialogModule } from 'primeng/dialog';
 
 import { AccionPosicionService } from '../../../core/accion-posicion.service';
 import { AccionDividendoService } from '../../../core/accion-dividendo.service';
+import { AccionOperacionService } from '../../../core/accion-operacion.service';
 import { PersonaService } from '../../../core/persona.service';
 import { InstrumentoService } from '../../../core/instrumento.service';
-import { AccionPosicion, AccionDividendo } from '../../../core/models/accion-models';
+import { AccionPosicion, AccionDividendo, AccionOperacion } from '../../../core/models/accion-models';
 
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
+import { ModalActionsComponent } from '../../../core/modal-actions';
 
 @Component({
   selector: 'app-portafolio-list',
@@ -38,7 +42,9 @@ import autoTable from 'jspdf-autotable';
     InputTextModule,
     TooltipModule,
     TagModule,
-    InputSwitchModule
+    InputSwitchModule,
+    DialogModule,
+    ModalActionsComponent
   ],
   templateUrl: './portafolio-list.component.html',
   styleUrl: './portafolio-list.component.css'
@@ -49,6 +55,12 @@ export class PortafolioListComponent implements OnInit {
   displayPosiciones: AccionPosicion[] = [];
   modoConsolidado = false;
   dividendos: AccionDividendo[] = [];
+
+  // Modal detalle operaciones
+  displayDetalleOperacionesDialog = false;
+  selectedPosicionRow: AccionPosicion | null = null;
+  detalleOperaciones: AccionOperacion[] = [];
+  loadingDetalleOperaciones = false;
 
   // Dropdown list options
   socios: any[] = [];
@@ -98,13 +110,14 @@ export class PortafolioListComponent implements OnInit {
 
   cols = [
     { field: 'persona', header: 'Socio' },
-    { field: 'instrumento', header: 'Acción' },
+    { field: 'instrumento', header: 'Emisor' },
     { field: 'cantidad_actual', header: 'Cantidad Acciones' },
     { field: 'costo_promedio_unitario', header: 'Precio Prom.' },
-    { field: 'capital_invertido', header: 'Capital Invertido' },
-    { field: 'precio_ultimo', header: 'Último Precio Cierre' },
+    { field: 'precio_ultimo', header: 'Último Precio' },
     { field: 'fecha_ultimo_precio', header: 'Fecha Cierre' },
-    { field: 'valor_mercado', header: 'Valor Mercado Actual' },
+    { field: 'capital_invertido', header: 'Capital Invertido' },
+    { field: 'valor_mercado', header: 'Valor Actual' },
+    { field: 'diferencia', header: 'Diferencia' },
     { field: 'utilidad_perdida_no_realizada', header: 'Plusvalía/Minusvalía' }
   ];
 
@@ -113,9 +126,66 @@ export class PortafolioListComponent implements OnInit {
     private dividendoService: AccionDividendoService,
     private personaService: PersonaService,
     private instrumentoService: InstrumentoService,
+    private operacionService: AccionOperacionService,
     private cdr: ChangeDetectorRef
   ) {
     this.setupChartOptions();
+  }
+
+  onRowSelect(row: AccionPosicion): void {
+    this.selectedPosicionRow = row;
+    this.displayDetalleOperacionesDialog = true;
+    this.loadingDetalleOperaciones = true;
+    this.detalleOperaciones = [];
+
+    const filters: any = {};
+    if (row.id_instrumento) {
+      filters.id_instrumento = row.id_instrumento;
+    }
+    if (row.id_persona && row.id_persona > 0) {
+      filters.id_persona = row.id_persona;
+    } else if (this.selectedSocio) {
+      filters.id_persona = this.selectedSocio;
+    }
+
+    this.operacionService.getAll(filters).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.detalleOperaciones = response.data;
+        } else {
+          this.detalleOperaciones = [];
+        }
+        this.loadingDetalleOperaciones = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar detalle de operaciones:', err);
+        this.detalleOperaciones = [];
+        this.loadingDetalleOperaciones = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  getPersonaNombre(op: AccionOperacion): string {
+    if (!op.persona) return '-';
+    return `${op.persona.nombres || ''} ${op.persona.apellidos || ''}`.trim() || op.persona.nombre || '-';
+  }
+
+  getTipoOperacionNombre(op: AccionOperacion): string {
+    return op.tipo_operacion?.nombre || op.tipoOperacion?.nombre || '-';
+  }
+
+  formatFechaLiquidacion(fecha: any): string {
+    if (!fecha) return '-';
+    const str = String(fecha).trim();
+    if (str.startsWith('1969') || str.startsWith('1970') || str.startsWith('0000')) {
+      return '-';
+    }
+    if (str.length >= 10 && str.match(/^\d{4}-\d{2}-\d{2}/)) {
+      return str.substring(0, 10);
+    }
+    return str;
   }
 
   ngOnInit(): void {
