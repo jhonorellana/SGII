@@ -480,4 +480,11 @@ export class DashboardComponent implements OnInit {
   setActiveTab(tab: 'capital' | 'acciones' | 'proyeccion'): void {
     this.activeTab = tab;
   }
+
+  getEstiloTotalCorriente(): string {
+    if (this.patrimonioTotalCorriente < 0) {
+      return 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)';
+    }
+    return 'linear-gradient(135deg, #3730a3 0%, #4f46e5 100%)';
+  }
 }
