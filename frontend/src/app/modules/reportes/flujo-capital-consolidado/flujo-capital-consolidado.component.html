@@ -179,7 +179,7 @@
                 </thead>
                 <tbody>
                   <!-- Filas de datos -->
-                  <tr *ngFor="let item of flujoCapitalDiario">
+                  <tr *ngFor="let item of flujoCapitalDiario" class="fila-dato clickable-row" (click)="mostrarDetalleDiario(item)">
                     <td class="text-center">{{ item.fecha }}</td>
                     <td class="text-end">{{ formatCurrency(item.interes) }}</td>
                     <td class="text-end">{{ formatCurrency(item.capital) }}</td>
@@ -291,15 +291,13 @@
               <tr>
                 <th>INV-AM</th>
                 <th>Fecha Compra</th>
+                <th>Propietario</th>
                 <th>Liquidación</th>
                 <th>Nombre Instrumento</th>
                 <th>Cuota</th>
                 <th class="text-end">Interés</th>
                 <th class="text-end">Capital</th>
                 <th class="text-end">Premio</th>
-                <th class="text-end">Int. Riesgo</th>
-                <th class="text-end">Cap. Riesgo</th>
-                <th class="text-end">Prem. Riesgo</th>
                 <th class="text-end">Total</th>
               </tr>
             </thead>
@@ -307,15 +305,13 @@
               <tr *ngFor="let item of detalleItems">
                 <td class="text-center">{{ item.id_inversion }}-{{ item.id_amortizacion }}</td>
                 <td class="text-center">{{ item.fecha_compra }}</td>
+                <td class="text-left">{{ item.propietario }}</td>
                 <td class="text-center">{{ item.liquidacion }}</td>
                 <td class="text-left">{{ item.nombre_instrumento }}</td>
                 <td class="text-center">{{ item.cuota }}</td>
                 <td class="text-end">{{ formatCurrency(item.interes) }}</td>
                 <td class="text-end">{{ formatCurrency(item.capital) }}</td>
                 <td class="text-end">{{ formatCurrency(item.premio) }}</td>
-                <td class="text-end">{{ formatCurrency(item.interes_riesgo) }}</td>
-                <td class="text-end">{{ formatCurrency(item.capital_riesgo) }}</td>
-                <td class="text-end">{{ formatCurrency(item.premio_riesgo) }}</td>
                 <td class="text-end fw-bold">{{ formatCurrency(item.total) }}</td>
               </tr>
             </tbody>

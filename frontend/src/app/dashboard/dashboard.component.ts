@@ -50,7 +50,7 @@ export class DashboardComponent implements OnInit {
   porcentajeAvanceProyeccion = 0;
 
   // Navegación por pestañas ejecutivas
-  activeTab: 'capital' | 'acciones' | 'proyeccion' = 'capital';
+  activeTab: 'acciones' | 'capital' | 'proyeccion' = 'acciones';
 
   // Nuevos KPIs Consolidados
   capitalRentaFijaConsolidado = 0;
@@ -115,10 +115,8 @@ export class DashboardComponent implements OnInit {
     const dia = String(hoy.getDate()).padStart(2, '0');
     const fechaFinStr = `${anio}-${mes}-${dia}`;
 
-    // Cálculo de fecha fin a 1 año para la proyección
-    const fechaFinProyeccion = new Date(hoy);
-    fechaFinProyeccion.setFullYear(hoy.getFullYear() + 1);
-    fechaFinProyeccion.setDate(fechaFinProyeccion.getDate() - 1);
+    // Cálculo de fecha fin a 1 año para la proyección (último día del undécimo mes, igual a Patrimonio Consolidado)
+    const fechaFinProyeccion = new Date(hoy.getFullYear(), hoy.getMonth() + 12, 0);
     const anioP = fechaFinProyeccion.getFullYear();
     const mesP = String(fechaFinProyeccion.getMonth() + 1).padStart(2, '0');
     const diaP = String(fechaFinProyeccion.getDate()).padStart(2, '0');

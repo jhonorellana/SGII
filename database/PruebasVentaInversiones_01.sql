@@ -43,10 +43,21 @@ select * from amortizacion where id_inversion in (393) -- (281,289,393); order b
 select * from sipro_desa.inversion where id_inversion in (281,289,393,569);   -- cambia el estado, fecha_venta, activo 
 Select * from sipro_desa.amortizacion where id_inversion > 500 in (393) (281,289,393); -- id_estado_amortizacion / activo   --- originalmente 134
 Select * from sipro_desa.movimiento_capital where id_inversion in (281,289,393); -- se crear un nuevo registro
-Select * from venta_inversion where id_inversion in (281,289,393); -- se debe crear un nuevo registro
-Select * from venta_inversion_detalle; -- se deben crear la misma cantidad de inversiones afectadas
+Select * from venta_inversion where id_inversion in (696); -- se debe crear un nuevo registro
+Select * from venta_inversion_detalle where id_venta_inversion = 146; -- se deben crear la misma cantidad de inversiones afectadas
 select * from inversion_propietario_reasignacion_log -- se carga cuando hay una reasignación automática de notas de crédito
 select * from accion_operacion
+
+select * from sipro_desa.inversion WHERE id_instrumento = 50
+select * from instrumento  WHERE id_instrumento = 50
+
+
+select * from amortizacion order by fecha_actualizacion desc
+
+select * from inversion where id_inversion = 267
+select * from instrumento where id_instrumento = 26
+
+select * from amortizacion where id_inversion = 700
 
 utilidad_sin_comision = Valor Efectivo Venta es decir valor_venta_sin_comision de la tabla venta_inversion - Valor Efectivo Compra 
 

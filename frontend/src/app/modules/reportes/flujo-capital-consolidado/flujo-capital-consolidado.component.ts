@@ -792,19 +792,49 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     }).format(value);
   }
 
-  // Método para mostrar el detalle de una fila
+  // Método para mostrar el detalle de una fila en la pestaña Detallado
   mostrarDetalle(item: FlujoCapitalItem): void {
     this.detalleSeleccionado = item;
     this.loadingDetalle = true;
     this.mostrarModalDetalle = true;
 
-    // Obtener el detalle del backend usando IDs
-    const params = {
-      fecha: item.fecha,
-      id_propietario: item.id_propietario,
-      id_emisor: item.id_emisor
+    const params: any = {
+      fecha: item.fecha
     };
 
+    if (item.id_propietario) params.id_propietario = item.id_propietario;
+    if (item.id_emisor) params.id_emisor = item.id_emisor;
+
+    const idGrupo = this.reporteForm.get('id_grupo_familiar')?.value;
+    if (idGrupo) params.id_grupo_familiar = idGrupo;
+
+    this.cargarDetalleBackend(params);
+  }
+
+  // Método para mostrar el detalle de una fila en la pestaña Consolidado por Día
+  mostrarDetalleDiario(item: FlujoCapitalItem): void {
+    this.detalleSeleccionado = {
+      ...item,
+      propietario: item.propietario && item.propietario !== 'Varios' ? item.propietario : 'Todos (Consolidado por Día)',
+      empresa: item.empresa && item.empresa !== 'Varias' ? item.empresa : 'Todas (Consolidado por Día)'
+    };
+    this.loadingDetalle = true;
+    this.mostrarModalDetalle = true;
+
+    const params: any = {
+      fecha: item.fecha
+    };
+
+    const idGrupo = this.reporteForm.get('id_grupo_familiar')?.value;
+    if (idGrupo) params.id_grupo_familiar = idGrupo;
+
+    const idProp = this.reporteForm.get('id_propietario')?.value;
+    if (idProp) params.id_propietario = idProp;
+
+    this.cargarDetalleBackend(params);
+  }
+
+  private cargarDetalleBackend(params: any): void {
     this.flujoCapitalService.getDetalleFlujoCapital(params).subscribe({
       next: (response: any) => {
         this.loadingDetalle = false;
@@ -855,15 +885,13 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     const headers = [
       'INV-AM',
       'Fecha Compra',
+      'Propietario',
       'Liquidación',
       'Nombre Instrumento',
       'Cuota',
       'Interés',
       'Capital',
       'Premio',
-      'Int. Riesgo',
-      'Cap. Riesgo',
-      'Prem. Riesgo',
       'Total'
     ];
 
@@ -871,15 +899,13 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     const datosDetalle = this.detalleItems.map(item => [
       `${item.id_inversion}-${item.id_amortizacion}`,
       item.fecha_compra,
+      item.propietario,
       item.liquidacion,
       item.nombre_instrumento,
       item.cuota,
       item.interes,
       item.capital,
       item.premio,
-      item.interes_riesgo,
-      item.capital_riesgo,
-      item.premio_riesgo,
       item.total
     ]);
 

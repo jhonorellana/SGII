@@ -130,19 +130,18 @@ class FlujoCapitalController extends Controller
                     i.fecha_compra,
                     a.id_inversion,
                     i.liquidacion,
+                    CONCAT_WS(' ', p.nombres, p.apellidos) AS propietario,
                     inst.nombre AS nombre_instrumento,
                     a.numero_cuota,
                     a.interes,
                     a.capital,
                     a.descuento AS premio,
-                    0 AS interes_riesgo,
-                    0 AS capital_riesgo,
-                    0 AS premio_riesgo,
                     (a.interes + a.capital + a.descuento) AS total
                 FROM amortizacion a
                 INNER JOIN inversion i ON a.id_inversion = i.id_inversion
                 INNER JOIN instrumento inst ON i.id_instrumento = inst.id_instrumento
                 INNER JOIN emisor e ON inst.id_emisor = e.id_emisor
+                LEFT JOIN persona p ON i.id_propietario = p.id_persona
                 WHERE a.fecha_pago = ?
                 AND a.id_estado_amortizacion IN (134, 135, 136)
                 AND a.eliminado = 0
@@ -162,6 +161,12 @@ class FlujoCapitalController extends Controller
                 $params[] = $idEmisor;
             }
 
+            $idGrupoFamiliar = $request->input('id_grupo_familiar');
+            if ($idGrupoFamiliar) {
+                $query .= " AND i.id_grupo_familiar = ?";
+                $params[] = $idGrupoFamiliar;
+            }
+
             $query .= " ORDER BY i.fecha_compra, a.numero_cuota";
 
             $detalles = DB::select($query, $params);
@@ -173,15 +178,13 @@ class FlujoCapitalController extends Controller
                     'id_amortizacion' => $row->id_amortizacion,
                     'fecha_compra' => $row->fecha_compra,
                     'id_inversion' => $row->id_inversion,
+                    'propietario' => $row->propietario ?? '-',
                     'liquidacion' => $row->liquidacion,
                     'nombre_instrumento' => $row->nombre_instrumento,
                     'cuota' => $row->numero_cuota,
                     'interes' => (float) $row->interes,
                     'capital' => (float) $row->capital,
                     'premio' => (float) $row->premio,
-                    'interes_riesgo' => (float) $row->interes_riesgo,
-                    'capital_riesgo' => (float) $row->capital_riesgo,
-                    'premio_riesgo' => (float) $row->premio_riesgo,
                     'total' => (float) $row->total
                 ];
             }

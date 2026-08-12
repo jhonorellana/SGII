@@ -140,15 +140,15 @@
           <div class="btn-group btn-group-sm p-1 bg-light rounded-pill border" role="group">
             <button type="button"
                     class="btn rounded-pill font-semibold px-3 py-1"
-                    [ngClass]="activeTab === 'capital' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
-                    (click)="setActiveTab('capital')">
-              <i class="bi bi-briefcase-fill me-1"></i> Distribución de Capital
-            </button>
-            <button type="button"
-                    class="btn rounded-pill font-semibold px-3 py-1"
                     [ngClass]="activeTab === 'acciones' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
                     (click)="setActiveTab('acciones')">
               <i class="bi bi-graph-up-arrow me-1"></i> Rendimientos Accionarios
+            </button>
+            <button type="button"
+                    class="btn rounded-pill font-semibold px-3 py-1"
+                    [ngClass]="activeTab === 'capital' ? 'btn-success text-white shadow-sm' : 'btn-link text-muted text-decoration-none'"
+                    (click)="setActiveTab('capital')">
+              <i class="bi bi-briefcase-fill me-1"></i> Distribución de Capital
             </button>
             <button type="button"
                     class="btn rounded-pill font-semibold px-3 py-1"
