@@ -1,0 +1,22 @@
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACTUALIZAR_AMORTIZACION_INVESTMENT`()
+BEGIN
+	update amortizacion A, inversion I
+       set am_pagada = 1
+       -- ,           is_active = 0    --  NO CAMBIAR ESTO PORQUE SIGNIFICARIA QUE FUE VENDIDO
+	   where am_fecha_pago < now() 
+       and inv_fecha_venta is null
+       and I.id = A.inv_id
+       and I.is_active = 1
+       and I.is_deleted =0
+       and A.is_active=1;
+ 
+ 	update inversion
+       set inv_pagada = 1
+       -- ,           is_active = 0   --  NO CAMBIAR ESTO PORQUE SIGNIFICARIA QUE FUE VENDIDO
+	   where inv_fecha_vencimiento < now() 
+       and inv_fecha_venta is null
+       and is_active = 0
+       and is_deleted=0
+	 order by id desc;
+ 
+END
