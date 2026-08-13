@@ -244,8 +244,8 @@ export class OperacionListComponent implements OnInit {
     const totalComisiones = comisionBolsa + comisionOperador;
 
     let valorNeto = 0;
-    // Si es COMPRA (204) o ajuste positivo (207) suma comisiones al costo. Si es VENTA (205) resta comisiones
-    if (idTipoOp === 204 || idTipoOp === 207) {
+    // Si es COMPRA (204), Suscripción (232) o ajuste positivo (207) suma comisiones al costo. Si es VENTA (205) resta comisiones
+    if (idTipoOp === 204 || idTipoOp === 207 || idTipoOp === 232) {
       valorNeto = valorBruto + totalComisiones;
     } else if (idTipoOp === 205 || idTipoOp === 208) {
       valorNeto = valorBruto - totalComisiones;
@@ -313,8 +313,8 @@ export class OperacionListComponent implements OnInit {
 
   isTipoOperacionFinanciera(): boolean {
     const idTipoOp = this.operacionForm.get('id_tipo_operacion')?.value;
-    // Compra (204) o Venta (205) son financieras.
-    return idTipoOp === 204 || idTipoOp === 205;
+    // Compra (204), Venta (205) o Suscripción (232) son financieras.
+    return idTipoOp === 204 || idTipoOp === 205 || idTipoOp === 232;
   }
 
   applyFilters(): void {
@@ -502,6 +502,9 @@ export class OperacionListComponent implements OnInit {
     if (cod === 'COMPRA_ACCION' || idTipo === 204 || nombre.includes('COMPRA')) {
       return 'tag-compra';
     }
+    if (idTipo === 232 || nombre.includes('SUSCRIPCIÓN') || nombre.includes('SUSCRIPCION')) {
+      return 'tag-suscripcion';
+    }
     if (cod === 'DIVIDENDO_ACCIONES' || cod === 'DIVIDENDO_ACC' || idTipo === 207 || nombre.includes('DIVIDENDO')) {
       return 'tag-dividendo';
     }
@@ -607,5 +610,30 @@ export class OperacionListComponent implements OnInit {
       summary: 'Éxito',
       detail: 'Archivo PDF exportado correctamente'
     });
+  }
+
+  get filteredOperaciones(): AccionOperacion[] {
+    return this.dt?.filteredValue || this.operaciones;
+  }
+
+  get totalCantidad(): number {
+    return this.filteredOperaciones.reduce((sum, op) => {
+      // Si es venta o ajuste negativo, restar de la cantidad total, de lo contrario sumar
+      const tipo = op.id_tipo_operacion;
+      const factor = (tipo === 205 || tipo === 208) ? -1 : 1;
+      return sum + (Number(op.cantidad || 0) * factor);
+    }, 0);
+  }
+
+  get totalValorBruto(): number {
+    return this.filteredOperaciones.reduce((sum, op) => sum + Number(op.valor_bruto || 0), 0);
+  }
+
+  get totalComisiones(): number {
+    return this.filteredOperaciones.reduce((sum, op) => sum + Number(op.total_comisiones || 0), 0);
+  }
+
+  get totalValorNeto(): number {
+    return this.filteredOperaciones.reduce((sum, op) => sum + Number(op.valor_neto || 0), 0);
   }
 }

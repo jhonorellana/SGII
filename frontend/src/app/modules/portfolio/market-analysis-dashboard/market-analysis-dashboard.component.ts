@@ -11,6 +11,7 @@ import { AccionPosicion, AccionDividendo } from '../../../core/models/accion-mod
 export interface MarketIndicatorRow extends SnapshotCarteraDiaria {
   myCapitalInvertido?: number;
   myCantidadAcciones?: number;
+  myCostoPromedio?: number;
   myValorActualAcciones?: number;
   myDiferenciaValVsCapital?: number;
   myCantidadDivAcciones?: number;
@@ -110,10 +111,13 @@ export class MarketAnalysisDashboardComponent implements OnInit {
               return sum;
             }, 0);
 
+            const costoPromedio = cantidadAcciones > 0 ? capitalInvertido / cantidadAcciones : 0;
+
             return {
               ...row,
               myCapitalInvertido: capitalInvertido,
               myCantidadAcciones: cantidadAcciones,
+              myCostoPromedio: costoPromedio,
               myValorActualAcciones: valorActualAcciones,
               myDiferenciaValVsCapital: diferenciaValVsCapital,
               myCantidadDivAcciones: cantidadDivAcciones,

@@ -112,6 +112,18 @@
       </tr>
     </ng-template>
 
+    <ng-template pTemplate="footer">
+      <tr *ngIf="filters.id_instrumento">
+        <td colspan="5" class="text-end font-bold">Totales de la Selección:</td>
+        <td class="text-end font-bold">{{ formatNumber(totalCantidad, 0) }}</td>
+        <td></td>
+        <td class="text-end font-bold">{{ formatCurrency(totalValorBruto) }}</td>
+        <td class="text-end font-bold">{{ formatCurrency(totalComisiones) }}</td>
+        <td class="text-end font-bold text-success">{{ formatCurrency(totalValorNeto) }}</td>
+        <td colspan="2"></td>
+      </tr>
+    </ng-template>
+
     <ng-template pTemplate="emptymessage">
       <tr>
         <td colspan="12" class="text-center p-4 text-muted">

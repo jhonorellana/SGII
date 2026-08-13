@@ -42,6 +42,10 @@
               <span class="p-label">Capital Invertido:</span>
               <span class="p-val font-bold text-dark">{{ (row.myCapitalInvertido || 0) | currency:'USD' }}</span>
             </div>
+            <div class="portfolio-metric-item" title="Costo Promedio Ponderado por Acción">
+              <span class="p-label">Costo Promedio:</span>
+              <span class="p-val font-bold text-dark">{{ (row.myCostoPromedio || 0) | currency:'USD' }}</span>
+            </div>
             <div class="portfolio-metric-item" title="Valor actual de las acciones a precio de mercado">
               <span class="p-label">Valor Actual Acciones:</span>
               <span class="p-val font-bold text-success">{{ (row.myValorActualAcciones || 0) | currency:'USD' }}</span>

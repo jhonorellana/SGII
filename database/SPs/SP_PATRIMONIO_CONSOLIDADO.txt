@@ -135,7 +135,7 @@ BEGIN
     SELECT 'Acciones Sin Interés' as detalle,
            COALESCE(SUM(
                CASE
-                   WHEN ao.id_tipo_operacion IN (204) THEN ao.valor_neto
+                   WHEN ao.id_tipo_operacion IN (204, 232) THEN ao.valor_neto
                    WHEN ao.id_tipo_operacion IN (205) THEN -ao.valor_neto
                    ELSE 0
                END
@@ -182,8 +182,8 @@ BEGIN
                        FROM (
                            SELECT 
                                i.id_emisor,
-                               SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212) THEN ao.cantidad WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_actual,
-                               SUM(CASE WHEN ao.id_tipo_operacion = 204 THEN ao.valor_neto WHEN ao.id_tipo_operacion = 205 THEN -ao.valor_neto ELSE 0 END) AS costo_desembolsado,
+                               SUM(CASE WHEN ao.id_tipo_operacion IN (204,206,207,212,232) THEN ao.cantidad WHEN ao.id_tipo_operacion IN (205,208) THEN -ao.cantidad ELSE 0 END) AS cantidad_actual,
+                               SUM(CASE WHEN ao.id_tipo_operacion IN (204,232) THEN ao.valor_neto WHEN ao.id_tipo_operacion = 205 THEN -ao.valor_neto ELSE 0 END) AS costo_desembolsado,
                                SUM(CASE WHEN ao.id_tipo_operacion IN (206,207) THEN ao.valor_neto ELSE 0 END) AS valor_dividendos_acciones
                            FROM sipro_desa.accion_operacion ao
                            JOIN sipro_desa.instrumento i ON i.id_instrumento = ao.id_instrumento

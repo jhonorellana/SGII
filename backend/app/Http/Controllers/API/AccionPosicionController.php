@@ -159,8 +159,8 @@ class AccionPosicionController extends Controller
             $cant = (float)$op->cantidad;
             $neto = (float)$op->valor_neto;
 
-            // Compra (204): aumenta cantidad y suma capital desembolsado real
-            if ($tipoOp === 204) {
+            // Compra (204) o Suscripción de acciones (232): aumenta cantidad y suma capital desembolsado real
+            if ($tipoOp === 204 || $tipoOp === 232) {
                 $costos[$key]['cantidad_acumulada'] += $cant;
                 $costos[$key]['costo_total_acumulado'] += $neto;
                 if ($costos[$key]['cantidad_acumulada'] > 0) {

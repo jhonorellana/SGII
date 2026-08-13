@@ -224,7 +224,7 @@ class AccionOperacionController extends Controller
         }
 
         // Si es una compra, validar que al revertirla/eliminarla no deje la cantidad neta en negativo
-        if ((int)$operacion->id_tipo_operacion === 204 || (int)$operacion->id_tipo_operacion === 206 || (int)$operacion->id_tipo_operacion === 207 || (int)$operacion->id_tipo_operacion === 212) {
+        if ((int)$operacion->id_tipo_operacion === 204 || (int)$operacion->id_tipo_operacion === 206 || (int)$operacion->id_tipo_operacion === 207 || (int)$operacion->id_tipo_operacion === 212 || (int)$operacion->id_tipo_operacion === 232) {
             $posicion = DB::table('vw_accion_posicion')
                 ->where('id_persona', $operacion->id_persona)
                 ->where('id_instrumento', $operacion->id_instrumento)

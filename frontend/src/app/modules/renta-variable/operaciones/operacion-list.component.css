@@ -149,6 +149,11 @@
   color: #ffffff !important;
 }
 
+::ng-deep .tipo-tag-fixed.tag-suscripcion {
+  background-color: #2563eb !important; /* Azul Rey para Suscripción de Acciones */
+  color: #ffffff !important;
+}
+
 ::ng-deep .tipo-tag-fixed.tag-dividendo {
   background-color: #0d9488 !important; /* Verde Menta / Teal para Dividendo Acciones */
   color: #ffffff !important;
