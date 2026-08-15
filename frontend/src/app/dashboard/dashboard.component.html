@@ -1,3 +1,5 @@
+<p-toast></p-toast>
+<p-confirmDialog [style]="{width: '450px'}"></p-confirmDialog>
 <div class="dashboard-container p-3">
   <!-- Banner Ejecutivo de Bienvenida -->
   <div class="hero-banner card border-0 shadow-sm p-3 mb-4" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius: 14px;">
@@ -11,9 +13,14 @@
           Bienvenido(a), <strong>{{ userName }}</strong>. Visión estratégica en tiempo real de tu patrimonio y activos.
         </p>
       </div>
-      <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
-        <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
-      </a>
+      <div class="d-flex gap-2">
+        <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-outline-light font-bold shadow-sm rounded-pill px-3">
+          <i class="bi bi-camera me-1"></i> Guardar Histórico
+        </button>
+        <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
+          <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
+        </a>
+      </div>
     </div>
   </div>
 

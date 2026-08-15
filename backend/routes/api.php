@@ -28,6 +28,7 @@ use App\Http\Controllers\API\HistoricoPatrimonioController;
 use App\Http\Controllers\API\AccionOperacionController;
 use App\Http\Controllers\API\AccionDividendoController;
 use App\Http\Controllers\API\AccionPosicionController;
+use App\Http\Controllers\HistoricoIndicadorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -169,3 +170,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // Rutas de Indicadores de Portafolio y Mercado (temporalmente sin autenticación para pruebas)
 Route::get('portfolio/indicadores', [\App\Http\Controllers\Api\PortfolioIndicadoresController::class, 'index']);
 Route::get('mercado/indicadores', [\App\Http\Controllers\Api\MercadoIndicadoresController::class, 'index']);
+
+// Snapshot Histórico Indicadores
+Route::post('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'store']);

@@ -15,11 +15,15 @@ import { InversionService } from '../core/inversion.service';
 import { AmortizacionService, Amortizacion } from '../core/amortizacion.service';
 import { VencimientosSemanalesService, VencimientoSemanal, ResumenSemanal } from '../core/vencimientos-semanales.service';
 import { createStackedTooltipOptions } from '../core/utils/chart-options.util';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { HistoricoIndicadorService, HistoricoIndicadorData } from '../core/historico-indicador.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, ChartModule, TableModule],
+  imports: [CommonModule, RouterLink, ChartModule, TableModule, ToastModule, ConfirmDialogModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css'],
   providers: [
@@ -29,7 +33,10 @@ import { createStackedTooltipOptions } from '../core/utils/chart-options.util';
     AccionDividendoService,
     InversionService,
     AmortizacionService,
-    VencimientosSemanalesService
+    VencimientosSemanalesService,
+    MessageService,
+    ConfirmationService,
+    HistoricoIndicadorService
   ]
 })
 export class DashboardComponent implements OnInit {
@@ -97,7 +104,10 @@ export class DashboardComponent implements OnInit {
     private dividendoService: AccionDividendoService,
     private inversionService: InversionService,
     private amortizacionService: AmortizacionService,
-    private vencimientosSemanalesService: VencimientosSemanalesService
+    private vencimientosSemanalesService: VencimientosSemanalesService,
+    private historicoService: HistoricoIndicadorService,
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit(): void {
@@ -486,5 +496,58 @@ export class DashboardComponent implements OnInit {
       return 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)';
     }
     return 'linear-gradient(135deg, #3730a3 0%, #4f46e5 100%)';
+  }
+
+  guardarSnapshot(force: boolean = false): void {
+    if (this.loading) {
+      this.messageService.add({ severity: 'warn', summary: 'Cargando', detail: 'Espere a que carguen los datos primero.' });
+      return;
+    }
+
+    const snapshot: HistoricoIndicadorData = {
+      fecha_captura: new Date().toISOString().split('T')[0],
+      patrimonio_base: this.patrimonioBaseCosto,
+      patrimonio_consolidado: this.patrimonioConsolidadoTotal,
+      proyeccion_1_ano: this.patrimonioProyeccionUnAnio,
+      patrimonio_proyectado_consolidado: this.patrimonioProyectadoConsolidadoTotal,
+      intereses_esperados: this.interesesEsperadosProyeccion,
+      total_corriente: this.patrimonioTotalCorriente,
+      dividendos_acciones: this.patrimonioDividendosAcciones,
+      dividendos_efectivo: this.dividendosEfectivo,
+      plusvalia_acciones: this.patrimonioPlusvaliaAcciones,
+      capital_renta_fija: this.capitalRentaFijaConsolidado,
+      capital_renta_variable: this.capitalRentaVariableConsolidado,
+      capital_notas_credito: this.capitalNotasCreditoConsolidado,
+      valor_compra_nc: this.valorCompraTotalNotasCredito,
+      valor_venta_nc: this.valorVentaTotalNotasCredito,
+      utilidad_nc: this.utilidadTotalNotasCredito
+    };
+
+    this.historicoService.guardarSnapshot(snapshot, force).subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Snapshot guardado correctamente en el historial.' });
+        } else {
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Hubo un error al guardar.' });
+        }
+      },
+      error: (err) => {
+        if (err.status === 409 && err.error?.code === 'ALREADY_EXISTS') {
+          this.confirmationService.confirm({
+            message: 'Ya has guardado un histórico el día de hoy. ¿Deseas generar uno nuevo y reemplazar el anterior?',
+            header: 'Registro Existente',
+            icon: 'bi bi-exclamation-triangle text-warning',
+            acceptLabel: 'Sí, reemplazar',
+            rejectLabel: 'No, cancelar',
+            accept: () => {
+              this.guardarSnapshot(true);
+            }
+          });
+        } else {
+          this.messageService.add({ severity: 'error', summary: 'Error de Conexión', detail: 'No se pudo guardar el snapshot.' });
+          console.error(err);
+        }
+      }
+    });
   }
 }
