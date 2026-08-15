@@ -20,6 +20,8 @@ import { DialogModule } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
 import { TabViewModule } from 'primeng/tabview';
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { AmortizacionService } from '../../../core/amortizacion.service';
+import { InputTextModule } from 'primeng/inputtext';
 
 export interface FlujoCapitalItem {
   fecha: string;
@@ -50,6 +52,7 @@ export interface FlujoCapitalItem {
     DialogModule,
     TableModule,
     TabViewModule,
+    InputTextModule,
     ModalActionsComponent
   ],
   providers: [MessageService, ModalActionsComponent],
@@ -61,6 +64,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   @Input() paramsModal: any = null;
 
   reporteForm!: FormGroup;
+  amortizacionForm!: FormGroup;
   flujoCapital: FlujoCapitalItem[] = [];
   totales: FlujoCapitalItem = {
     fecha: 'TOTAL',
@@ -100,6 +104,13 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   detalleSeleccionado: FlujoCapitalItem | null = null;
   detalleItems: any[] = [];
   loadingDetalle = false;
+  lastParams: any = null;
+
+  // Edición de Amortización
+  displayEditAmortizacionDialog = false;
+  loadingAmortizacion = false;
+  editingAmortizacionId: number | null = null;
+  amortizacionOriginal: any = null;
 
   currentUser: any = null;
   gruposFamiliares: any[] = [];
@@ -110,12 +121,13 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     private flujoCapitalService: FlujoCapitalService,
     private grupoFamiliarService: GrupoFamiliarService,
     private personaService: PersonaService,
+    private amortizacionService: AmortizacionService,
     private messageService: MessageService,
     private authService: AuthService
   ) { }
 
-  ngOnInit(): void {
-    this.inicializarFormulario();
+  ngOnInit(): void {    this.inicializarFormulario();
+    this.inicializarAmortizacionForm();
     this.loadCurrentUser();
     this.loadInitialData();
 
@@ -136,6 +148,15 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
         this.generarReporte();
       }, 1000);
     }
+  }
+
+  inicializarAmortizacionForm(): void {
+    this.amortizacionForm = this.fb.group({
+      fecha_pago: [null, Validators.required],
+      capital: [0, [Validators.required, Validators.min(0)]],
+      interes: [0, [Validators.required, Validators.min(0)]],
+      descuento: [0, [Validators.required, Validators.min(0)]]
+    });
   }
 
   loadCurrentUser(): void {
@@ -775,11 +796,12 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     }
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: Date | string): string {
     if (!date) return '';
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 
@@ -835,6 +857,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   }
 
   private cargarDetalleBackend(params: any): void {
+    this.lastParams = params;
     this.flujoCapitalService.getDetalleFlujoCapital(params).subscribe({
       next: (response: any) => {
         this.loadingDetalle = false;
@@ -952,5 +975,83 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       summary: 'Exportación',
       detail: 'Archivo Excel del detalle descargado correctamente'
     });
+  }
+
+  // --- Lógica de Edición de Amortización ---
+  editarAmortizacion(item: any): void {
+    if (!item.id_amortizacion) {
+      this.messageService.add({severity: 'error', summary: 'Error', detail: 'ID de amortización no encontrado'});
+      return;
+    }
+    
+    this.loadingAmortizacion = true;
+    this.displayEditAmortizacionDialog = true;
+    this.editingAmortizacionId = item.id_amortizacion;
+    
+    this.amortizacionService.getById(item.id_amortizacion).subscribe({
+      next: (data) => {
+        this.amortizacionOriginal = data;
+        
+        let parsedDate = null;
+        if (data.fecha_pago) {
+          const dateString = data.fecha_pago.toString().substring(0, 10);
+          parsedDate = new Date(dateString + 'T00:00:00');
+        }
+
+        this.amortizacionForm.patchValue({
+          fecha_pago: parsedDate,
+          capital: data.capital,
+          interes: data.interes,
+          descuento: data.descuento
+        });
+        this.loadingAmortizacion = false;
+      },
+      error: (err) => {
+        this.loadingAmortizacion = false;
+        this.displayEditAmortizacionDialog = false;
+        console.error('Error cargando amortización:', err);
+        this.messageService.add({severity: 'error', summary: 'Error', detail: 'No se pudo cargar la amortización'});
+      }
+    });
+  }
+
+  saveAmortizacion(): void {
+    if (this.amortizacionForm.invalid || !this.editingAmortizacionId) return;
+
+    this.loadingAmortizacion = true;
+    const formValues = this.amortizacionForm.value;
+    const updateData = {
+      ...this.amortizacionOriginal,
+      fecha_pago: this.formatDate(formValues.fecha_pago),
+      capital: formValues.capital,
+      interes: formValues.interes,
+      descuento: formValues.descuento,
+      total: Number(formValues.capital) + Number(formValues.interes) + Number(formValues.descuento)
+    };
+
+    this.amortizacionService.update(this.editingAmortizacionId, updateData).subscribe({
+      next: () => {
+        this.loadingAmortizacion = false;
+        this.displayEditAmortizacionDialog = false;
+        this.messageService.add({severity: 'success', summary: 'Éxito', detail: 'Amortización actualizada correctamente'});
+        
+        // Recargar detalle si es posible
+        if (this.lastParams) {
+          this.cargarDetalleBackend(this.lastParams);
+        }
+      },
+      error: (err) => {
+        this.loadingAmortizacion = false;
+        console.error('Error actualizando amortización:', err);
+        this.messageService.add({severity: 'error', summary: 'Error', detail: 'No se pudo actualizar la amortización'});
+      }
+    });
+  }
+
+  cancelEditAmortizacion(): void {
+    this.displayEditAmortizacionDialog = false;
+    this.editingAmortizacionId = null;
+    this.amortizacionOriginal = null;
+    this.amortizacionForm.reset();
   }
 }

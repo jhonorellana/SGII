@@ -302,7 +302,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of detalleItems">
+              <tr *ngFor="let item of detalleItems" class="clickable-row" (click)="editarAmortizacion(item)" title="Haga clic para editar esta amortización">
                 <td class="text-center">{{ item.id_inversion }}-{{ item.id_amortizacion }}</td>
                 <td class="text-center">{{ item.fecha_compra }}</td>
                 <td class="text-left">{{ item.propietario }}</td>
@@ -336,4 +336,44 @@
     </ng-container>
   </p-dialog>
 
-<p-toast></p-toast>
+  <!-- Modal para Editar Amortización -->
+  <p-dialog [(visible)]="displayEditAmortizacionDialog" header="Editar Amortización"
+            [modal]="true" [closable]="false" [style]="{width: '50vw'}" styleClass="app-custom-modal">
+    <div *ngIf="loadingAmortizacion" class="text-center py-4">
+      <p-progressSpinner></p-progressSpinner>
+      <p class="mt-2">Cargando datos...</p>
+    </div>
+    
+    <form *ngIf="!loadingAmortizacion && amortizacionOriginal" [formGroup]="amortizacionForm">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Fecha de Pago <span class="text-danger">*</span></label>
+          <p-calendar formControlName="fecha_pago" dateFormat="yy-mm-dd" placeholder="YYYY-MM-DD" styleClass="w-100" appendTo="body"></p-calendar>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Capital <span class="text-danger">*</span></label>
+          <input pInputText type="number" formControlName="capital" step="0.01" class="w-100">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Interés <span class="text-danger">*</span></label>
+          <input pInputText type="number" formControlName="interes" step="0.01" class="w-100">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label fw-bold">Premio / Descuento <span class="text-danger">*</span></label>
+          <input pInputText type="number" formControlName="descuento" step="0.01" class="w-100">
+        </div>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <app-modal-actions
+        [cancelText]="'Cancelar'"
+        [saveText]="'Guardar Cambios'"
+        [disabled]="amortizacionForm.invalid || loadingAmortizacion"
+        (onCancel)="cancelEditAmortizacion()"
+        (onSave)="saveAmortizacion()">
+      </app-modal-actions>
+    </ng-template>
+  </p-dialog>
+
+  <p-toast></p-toast>

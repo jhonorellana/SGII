@@ -88,7 +88,7 @@
 
     <!-- Filas de datos -->
     <ng-template pTemplate="body" let-instrumento>
-      <tr>
+      <tr class="clickable-row cursor-pointer table-hover-row" (click)="viewInversiones(instrumento)">
         <td>{{ instrumento.id_instrumento }}</td>
         <td>{{ instrumento.nombre }}</td>
         <td>
@@ -109,13 +109,13 @@
         </td>
         <td>
           <div class="btn-group">
-            <button class="btn btn-sm btn-outline-primary" (click)="viewInversiones(instrumento)" title="Ver Inversiones">
+            <button class="btn btn-sm btn-outline-primary" (click)="viewInversiones(instrumento); $event.stopPropagation()" title="Ver Inversiones">
               <i class="bi bi-eye"></i>
             </button>
-            <button class="btn btn-sm btn-outline-info" (click)="openEdit(instrumento)">
+            <button class="btn btn-sm btn-outline-info" (click)="openEdit(instrumento); $event.stopPropagation()">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" (click)="delete(instrumento)">
+            <button class="btn btn-sm btn-outline-danger" (click)="delete(instrumento); $event.stopPropagation()">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -272,10 +272,10 @@
         </tr>
       </ng-template>
       <ng-template pTemplate="body" let-inv>
-        <tr>
-          <td>{{ inv.id_inversion }}</td>
+        <tr class="clickable-row" (click)="verDetalleInversion(inv)" title="Haga clic para ver los detalles de la inversión">
+          <td class="text-center">{{ inv.id_inversion }}</td>
           <td>{{ inv.propietario?.nombres }}</td>
-          <td>{{ inv.liquidacion || '-' }}</td>
+          <td class="text-center">{{ inv.liquidacion || '-' }}</td>
           <td class="text-center">{{ formatDate(inv.fecha_compra) }}</td>
           <td class="text-end">{{ inv.valor_nominal | currency:'USD' }}</td>
           <td class="text-end">{{ inv.capital_invertido | currency:'USD' }}</td>
@@ -298,5 +298,196 @@
         </tr>
       </ng-template>
     </p-table>
+  </p-dialog>
+
+  <!-- Modal para Detalle de Inversión (Read-Only) -->
+  <p-dialog [(visible)]="displayDetalleInversionDialog" header="Detalle Completo de la Inversión"
+            [style]="{width: '70vw', maxWidth: '900px'}" [modal]="true" [closable]="true" [dismissableMask]="true" styleClass="app-custom-modal">
+    <div *ngIf="inversionSeleccionada">
+      <!-- Información Básica -->
+      <h6 class="text-primary border-bottom pb-2 mt-2">Información Básica</h6>
+      <div class="row">
+        <div class="col-md-4 mb-2"><strong>ID Inversión:</strong> {{ inversionSeleccionada.id_inversion }}</div>
+        <div class="col-md-4 mb-2"><strong>Estado:</strong> <p-tag [value]="inversionSeleccionada.estadoInversion?.nombre" [severity]="'info'"></p-tag></div>
+        <div class="col-md-4 mb-2"><strong>Liquidación:</strong> {{ inversionSeleccionada.liquidacion || '-' }}</div>
+        <div class="col-md-6 mb-2"><strong>Propietario:</strong> {{ inversionSeleccionada.propietario?.nombres || inversionSeleccionada.propietario?.nombre || '-' }}</div>
+        <div class="col-md-6 mb-2"><strong>Aportante:</strong> {{ inversionSeleccionada.aportante?.nombres || inversionSeleccionada.aportante?.nombre || '-' }}</div>
+        <div class="col-md-12 mb-2"><strong>Observaciones:</strong> {{ inversionSeleccionada.observacion || '-' }}</div>
+      </div>
+
+      <!-- Fechas -->
+      <h6 class="text-primary border-bottom pb-2 mt-4">Fechas</h6>
+      <div class="row">
+        <div class="col-md-4 mb-2"><strong>Fecha de Compra:</strong> {{ formatDate(inversionSeleccionada.fecha_compra) || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Fecha 1er Pago:</strong> {{ formatDate(inversionSeleccionada.fecha_primer_pago) || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Fecha de Venta:</strong> {{ formatDate(inversionSeleccionada.fecha_venta) || '-' }}</div>
+      </div>
+
+      <!-- Valores Monetarios -->
+      <h6 class="text-primary border-bottom pb-2 mt-4">Valores Monetarios Principales</h6>
+      <div class="row">
+        <div class="col-md-4 mb-2"><strong>Valor Nominal:</strong> {{ (inversionSeleccionada.valor_nominal | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Capital Invertido:</strong> {{ (inversionSeleccionada.capital_invertido | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Monto a Negociar:</strong> {{ (inversionSeleccionada.monto_a_negociar | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Precio Compra:</strong> {{ (inversionSeleccionada.precio_compra | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Precio Neto Compra:</strong> {{ (inversionSeleccionada.precio_neto_compra | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Valor Efectivo:</strong> {{ (inversionSeleccionada.valor_efectivo | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Valor sin Comisión:</strong> {{ (inversionSeleccionada.valor_sin_comision | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Valor con Interés:</strong> {{ (inversionSeleccionada.valor_con_interes | currency:'USD') || '-' }}</div>
+      </div>
+
+      <!-- Tasas y Rendimientos -->
+      <h6 class="text-primary border-bottom pb-2 mt-4">Tasas y Rendimientos</h6>
+      <div class="row">
+        <div class="col-md-3 mb-2"><strong>Tasa Interés:</strong> {{ inversionSeleccionada.tasa_interes ? inversionSeleccionada.tasa_interes + '%' : '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Rendimiento Nom.:</strong> {{ inversionSeleccionada.rendimiento_nominal ? inversionSeleccionada.rendimiento_nominal + '%' : '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Rendimiento Efec.:</strong> {{ inversionSeleccionada.rendimiento_efectivo ? inversionSeleccionada.rendimiento_efectivo + '%' : '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Tasa Mensual Real:</strong> {{ inversionSeleccionada.tasa_mensual_real ? inversionSeleccionada.tasa_mensual_real + '%' : '-' }}</div>
+      </div>
+
+      <!-- Intereses y Comisiones -->
+      <h6 class="text-primary border-bottom pb-2 mt-4">Intereses y Comisiones</h6>
+      <div class="row">
+        <div class="col-md-4 mb-2"><strong>Interés Mensual:</strong> {{ (inversionSeleccionada.interes_mensual | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Interés 1er Mes:</strong> {{ (inversionSeleccionada.interes_primer_mes | currency:'USD') || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Int. Acumulado Previo:</strong> {{ (inversionSeleccionada.interes_acumulado_previo | currency:'USD') || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Comisión Bolsa:</strong> {{ (inversionSeleccionada.comision_bolsa | currency:'USD') || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Com. Casa Valores:</strong> {{ (inversionSeleccionada.comision_casa_valores | currency:'USD') || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Total Comisiones:</strong> {{ (inversionSeleccionada.total_comisiones | currency:'USD') || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Retención Fte.:</strong> {{ (inversionSeleccionada.retencion_fuente | currency:'USD') || '-' }}</div>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <div class="d-flex justify-content-between w-100">
+        <button pButton type="button" label="Ver Tabla Amortización" icon="pi pi-table" class="p-button-outlined p-button-success" (click)="viewAmortizacion(inversionSeleccionada)"></button>
+        <button pButton type="button" label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="displayDetalleInversionDialog = false"></button>
+        <!-- Modal para Ver Tabla de Amortización -->
+  <p-dialog [(visible)]="displayAmortizacionDialog" header="Tabla de Amortización"
+            [style]="{width: '90vw', maxWidth: '1200px'}" [modal]="true" [closable]="true"
+            [resizable]="true"
+            (onHide)="displayAmortizacionDialog = false" styleClass="app-custom-modal">
+    <div *ngIf="inversionSeleccionada">
+      <!-- Resumen de Indicadores: Recibido vs Por Recibir -->
+      <div *ngIf="!loadingAmortizacion && amortizaciones.length > 0" class="row g-2 mb-3 mt-2">
+        <!-- Tarjeta Recibido (Cobrado) -->
+        <div class="col-md-6">
+          <div class="card border-success shadow-sm h-100" style="background-color: #f0fdf4;">
+            <div class="card-header bg-success text-white py-1 px-3 d-flex justify-content-between align-items-center">
+              <span class="fw-bold small"><i class="bi bi-check-circle-fill me-1"></i> RECIBIDO (COBRADO)</span>
+              <span class="fw-bold fs-6">{{ formatCurrency(totalRecibido) }}</span>
+            </div>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Capital Recibido:</span>
+                <strong class="text-success">{{ formatCurrency(capitalRecibido) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Interés Recibido:</span>
+                <strong class="text-success">{{ formatCurrency(interesRecibido) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">Premio Recibido:</span>
+                <strong class="text-success">{{ formatCurrency(premioRecibido) }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta Por Recibir (Pendiente) -->
+        <div class="col-md-6">
+          <div class="card border-warning shadow-sm h-100" style="background-color: #fffbeb;">
+            <div class="card-header bg-warning text-dark py-1 px-3 d-flex justify-content-between align-items-center">
+              <span class="fw-bold small"><i class="bi bi-clock-history me-1"></i> POR RECIBIR (PENDIENTE)</span>
+              <span class="fw-bold fs-6">{{ formatCurrency(totalPorRecibir) }}</span>
+            </div>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Capital por Recibir:</span>
+                <strong class="text-warning-emphasis">{{ formatCurrency(capitalPorRecibir) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Interés por Recibir:</span>
+                <strong class="text-warning-emphasis">{{ formatCurrency(interesPorRecibir) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">Premio por Recibir:</span>
+                <strong class="text-warning-emphasis">{{ formatCurrency(premioPorRecibir) }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Amortización -->
+      <div class="table-responsive" *ngIf="!loadingAmortizacion">
+        <p-table #amortizacionTable [value]="amortizaciones" [paginator]="true" [rows]="10"
+                 [rowsPerPageOptions]="[10, 20, 50]"
+                 [paginatorDropdownAppendTo]="'body'"
+                 styleClass="p-datatable-sm p-datatable-gridlines"
+                 responsiveLayout="scroll">
+          <ng-template pTemplate="header">
+            <tr>
+              <th># Cuota</th>
+              <th>Fecha Pago</th>
+              <th class="text-end">Capital</th>
+              <th class="text-end">Interés</th>
+              <th class="text-end">Premio</th>
+              <th class="text-end">Interés+Premio</th>
+              <th class="text-end">Total</th>
+              <th class="text-center">Estado</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-amortizacion>
+            <tr [class.table-secondary]="!isCuotaCobrada(amortizacion)">
+              <td>{{ amortizacion.numero_cuota || '-' }}</td>
+              <td>{{ formatDate(amortizacion.fecha_pago) }}</td>
+              <td class="text-end">{{ formatNumber(amortizacion.capital) }}</td>
+              <td class="text-end">{{ formatNumber(amortizacion.interes) }}</td>
+              <td class="text-end">{{ formatNumber(amortizacion.descuento) }}</td>
+              <td class="text-end fw-semibold text-primary">{{ formatNumber(getInteresMasPremio(amortizacion)) }}</td>
+              <td class="text-end fw-bold">{{ formatNumber(amortizacion.total) }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="getEstadoAmortizacionBadgeClass(amortizacion)">
+                  {{ getEstadoAmortizacionNombre(amortizacion) }}
+                </span>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <tr class="fw-bold bg-light">
+              <td colspan="2" class="text-end">TOTALES TABLA:</td>
+              <td class="text-end text-primary">{{ formatNumber(totalCapitalGeneral) }}</td>
+              <td class="text-end text-primary">{{ formatNumber(totalInteresGeneral) }}</td>
+              <td class="text-end text-primary">{{ formatNumber(totalPremioGeneral) }}</td>
+              <td class="text-end text-primary">{{ formatNumber(totalInteresGeneral + totalPremioGeneral) }}</td>
+              <td class="text-end text-success fs-6">{{ formatNumber(totalGeneralTotal) }}</td>
+              <td></td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="text-center py-4">
+                <i class="bi bi-inbox fs-1 text-muted"></i>
+                <p class="mb-0 text-muted">No hay amortizaciones registradas para esta inversión</p>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loadingAmortizacion" class="text-center py-4">
+        <i class="pi pi-spinner pi-spin fs-1 text-muted"></i>
+        <p class="mb-0 text-muted">Cargando amortizaciones...</p>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <app-modal-actions
+        [cancelText]="'Cerrar'"
+        [showSaveButton]="false"
+        (onCancel)="displayAmortizacionDialog = false">
+      </app-modal-actions>
+    </ng-template>
   </p-dialog>
 </div>
