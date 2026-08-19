@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './auth/login/login.component';
+import { TendenciasHistoricasComponent } from './dashboard/tendencias-historicas/tendencias-historicas.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { CatalogoListComponent } from './modules/catalogos/catalogo-list/catalogo-list.component';
@@ -68,6 +69,7 @@ export const routes: Routes = [
       { path: 'reportes/historico-acciones', component: HistoricoAccionesComponent },
       { path: 'reportes/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: 'reportes/historico-patrimonio', component: HistoricoPatrimonioReportComponent },
+      { path: 'reportes/tendencias-historicas', component: TendenciasHistoricasComponent },
       { path: 'historico-patrimonio', component: HistoricoPatrimonioListComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },

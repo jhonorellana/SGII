@@ -33,24 +33,28 @@ select * from catalogo_valor where id_catalogo =5  order by id_catalogo_valor
 */
 
 select * from instrumento where nombre like '%pichincha%' id_instrumento = 194 -- id_instrumento = 64;
-select * from inversion where id_inversion in (281,289,393);  -- 347901 / 20288 - VRF35 / 366691
+select * from inversion where id_inversion in (709) (281,289,393);  -- 347901 / 20288 - VRF35 / 366691
 
 
-select * from amortizacion where id_inversion in (393) -- (281,289,393); order by fecha_pago;
+select * from amortizacion where id_inversion in (709) -- (281,289,393); order by fecha_pago;
 
+
+Select * from venta_inversion where  fecha_venta='2026-05-05'   -- id_inversion=709  id_venta_inversion=135  
+Select * from venta_inversion where  fecha_venta='2026-05-19'
 
 -- select * from inversion.bonos where inv_id = 241;
 select * from sipro_desa.inversion where id_inversion in (281,289,393,569);   -- cambia el estado, fecha_venta, activo 
 Select * from sipro_desa.amortizacion where id_inversion > 500 in (393) (281,289,393); -- id_estado_amortizacion / activo   --- originalmente 134
 Select * from sipro_desa.movimiento_capital where id_inversion in (281,289,393); -- se crear un nuevo registro
-Select * from venta_inversion where id_inversion in (696); -- se debe crear un nuevo registro
-Select * from venta_inversion_detalle where id_venta_inversion = 146; -- se deben crear la misma cantidad de inversiones afectadas
+Select * from venta_inversion where id_inversion in (709,710); -- se debe crear un nuevo registro
+Select * from venta_inversion_detalle where id_venta_inversion in (135,138); -- se deben crear la misma cantidad de inversiones afectadas
 select * from inversion_propietario_reasignacion_log -- se carga cuando hay una reasignación automática de notas de crédito
 select * from accion_operacion
 
 select * from sipro_desa.inversion WHERE id_instrumento = 50
 select * from instrumento  WHERE id_instrumento = 50
 
+select * from historico_indicadores
 
 select * from amortizacion order by fecha_actualizacion desc
 
@@ -137,3 +141,5 @@ SET
     
     select * from amortizacion where fecha_pago between '2026-05-01' and '2026-05-31'
     
+    
+    select * from instrumento where nombre like '%BRI%' -- id_instrumento = 194 -- id_instrumento = 64;

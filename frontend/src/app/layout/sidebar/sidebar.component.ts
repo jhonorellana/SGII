@@ -182,6 +182,11 @@ export class SidebarComponent implements OnInit {
           title: 'Histórico de Capital',
           icon: 'bi-graph-up',
           path: '/reportes/historico-patrimonio'
+        },
+        {
+          title: 'Tendencias Analíticas',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/tendencias-historicas'
         }
       ]
     },

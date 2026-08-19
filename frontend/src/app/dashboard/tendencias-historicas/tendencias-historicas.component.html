@@ -1,0 +1,74 @@
+<div class="tendencias-container mt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-1 text-primary fw-bold">
+        <i class="bi bi-graph-up-arrow me-2"></i>Tendencias Analíticas Históricas
+      </h3>
+      <p class="text-muted mb-0">Evolución en el tiempo de los principales indicadores de tu portafolio</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center p-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && historicoData.length === 0" class="alert alert-info">
+    No hay datos históricos registrados. Haz clic en "Guardar Histórico" en el panel principal para comenzar a graficar tus tendencias.
+  </div>
+
+  <div *ngIf="!loading && historicoData.length > 0" class="row g-4">
+    <!-- Crecimiento Patrimonial -->
+    <div class="col-xl-6">
+      <div class="card border-0 shadow-sm h-100 chart-card" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+          <h5 class="mb-0 fw-bold" style="color: #1e293b;">Crecimiento Patrimonial</h5>
+          <small class="text-muted">Evolución del capital base vs consolidado y la meta anual</small>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p-chart type="line" [data]="chartCrecimientoData" [options]="chartCrecimientoOptions" height="320px"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribución de Riesgo -->
+    <div class="col-xl-6">
+      <div class="card border-0 shadow-sm h-100 chart-card" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+          <h5 class="mb-0 fw-bold" style="color: #1e293b;">Distribución de Capital (Riesgo)</h5>
+          <small class="text-muted">Composición histórica del portafolio por tipo de activo</small>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p-chart type="line" [data]="chartRiesgoData" [options]="chartRiesgoOptions" height="320px"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Renta Variable -->
+    <div class="col-xl-6">
+      <div class="card border-0 shadow-sm h-100 chart-card" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+          <h5 class="mb-0 fw-bold" style="color: #1e293b;">Desempeño de Renta Variable</h5>
+          <small class="text-muted">Plusvalía acumulada de acciones vs dividendos cobrados (efectivo/acciones)</small>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p-chart type="bar" [data]="chartRentaVariableData" [options]="chartRentaVariableOptions" height="320px"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notas de Crédito -->
+    <div class="col-xl-6">
+      <div class="card border-0 shadow-sm h-100 chart-card" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white border-0 pt-4 pb-0 px-4">
+          <h5 class="mb-0 fw-bold" style="color: #1e293b;">Operaciones Notas de Crédito</h5>
+          <small class="text-muted">Volumen histórico de compra/venta y utilidad neta generada</small>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <p-chart type="bar" [data]="chartNCData" [options]="chartNCOptions" height="320px"></p-chart>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

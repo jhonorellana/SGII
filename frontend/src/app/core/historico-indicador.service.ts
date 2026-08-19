@@ -30,6 +30,10 @@ export class HistoricoIndicadorService {
 
   constructor(private http: HttpClient) {}
 
+  getHistorico(): Observable<any> {
+    return this.http.get<any>(this.apiUrl);
+  }
+
   guardarSnapshot(data: HistoricoIndicadorData, force: boolean = false): Observable<any> {
     const payload = { ...data, force };
     return this.http.post<any>(this.apiUrl, payload);

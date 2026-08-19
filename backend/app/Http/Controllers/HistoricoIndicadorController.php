@@ -9,6 +9,30 @@ use Illuminate\Support\Facades\Log;
 class HistoricoIndicadorController extends Controller
 {
     /**
+     * Display a listing of active snapshots ordered by date.
+     */
+    public function index()
+    {
+        try {
+            $historicos = HistoricoIndicador::where('activo', true)
+                                            ->orderBy('fecha_captura', 'asc')
+                                            ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $historicos
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Error fetching historico_indicadores: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el historial de indicadores.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Store a newly created snapshot in storage.
      */
     public function store(Request $request)

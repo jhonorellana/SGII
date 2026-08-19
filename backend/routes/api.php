@@ -172,4 +172,5 @@ Route::get('portfolio/indicadores', [\App\Http\Controllers\Api\PortfolioIndicado
 Route::get('mercado/indicadores', [\App\Http\Controllers\Api\MercadoIndicadoresController::class, 'index']);
 
 // Snapshot Histórico Indicadores
+Route::get('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'index']);
 Route::post('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'store']);
