@@ -1,0 +1,49 @@
+.a4-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  background-color: white;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.pdf-preview-wrapper {
+  overflow-x: auto;
+  padding-bottom: 2rem;
+}
+
+.kpi-box {
+  background-color: #fff;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.table {
+  font-size: 0.85rem;
+}
+
+.table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.text-xs {
+  font-size: 0.75rem;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.font-extrabold {
+  font-weight: 800;
+}

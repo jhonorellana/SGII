@@ -96,6 +96,28 @@ export class DashboardComponent implements OnInit {
   vencimientosChartData: any = null;
   vencimientosChartOptions: any = null;
 
+  // MoM Variations
+  momPatrimonioBase: number | null = null;
+  momPatrimonioConsolidado: number | null = null;
+  momProyeccion: number | null = null;
+  momIntereses: number | null = null;
+  momTotalCorriente: number | null = null;
+
+  // Alertas de Desviación
+  alertaDesviacion: boolean = false;
+  montoDesviacion: number = 0;
+  metaEsperadaHoy: number = 0;
+
+  // Modo Máquina del Tiempo
+  isTimeMachineActive: boolean = false;
+  historicosOptions: any[] = [];
+  selectedHistoricoId: string = 'REAL_TIME';
+  rawHistoricos: any[] = [];
+  realTimeCache: any = null;
+
+  // Calculadora TIR (XIRR)
+  tirHistorica: number | null = null;
+
   constructor(
     private authService: AuthService,
     private patrimonioService: PatrimonioService,
@@ -152,7 +174,8 @@ export class DashboardComponent implements OnInit {
       dividendos: this.dividendoService.getAll().pipe(catchError(() => of(null))),
       inversiones: this.inversionService.getAll().pipe(catchError(() => of(null))),
       amortizaciones: this.amortizacionService.getProximas(5).pipe(catchError(() => of(null))),
-      vencimientosSemanales: this.vencimientosSemanalesService.getVencimientosSemanales(fechaFinStr).pipe(catchError(() => of(null)))
+      vencimientosSemanales: this.vencimientosSemanalesService.getVencimientosSemanales(fechaFinStr).pipe(catchError(() => of(null))),
+      historicos: this.historicoService.getHistorico().pipe(catchError(() => of(null)))
     }).subscribe({
       next: (res) => {
         // 1. Patrimonio Consolidado Base (tomado con los 3 switches apagados)
@@ -321,6 +344,15 @@ export class DashboardComponent implements OnInit {
           this.buildVencimientosChartData();
         }
 
+        if (res.historicos && res.historicos.success && Array.isArray(res.historicos.data)) {
+          this.rawHistoricos = res.historicos.data;
+          this.buildHistoricosOptions();
+          this.calcularMoM(this.rawHistoricos);
+          this.calcularDesviacion(this.rawHistoricos);
+          this.calcularTIR(this.rawHistoricos);
+        }
+
+        this.cacheRealTimeData();
         this.loading = false;
       },
       error: (err) => {
@@ -329,6 +361,286 @@ export class DashboardComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  calcularMoM(historicos: any[]): void {
+    if (historicos.length === 0) return;
+
+    // Buscar el snapshot de cierre del mes calendario anterior
+    const hoy = new Date();
+    const primerDiaMesActual = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+    // Filtrar snapshots que sean estrictamente anteriores al primer día del mes actual
+    const snapshotsPasados = historicos.filter(h => {
+      const fecha = new Date(h.fecha_captura + 'T00:00:00');
+      return fecha < primerDiaMesActual;
+    });
+
+    if (snapshotsPasados.length === 0) return;
+
+    // Tomar el más reciente
+    const snapshotMesAnterior = snapshotsPasados[snapshotsPasados.length - 1];
+
+    // Función auxiliar para calcular variación
+    const calcVar = (actual: number, anterior: number) => {
+      if (!anterior || anterior === 0) return null;
+      return ((actual / anterior) - 1) * 100;
+    };
+
+    this.momPatrimonioBase = calcVar(this.patrimonioBaseCosto, Number(snapshotMesAnterior.patrimonio_base || 0));
+    this.momPatrimonioConsolidado = calcVar(this.patrimonioConsolidadoTotal, Number(snapshotMesAnterior.patrimonio_consolidado || 0));
+    this.momProyeccion = calcVar(this.patrimonioProyectadoConsolidadoTotal, Number(snapshotMesAnterior.patrimonio_proyectado_consolidado || 0));
+    this.momIntereses = calcVar(this.interesesEsperadosProyeccion, Number(snapshotMesAnterior.intereses_esperados || 0));
+    this.momTotalCorriente = calcVar(this.patrimonioTotalCorriente, Number(snapshotMesAnterior.total_corriente || 0));
+  }
+
+  calcularDesviacion(historicos: any[]): void {
+    if (historicos.length === 0) return;
+
+    const hoy = new Date();
+    // Buscar el snapshot de referencia (hace 1 año máximo)
+    const haceUnAno = new Date(hoy.getFullYear() - 1, hoy.getMonth(), hoy.getDate());
+
+    const snapshotsValidos = historicos.filter(h => new Date(h.fecha_captura + 'T00:00:00') >= haceUnAno);
+    
+    if (snapshotsValidos.length === 0) return;
+
+    // Tomar el más antiguo dentro del último año (que es el primero del array porque vienen ordenados ASC)
+    const snapshotBase = snapshotsValidos[0];
+
+    const fechaBase = new Date(snapshotBase.fecha_captura + 'T00:00:00');
+    const diasTranscurridos = Math.floor((hoy.getTime() - fechaBase.getTime()) / (1000 * 60 * 60 * 24));
+
+    // Si tiene menos de 7 días, es muy pronto para medir desviación lineal
+    if (diasTranscurridos < 7) return;
+
+    const pBase = Number(snapshotBase.patrimonio_consolidado || 0);
+    const pMeta1Ano = Number(snapshotBase.patrimonio_proyectado_consolidado || 0);
+
+    // Si la meta proyectada era menor que la base, ignoramos
+    if (pMeta1Ano <= pBase) return;
+
+    // Crecimiento esperado por día según la proyección inicial
+    const crecimientoDiarioEsperado = (pMeta1Ano - pBase) / 365;
+    
+    // Meta que deberíamos tener "hoy" si siguiéramos la línea recta perfecta
+    this.metaEsperadaHoy = pBase + (crecimientoDiarioEsperado * diasTranscurridos);
+    
+    // Umbral de sensibilidad del 0.5% (No alertar por fluctuaciones pequeñísimas diarias)
+    const umbralSensibilidad = this.metaEsperadaHoy * 0.005;
+
+    if (this.patrimonioConsolidadoTotal < (this.metaEsperadaHoy - umbralSensibilidad)) {
+      this.alertaDesviacion = true;
+      this.montoDesviacion = this.metaEsperadaHoy - this.patrimonioConsolidadoTotal;
+    }
+  }
+
+  calcularTIR(historicos: any[]): void {
+    if (historicos.length === 0) return;
+
+    const flujos: number[] = [];
+    const fechas: Date[] = [];
+
+    // Primer flujo: Inversión inicial (Patrimonio Base del snapshot más antiguo)
+    const primerSnapshot = historicos[0];
+    flujos.push(-Number(primerSnapshot.patrimonio_base || 0));
+    fechas.push(new Date(primerSnapshot.fecha_captura + 'T00:00:00'));
+
+    // Flujos intermedios: Variaciones en el Patrimonio Base (Aportaciones o Retiros)
+    for (let i = 1; i < historicos.length; i++) {
+      const anteriorBase = Number(historicos[i - 1].patrimonio_base || 0);
+      const actualBase = Number(historicos[i].patrimonio_base || 0);
+      const delta = actualBase - anteriorBase;
+
+      // Si el patrimonio base cambió en más de $1, se considera flujo de caja
+      if (Math.abs(delta) > 1) {
+        flujos.push(-delta); // Flujo negativo si es aportación, positivo si es retiro
+        fechas.push(new Date(historicos[i].fecha_captura + 'T00:00:00'));
+      }
+    }
+
+    // Flujo terminal: El patrimonio consolidado actual (Retiro total simulado)
+    // Usamos la fecha de hoy para el flujo final
+    const hoy = new Date();
+    // Prevenir error si el primer snapshot fue creado hoy mismo (división por cero)
+    if (hoy.getTime() - fechas[0].getTime() < 86400000) {
+      this.tirHistorica = null;
+      return;
+    }
+    
+    flujos.push(this.patrimonioConsolidadoTotal);
+    fechas.push(hoy);
+
+    this.tirHistorica = this.xirr(flujos, fechas);
+  }
+
+  private xirr(values: number[], dates: Date[], guess: number = 0.1): number | null {
+    const xnpv = (rate: number) => {
+      let sum = 0;
+      const d0 = dates[0].getTime();
+      for (let i = 0; i < values.length; i++) {
+        // Fracción de año (365 días exactos para finanzas)
+        const t = (dates[i].getTime() - d0) / (1000 * 60 * 60 * 24 * 365);
+        // Si rate es -1, Math.pow da Infinity, evitamos eso
+        sum += values[i] / Math.pow(1 + rate, t);
+      }
+      return sum;
+    };
+
+    const xnpvDerivative = (rate: number) => {
+      let sum = 0;
+      const d0 = dates[0].getTime();
+      for (let i = 0; i < values.length; i++) {
+        const t = (dates[i].getTime() - d0) / (1000 * 60 * 60 * 24 * 365);
+        if (t > 0) {
+          sum -= (t * values[i]) / Math.pow(1 + rate, t + 1);
+        }
+      }
+      return sum;
+    };
+
+    let rate = guess;
+    for (let i = 0; i < 100; i++) {
+      const fv = xnpv(rate);
+      const fvPrime = xnpvDerivative(rate);
+      if (Math.abs(fvPrime) < 1e-10) break;
+      const newRate = rate - fv / fvPrime;
+      if (Math.abs(newRate - rate) < 1e-7) return newRate * 100; // Multiplicar por 100 para porcentaje
+      rate = newRate;
+      // Prevenir tasas irreales negativas
+      if (rate <= -1.0) rate = -0.99999;
+    }
+    return null; // No convergió
+  }
+
+  cacheRealTimeData(): void {
+    this.realTimeCache = {
+      patrimonioBaseCosto: this.patrimonioBaseCosto,
+      patrimonioConsolidadoTotal: this.patrimonioConsolidadoTotal,
+      patrimonioProyeccionUnAnio: this.patrimonioProyeccionUnAnio,
+      interesesEsperadosProyeccion: this.interesesEsperadosProyeccion,
+      patrimonioTotalCorriente: this.patrimonioTotalCorriente,
+      patrimonioProyectadoConsolidadoTotal: this.patrimonioProyectadoConsolidadoTotal,
+      patrimonioDesglose: this.patrimonioDesglose,
+      capitalRentaFijaConsolidado: this.capitalRentaFijaConsolidado,
+      capitalRentaVariableConsolidado: this.capitalRentaVariableConsolidado,
+      capitalNotasCreditoConsolidado: this.capitalNotasCreditoConsolidado,
+      momPatrimonioBase: this.momPatrimonioBase,
+      momPatrimonioConsolidado: this.momPatrimonioConsolidado,
+      momProyeccion: this.momProyeccion,
+      momIntereses: this.momIntereses,
+      momTotalCorriente: this.momTotalCorriente,
+      alertaDesviacion: this.alertaDesviacion,
+      montoDesviacion: this.montoDesviacion,
+      metaEsperadaHoy: this.metaEsperadaHoy,
+      tirHistorica: this.tirHistorica
+    };
+  }
+
+  buildHistoricosOptions(): void {
+    // Dropdown options
+    this.historicosOptions = [{ label: '⏳ Tiempo Real (Hoy)', value: 'REAL_TIME' }];
+    
+    // Sort descending for the dropdown
+    const reversed = [...this.rawHistoricos].reverse();
+    reversed.forEach(h => {
+      this.historicosOptions.push({
+        label: `Snapshot ${h.fecha_captura}`,
+        value: h.id_historico
+      });
+    });
+  }
+
+  onTimeMachineChange(event: any): void {
+    const val = event?.target?.value || event?.value;
+    if (val === 'REAL_TIME' || !val) {
+      this.isTimeMachineActive = false;
+      this.restoreRealTimeData();
+      this.buildChartData(this.patrimonioDesglose);
+    } else {
+      this.isTimeMachineActive = true;
+      const snapshot = this.rawHistoricos.find(h => String(h.id_historico) === String(val));
+      if (snapshot) {
+        this.applyTimeMachineSnapshot(snapshot);
+      }
+    }
+  }
+
+  restoreRealTimeData(): void {
+    if (!this.realTimeCache) return;
+    const c = this.realTimeCache;
+    this.patrimonioBaseCosto = c.patrimonioBaseCosto;
+    this.patrimonioConsolidadoTotal = c.patrimonioConsolidadoTotal;
+    this.patrimonioProyeccionUnAnio = c.patrimonioProyeccionUnAnio;
+    this.interesesEsperadosProyeccion = c.interesesEsperadosProyeccion;
+    this.patrimonioTotalCorriente = c.patrimonioTotalCorriente;
+    this.patrimonioProyectadoConsolidadoTotal = c.patrimonioProyectadoConsolidadoTotal;
+    this.patrimonioDesglose = c.patrimonioDesglose;
+    this.capitalRentaFijaConsolidado = c.capitalRentaFijaConsolidado;
+    this.capitalRentaVariableConsolidado = c.capitalRentaVariableConsolidado;
+    this.capitalNotasCreditoConsolidado = c.capitalNotasCreditoConsolidado;
+    
+    this.momPatrimonioBase = c.momPatrimonioBase;
+    this.momPatrimonioConsolidado = c.momPatrimonioConsolidado;
+    this.momProyeccion = c.momProyeccion;
+    this.momIntereses = c.momIntereses;
+    this.momTotalCorriente = c.momTotalCorriente;
+    
+    this.alertaDesviacion = c.alertaDesviacion;
+    this.montoDesviacion = c.montoDesviacion;
+    this.metaEsperadaHoy = c.metaEsperadaHoy;
+    this.tirHistorica = c.tirHistorica;
+  }
+
+  applyTimeMachineSnapshot(snapshot: any): void {
+    // Hero KPIs
+    this.patrimonioBaseCosto = Number(snapshot.patrimonio_base || 0);
+    this.patrimonioConsolidadoTotal = Number(snapshot.patrimonio_consolidado || 0);
+    this.patrimonioProyeccionUnAnio = Number(snapshot.proyeccion_1_ano || 0);
+    this.patrimonioProyectadoConsolidadoTotal = Number(snapshot.patrimonio_proyectado_consolidado || 0);
+    this.interesesEsperadosProyeccion = Number(snapshot.intereses_esperados || 0);
+    this.patrimonioTotalCorriente = Number(snapshot.total_corriente || 0);
+
+    // Chart Data (Desglose simulado para el gráfico)
+    this.capitalRentaFijaConsolidado = Number(snapshot.capital_renta_fija || 0);
+    this.capitalRentaVariableConsolidado = Number(snapshot.capital_renta_variable || 0);
+    this.capitalNotasCreditoConsolidado = Number(snapshot.capital_notas_credito || 0);
+    
+    const mockItems = [
+      { detalle: 'Renta Fija', valor: this.capitalRentaFijaConsolidado },
+      { detalle: 'Renta Variable', valor: this.capitalRentaVariableConsolidado },
+      { detalle: 'Notas de Crédito', valor: this.capitalNotasCreditoConsolidado }
+    ];
+    
+    // MoM for this snapshot (compare against previous snapshot)
+    // Find previous snapshot
+    const idx = this.rawHistoricos.findIndex(h => h.id_historico === snapshot.id_historico);
+    if (idx > 0) {
+      // hay uno anterior
+      const prev = this.rawHistoricos[idx - 1];
+      const calcVar = (actual: number, anterior: number) => {
+        if (!anterior || anterior === 0) return null;
+        return ((actual / anterior) - 1) * 100;
+      };
+      this.momPatrimonioBase = calcVar(this.patrimonioBaseCosto, Number(prev.patrimonio_base || 0));
+      this.momPatrimonioConsolidado = calcVar(this.patrimonioConsolidadoTotal, Number(prev.patrimonio_consolidado || 0));
+      this.momProyeccion = calcVar(this.patrimonioProyectadoConsolidadoTotal, Number(prev.patrimonio_proyectado_consolidado || 0));
+      this.momIntereses = calcVar(this.interesesEsperadosProyeccion, Number(prev.intereses_esperados || 0));
+      this.momTotalCorriente = calcVar(this.patrimonioTotalCorriente, Number(prev.total_corriente || 0));
+    } else {
+      // no hay anterior
+      this.momPatrimonioBase = null;
+      this.momPatrimonioConsolidado = null;
+      this.momProyeccion = null;
+      this.momIntereses = null;
+      this.momTotalCorriente = null;
+    }
+
+    // Disable alerts and TIR in time machine mode to avoid confusion
+    this.alertaDesviacion = false;
+    this.tirHistorica = null;
+    
+    this.buildChartData(mockItems as any);
   }
 
   buildVencimientosChartData(): void {

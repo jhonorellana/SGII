@@ -1,0 +1,164 @@
+<div class="reporte-gerencial-container p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="font-bold text-dark mb-1">
+        <i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i> Resumen Gerencial PDF
+      </h3>
+      <p class="text-muted mb-0">Selecciona dos periodos históricos para generar un reporte comparativo.</p>
+    </div>
+    <a routerLink="/dashboard" class="btn btn-outline-secondary rounded-pill shadow-sm">
+      <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-3 text-muted">Cargando históricos...</p>
+  </div>
+
+  <div *ngIf="error" class="alert alert-warning shadow-sm">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error" class="card border-0 shadow-sm mb-4" style="border-radius: 12px;">
+    <div class="card-body p-4 bg-light" style="border-radius: 12px;">
+      <!-- Controles de Filtro -->
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label font-bold text-secondary text-sm">Snapshot Inicial (Desde)</label>
+          <select class="form-select font-medium shadow-sm" [(ngModel)]="selectedInicioId" (change)="onSeleccionCambiada()">
+            <option *ngFor="let opt of snapshotOptions" [value]="opt.id">{{ opt.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label font-bold text-secondary text-sm">Snapshot Final (Hasta)</label>
+          <select class="form-select font-medium shadow-sm" [(ngModel)]="selectedFinId" (change)="onSeleccionCambiada()">
+            <option *ngFor="let opt of snapshotOptions" [value]="opt.id">{{ opt.label }}</option>
+          </select>
+        </div>
+        <div class="col-md-4 text-end">
+          <button (click)="descargarPDF()" [disabled]="isGeneratingPDF || !snapshotInicio || !snapshotFin" class="btn btn-danger font-bold px-4 shadow rounded-pill d-flex align-items-center justify-content-center w-100 h-100" style="padding-top: 0.6rem; padding-bottom: 0.6rem;">
+            <i class="bi" [ngClass]="isGeneratingPDF ? 'bi-hourglass-split' : 'bi-download'"></i>
+            <span class="ms-2">{{ isGeneratingPDF ? 'Generando PDF...' : 'Descargar Reporte' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Previa (Hoja A4) -->
+  <div *ngIf="!loading && !error && snapshotInicio && snapshotFin" class="pdf-preview-wrapper d-flex justify-content-center mt-5">
+    <div class="a4-sheet shadow-lg bg-white position-relative" #pdfReport>
+      <!-- HEADER DEL REPORTE -->
+      <div class="report-header d-flex justify-content-between align-items-end border-bottom pb-4 mb-4">
+        <div>
+          <h2 class="font-extrabold tracking-tight" style="color: #0f172a; margin-bottom: 0.2rem;">RESUMEN EJECUTIVO DE INVERSIONES</h2>
+          <p class="text-secondary font-medium mb-0">Comparativa Periódica Patrimonial</p>
+        </div>
+        <div class="text-end">
+          <p class="font-mono text-sm text-secondary mb-1">FECHA DE EMISIÓN: {{ hoy | date:'dd/MM/yyyy' }}</p>
+          <div class="badge bg-light text-dark border p-2 text-sm font-semibold">
+            PERIODO: {{ snapshotInicio.fecha_captura }} <i class="bi bi-arrow-right mx-1"></i> {{ snapshotFin.fecha_captura }}
+            <span class="text-muted ms-2 fw-normal">({{ diasPeriodo }} días)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 1: KPIs RESUMEN -->
+      <div class="row g-4 mb-5">
+        <!-- Crecimiento Consolidado -->
+        <div class="col-md-4">
+          <div class="kpi-box border rounded p-3 text-center h-100">
+            <h6 class="text-muted text-uppercase text-xs font-bold tracking-wider mb-2">Crecimiento Consolidado</h6>
+            <h3 class="font-bold mb-1" [ngClass]="crecimientoConsolidadoValor >= 0 ? 'text-success' : 'text-danger'">
+              {{ crecimientoConsolidadoValor > 0 ? '+' : '' }}{{ crecimientoConsolidadoValor | currency:'USD':'symbol':'1.0-0' }}
+            </h3>
+            <span class="badge" [ngClass]="crecimientoConsolidadoPorcentaje >= 0 ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+              <i class="bi" [ngClass]="crecimientoConsolidadoPorcentaje >= 0 ? 'bi-arrow-up' : 'bi-arrow-down'"></i>
+              {{ Math.abs(crecimientoConsolidadoPorcentaje) | number:'1.1-1' }}%
+            </span>
+          </div>
+        </div>
+
+        <!-- Crecimiento Base -->
+        <div class="col-md-4">
+          <div class="kpi-box border rounded p-3 text-center h-100">
+            <h6 class="text-muted text-uppercase text-xs font-bold tracking-wider mb-2">Nuevos Aportes de Capital</h6>
+            <h3 class="font-bold mb-1 text-dark">
+              {{ crecimientoBaseValor > 0 ? '+' : '' }}{{ crecimientoBaseValor | currency:'USD':'symbol':'1.0-0' }}
+            </h3>
+            <span class="badge bg-secondary-subtle text-secondary">
+              Variación de Costo Base
+            </span>
+          </div>
+        </div>
+
+        <!-- TIR -->
+        <div class="col-md-4">
+          <div class="kpi-box border rounded p-3 text-center h-100" style="border-color: #e0e7ff !important; background-color: #f8fafc;">
+            <h6 class="text-muted text-uppercase text-xs font-bold tracking-wider mb-2" style="color: #4338ca !important;">TIR del Periodo</h6>
+            <h3 class="font-bold mb-1" style="color: #4338ca;">
+              {{ tirPeriodo !== null ? (tirPeriodo | number:'1.2-2') + '%' : 'N/A' }}
+            </h3>
+            <span class="badge text-white" style="background-color: #6366f1;">
+              Efectivo Anualizada
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: GRÁFICO COMPARATIVO -->
+      <h5 class="font-bold text-dark mb-3 border-start border-4 border-success ps-2">Evolución del Patrimonio</h5>
+      <div class="chart-container border rounded p-3 mb-5" style="height: 300px; background: #fafafa;">
+        <p-chart type="bar" [data]="barChartData" [options]="barChartOptions" height="260px"></p-chart>
+      </div>
+
+      <!-- SECCIÓN 3: DESGLOSE DE CARTERA (Snapshot Final) -->
+      <h5 class="font-bold text-dark mb-3 border-start border-4 border-primary ps-2">Estado de Cuenta al Cierre del Periodo</h5>
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th class="text-uppercase text-xs font-bold text-muted">Clase de Activo</th>
+            <th class="text-uppercase text-xs font-bold text-muted text-end">Costo Base</th>
+            <th class="text-uppercase text-xs font-bold text-muted text-end">Valor Actual</th>
+            <th class="text-uppercase text-xs font-bold text-muted text-end">Proyección (1 Año)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="font-medium text-dark"><i class="bi bi-bank me-2 text-primary"></i> Renta Fija</td>
+            <td class="text-end text-muted font-mono">{{ snapshotFin.capital_renta_fija | currency:'USD' }}</td>
+            <td class="text-end font-bold text-dark font-mono">{{ snapshotFin.capital_renta_fija | currency:'USD' }}</td>
+            <td class="text-end text-success font-mono">{{ snapshotFin.capital_renta_fija | currency:'USD' }}</td>
+          </tr>
+          <tr>
+            <td class="font-medium text-dark"><i class="bi bi-graph-up me-2 text-success"></i> Renta Variable</td>
+            <td class="text-end text-muted font-mono">{{ snapshotFin.capital_renta_variable | currency:'USD' }}</td>
+            <td class="text-end font-bold text-dark font-mono">{{ snapshotFin.capital_renta_variable | currency:'USD' }}</td>
+            <td class="text-end text-success font-mono">{{ snapshotFin.capital_renta_variable | currency:'USD' }}</td>
+          </tr>
+          <tr>
+            <td class="font-medium text-dark"><i class="bi bi-file-text me-2 text-warning"></i> Notas de Crédito</td>
+            <td class="text-end text-muted font-mono">{{ snapshotFin.capital_notas_credito | currency:'USD' }}</td>
+            <td class="text-end font-bold text-dark font-mono">{{ snapshotFin.capital_notas_credito | currency:'USD' }}</td>
+            <td class="text-end text-success font-mono">{{ snapshotFin.capital_notas_credito | currency:'USD' }}</td>
+          </tr>
+        </tbody>
+        <tfoot class="table-group-divider">
+          <tr>
+            <td class="font-bold text-dark text-uppercase">Total Consolidado</td>
+            <td class="text-end font-bold text-muted font-mono">{{ snapshotFin.patrimonio_base | currency:'USD' }}</td>
+            <td class="text-end font-bold text-dark font-mono fs-6">{{ snapshotFin.patrimonio_consolidado | currency:'USD' }}</td>
+            <td class="text-end font-bold text-success font-mono fs-6">{{ snapshotFin.patrimonio_proyectado_consolidado | currency:'USD' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <!-- FOOTER DEL REPORTE -->
+      <div class="report-footer mt-5 pt-3 border-top text-center">
+        <p class="text-muted text-xs mb-0">Documento generado automáticamente por SIPRO 07 - Sistema de Control y Consolidado de Inversiones.</p>
+        <p class="text-muted text-xs font-mono">ID de Referencia: {{ snapshotInicio.id_historico }}-{{ snapshotFin.id_historico }} | {{ hoy | date:'long' }}</p>
+      </div>
+    </div>
+  </div>
+</div>

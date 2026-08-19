@@ -37,6 +37,7 @@ import { OperacionListComponent } from './modules/renta-variable/operaciones/ope
 import { DividendoListComponent } from './modules/renta-variable/dividendos/dividendo-list.component';
 import { PortfolioDashboardComponent } from './modules/portfolio/portfolio-dashboard/portfolio-dashboard.component';
 import { MarketAnalysisDashboardComponent } from './modules/portfolio/market-analysis-dashboard/market-analysis-dashboard.component';
+import { ResumenGerencialComponent } from './reportes/resumen-gerencial/resumen-gerencial.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -70,6 +71,7 @@ export const routes: Routes = [
       { path: 'reportes/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: 'reportes/historico-patrimonio', component: HistoricoPatrimonioReportComponent },
       { path: 'reportes/tendencias-historicas', component: TendenciasHistoricasComponent },
+      { path: 'reportes/resumen-gerencial', component: ResumenGerencialComponent },
       { path: 'historico-patrimonio', component: HistoricoPatrimonioListComponent },
       { path: 'otros-valores', component: OtrosValoresListComponent },
       { path: 'cuentas-bancarias', component: CuentaBancariaListComponent },

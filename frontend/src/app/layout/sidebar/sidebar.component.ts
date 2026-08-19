@@ -187,6 +187,11 @@ export class SidebarComponent implements OnInit {
           title: 'Tendencias Analíticas',
           icon: 'bi-graph-up-arrow',
           path: '/reportes/tendencias-historicas'
+        },
+        {
+          title: 'Resumen Gerencial PDF',
+          icon: 'bi-file-earmark-pdf',
+          path: '/reportes/resumen-gerencial'
         }
       ]
     },
