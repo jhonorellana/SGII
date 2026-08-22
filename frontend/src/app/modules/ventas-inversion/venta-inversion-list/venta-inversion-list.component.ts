@@ -160,11 +160,20 @@ export class VentaInversionListComponent implements OnInit {
             return idTipo !== 91;
           });
 
-          this.ventas = ventasFiltradas.map((venta: any) => ({
-            ...venta,
-            inversionDisplay: this.formatInversionDisplay(venta),
-            instrumentoDisplay: this.formatInstrumentoDisplay(venta)
-          }));
+          this.ventas = ventasFiltradas.map((venta: any) => {
+            // Calcular valor_nominal sumando los detalles si existen
+            let vNominal = venta.valorNominalTotal || 0;
+            if (venta.detalles && venta.detalles.length > 0) {
+              vNominal = venta.detalles.reduce((sum: number, d: any) => sum + Number(d.valor_nominal || 0), 0);
+            }
+            
+            return {
+              ...venta,
+              valor_nominal: vNominal,
+              inversionDisplay: this.formatInversionDisplay(venta),
+              instrumentoDisplay: this.formatInstrumentoDisplay(venta)
+            };
+          });
           this.totalRecords = ventasFiltradas.length;
         } else {
           this.error = response.message || 'Error al cargar ventas';
@@ -555,7 +564,8 @@ export class VentaInversionListComponent implements OnInit {
     const instrumento = venta.instrumento;
     const id = venta.id_instrumento || 'N/A';
     const nombre = instrumento.nombre || instrumento.descripcion || 'N/A';
-    return `${id} - ${nombre}`;
+    const nombreCorto = nombre.length > 10 ? nombre.substring(10).trim() : nombre;
+    return `${id} - ${nombreCorto}`;
   }
 
   formatPercentage(value: number | null | undefined): string {

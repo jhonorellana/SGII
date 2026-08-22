@@ -99,7 +99,8 @@ export class TendenciasHistoricasComponent implements OnInit {
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { color: textColor } },
-        tooltip: createStackedTooltipOptions('$')
+        tooltip: createStackedTooltipOptions('$'),
+        datalabels: { display: false }
       },
       scales: {
         x: { ticks: { color: textColorSecondary }, grid: { color: surfaceBorder } },
@@ -142,7 +143,8 @@ export class TendenciasHistoricasComponent implements OnInit {
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { color: textColor } },
-        tooltip: createStackedTooltipOptions('$')
+        tooltip: createStackedTooltipOptions('$'),
+        datalabels: { display: false }
       },
       scales: {
         x: { stacked: true, ticks: { color: textColorSecondary }, grid: { color: surfaceBorder } },
@@ -182,7 +184,8 @@ export class TendenciasHistoricasComponent implements OnInit {
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { color: textColor } },
-        tooltip: createStackedTooltipOptions('$')
+        tooltip: createStackedTooltipOptions('$'),
+        datalabels: { display: false }
       },
       scales: {
         x: { stacked: true, ticks: { color: textColorSecondary }, grid: { color: surfaceBorder } },
@@ -222,7 +225,8 @@ export class TendenciasHistoricasComponent implements OnInit {
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { color: textColor } },
-        tooltip: createStackedTooltipOptions('$')
+        tooltip: createStackedTooltipOptions('$'),
+        datalabels: { display: false }
       },
       scales: {
         x: { ticks: { color: textColorSecondary }, grid: { color: surfaceBorder } },
