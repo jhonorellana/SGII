@@ -22,6 +22,8 @@ import { TabViewModule } from 'primeng/tabview';
 import { ModalActionsComponent } from '../../../core/modal-actions';
 import { AmortizacionService } from '../../../core/amortizacion.service';
 import { InputTextModule } from 'primeng/inputtext';
+import { InversionService } from '../../../core/inversion.service';
+import { forkJoin } from 'rxjs';
 
 export interface FlujoCapitalItem {
   fecha: string;
@@ -55,7 +57,7 @@ export interface FlujoCapitalItem {
     InputTextModule,
     ModalActionsComponent
   ],
-  providers: [MessageService, ModalActionsComponent],
+  providers: [MessageService, ModalActionsComponent, InversionService],
   templateUrl: './flujo-capital-consolidado.component.html',
   styleUrls: ['./flujo-capital-consolidado.component.css']
 })
@@ -111,6 +113,10 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   loadingAmortizacion = false;
   editingAmortizacionId: number | null = null;
   amortizacionOriginal: any = null;
+  selectedAmortizacionDetalle: any = null;
+  
+  // Resumen de Inversión
+  inversionResumen: any = null;
 
   currentUser: any = null;
   gruposFamiliares: any[] = [];
@@ -122,6 +128,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     private grupoFamiliarService: GrupoFamiliarService,
     private personaService: PersonaService,
     private amortizacionService: AmortizacionService,
+    private inversionService: InversionService,
     private messageService: MessageService,
     private authService: AuthService
   ) { }
@@ -987,6 +994,49 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     this.loadingAmortizacion = true;
     this.displayEditAmortizacionDialog = true;
     this.editingAmortizacionId = item.id_amortizacion;
+    this.selectedAmortizacionDetalle = item;
+    this.inversionResumen = null;
+
+    // Load Inversion for summary
+    forkJoin({
+      inv: this.inversionService.getById(item.id_inversion),
+      amortizaciones: this.amortizacionService.getByInversion(item.id_inversion)
+    }).subscribe({
+      next: ({ inv, amortizaciones }: any) => {
+        let valorNominalOriginal = Number(inv.valor_nominal || 0);
+        let capitalInvertidoOriginal = Number(inv.capital_invertido || 0);
+
+        let capitalRecibido = 0;
+        let interesRecibido = 0;
+        let interesEsperado = 0;
+
+        (amortizaciones || []).forEach((a: any) => {
+          const cap = Number(a.capital || 0);
+          const int = Number(a.interes || 0);
+          const pagada = a.id_estado_amortizacion === 135 || a.estado_amortizacion === 'Pagado' || a.pagada_old === 1;
+          
+          interesEsperado += int;
+          
+          if (pagada) {
+            capitalRecibido += cap;
+            interesRecibido += int;
+          }
+        });
+
+        this.inversionResumen = {
+          valorNominalOriginal: valorNominalOriginal,
+          valorNominalRecibido: capitalRecibido,
+          valorNominalPendiente: Math.max(0, valorNominalOriginal - capitalRecibido),
+          capitalInvertidoOriginal: capitalInvertidoOriginal,
+          capitalInvertidoRecibido: valorNominalOriginal > 0 ? (capitalRecibido / valorNominalOriginal) * capitalInvertidoOriginal : 0,
+          capitalInvertidoPendiente: valorNominalOriginal > 0 ? Math.max(0, capitalInvertidoOriginal - ((capitalRecibido / valorNominalOriginal) * capitalInvertidoOriginal)) : capitalInvertidoOriginal,
+          interesTotalEsperado: interesEsperado,
+          interesTotalRecibido: interesRecibido,
+          interesTotalPendiente: Math.max(0, interesEsperado - interesRecibido)
+        };
+      },
+      error: (err) => console.error('Error cargando inversión y amortizaciones:', err)
+    });
     
     this.amortizacionService.getById(item.id_amortizacion).subscribe({
       next: (data) => {
@@ -1033,6 +1083,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       next: () => {
         this.loadingAmortizacion = false;
         this.displayEditAmortizacionDialog = false;
+        this.selectedAmortizacionDetalle = null;
+        this.inversionResumen = null;
         this.messageService.add({severity: 'success', summary: 'Éxito', detail: 'Amortización actualizada correctamente'});
         
         // Recargar detalle si es posible
@@ -1052,6 +1104,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     this.displayEditAmortizacionDialog = false;
     this.editingAmortizacionId = null;
     this.amortizacionOriginal = null;
+    this.selectedAmortizacionDetalle = null;
+    this.inversionResumen = null;
     this.amortizacionForm.reset();
   }
 }

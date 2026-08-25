@@ -344,6 +344,45 @@
       <p class="mt-2">Cargando datos...</p>
     </div>
     
+    <div *ngIf="!loadingAmortizacion && selectedAmortizacionDetalle" class="alert alert-info mb-4" role="alert" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 12px; border-radius: 6px;">
+      <div class="row">
+        <div class="col-md-6 mb-2"><strong>ID Inversión:</strong> {{ selectedAmortizacionDetalle.id_inversion }}</div>
+        <div class="col-md-6 mb-2"><strong>Liquidación:</strong> {{ selectedAmortizacionDetalle.liquidacion }}</div>
+        <div class="col-md-12 mb-2"><strong>Instrumento:</strong> {{ selectedAmortizacionDetalle.nombre_instrumento }}</div>
+        <div class="col-md-6 mb-2"><strong>Propietario:</strong> {{ selectedAmortizacionDetalle.propietario }}</div>
+        <div class="col-md-6 mb-2"><strong>Cuota No.:</strong> {{ selectedAmortizacionDetalle.cuota }}</div>
+      </div>
+      
+      <hr style="border-color: #bae6fd; margin-top: 5px; margin-bottom: 10px;">
+      
+      <!-- Indicadores de la Inversión -->
+      <div *ngIf="inversionResumen" class="row small mt-2">
+        <div class="col-md-4 mb-2">
+          <strong>Capital Invertido Original:</strong> <br>{{ inversionResumen.capitalInvertidoOriginal | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <strong>Capital Invertido Recibido:</strong> <br>{{ inversionResumen.capitalInvertidoRecibido | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <strong>Capital Invertido Pendiente:</strong> <br>{{ inversionResumen.capitalInvertidoPendiente | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+
+        <div class="col-md-4 mb-2">
+          <strong>Interés Total Esperado:</strong> <br>{{ inversionResumen.interesTotalEsperado | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <strong>Interés Total Recibido:</strong> <br>{{ inversionResumen.interesTotalRecibido | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <strong>Interés Total Pendiente:</strong> <br>{{ inversionResumen.interesTotalPendiente | currency:'COP':'symbol-narrow':'1.2-2' }}
+        </div>
+      </div>
+      
+      <div *ngIf="!inversionResumen" class="text-center small py-2">
+        <p-progressSpinner [style]="{width: '20px', height: '20px'}"></p-progressSpinner> <span class="ms-2">Cargando indicadores financieros...</span>
+      </div>
+    </div>
+
     <form *ngIf="!loadingAmortizacion && amortizacionOriginal" [formGroup]="amortizacionForm">
       <div class="row">
         <div class="col-md-6 mb-3">
