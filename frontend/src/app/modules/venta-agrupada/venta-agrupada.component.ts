@@ -683,6 +683,58 @@ export class VentaAgrupadaComponent implements OnInit {
            this.inversiones.every(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
   }
 
+  copiarResumenDiario(): void {
+    if (this.inversionesSeleccionadasCount === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Seleccione al menos una nota de crédito para generar el resumen.'
+      });
+      return;
+    }
+
+    const cantidad = this.inversionesSeleccionadasCount;
+    const nominal = this.formatCurrency(this.valorNominalTotal);
+    const capital = this.formatCurrency(this.valorCompraTotal);
+    const diferencia = this.formatCurrency(this.valorNominalTotal - this.valorCompraTotal);
+    const dias = this.diasTranscurridos;
+
+    const bromas = [
+      "El mercado de valores está lleno de individuos que conocen el precio de todo, pero el valor de nada. ¡A comprar y vender se ha dicho! 🚀",
+      "Si la inversión fuera fácil, no sería tan divertido. ¡A ver qué nos depara el mercado hoy! 💼",
+      "El único lugar donde el éxito viene antes que el trabajo es en el diccionario... y a veces en un buen golpe de suerte con estas notas. ¡Vamos! 🍀",
+      "El dinero nunca duerme, y parece que estas notas de crédito tampoco. ¡Que tengamos una excelente jornada! 🌅",
+      "Dicen que la paciencia es amarga, pero sus frutos son dulces. ¡A cosechar buenas transacciones hoy! 🍎"
+    ];
+    
+    const bromaAleatoria = bromas[Math.floor(Math.random() * bromas.length)];
+
+    const diasText = dias > 0 ? ` (con ${dias} días transcurridos)` : '';
+
+    const mensaje = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n\n` +
+                    `📊 *Resumen de la cartera seleccionada:*\n` +
+                    `• 📝 *Cantidad:* ${cantidad}\n` +
+                    `• 💰 *Nominal Total:* ${nominal}\n` +
+                    `• 💵 *Capital Invertido:* ${capital}\n` +
+                    `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n\n` +
+                    `_${bromaAleatoria}_`;
+
+    navigator.clipboard.writeText(mensaje).then(() => {
+      this.messageService.add({
+        severity: 'success',
+        summary: '¡Copiado!',
+        detail: 'El resumen diario ha sido copiado al portapapeles.'
+      });
+    }).catch(err => {
+      console.error('Error al copiar: ', err);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo copiar el texto automáticamente.'
+      });
+    });
+  }
+
   onPageChange(event: any): void {
     this.rowsPerPage = event.rows;
     this.paginationService.setRowsPerPage('ventaAgrupada', this.rowsPerPage);
