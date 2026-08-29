@@ -22,7 +22,7 @@
           </select>
         </div>
 
-        <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-outline-light font-bold shadow-sm rounded-pill px-3">
+        <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
           <i class="bi bi-camera me-1"></i> Guardar Histórico
         </button>
         <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
@@ -541,11 +541,13 @@
       <!-- Columna 1: Gráfico y Componentes del Patrimonio -->
       <div class="col-lg-7">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-          <div class="card-header bg-light border-bottom py-3 d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 font-bold text-dark d-flex align-items-center gap-2">
-              <i class="bi bi-pie-chart-fill text-success"></i> Distribución del Patrimonio
+          <div class="card-header app-custom-header d-flex justify-content-between align-items-center" style="border-top-left-radius: inherit; border-top-right-radius: inherit;">
+            <h5 class="mb-0 font-bold d-flex align-items-center gap-2">
+              <i class="bi bi-pie-chart-fill"></i> Distribución del Patrimonio
             </h5>
-            <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-sm btn-outline-success">Ver Reporte</a>
+            <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-sm rounded-pill px-3 fw-bold bg-white text-success shadow-sm btn-report-header" style="border: none;">
+              Ver Reporte <i class="bi bi-arrow-right ms-1 text-success"></i>
+            </a>
           </div>
           <div class="card-body">
             <div *ngIf="chartData" class="row align-items-center g-3">
@@ -599,14 +601,16 @@
       <!-- Columna 2: Vencimientos y Cobros de la Semana -->
       <div class="col-lg-5">
         <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
-          <div class="card-header bg-light border-bottom py-3 d-flex justify-content-between align-items-center">
+          <div class="card-header app-custom-header d-flex justify-content-between align-items-center" style="border-top-left-radius: inherit; border-top-right-radius: inherit;">
             <div>
-              <h5 class="mb-0 font-bold text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-calendar2-check-fill text-warning me-1"></i> Cobros de la Semana
+              <h5 class="mb-0 font-bold d-flex align-items-center gap-2">
+                <i class="bi bi-calendar2-check-fill me-1"></i> Cobros de la Semana
               </h5>
-              <small class="text-muted font-medium" style="font-size: 0.72rem;">Horizonte Semanal (Sábado a Viernes)</small>
+              <small class="font-medium" style="font-size: 0.72rem;">Horizonte Semanal (Sábado a Viernes)</small>
             </div>
-            <a routerLink="/reportes/vencimientos-semanales" class="btn btn-sm btn-outline-warning">Ver Reporte</a>
+            <a routerLink="/reportes/vencimientos-semanales" class="btn btn-sm rounded-pill px-3 fw-bold bg-white text-success shadow-sm btn-report-header" style="border: none;">
+              Ver Reporte <i class="bi bi-arrow-right ms-1 text-success"></i>
+            </a>
           </div>
           <div class="card-body p-3 d-flex flex-column justify-content-center align-items-center" *ngIf="isTimeMachineActive">
             <i class="bi bi-clock-history text-muted mb-2" style="font-size: 3rem; opacity: 0.3;"></i>

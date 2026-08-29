@@ -191,3 +191,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Estilos para los botones de las cabeceras de tarjeta */
+.btn-report-header {
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-report-header:hover {
+  background-color: #f0fdf4 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Sobrescribir el estilo global de .app-custom-header i para mantener el icono verde */
+.app-custom-header a.btn-report-header i {
+  color: inherit !important;
+}
