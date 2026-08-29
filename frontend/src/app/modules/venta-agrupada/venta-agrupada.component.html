@@ -56,11 +56,11 @@
         pButton
         type="button"
         label="Copiar Resumen"
-        icon="pi pi-copy"
-        [disabled]="inversionesSeleccionadasCount === 0"
-        (click)="copiarResumenDiario()"
-        class="p-button-outlined p-button-secondary shadow-sm w-100"
-        style="border-radius: 8px; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; white-space: normal; background-color: #f8f9fa;">
+        [icon]="generandoMensaje ? 'pi pi-spinner pi-spin' : 'pi pi-copy'"
+        [disabled]="inversionesSeleccionadasCount === 0 || generandoMensaje"
+        (click)="abrirModalIA()"
+        class="p-button-outlined p-button-success w-100 btn-sm shadow-sm"
+        style="height: 38px; border-radius: 8px; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; white-space: normal;">
       </button>
       <button
         pButton
@@ -462,6 +462,78 @@
       (onCancel)="cancelarVenta()"
       (onSave)="confirmarVenta()">
     </app-modal-actions>
+  </ng-template>
+</p-dialog>
+
+<!-- Modal Personalizar IA -->
+<p-dialog
+  header="Personalizar Mensaje Diario (IA)"
+  [(visible)]="displayModalIA"
+  [style]="{width: '680px', 'max-width': '95vw'}"
+  [modal]="true"
+  [baseZIndex]="10000">
+  
+  <div class="mb-3">
+    <label class="form-label fw-bold text-secondary mb-1">
+      <i class="pi pi-sparkles text-primary me-1"></i> 1. Novedades del Mercado / Contexto (Renta Variable):
+    </label>
+    <textarea
+      pInputTextarea
+      [(ngModel)]="contextoIA"
+      rows="5"
+      placeholder="Cargando posiciones reales del portafolio..."
+      class="w-100 p-inputtext-sm form-control"
+      style="width: 100%; resize: vertical; font-family: monospace; font-size: 0.8rem; line-height: 1.35;">
+    </textarea>
+  </div>
+
+  <div class="mb-2">
+    <label class="form-label fw-bold text-secondary mb-1">
+      <i class="pi pi-file-edit text-success me-1"></i> 2. Mensaje Final Generado (Editable antes de copiar):
+    </label>
+    <textarea
+      pInputTextarea
+      [(ngModel)]="mensajeGeneradoIA"
+      rows="5"
+      placeholder="Haz clic en 'Generar Mensaje con IA' para obtener el borrador..."
+      class="w-100 p-inputtext-sm form-control"
+      style="width: 100%; resize: vertical; font-family: monospace; font-size: 0.82rem; line-height: 1.35;">
+    </textarea>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="d-flex justify-content-between align-items-center w-100">
+      <button
+        pButton
+        type="button"
+        label="Cancelar"
+        icon="pi pi-times"
+        class="p-button-outlined p-button-secondary"
+        (click)="displayModalIA = false">
+      </button>
+
+      <div class="d-flex gap-2">
+        <button
+          pButton
+          type="button"
+          label="Generar Mensaje con IA"
+          [icon]="generandoMensaje ? 'pi pi-spinner pi-spin' : 'pi pi-bolt'"
+          class="p-button-primary fw-bold"
+          [disabled]="generandoMensaje"
+          (click)="generarMensajeIA()">
+        </button>
+
+        <button
+          pButton
+          type="button"
+          label="Copiar al Portapapeles"
+          icon="pi pi-copy"
+          class="p-button-success"
+          [disabled]="!mensajeGeneradoIA"
+          (click)="copiarMensajeFinalIA()">
+        </button>
+      </div>
+    </div>
   </ng-template>
 </p-dialog>
 

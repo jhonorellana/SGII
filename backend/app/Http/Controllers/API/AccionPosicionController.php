@@ -39,8 +39,18 @@ class AccionPosicionController extends Controller
             $request->id_instrumento ?: null
         );
 
-        // Mapear los costos en las posiciones
-        $posicionesMap = $posiciones->map(function ($pos) use ($costos) {
+        // Obtener cierres y variaciones diarias directamente desde shares_lastdate
+        $lastDates = [];
+        try {
+            $lastDates = DB::connection('mysql_inversion')
+                ->table('shares_lastdate')
+                ->get();
+        } catch (\Exception $ex) {
+            // Silencioso si no hay conexión a mysql_inversion
+        }
+
+        // Mapear los costos y variaciones en las posiciones
+        $posicionesMap = $posiciones->map(function ($pos) use ($costos, $lastDates) {
             $key = $pos->id_persona . '_' . $pos->id_instrumento;
             
             $cpu = 0.0;
@@ -58,6 +68,47 @@ class AccionPosicionController extends Controller
             $pos->costo_promedio_unitario = $cpu;
             $pos->capital_invertido = $capitalInvertido;
             $pos->utilidad_perdida_no_realizada = $utilidadPerdidaNoRealizada;
+
+            // Buscar coincidencia en shares_lastdate por nombre de instrumento/emisor primero
+            $v = null;
+            foreach ($lastDates as $ld) {
+                if ($this->matchEmisor($pos->instrumento, $ld->SHA_ISSUER) || $this->matchEmisor($pos->emisor_nombre, $ld->SHA_ISSUER)) {
+                    $v = $ld;
+                    break;
+                }
+            }
+            if (!$v) {
+                foreach ($lastDates as $ld) {
+                    if (!empty($ld->SHA_ISSUER_ID) && $pos->id_emisor == $ld->SHA_ISSUER_ID) {
+                        $v = $ld;
+                        break;
+                    }
+                }
+            }
+
+            if ($v) {
+                $precioUlt = (float)($v->AVG_PRICE ?? $v->MAX_PRICE ?? $pos->precio_ultimo);
+                if ($precioUlt > 0) {
+                    $pos->precio_ultimo = $precioUlt;
+                    $pos->valor_mercado = (float)$pos->cantidad_actual * $precioUlt;
+                    $pos->utilidad_perdida_no_realizada = $pos->valor_mercado - $capitalInvertido;
+                }
+
+                $pos->precio_anterior = (float)($v->PREV_AVG_PRICE ?? 0);
+                $pos->fecha_anterior = $v->PREV_DATE ?? null;
+                $pos->cambio_diario = (float)($v->DAILY_CHANGE ?? 0);
+                $pos->variacion_diaria_pct = (float)($v->DAILY_VARIATION_PCT ?? 0);
+                $pos->tendencia_diaria = $pos->cambio_diario > 0 ? 'SUBIO' : ($pos->cambio_diario < 0 ? 'BAJO' : 'IGUAL');
+                if (!empty($v->MAX_DATE)) {
+                    $pos->fecha_ultimo_precio = $v->MAX_DATE;
+                }
+            } else {
+                $pos->precio_anterior = null;
+                $pos->fecha_anterior = null;
+                $pos->cambio_diario = 0;
+                $pos->variacion_diaria_pct = 0;
+                $pos->tendencia_diaria = 'IGUAL';
+            }
 
             return $pos;
         });
@@ -191,5 +242,34 @@ class AccionPosicionController extends Controller
         }
 
         return $costos;
+    }
+
+    private function matchEmisor($name1, $name2)
+    {
+        if (empty($name1) || empty($name2)) return false;
+        $n1 = trim(mb_strtoupper($name1));
+        $n2 = trim(mb_strtoupper($name2));
+        if ($n1 === $n2) return true;
+
+        $clean1 = preg_replace('/[^A-Z0-9]/', '', $n1);
+        $clean2 = preg_replace('/[^A-Z0-9]/', '', $n2);
+        if (!empty($clean1) && !empty($clean2)) {
+            if ($clean1 === $clean2) return true;
+            if (strlen($clean1) >= 5 && strlen($clean2) >= 5) {
+                if (strpos($clean1, $clean2) !== false || strpos($clean2, $clean1) !== false) return true;
+            }
+        }
+
+        $ignore = ['BANCO', 'DE', 'LA', 'EL', 'LOS', 'LAS', 'SA', 'CA', 'SOCIEDAD', 'ANONIMA', 'CORPORACION', 'COMPANIA', 'FONDO', 'INVERSION', 'ACCIONES'];
+        $words1 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n1)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
+        $words2 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n2)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
+
+        foreach ($words1 as $w1) {
+            foreach ($words2 as $w2) {
+                if ($w1 === $w2) return true;
+            }
+        }
+
+        return false;
     }
 }

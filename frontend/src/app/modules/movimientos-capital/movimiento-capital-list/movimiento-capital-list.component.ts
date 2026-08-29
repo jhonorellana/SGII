@@ -17,6 +17,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { CardModule } from 'primeng/card';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { MovimientoCapitalService, MovimientoCapital } from '../../../core/movimiento-capital.service';
+import { AccionPosicionService } from '../../../core/accion-posicion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
 import { CuentaBancariaService, CuentaBancaria } from '../../../core/cuenta-bancaria.service';
@@ -99,6 +100,10 @@ export class MovimientoCapitalListComponent implements OnInit {
 
   // Modal properties
   displayDialog: boolean = false;
+  generandoMensajeCierre: boolean = false;
+  displayModalIACierre: boolean = false;
+  contextoIACierre: string = '';
+  mensajeGeneradoIACierre: string = '';
   isEdit: boolean = false;
   movimientoId: number | null = null;
   movimientoForm: FormGroup;
@@ -112,6 +117,7 @@ export class MovimientoCapitalListComponent implements OnInit {
 
   constructor(
     private movimientoService: MovimientoCapitalService,
+    private accionPosicionService: AccionPosicionService,
     private catalogoService: CatalogoService,
     private inversionService: InversionService,
     private accionOperacionService: AccionOperacionService,
@@ -787,6 +793,187 @@ export class MovimientoCapitalListComponent implements OnInit {
       this.saldoEsperado = 0;
     }
   }
+
+  abrirModalIACierre(): void {
+    this.mensajeGeneradoIACierre = '';
+    this.displayModalIACierre = true;
+
+    // Cargar posiciones reales de renta variable para auto-llenar la caja de texto
+    this.accionPosicionService.getPosiciones().subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          const emisoresMap: {
+            [key: string]: {
+              precio: number;
+              capital: number;
+              mercado: number;
+              tendenciaDiaria: string;
+              cambioDiario: number;
+              varDiariaPct: number;
+            }
+          } = {};
+
+          res.data.forEach((p: any) => {
+            const emisor = (p.emisor_nombre || p.instrumento || 'Acción').trim();
+            const precio = p.precio_ultimo ? Number(p.precio_ultimo) : 0;
+            const cap = p.capital_invertido ? Number(p.capital_invertido) : 0;
+            const merc = p.valor_mercado ? Number(p.valor_mercado) : (p.cantidad_actual ? Number(p.cantidad_actual) * precio : 0);
+            const tendenciaDiaria = p.tendencia_diaria || 'IGUAL';
+            const cambioDiario = p.cambio_diario ? Number(p.cambio_diario) : 0;
+            const varDiariaPct = p.variacion_diaria_pct ? Number(p.variacion_diaria_pct) : 0;
+
+            if (!emisoresMap[emisor]) {
+              emisoresMap[emisor] = {
+                precio,
+                capital: 0,
+                mercado: 0,
+                tendenciaDiaria,
+                cambioDiario,
+                varDiariaPct
+              };
+            }
+            if (precio > 0) emisoresMap[emisor].precio = precio;
+            emisoresMap[emisor].capital += cap;
+            emisoresMap[emisor].mercado += merc;
+            if (tendenciaDiaria !== 'IGUAL') {
+              emisoresMap[emisor].tendenciaDiaria = tendenciaDiaria;
+              emisoresMap[emisor].cambioDiario = cambioDiario;
+              emisoresMap[emisor].varDiariaPct = varDiariaPct;
+            }
+          });
+
+          const lineas: string[] = [];
+          Object.keys(emisoresMap).forEach(emisor => {
+            const d = emisoresMap[emisor];
+            const varPct = d.capital > 0 ? ((d.mercado - d.capital) / d.capital) * 100 : 0;
+            const signoStr = varPct >= 0 ? '+' : '';
+
+            let diarioText = '';
+            if (d.tendenciaDiaria === 'SUBIO') {
+              diarioText = ` | 📈 subió +$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (+${d.varDiariaPct.toFixed(2)}%)`;
+            } else if (d.tendenciaDiaria === 'BAJO') {
+              diarioText = ` | 🔻 bajó -$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (${d.varDiariaPct.toFixed(2)}%)`;
+            } else {
+              diarioText = ` | ➡️ sin cambio vs registro anterior`;
+            }
+
+            lineas.push(`• ${emisor}: $${d.precio.toFixed(2)} (${signoStr}${varPct.toFixed(2)}% acum.)${diarioText}`);
+          });
+
+          this.contextoIACierre = `📊 Resumen Cierre de Renta Variable (Portafolio):\n` + lineas.join('\n');
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar posiciones para IA cierre:', err);
+      }
+    });
+  }
+
+  generarMensajeIACierre(): void {
+    this.generandoMensajeCierre = true;
+
+    // Asegurar que los saldos estén recién calculados
+    this.calculateSaldoAcumulado();
+
+    // Filtrar saldos por persona y total general (excluir ceros)
+    const saldosActivos: string[] = [];
+
+    if (this.saldosPorPersona) {
+      Object.values(this.saldosPorPersona).forEach(p => {
+        if (p && p.nombre) {
+          const saldoNum = typeof p.saldo === 'number' ? p.saldo : parseFloat(String(p.saldo || '0'));
+          if (!isNaN(saldoNum) && Math.abs(saldoNum) > 0.005) {
+            saldosActivos.push(`• 👤 *${p.nombre}:* ${this.formatCurrency(saldoNum)}`);
+          }
+        }
+      });
+    }
+
+    const saldosTexto = saldosActivos.length > 0
+      ? saldosActivos.join('\n')
+      : '• _No hay saldos activos de clientes_';
+
+    this.movimientoService.getBromaCierre(this.contextoIACierre).subscribe({
+      next: (response: any) => {
+        let broma = "¡Cierre contable listo! 📊";
+        if (response.success && response.data) {
+          broma = response.data;
+        }
+
+        this.mensajeGeneradoIACierre = `🌙 *¡Buenas tardes! Así se cierra la contabilidad el día de hoy:*\n` +
+          `👥 *Saldos por Persona (Activos):*\n` +
+          `${saldosTexto}\n\n` +
+          `_${broma}_`;
+
+        this.generandoMensajeCierre = false;
+        this.messageService.add({
+          severity: 'info',
+          summary: '¡Mensaje Generado!',
+          detail: 'Puedes revisar o editar el mensaje antes de copiarlo.'
+        });
+      },
+      error: (err: any) => {
+        console.error('Error al obtener broma cierre:', err);
+        this.mensajeGeneradoIACierre = `🌙 *¡Buenas tardes! Así se cierra la contabilidad el día de hoy:*\n` +
+          `👥 *Saldos por Persona (Activos):*\n` +
+          `${saldosTexto}\n\n` +
+          `_¡Cierre contable guardado!_ 📊`;
+
+        this.generandoMensajeCierre = false;
+      }
+    });
+  }
+
+  copiarMensajeFinalIACierre(): void {
+    if (!this.mensajeGeneradoIACierre) return;
+
+    this.copiarTextoAlPortapapeles(this.mensajeGeneradoIACierre).then((exito) => {
+      if (exito) {
+        this.messageService.add({
+          severity: 'success',
+          summary: '¡Copiado!',
+          detail: 'El cierre diario ha sido copiado al portapapeles.'
+        });
+        this.displayModalIACierre = false;
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo copiar el texto automáticamente.'
+        });
+      }
+    });
+  }
+
+  copiarTextoAlPortapapeles(texto: string): Promise<boolean> {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(texto)
+        .then(() => true)
+        .catch(() => this.fallbackCopiarTexto(texto));
+    } else {
+      return Promise.resolve(this.fallbackCopiarTexto(texto));
+    }
+  }
+
+  fallbackCopiarTexto(texto: string): boolean {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = texto;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const exito = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return exito;
+    } catch (err) {
+      console.error('Error en fallback de copiado:', err);
+      return false;
+    }
+  }
+
 
   calculateSaldoAcumulado(): void {
     // Reset saldos por persona

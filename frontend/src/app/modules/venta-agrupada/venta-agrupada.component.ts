@@ -19,6 +19,10 @@ import { VentaInversionService, VentaAgrupadaRequest } from '../../core/venta-in
 import { PersonaService } from '../../core/persona.service';
 import { ModalActionsComponent } from '../../core/modal-actions';
 import { PaginationService } from '../../core/pagination.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { MovimientoCapitalService } from '../../core/movimiento-capital.service';
+import { AccionPosicionService } from '../../core/accion-posicion.service';
 import { Table } from 'primeng/table';
 
 @Component({
@@ -56,6 +60,10 @@ export class VentaAgrupadaComponent implements OnInit {
   loadingCalculo = false;
   displayDialog = false;
   displayPrevisualizar = false;
+  generandoMensaje = false;
+  displayModalIA = false;
+  contextoIA = '';
+  mensajeGeneradoIA = '';
   rowsPerPage: number = 10;
   rowsPerPageModal: number = 10;
 
@@ -68,6 +76,8 @@ export class VentaAgrupadaComponent implements OnInit {
     private inversionService: InversionService,
     private ventaService: VentaInversionService,
     private personaService: PersonaService,
+    private movimientoCapitalService: MovimientoCapitalService,
+    private accionPosicionService: AccionPosicionService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
     private paginationService: PaginationService
@@ -97,7 +107,7 @@ export class VentaAgrupadaComponent implements OnInit {
     return this.fb.group({
       id_persona: [null, Validators.required],
       precio: [100, [Validators.min(0), Validators.max(100)]],
-      valor_total_recibido: [{value: null, disabled: true}, [Validators.min(0)]],
+      valor_total_recibido: [{ value: null, disabled: true }, [Validators.min(0)]],
       fecha_venta: [new Date(), Validators.required],
       liquidacion_venta: ['', Validators.required],
       comision_operador: [0, [Validators.min(0)]],
@@ -680,10 +690,10 @@ export class VentaAgrupadaComponent implements OnInit {
 
   get todasInversionesSeleccionadas(): boolean {
     return this.inversiones.length > 0 &&
-           this.inversiones.every(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
+      this.inversiones.every(i => this.inversionesSeleccionadas.includes(i.id_inversion!));
   }
 
-  copiarResumenDiario(): void {
+  abrirModalIA(): void {
     if (this.inversionesSeleccionadasCount === 0) {
       this.messageService.add({
         severity: 'warn',
@@ -693,46 +703,184 @@ export class VentaAgrupadaComponent implements OnInit {
       return;
     }
 
-    const cantidad = this.inversionesSeleccionadasCount;
+    this.mensajeGeneradoIA = '';
+    this.displayModalIA = true;
+
+    // Cargar posiciones reales de renta variable para auto-llenar la caja de texto
+    this.accionPosicionService.getPosiciones().subscribe({
+      next: (res) => {
+        if (res.success && res.data && res.data.length > 0) {
+          const emisoresMap: {
+            [key: string]: {
+              precio: number;
+              capital: number;
+              mercado: number;
+              tendenciaDiaria: string;
+              cambioDiario: number;
+              varDiariaPct: number;
+            }
+          } = {};
+
+          res.data.forEach((p: any) => {
+            const emisor = (p.emisor_nombre || p.instrumento || 'Acción').trim();
+            const precio = p.precio_ultimo ? Number(p.precio_ultimo) : 0;
+            const cap = p.capital_invertido ? Number(p.capital_invertido) : 0;
+            const merc = p.valor_mercado ? Number(p.valor_mercado) : (p.cantidad_actual ? Number(p.cantidad_actual) * precio : 0);
+            const tendenciaDiaria = p.tendencia_diaria || 'IGUAL';
+            const cambioDiario = p.cambio_diario ? Number(p.cambio_diario) : 0;
+            const varDiariaPct = p.variacion_diaria_pct ? Number(p.variacion_diaria_pct) : 0;
+
+            if (!emisoresMap[emisor]) {
+              emisoresMap[emisor] = {
+                precio,
+                capital: 0,
+                mercado: 0,
+                tendenciaDiaria,
+                cambioDiario,
+                varDiariaPct
+              };
+            }
+            if (precio > 0) emisoresMap[emisor].precio = precio;
+            emisoresMap[emisor].capital += cap;
+            emisoresMap[emisor].mercado += merc;
+            if (tendenciaDiaria !== 'IGUAL') {
+              emisoresMap[emisor].tendenciaDiaria = tendenciaDiaria;
+              emisoresMap[emisor].cambioDiario = cambioDiario;
+              emisoresMap[emisor].varDiariaPct = varDiariaPct;
+            }
+          });
+
+          const lineas: string[] = [];
+          Object.keys(emisoresMap).forEach(emisor => {
+            const d = emisoresMap[emisor];
+            const varPct = d.capital > 0 ? ((d.mercado - d.capital) / d.capital) * 100 : 0;
+            const signoStr = varPct >= 0 ? '+' : '';
+
+            let diarioText = '';
+            if (d.tendenciaDiaria === 'SUBIO') {
+              diarioText = ` | 📈 subió +$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (+${d.varDiariaPct.toFixed(2)}%)`;
+            } else if (d.tendenciaDiaria === 'BAJO') {
+              diarioText = ` | 🔻 bajó -$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (${d.varDiariaPct.toFixed(2)}%)`;
+            } else {
+              diarioText = ` | ➡️ sin cambio vs registro anterior`;
+            }
+
+            lineas.push(`• ${emisor}: $${d.precio.toFixed(2)} (${signoStr}${varPct.toFixed(2)}% acum.)${diarioText}`);
+          });
+
+          this.contextoIA = `📊 Resumen de Renta Variable (Portafolio):\n` + lineas.join('\n');
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar posiciones para IA:', err);
+      }
+    });
+  }
+
+  generarMensajeIA(): void {
+    if (this.inversionesSeleccionadasCount === 0) return;
+
+    this.generandoMensaje = true;
+
     const nominal = this.formatCurrency(this.valorNominalTotal);
     const capital = this.formatCurrency(this.valorCompraTotal);
     const diferencia = this.formatCurrency(this.valorNominalTotal - this.valorCompraTotal);
     const dias = this.diasTranscurridos;
-
-    const bromas = [
-      "El mercado de valores está lleno de individuos que conocen el precio de todo, pero el valor de nada. ¡A comprar y vender se ha dicho! 🚀",
-      "Si la inversión fuera fácil, no sería tan divertido. ¡A ver qué nos depara el mercado hoy! 💼",
-      "El único lugar donde el éxito viene antes que el trabajo es en el diccionario... y a veces en un buen golpe de suerte con estas notas. ¡Vamos! 🍀",
-      "El dinero nunca duerme, y parece que estas notas de crédito tampoco. ¡Que tengamos una excelente jornada! 🌅",
-      "Dicen que la paciencia es amarga, pero sus frutos son dulces. ¡A cosechar buenas transacciones hoy! 🍎"
-    ];
-    
-    const bromaAleatoria = bromas[Math.floor(Math.random() * bromas.length)];
-
     const diasText = dias > 0 ? ` (con ${dias} días transcurridos)` : '';
 
-    const mensaje = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n\n` +
-                    `📊 *Resumen de la cartera seleccionada:*\n` +
-                    `• 📝 *Cantidad:* ${cantidad}\n` +
-                    `• 💰 *Nominal Total:* ${nominal}\n` +
-                    `• 💵 *Capital Invertido:* ${capital}\n` +
-                    `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n\n` +
-                    `_${bromaAleatoria}_`;
+    forkJoin({
+      bromaRes: this.ventaService.getBromaDiaria(this.contextoIA).pipe(catchError(() => of(null))),
+      saldoRes: this.movimientoCapitalService.getSaldoEsperado().pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ bromaRes, saldoRes }: any) => {
+        let broma = "¡A comprar y vender se ha dicho! 🚀";
+        if (bromaRes && bromaRes.success && bromaRes.data) {
+          broma = bromaRes.data;
+        }
 
-    navigator.clipboard.writeText(mensaje).then(() => {
-      this.messageService.add({
-        severity: 'success',
-        summary: '¡Copiado!',
-        detail: 'El resumen diario ha sido copiado al portapapeles.'
-      });
-    }).catch(err => {
-      console.error('Error al copiar: ', err);
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo copiar el texto automáticamente.'
-      });
+        let saldoDisponibleLine = '';
+        if (saldoRes) {
+          const saldoVal = saldoRes.saldo_esperado !== undefined ? saldoRes.saldo_esperado : (saldoRes.data ? (saldoRes.data as any).saldo_esperado : null);
+          if (saldoVal !== null && saldoVal !== undefined) {
+            saldoDisponibleLine = `• 💳 *Saldo disponible para inversión:* ${this.formatCurrency(saldoVal)}\n`;
+          }
+        }
+
+        this.mensajeGeneradoIA = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n` +
+          `• 💰 *Nominal Total:* ${nominal}\n` +
+          `• 💵 *Capital Invertido:* ${capital}\n` +
+          `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n` +
+          `${saldoDisponibleLine}\n` +
+          `_${broma}_`;
+
+        this.generandoMensaje = false;
+        this.messageService.add({
+          severity: 'info',
+          summary: '¡Mensaje Generado!',
+          detail: 'Puedes revisar o editar el mensaje antes de copiarlo.'
+        });
+      },
+      error: (err: any) => {
+        console.error('Error al generar resumen:', err);
+        this.mensajeGeneradoIA = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n` +
+          `• 💰 *Nominal Total:* ${nominal}\n` +
+          `• 💵 *Capital Invertido:* ${capital}\n` +
+          `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n\n` +
+          `_¡A seguir moviendo esas notas en el mercado!_ 🚀`;
+
+        this.generandoMensaje = false;
+      }
     });
+  }
+
+  copiarMensajeFinalIA(): void {
+    if (!this.mensajeGeneradoIA) return;
+
+    this.copiarTextoAlPortapapeles(this.mensajeGeneradoIA).then((exito) => {
+      if (exito) {
+        this.messageService.add({
+          severity: 'success',
+          summary: '¡Copiado!',
+          detail: 'El resumen diario ha sido copiado al portapapeles.'
+        });
+        this.displayModalIA = false;
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo copiar el texto automáticamente.'
+        });
+      }
+    });
+  }
+
+  copiarTextoAlPortapapeles(texto: string): Promise<boolean> {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(texto)
+        .then(() => true)
+        .catch(() => this.fallbackCopiarTexto(texto));
+    } else {
+      return Promise.resolve(this.fallbackCopiarTexto(texto));
+    }
+  }
+
+  fallbackCopiarTexto(texto: string): boolean {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = texto;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const exito = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      return exito;
+    } catch (err) {
+      console.error('Error en fallback de copiado:', err);
+      return false;
+    }
   }
 
   onPageChange(event: any): void {

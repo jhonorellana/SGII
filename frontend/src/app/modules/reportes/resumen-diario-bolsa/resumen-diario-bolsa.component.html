@@ -204,7 +204,94 @@
           </div>
         </p-tabPanel>
 
-        <!-- Pestaña Renta Variable -->
+        <!-- Pestaña Cierres de Mercado (Pestaña Principal #1) -->
+        <p-tabPanel header="Cierres de Acciones (Mercado)">
+          <div class="table-container">
+            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="rowsPerPageCierres" (onPage)="onPageChangeCierres($event)" stateStorage="session" stateKey="resumen-bolsa-cierres-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio','fecha_anterior','precio_maximo_anterior','precio_minimo_anterior','precio_anterior','cambio_diario','variacion_diaria_pct']">
+              <ng-template pTemplate="caption">
+                <div class="d-flex justify-content-between align-items-center table-header-caption">
+                  <span class="table-caption-title">Cierres de Mercado</span>
+                  <span class="p-input-icon-left search-wrapper">
+                    <i class="pi pi-search"></i>
+                    <input pInputText type="text" (input)="dtCierres.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en cierres..." class="p-inputtext-sm search-filter-input" />
+                  </span>
+                </div>
+              </ng-template>
+
+              <ng-template pTemplate="header">
+                <!-- Fila 1: Grupos de Columnas -->
+                <tr>
+                  <th rowspan="2" pSortableColumn="emisor" style="width: 250px; min-width: 220px; border-right: 2px solid #cbd5e1; vertical-align: middle;">
+                    Emisor <p-sortIcon field="emisor"></p-sortIcon>
+                  </th>
+                  <th colspan="4" class="header-grupo-ultimo">
+                    <i class="pi pi-calendar-check me-1"></i> ÚLTIMO CIERRE
+                  </th>
+                  <th colspan="4" class="header-grupo-anterior">
+                    <i class="pi pi-history me-1"></i> CIERRE ANTERIOR
+                  </th>
+                  <th rowspan="2" pSortableColumn="variacion_diaria_pct" class="text-right" style="width: 175px; min-width: 175px; vertical-align: middle;">
+                    Var. Diaria ($ / %) <p-sortIcon field="variacion_diaria_pct"></p-sortIcon>
+                  </th>
+                </tr>
+                <!-- Fila 2: Sub-encabezados -->
+                <tr>
+                  <!-- Bloque 1: Último Cierre -->
+                  <th pSortableColumn="fecha_maxima" class="text-center bg-blue-subtle" style="font-size: 0.78rem; width: 95px;">Fecha <p-sortIcon field="fecha_maxima"></p-sortIcon></th>
+                  <th pSortableColumn="precio_maximo" class="text-right bg-blue-subtle" style="font-size: 0.78rem; width: 85px;">Máximo <p-sortIcon field="precio_maximo"></p-sortIcon></th>
+                  <th pSortableColumn="precio_minimo" class="text-right bg-blue-subtle" style="font-size: 0.78rem; width: 85px;">Mínimo <p-sortIcon field="precio_minimo"></p-sortIcon></th>
+                  <th pSortableColumn="precio_promedio" class="text-right bg-blue-subtle" style="font-size: 0.78rem; width: 90px; border-right: 2px solid #cbd5e1;">Promedio <p-sortIcon field="precio_promedio"></p-sortIcon></th>
+
+                  <!-- Bloque 2: Cierre Anterior -->
+                  <th pSortableColumn="fecha_anterior" class="text-center bg-slate-subtle" style="font-size: 0.78rem; width: 95px;">Fecha <p-sortIcon field="fecha_anterior"></p-sortIcon></th>
+                  <th pSortableColumn="precio_maximo_anterior" class="text-right bg-slate-subtle" style="font-size: 0.78rem; width: 85px;">Máx. ant. <p-sortIcon field="precio_maximo_anterior"></p-sortIcon></th>
+                  <th pSortableColumn="precio_minimo_anterior" class="text-right bg-slate-subtle" style="font-size: 0.78rem; width: 85px;">Mín. ant. <p-sortIcon field="precio_minimo_anterior"></p-sortIcon></th>
+                  <th pSortableColumn="precio_anterior" class="text-right bg-slate-subtle" style="font-size: 0.78rem; width: 90px; border-right: 2px solid #cbd5e1;">Prom. ant. <p-sortIcon field="precio_anterior"></p-sortIcon></th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <!-- Columna EMISOR Completa (Ancho Optimizado 250px) -->
+                  <td style="border-right: 2px solid #cbd5e1; width: 250px; min-width: 220px;">
+                    <span class="font-medium text-dark fw-semibold" style="font-size: 0.82rem;">
+                      {{ item.emisor }}
+                    </span>
+                  </td>
+
+                  <!-- Bloque 1: Último Cierre (Fondo Claro Vivo) -->
+                  <td class="text-center font-mono text-dark col-ultimo-cierre" style="font-size: 0.82rem; width: 95px;">{{ item.fecha_maxima | date:'yyyy-MM-dd' }}</td>
+                  <td class="text-right font-mono text-danger fw-semibold col-ultimo-cierre" style="width: 85px;">{{ formatearMoneda(item.precio_maximo) }}</td>
+                  <td class="text-right font-mono text-success fw-semibold col-ultimo-cierre" style="width: 85px;">{{ formatearMoneda(item.precio_minimo) }}</td>
+                  <td class="text-right font-mono font-bold text-dark col-ultimo-cierre" style="width: 90px; border-right: 2px solid #cbd5e1;">{{ formatearMoneda(item.precio_promedio) }}</td>
+
+                  <!-- Bloque 2: Cierre Anterior (Fondo Tinte Slate + Texto Atenuado) -->
+                  <td class="text-center font-mono text-anterior col-cierre-anterior" style="font-size: 0.82rem; width: 95px;">{{ item.fecha_anterior ? (item.fecha_anterior | date:'yyyy-MM-dd') : '-' }}</td>
+                  <td class="text-right font-mono text-anterior-danger col-cierre-anterior" style="width: 85px;">{{ item.precio_maximo_anterior ? formatearMoneda(item.precio_maximo_anterior) : '-' }}</td>
+                  <td class="text-right font-mono text-anterior-success col-cierre-anterior" style="width: 85px;">{{ item.precio_minimo_anterior ? formatearMoneda(item.precio_minimo_anterior) : '-' }}</td>
+                  <td class="text-right font-mono font-semibold text-anterior col-cierre-anterior" style="width: 90px; border-right: 2px solid #cbd5e1;">{{ item.precio_anterior ? formatearMoneda(item.precio_anterior) : '-' }}</td>
+
+                  <!-- Columna Var. Diaria (Ancho 175px con white-space nowrap para evitar 2 filas) -->
+                  <td class="text-right font-mono font-bold" style="width: 175px; min-width: 175px; white-space: nowrap;">
+                    <span *ngIf="(item.cambio_diario || 0) > 0" class="text-success">
+                      <i class="pi pi-arrow-up text-xs me-1"></i>+{{ formatearMoneda(item.cambio_diario) }}
+                      <small class="d-inline text-xs ms-1 text-success font-normal">(+{{ item.variacion_diaria_pct | number:'1.2-2' }}%)</small>
+                    </span>
+                    <span *ngIf="(item.cambio_diario || 0) < 0" class="text-danger">
+                      <i class="pi pi-arrow-down text-xs me-1"></i>-{{ formatearMoneda(getAbsValue(item.cambio_diario)) }}
+                      <small class="d-inline text-xs ms-1 text-danger font-normal">({{ item.variacion_diaria_pct | number:'1.2-2' }}%)</small>
+                    </span>
+                    <span *ngIf="!item.cambio_diario || item.cambio_diario === 0" class="text-secondary">
+                      $0.00 <small class="d-inline text-xs ms-1 text-secondary font-normal">(0.00%)</small>
+                    </span>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </p-tabPanel>
+
+        <!-- Pestaña Renta Variable (Pestaña #2) -->
         <p-tabPanel header="Renta Variable (Acciones)">
           <div class="table-container">
             <p-table [value]="acciones" [paginator]="true" [rows]="rowsPerPageRV" (onPage)="onPageChangeRV($event)" stateStorage="session" stateKey="resumen-bolsa-rv-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtRV [globalFilterFields]="['fecha','emisor','tipo','valor_nominal','precio','cantidad','efectivo','procedencia']">
@@ -239,41 +326,6 @@
                   <td class="text-right font-mono">{{ formatearNumero(item.cantidad) }}</td>
                   <td class="text-right font-mono font-bold">{{ formatearMoneda(item.efectivo) }}</td>
                   <td class="text-center font-mono"><span class="badge badge-light">{{ item.procedencia }}</span></td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </div>
-        </p-tabPanel>
-
-        <!-- Pestaña Cierres de Mercado -->
-        <p-tabPanel header="Cierres de Acciones (Mercado)">
-          <div class="table-container">
-            <p-table [value]="cierresAcciones" [paginator]="true" [rows]="rowsPerPageCierres" (onPage)="onPageChangeCierres($event)" stateStorage="session" stateKey="resumen-bolsa-cierres-state" [rowsPerPageOptions]="[10, 20, 50, 100]" [paginatorDropdownAppendTo]="'body'" showCurrentPageReport="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros" paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" responsiveLayout="scroll" styleClass="p-datatable-sm" #dtCierres [globalFilterFields]="['emisor','fecha_maxima','precio_maximo','precio_minimo','precio_promedio']">
-              <ng-template pTemplate="caption">
-                <div class="d-flex justify-content-between align-items-center table-header-caption">
-                  <span class="table-caption-title">Cierres de Mercado</span>
-                  <span class="p-input-icon-left search-wrapper">
-                    <i class="pi pi-search"></i>
-                    <input pInputText type="text" (input)="dtCierres.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en cierres..." class="p-inputtext-sm search-filter-input" />
-                  </span>
-                </div>
-              </ng-template>
-              <ng-template pTemplate="header">
-                <tr>
-                  <th pSortableColumn="emisor">Emisor <p-sortIcon field="emisor"></p-sortIcon></th>
-                  <th pSortableColumn="fecha_maxima" class="text-center">Fecha Último Cierre <p-sortIcon field="fecha_maxima"></p-sortIcon></th>
-                  <th pSortableColumn="precio_maximo" class="text-right">Precio Máximo <p-sortIcon field="precio_maximo"></p-sortIcon></th>
-                  <th pSortableColumn="precio_minimo" class="text-right">Precio Mínimo <p-sortIcon field="precio_minimo"></p-sortIcon></th>
-                  <th pSortableColumn="precio_promedio" class="text-right">Precio Promedio <p-sortIcon field="precio_promedio"></p-sortIcon></th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-item>
-                <tr>
-                  <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
-                  <td class="text-center font-mono text-muted">{{ item.fecha_maxima | date:'yyyy-MM-dd' }}</td>
-                  <td class="text-right font-mono text-danger">{{ formatearMoneda(item.precio_maximo) }}</td>
-                  <td class="text-right font-mono text-success">{{ formatearMoneda(item.precio_minimo) }}</td>
-                  <td class="text-right font-mono font-bold text-dark">{{ formatearMoneda(item.precio_promedio) }}</td>
                 </tr>
               </ng-template>
             </p-table>

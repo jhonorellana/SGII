@@ -80,4 +80,9 @@ export interface AccionPosicion {
   costo_promedio_unitario?: number;
   capital_invertido?: number;
   utilidad_perdida_no_realizada?: number;
+  precio_anterior?: number;
+  fecha_anterior?: string;
+  cambio_diario?: number;
+  variacion_diaria_pct?: number;
+  tendencia_diaria?: string;
 }

@@ -186,4 +186,8 @@ export class MovimientoCapitalService {
 
     return this.apiService.get<ReporteCuenta>(url);
   }
+
+  getBromaCierre(contexto?: string): Observable<ApiResponse<string>> {
+    return this.apiService.post<string>('/utilidades/broma-cierre', { contexto });
+  }
 }

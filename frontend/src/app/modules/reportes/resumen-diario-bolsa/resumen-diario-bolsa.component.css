@@ -625,3 +625,59 @@
 ::ng-deep .p-dropdown-panel {
   z-index: 99999 !important;
 }
+
+/* Agrupación y Diferenciación Visual de Bloques (Último Cierre vs Cierre Anterior) */
+.header-grupo-ultimo {
+  background-color: #eff6ff !important;
+  color: #1e40af !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border-bottom: 2px solid #bfdbfe !important;
+  border-right: 2px solid #cbd5e1 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.05em;
+  padding: 0.6rem !important;
+}
+
+.header-grupo-anterior {
+  background-color: #f1f5f9 !important;
+  color: #475569 !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+  border-right: 2px solid #cbd5e1 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.05em;
+  padding: 0.6rem !important;
+}
+
+.bg-blue-subtle {
+  background-color: #f8fafc !important;
+}
+
+.bg-slate-subtle {
+  background-color: #f1f5f9 !important;
+}
+
+.col-ultimo-cierre {
+  background-color: #ffffff;
+}
+
+.col-cierre-anterior {
+  background-color: #f8fafc;
+}
+
+.text-anterior {
+  color: #64748b !important;
+}
+
+.text-anterior-danger {
+  color: #dc2626 !important;
+  opacity: 0.85;
+}
+
+.text-anterior-success {
+  color: #16a34a !important;
+  opacity: 0.85;
+}
+

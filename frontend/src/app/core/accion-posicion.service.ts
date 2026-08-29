@@ -32,7 +32,10 @@ export class AccionPosicionService {
             valor_mercado: pos.valor_mercado ? parseFloat(pos.valor_mercado.toString()) : undefined,
             costo_promedio_unitario: pos.costo_promedio_unitario ? parseFloat(pos.costo_promedio_unitario.toString()) : undefined,
             capital_invertido: pos.capital_invertido ? parseFloat(pos.capital_invertido.toString()) : undefined,
-            utilidad_perdida_no_realizada: pos.utilidad_perdida_no_realizada ? parseFloat(pos.utilidad_perdida_no_realizada.toString()) : undefined
+            utilidad_perdida_no_realizada: pos.utilidad_perdida_no_realizada ? parseFloat(pos.utilidad_perdida_no_realizada.toString()) : undefined,
+            precio_anterior: pos.precio_anterior ? parseFloat(pos.precio_anterior.toString()) : undefined,
+            cambio_diario: pos.cambio_diario ? parseFloat(pos.cambio_diario.toString()) : 0,
+            variacion_diaria_pct: pos.variacion_diaria_pct ? parseFloat(pos.variacion_diaria_pct.toString()) : 0
           }));
         }
         return response;

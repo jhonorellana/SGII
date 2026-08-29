@@ -223,7 +223,13 @@ class ResumenBolsaController extends Controller
                     'MAX_DATE as fecha_maxima',
                     'MAX_PRICE as precio_maximo',
                     'MIN_PRICE as precio_minimo',
-                    'AVG_PRICE as precio_promedio'
+                    'AVG_PRICE as precio_promedio',
+                    'PREV_DATE as fecha_anterior',
+                    'PREV_AVG_PRICE as precio_anterior',
+                    'PREV_MIN_PRICE as precio_minimo_anterior',
+                    'PREV_MAX_PRICE as precio_maximo_anterior',
+                    'DAILY_CHANGE as cambio_diario',
+                    'DAILY_VARIATION_PCT as variacion_diaria_pct'
                 ])
                 ->orderByDesc('MAX_DATE')
                 ->get();

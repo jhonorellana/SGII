@@ -107,6 +107,12 @@ export interface CierreAccionRecord {
   precio_maximo: number;
   precio_minimo: number;
   precio_promedio: number;
+  fecha_anterior?: string;
+  precio_anterior?: number;
+  precio_minimo_anterior?: number;
+  precio_maximo_anterior?: number;
+  cambio_diario?: number;
+  variacion_diaria_pct?: number;
 }
 
 export interface GenericoRecord {

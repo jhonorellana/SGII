@@ -1,0 +1,108 @@
+DELIMITER $$
+
+-- 1. ALTER TABLE de shares_lastdate para añadir columnas del penúltimo cierre
+-- (Ejecutar este bloque de ALTER TABLE en mysql_inversion si aún no existen las columnas):
+/*
+ALTER TABLE `shares_lastdate`
+  ADD COLUMN `PREV_DATE` DATE DEFAULT NULL AFTER `AVG_PRICE`,
+  ADD COLUMN `PREV_AVG_PRICE` DECIMAL(8,2) DEFAULT NULL AFTER `PREV_DATE`,
+  ADD COLUMN `PREV_MIN_PRICE` DECIMAL(8,2) DEFAULT NULL AFTER `PREV_AVG_PRICE`,
+  ADD COLUMN `PREV_MAX_PRICE` DECIMAL(8,2) DEFAULT NULL AFTER `PREV_MIN_PRICE`,
+  ADD COLUMN `DAILY_CHANGE` DECIMAL(8,2) DEFAULT NULL AFTER `PREV_MAX_PRICE`,
+  ADD COLUMN `DAILY_VARIATION_PCT` DECIMAL(8,2) DEFAULT NULL AFTER `DAILY_CHANGE`;
+*/
+
+DROP PROCEDURE IF EXISTS `SP_ACTUALIZAR_SHARES_LAST_DATE`$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACTUALIZAR_SHARES_LAST_DATE`()
+BEGIN
+
+    -- 1. Vaciar tabla principal
+    TRUNCATE TABLE shares_lastdate;
+
+    -- 2. Crear tabla temporal para obtener las 2 últimas fechas negociadas por emisor
+    DROP TEMPORARY TABLE IF EXISTS temp_top2_fechas;
+    CREATE TEMPORARY TABLE temp_top2_fechas AS
+    SELECT sha_issuer_id, sha_issuer, sha_date, orden
+    FROM (
+        SELECT 
+            SHA_ISSUER_ID as sha_issuer_id,
+            SHA_ISSUER as sha_issuer,
+            SHA_DATE as sha_date,
+            ROW_NUMBER() OVER (PARTITION BY SHA_ISSUER_ID ORDER BY SHA_DATE DESC) as orden
+        FROM shares
+        WHERE SHA_CASH_VALUE > 0 
+          AND SHA_DATE <= CURRENT_DATE()
+        GROUP BY SHA_ISSUER_ID, SHA_ISSUER, SHA_DATE
+    ) t
+    WHERE orden <= 2;
+
+    -- 3. Insertar el último cierre (orden = 1) y penúltimo cierre (orden = 2)
+    INSERT INTO shares_lastdate (
+        SHA_ISSUER_ID,
+        SHA_ISSUER,
+        MAX_DATE,
+        AVG_PRICE,
+        MIN_PRICE,
+        MAX_PRICE,
+        PREV_DATE,
+        PREV_AVG_PRICE,
+        PREV_MIN_PRICE,
+        PREV_MAX_PRICE,
+        DAILY_CHANGE,
+        DAILY_VARIATION_PCT
+    )
+    SELECT 
+        u.sha_issuer_id,
+        u.sha_issuer,
+        -- Datos del Último Cierre (Orden 1)
+        u.max_date,
+        u.avg_price,
+        u.min_price,
+        u.max_price,
+        -- Datos del Penúltimo Cierre (Orden 2)
+        p.prev_date,
+        p.prev_avg_price,
+        p.prev_min_price,
+        p.prev_max_price,
+        -- Cambio y Variación Porcentual Diaria
+        ROUND(u.avg_price - COALESCE(p.prev_avg_price, u.avg_price), 2) AS DAILY_CHANGE,
+        CASE 
+            WHEN COALESCE(p.prev_avg_price, 0) > 0 
+            THEN ROUND(((u.avg_price - p.prev_avg_price) / p.prev_avg_price) * 100, 2)
+            ELSE 0.00
+        END AS DAILY_VARIATION_PCT
+    FROM (
+        -- Resumen Último Cierre (Orden 1)
+        SELECT 
+            s.SHA_ISSUER_ID as sha_issuer_id,
+            s.SHA_ISSUER as sha_issuer,
+            tf.sha_date as max_date,
+            ROUND(SUM(s.SHA_CASH_VALUE) / SUM(s.SHA_NUMBER), 2) as avg_price,
+            ROUND(MIN(s.SHA_PRICE), 2) as min_price,
+            ROUND(MAX(s.SHA_PRICE), 2) as max_price
+        FROM shares s
+        INNER JOIN temp_top2_fechas tf ON s.SHA_ISSUER_ID = tf.sha_issuer_id AND s.SHA_DATE = tf.sha_date
+        WHERE tf.orden = 1
+        GROUP BY s.SHA_ISSUER_ID, s.SHA_ISSUER, tf.sha_date
+    ) u
+    LEFT JOIN (
+        -- Resumen Penúltimo Cierre (Orden 2)
+        SELECT 
+            s.SHA_ISSUER_ID as sha_issuer_id,
+            tf.sha_date as prev_date,
+            ROUND(SUM(s.SHA_CASH_VALUE) / SUM(s.SHA_NUMBER), 2) as prev_avg_price,
+            ROUND(MIN(s.SHA_PRICE), 2) as prev_min_price,
+            ROUND(MAX(s.SHA_PRICE), 2) as prev_max_price
+        FROM shares s
+        INNER JOIN temp_top2_fechas tf ON s.SHA_ISSUER_ID = tf.sha_issuer_id AND s.SHA_DATE = tf.sha_date
+        WHERE tf.orden = 2
+        GROUP BY s.SHA_ISSUER_ID, tf.sha_date
+    ) p ON u.sha_issuer_id = p.sha_issuer_id;
+
+    -- 4. Limpieza de tablas temporales
+    DROP TEMPORARY TABLE IF EXISTS temp_top2_fechas;
+
+END$$
+
+DELIMITER ;

@@ -744,6 +744,10 @@ export class ResumenDiarioBolsaComponent implements OnInit {
     return valor.toFixed(2) + '%';
   }
 
+  getAbsValue(val: any): number {
+    return Math.abs(val || 0);
+  }
+
   obtenerTipoBadge(tipo: string): "success" | "secondary" | "info" | "warning" | "danger" | "contrast" | undefined {
     switch (tipo) {
       case 'Bono': return 'info';
@@ -819,10 +823,16 @@ export class ResumenDiarioBolsaComponent implements OnInit {
     // 4. Hoja de Cierres de Mercado
     const cierresData = this.cierresAcciones.map(item => ({
       'Emisor': item.emisor,
-      'Fecha Último Cierre': item.fecha_maxima,
-      'Precio Máximo ($)': item.precio_maximo,
-      'Precio Mínimo ($)': item.precio_minimo,
-      'Precio Promedio ($)': item.precio_promedio
+      'Último Cierre': item.fecha_maxima,
+      'Máximo ($)': item.precio_maximo || 0,
+      'Mínimo ($)': item.precio_minimo || 0,
+      'Promedio ($)': item.precio_promedio || 0,
+      'Cierre Anterior': item.fecha_anterior || '-',
+      'Máx. Anterior ($)': item.precio_maximo_anterior || 0,
+      'Mín. Anterior ($)': item.precio_minimo_anterior || 0,
+      'Prom. Anterior ($)': item.precio_anterior || 0,
+      'Var. Diaria ($)': item.cambio_diario || 0,
+      'Var. Diaria (%)': item.variacion_diaria_pct || 0
     }));
     const wsCierres = XLSX.utils.json_to_sheet(cierresData);
     XLSX.utils.book_append_sheet(wb, wsCierres, 'Últimos Cierres');

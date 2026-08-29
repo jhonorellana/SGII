@@ -167,10 +167,10 @@
                 
                 <!-- Socio / Persona -->
                 <span *ngIf="col.field === 'persona'" class="font-semibold text-gray-800">
-                  <span *ngIf="row.persona === 'TODOS (Consolidado)'" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.8rem;">
-                    <i class="pi pi-users me-1"></i> TODOS (Consolidado)
+                  <span *ngIf="row.persona === 'TODOS' || row.persona === 'TODOS (Consolidado)'" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.8rem;">
+                    <i class="pi pi-users me-1"></i> TODOS
                   </span>
-                  <span *ngIf="row.persona !== 'TODOS (Consolidado)'">
+                  <span *ngIf="row.persona !== 'TODOS' && row.persona !== 'TODOS (Consolidado)'">
                     {{ row.persona || '-' }}
                   </span>
                 </span>
@@ -198,6 +198,27 @@
                 <!-- Último Precio -->
                 <span *ngIf="col.field === 'precio_ultimo'">
                   {{ formatCurrency(row.precio_ultimo) }}
+                </span>
+
+                <!-- Precio Anterior -->
+                <span *ngIf="col.field === 'precio_anterior'" class="text-muted">
+                  {{ row.precio_anterior ? formatCurrency(row.precio_anterior) : '-' }}
+                </span>
+
+                <!-- Var. Diaria -->
+                <span *ngIf="col.field === 'variacion_diaria'">
+                  <span *ngIf="(row.cambio_diario || 0) > 0" class="text-success font-semibold">
+                    <i class="pi pi-arrow-up text-xs me-1"></i>+{{ formatCurrency(row.cambio_diario) }}
+                    <small class="d-block text-xs text-success font-normal">+{{ formatNumber(row.variacion_diaria_pct, 2) }}%</small>
+                  </span>
+                  <span *ngIf="(row.cambio_diario || 0) < 0" class="text-danger font-semibold">
+                    <i class="pi pi-arrow-down text-xs me-1"></i>-{{ formatCurrency(getAbsValue(row.cambio_diario)) }}
+                    <small class="d-block text-xs text-danger font-normal">{{ formatNumber(row.variacion_diaria_pct, 2) }}%</small>
+                  </span>
+                  <span *ngIf="!row.cambio_diario || row.cambio_diario === 0" class="text-secondary">
+                    $0.00
+                    <small class="d-block text-xs text-secondary font-normal">0.00%</small>
+                  </span>
                 </span>
 
                 <!-- Fecha de Último Precio -->

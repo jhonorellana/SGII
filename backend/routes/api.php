@@ -174,3 +174,7 @@ Route::get('mercado/indicadores', [\App\Http\Controllers\Api\MercadoIndicadoresC
 // Snapshot Histórico Indicadores
 Route::get('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'index']);
 Route::post('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'store']);
+
+Route::match(['get', 'post'], '/utilidades/broma-diaria', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaDiaria']);
+
+Route::match(['get', 'post'], '/utilidades/broma-cierre', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaCierre']);

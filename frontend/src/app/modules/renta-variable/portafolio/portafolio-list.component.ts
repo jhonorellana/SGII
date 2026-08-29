@@ -111,14 +111,16 @@ export class PortafolioListComponent implements OnInit {
   cols = [
     { field: 'persona', header: 'Socio' },
     { field: 'instrumento', header: 'Emisor' },
-    { field: 'cantidad_actual', header: 'Cantidad Acciones' },
-    { field: 'costo_promedio_unitario', header: 'Precio Prom.' },
+    { field: 'cantidad_actual', header: 'Acciones' },
+    { field: 'costo_promedio_unitario', header: 'Compra prom.' },
     { field: 'precio_ultimo', header: 'Último Precio' },
     { field: 'fecha_ultimo_precio', header: 'Fecha Cierre' },
-    { field: 'capital_invertido', header: 'Capital Invertido' },
+    { field: 'precio_anterior', header: 'Precio Ant.' },
+    { field: 'variacion_diaria', header: 'Var. Diaria' },
+    { field: 'capital_invertido', header: 'Invertido' },
     { field: 'valor_mercado', header: 'Valor Actual' },
     { field: 'diferencia', header: 'Diferencia' },
-    { field: 'utilidad_perdida_no_realizada', header: 'Plusvalía/Minusvalía' }
+    { field: 'utilidad_perdida_no_realizada', header: 'Plusvalía' }
   ];
 
   constructor(
@@ -174,6 +176,10 @@ export class PortafolioListComponent implements OnInit {
 
   getTipoOperacionNombre(op: AccionOperacion): string {
     return op.tipo_operacion?.nombre || op.tipoOperacion?.nombre || '-';
+  }
+
+  getAbsValue(val: number | undefined | null): number {
+    return Math.abs(val || 0);
   }
 
   formatFechaLiquidacion(fecha: any): string {
@@ -382,12 +388,17 @@ export class PortafolioListComponent implements OnInit {
         id_instrumento: idInst,
         id_emisor: items[0].id_emisor,
         id_persona: 0,
-        persona: 'TODOS (Consolidado)',
+        persona: 'TODOS',
         instrumento: items[0].instrumento,
         cantidad_actual: cantTotal,
         costo_promedio_unitario: costoPromUnitario,
         capital_invertido: capInvertidoTotal,
         precio_ultimo: items[0].precio_ultimo,
+        precio_anterior: items[0].precio_anterior,
+        fecha_anterior: items[0].fecha_anterior,
+        cambio_diario: items[0].cambio_diario,
+        variacion_diaria_pct: items[0].variacion_diaria_pct,
+        tendencia_diaria: items[0].tendencia_diaria,
         fecha_ultimo_precio: items[0].fecha_ultimo_precio,
         valor_mercado: valorMercadoTotal,
         utilidad_perdida_no_realizada: utilidadPerdida
@@ -595,10 +606,13 @@ export class PortafolioListComponent implements OnInit {
     const exportData = dataToExport.map(pos => ({
       Socio: pos.persona || '-',
       Acción: pos.instrumento || '-',
-      'Cantidad Acciones': pos.cantidad_actual,
-      'Precio Prom.': pos.costo_promedio_unitario || 0,
+      'Cantidad': pos.cantidad_actual || 0,
+      'Costo Promedio': pos.costo_promedio_unitario || 0,
       'Capital Invertido': pos.capital_invertido || 0,
       'Último Precio': pos.precio_ultimo || 0,
+      'Precio Anterior': pos.precio_anterior || 0,
+      'Var. Diaria ($)': pos.cambio_diario || 0,
+      'Var. Diaria (%)': pos.variacion_diaria_pct || 0,
       'Fecha Cierre': pos.fecha_ultimo_precio || '-',
       'Valor Mercado': pos.valor_mercado || 0,
       'Plusvalía / Minusvalía': pos.utilidad_perdida_no_realizada || 0
@@ -629,15 +643,17 @@ export class PortafolioListComponent implements OnInit {
       pos.instrumento || '-',
       this.formatNumber(pos.cantidad_actual, 2),
       this.formatCurrency(pos.costo_promedio_unitario),
-      this.formatCurrency(pos.capital_invertido),
       this.formatCurrency(pos.precio_ultimo),
+      this.formatCurrency(pos.precio_anterior),
+      `${pos.cambio_diario ? (pos.cambio_diario > 0 ? '+' : '') + this.formatCurrency(pos.cambio_diario) : '$0.00'} (${this.formatNumber(pos.variacion_diaria_pct, 2)}%)`,
+      this.formatCurrency(pos.capital_invertido),
       pos.fecha_ultimo_precio || '-',
       this.formatCurrency(pos.valor_mercado),
       this.formatCurrency(pos.utilidad_perdida_no_realizada)
     ]);
 
     autoTable(doc, {
-      head: [['Socio', 'Acción', 'Cantidad', 'Precio Prom.', 'Cap. Invertido', 'Últ. Precio', 'F. Cierre', 'Valor Mercado', 'Plus/Minusvalía']],
+      head: [['Socio', 'Acción', 'Cantidad', 'Precio Prom.', 'Últ. Precio', 'Precio Ant.', 'Var. Diaria', 'Cap. Invertido', 'F. Cierre', 'Valor Mercado', 'Plus/Minusvalía']],
       body: tableData,
       startY: 35,
       styles: { fontSize: 8 },
