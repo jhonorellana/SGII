@@ -469,9 +469,10 @@
 <p-dialog
   header="Personalizar Mensaje Diario (IA)"
   [(visible)]="displayModalIA"
-  [style]="{width: '680px', 'max-width': '95vw'}"
+  [style]="{width: '780px', 'max-width': '95vw'}"
   [modal]="true"
-  [baseZIndex]="10000">
+  [baseZIndex]="10000"
+  styleClass="app-custom-modal">
   
   <div class="mb-3">
     <label class="form-label fw-bold text-secondary mb-1">
@@ -480,16 +481,31 @@
     <textarea
       pInputTextarea
       [(ngModel)]="contextoIA"
-      rows="5"
+      (ngModelChange)="actualizarPromptIA()"
+      rows="4"
       placeholder="Cargando posiciones reales del portafolio..."
       class="w-100 p-inputtext-sm form-control"
-      style="width: 100%; resize: vertical; font-family: monospace; font-size: 0.8rem; line-height: 1.35;">
+      style="width: 100%; min-height: 100px; resize: vertical; font-family: monospace; font-size: 0.82rem; line-height: 1.35;">
+    </textarea>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-bold text-secondary mb-1">
+      <i class="pi pi-send text-warning me-1"></i> 2. Prompt a Enviar a OpenAI (Vista previa / Editable):
+    </label>
+    <textarea
+      pInputTextarea
+      [(ngModel)]="promptIA"
+      rows="5"
+      placeholder="Prompt que se enviará a OpenAI..."
+      class="w-100 p-inputtext-sm form-control bg-light"
+      style="width: 100%; min-height: 110px; resize: vertical; font-family: monospace; font-size: 0.82rem; line-height: 1.35;">
     </textarea>
   </div>
 
   <div class="mb-2">
     <label class="form-label fw-bold text-secondary mb-1">
-      <i class="pi pi-file-edit text-success me-1"></i> 2. Mensaje Final Generado (Editable antes de copiar):
+      <i class="pi pi-file-edit text-success me-1"></i> 3. Mensaje Final Generado (Editable antes de copiar):
     </label>
     <textarea
       pInputTextarea
@@ -497,7 +513,7 @@
       rows="5"
       placeholder="Haz clic en 'Generar Mensaje con IA' para obtener el borrador..."
       class="w-100 p-inputtext-sm form-control"
-      style="width: 100%; resize: vertical; font-family: monospace; font-size: 0.82rem; line-height: 1.35;">
+      style="width: 100%; min-height: 110px; resize: vertical; font-family: monospace; font-size: 0.82rem; line-height: 1.35;">
     </textarea>
   </div>
 

@@ -278,37 +278,6 @@
   padding: 0;
 }
 
-::ng-deep .p-tabview-nav {
-  background: transparent !important;
-  border: none !important;
-  gap: 0.5rem !important;
-  margin-bottom: 0.5rem !important;
-  padding: 0 !important;
-}
-
-::ng-deep .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-  background: #ffffff !important;
-  border: 1px solid #cbd5e1 !important;
-  border-radius: 6px !important;
-  color: #475569 !important;
-  font-weight: 600 !important;
-  font-size: 0.9rem !important;
-  padding: 0.5rem 1.25rem !important;
-  transition: all 0.2s ease !important;
-}
-
-::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  background: #047857 !important;
-  color: #ffffff !important;
-  border: 1px solid #047857 !important;
-  font-weight: 600 !important;
-}
-
-::ng-deep .p-tabview .p-tabview-panels {
-  background: transparent !important;
-  padding: 0 !important;
-}
-
 /* Estilos de Tabla Polished */
 .table-container {
   overflow-x: auto;

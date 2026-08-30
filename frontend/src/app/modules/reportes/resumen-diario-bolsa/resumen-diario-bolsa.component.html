@@ -279,15 +279,15 @@
 
                   <!-- Columna Var. Diaria -->
                   <td class="text-right font-mono font-bold" style="width: 15%; min-width: 160px; white-space: nowrap;">
-                    <span *ngIf="(item.cambio_diario || 0) > 0" class="text-success">
-                      <i class="pi pi-arrow-up text-xs me-1"></i>+{{ formatearMoneda(item.cambio_diario) }}
-                      <small class="d-inline text-xs ms-1 text-success font-normal">(+{{ item.variacion_diaria_pct | number:'1.2-2' }}%)</small>
+                    <span *ngIf="getCambioDiario(item) > 0" class="text-success">
+                      <i class="pi pi-arrow-up text-xs me-1"></i>+{{ formatearMoneda(getCambioDiario(item)) }}
+                      <small class="d-inline text-xs ms-1 text-success font-normal">(+{{ getVariacionPct(item) | number:'1.2-2' }}%)</small>
                     </span>
-                    <span *ngIf="(item.cambio_diario || 0) < 0" class="text-danger">
-                      <i class="pi pi-arrow-down text-xs me-1"></i>-{{ formatearMoneda(getAbsValue(item.cambio_diario)) }}
-                      <small class="d-inline text-xs ms-1 text-danger font-normal">({{ item.variacion_diaria_pct | number:'1.2-2' }}%)</small>
+                    <span *ngIf="getCambioDiario(item) < 0" class="text-danger">
+                      <i class="pi pi-arrow-down text-xs me-1"></i>-{{ formatearMoneda(getAbsValue(getCambioDiario(item))) }}
+                      <small class="d-inline text-xs ms-1 text-danger font-normal">({{ getVariacionPct(item) | number:'1.2-2' }}%)</small>
                     </span>
-                    <span *ngIf="!(item.cambio_diario || 0)" class="text-dark font-semibold">
+                    <span *ngIf="getCambioDiario(item) === 0" class="text-dark font-semibold">
                       $0.00 <small class="d-inline text-xs ms-1 text-dark font-normal">(0.00%)</small>
                     </span>
                   </td>

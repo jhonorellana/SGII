@@ -23,6 +23,7 @@ import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { MovimientoCapitalService } from '../../core/movimiento-capital.service';
 import { AccionPosicionService } from '../../core/accion-posicion.service';
+import { ResumenBolsaService } from '../../core/resumen-bolsa.service';
 import { Table } from 'primeng/table';
 
 @Component({
@@ -63,8 +64,18 @@ export class VentaAgrupadaComponent implements OnInit {
   generandoMensaje = false;
   displayModalIA = false;
   contextoIA = '';
+  promptIA = '';
   mensajeGeneradoIA = '';
   rowsPerPage: number = 10;
+
+  actualizarPromptIA(): void {
+    const basePrompt = 'Genera una frase amigable, ingeniosa y breve (máximo 30 palabras) escrita en primera persona desde la perspectiva de un inversionista que le escribe a su corredor de bolsa en Ecuador. Debe hacer un comentario con toque de humor entusiasta sobre el estado reciente de sus acciones y pedir su recomendación u opinión experta. Usa emojis al final. La casa de Valores se llama Santa Fé. La persona a quien va dirigido el mensaje es José Luis. Usa la información del portafolio para generar la frase.';
+    if (this.contextoIA && this.contextoIA.trim().length > 0) {
+      this.promptIA = `${basePrompt}\n\nEl estado y movimientos recientes de su portafolio son:\n'${this.contextoIA}'`;
+    } else {
+      this.promptIA = basePrompt;
+    }
+  }
   rowsPerPageModal: number = 10;
 
   ventaForm: FormGroup;
@@ -78,6 +89,7 @@ export class VentaAgrupadaComponent implements OnInit {
     private personaService: PersonaService,
     private movimientoCapitalService: MovimientoCapitalService,
     private accionPosicionService: AccionPosicionService,
+    private resumenBolsaService: ResumenBolsaService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
     private paginationService: PaginationService
@@ -704,75 +716,104 @@ export class VentaAgrupadaComponent implements OnInit {
     }
 
     this.mensajeGeneradoIA = '';
+    this.contextoIA = 'Cargando datos de mercado (inversion.shares_lastdate)...';
     this.displayModalIA = true;
 
-    // Cargar posiciones reales de renta variable para auto-llenar la caja de texto
-    this.accionPosicionService.getPosiciones().subscribe({
-      next: (res) => {
-        if (res.success && res.data && res.data.length > 0) {
-          const emisoresMap: {
-            [key: string]: {
-              precio: number;
-              capital: number;
-              mercado: number;
-              tendenciaDiaria: string;
-              cambioDiario: number;
-              varDiariaPct: number;
-            }
-          } = {};
+    // Cargar las posiciones activas del portafolio y los últimos cierres oficiales de la tabla inversion.shares_lastdate
+    forkJoin({
+      posicionesRes: this.accionPosicionService.getPosiciones().pipe(catchError(() => of(null))),
+      cierresRes: this.resumenBolsaService.obtenerUltimoCierreAcciones().pipe(catchError(() => of(null)))
+    }).subscribe({
+      next: ({ posicionesRes, cierresRes }: any) => {
+        // Lista de cierres de la tabla inversion.shares_lastdate
+        const cierresLista = (cierresRes && cierresRes.exito && cierresRes.datos) ? cierresRes.datos : [];
 
-          res.data.forEach((p: any) => {
+        // Función para emparejar de forma inteligente nombres de emisores entre portafolio y shares_lastdate
+        const findCierreOficial = (emisor: string): any => {
+          if (!emisor || cierresLista.length === 0) return null;
+          const eNorm = emisor.toUpperCase();
+          let match = cierresLista.find((c: any) => {
+            const cNorm = (c.emisor || '').toUpperCase();
+            return cNorm === eNorm || cNorm.includes(eNorm) || eNorm.includes(cNorm);
+          });
+          if (match) return match;
+
+          const palabrasClave = ['GUAYAQUIL', 'PICHINCHA', 'PRODUBANCO', 'BOLIVARIANO', 'AUSTRO', 'FAVORITA', 'CRIDESA', 'SAN CARLOS', 'HOLCIM', 'NATLUK'];
+          const kw = palabrasClave.find(k => eNorm.includes(k));
+          if (kw) {
+            return cierresLista.find((c: any) => (c.emisor || '').toUpperCase().includes(kw));
+          }
+          return null;
+        };
+
+        const lineas: string[] = [];
+
+        if (posicionesRes && posicionesRes.success && posicionesRes.data && posicionesRes.data.length > 0) {
+          const emisoresMap: { [key: string]: { precio: number; capital: number; mercado: number; emisorOriginal: string } } = {};
+
+          posicionesRes.data.forEach((p: any) => {
             const emisor = (p.emisor_nombre || p.instrumento || 'Acción').trim();
+            const key = emisor.toUpperCase();
             const precio = p.precio_ultimo ? Number(p.precio_ultimo) : 0;
             const cap = p.capital_invertido ? Number(p.capital_invertido) : 0;
             const merc = p.valor_mercado ? Number(p.valor_mercado) : (p.cantidad_actual ? Number(p.cantidad_actual) * precio : 0);
-            const tendenciaDiaria = p.tendencia_diaria || 'IGUAL';
-            const cambioDiario = p.cambio_diario ? Number(p.cambio_diario) : 0;
-            const varDiariaPct = p.variacion_diaria_pct ? Number(p.variacion_diaria_pct) : 0;
 
-            if (!emisoresMap[emisor]) {
-              emisoresMap[emisor] = {
+            if (!emisoresMap[key]) {
+              emisoresMap[key] = {
                 precio,
                 capital: 0,
                 mercado: 0,
-                tendenciaDiaria,
-                cambioDiario,
-                varDiariaPct
+                emisorOriginal: emisor
               };
             }
-            if (precio > 0) emisoresMap[emisor].precio = precio;
-            emisoresMap[emisor].capital += cap;
-            emisoresMap[emisor].mercado += merc;
-            if (tendenciaDiaria !== 'IGUAL') {
-              emisoresMap[emisor].tendenciaDiaria = tendenciaDiaria;
-              emisoresMap[emisor].cambioDiario = cambioDiario;
-              emisoresMap[emisor].varDiariaPct = varDiariaPct;
-            }
+            if (precio > 0) emisoresMap[key].precio = precio;
+            emisoresMap[key].capital += cap;
+            emisoresMap[key].mercado += merc;
           });
 
-          const lineas: string[] = [];
-          Object.keys(emisoresMap).forEach(emisor => {
-            const d = emisoresMap[emisor];
+          Object.keys(emisoresMap).forEach(key => {
+            const d = emisoresMap[key];
+            const emisorNombre = d.emisorOriginal;
             const varPct = d.capital > 0 ? ((d.mercado - d.capital) / d.capital) * 100 : 0;
             const signoStr = varPct >= 0 ? '+' : '';
 
+            // Consultar datos oficiales de inversion.shares_lastdate usando findCierreOficial
+            const cierreOficial = findCierreOficial(emisorNombre);
             let diarioText = '';
-            if (d.tendenciaDiaria === 'SUBIO') {
-              diarioText = ` | 📈 subió +$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (+${d.varDiariaPct.toFixed(2)}%)`;
-            } else if (d.tendenciaDiaria === 'BAJO') {
-              diarioText = ` | 🔻 bajó -$${Math.abs(d.cambioDiario).toFixed(2)} vs registro anterior (${d.varDiariaPct.toFixed(2)}%)`;
-            } else {
-              diarioText = ` | ➡️ sin cambio vs registro anterior`;
-            }
 
-            lineas.push(`• ${emisor}: $${d.precio.toFixed(2)} (${signoStr}${varPct.toFixed(2)}% acum.)${diarioText}`);
+            if (cierreOficial) {
+              const precioUltimo = cierreOficial.precio_promedio ? parseFloat(cierreOficial.precio_promedio) : d.precio;
+              if (precioUltimo > 0) d.precio = precioUltimo;
+
+              const cambio = cierreOficial.cambio_diario !== undefined && cierreOficial.cambio_diario !== null
+                ? parseFloat(cierreOficial.cambio_diario)
+                : 0;
+              const varDiariaPct = cierreOficial.variacion_diaria_pct !== undefined && cierreOficial.variacion_diaria_pct !== null
+                ? parseFloat(cierreOficial.variacion_diaria_pct)
+                : 0;
+
+              if (cambio > 0) {
+                lineas.push(`• ${emisorNombre}: 📈 último precio: $${d.precio.toFixed(2)}, subió $${Math.abs(cambio).toFixed(2)}`);
+              } else if (cambio < 0) {
+                lineas.push(`• ${emisorNombre}: 🔻 último precio: $${d.precio.toFixed(2)}, bajó $${Math.abs(cambio).toFixed(2)}`);
+              } else {
+                lineas.push(`• ${emisorNombre}: ➡️ último precio: $${d.precio.toFixed(2)}, sin cambio`);
+              }
+            } else {
+              lineas.push(`• ${emisorNombre}: ➡️ último precio: $${d.precio.toFixed(2)}, sin cambio`);
+            }
           });
 
-          this.contextoIA = `📊 Resumen de Renta Variable (Portafolio):\n` + lineas.join('\n');
+          this.contextoIA = lineas.join('\n');
+        } else {
+          this.contextoIA = 'Sin posiciones activas de renta variable en el portafolio.';
         }
+        this.actualizarPromptIA();
       },
       error: (err) => {
-        console.error('Error al cargar posiciones para IA:', err);
+        console.error('Error al cargar posiciones/cierres para IA:', err);
+        this.contextoIA = 'Error al consultar inversion.shares_lastdate.';
+        this.actualizarPromptIA();
       }
     });
   }
@@ -789,7 +830,7 @@ export class VentaAgrupadaComponent implements OnInit {
     const diasText = dias > 0 ? ` (con ${dias} días transcurridos)` : '';
 
     forkJoin({
-      bromaRes: this.ventaService.getBromaDiaria(this.contextoIA).pipe(catchError(() => of(null))),
+      bromaRes: this.ventaService.getBromaDiaria(this.contextoIA, this.promptIA).pipe(catchError(() => of(null))),
       saldoRes: this.movimientoCapitalService.getSaldoEsperado().pipe(catchError(() => of(null)))
     }).subscribe({
       next: ({ bromaRes, saldoRes }: any) => {

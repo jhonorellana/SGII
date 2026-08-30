@@ -1107,4 +1107,34 @@ export class ResumenDiarioBolsaComponent implements OnInit {
       detail: 'Reporte PDF generado y descargado correctamente.'
     });
   }
+
+  getCambioDiario(item: CierreAccionRecord): number {
+    if (!item) return 0;
+    if (item.cambio_diario !== undefined && item.cambio_diario !== null) {
+      const val = parseFloat(item.cambio_diario as any);
+      if (!isNaN(val)) return val;
+    }
+    if (item.precio_promedio && item.precio_anterior) {
+      const p1 = parseFloat(item.precio_promedio as any);
+      const p2 = parseFloat(item.precio_anterior as any);
+      if (!isNaN(p1) && !isNaN(p2)) {
+        return p1 - p2;
+      }
+    }
+    return 0;
+  }
+
+  getVariacionPct(item: CierreAccionRecord): number {
+    if (!item) return 0;
+    if (item.variacion_diaria_pct !== undefined && item.variacion_diaria_pct !== null) {
+      const val = parseFloat(item.variacion_diaria_pct as any);
+      if (!isNaN(val)) return val;
+    }
+    const cambio = this.getCambioDiario(item);
+    const pAnt = item.precio_anterior ? parseFloat(item.precio_anterior as any) : 0;
+    if (pAnt > 0) {
+      return (cambio / pAnt) * 100;
+    }
+    return 0;
+  }
 }

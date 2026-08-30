@@ -314,8 +314,8 @@ export class VentaInversionService {
     return this.apiService.post<PrevisualizarVentaResponse>(`${this.endpoint}/previsualizar-venta-agrupada`, request);
   }
 
-  getBromaDiaria(contexto?: string): Observable<ApiResponse<string>> {
-    return this.apiService.post<string>('/utilidades/broma-diaria', { contexto });
+  getBromaDiaria(contexto?: string, prompt?: string): Observable<ApiResponse<string>> {
+    return this.apiService.post<string>('/utilidades/broma-diaria', { contexto, prompt });
   }
 
   crearVentaAgrupada(request: VentaAgrupadaRequest): Observable<ApiResponse<VentaAgrupadaResponse>> {
