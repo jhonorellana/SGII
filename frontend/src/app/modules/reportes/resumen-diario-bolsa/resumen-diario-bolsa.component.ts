@@ -11,6 +11,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { ResumenBolsaService, DatosResumenDiario, CierreAccionRecord, AccionRecord } from '../../../core/resumen-bolsa.service';
 import { PaginationService } from '../../../core/pagination.service';
+import { AccionPosicionService } from '../../../core/accion-posicion.service';
+import { AccionPosicion } from '../../../core/models/accion-models';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -51,7 +53,7 @@ export interface RentaFijaConsolidada {
     ToastModule,
     InputTextModule
   ],
-  providers: [MessageService],
+  providers: [MessageService, AccionPosicionService],
   templateUrl: './resumen-diario-bolsa.component.html',
   styleUrls: ['./resumen-diario-bolsa.component.css']
 })
@@ -65,6 +67,7 @@ export class ResumenDiarioBolsaComponent implements OnInit {
   rentaFijaConsolidada: RentaFijaConsolidada[] = [];
   acciones: AccionRecord[] = [];
   cierresAcciones: CierreAccionRecord[] = [];
+  misEmisoresConInversion: Set<string> = new Set<string>();
 
   // Paginación persistente
   rowsPerPageRF = 10;
@@ -95,6 +98,7 @@ export class ResumenDiarioBolsaComponent implements OnInit {
 
   constructor(
     private resumenService: ResumenBolsaService,
+    private posicionService: AccionPosicionService,
     private messageService: MessageService,
     private cdr: ChangeDetectorRef,
     private router: Router,
@@ -108,7 +112,41 @@ export class ResumenDiarioBolsaComponent implements OnInit {
     this.rowsPerPageRV = this.paginationService.getRowsPerPage('resumenBolsaRV', 10);
     this.rowsPerPageCierres = this.paginationService.getRowsPerPage('resumenBolsaCierres', 10);
     this.inicializarFechasPorDefecto();
+    this.cargarMisPosiciones();
     this.cargarDatos();
+  }
+
+  cargarMisPosiciones(): void {
+    this.posicionService.getPosiciones().subscribe({
+      next: (res) => {
+        if (res && res.success && res.data) {
+          const set = new Set<string>();
+          res.data.forEach((p: AccionPosicion) => {
+            if (Number(p.cantidad_actual || 0) > 0) {
+              if (p.emisor_nombre) set.add(p.emisor_nombre.toUpperCase().trim());
+              if (p.instrumento) set.add(p.instrumento.toUpperCase().trim());
+            }
+          });
+          this.misEmisoresConInversion = set;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => console.error('Error al cargar posiciones para resumen:', err)
+    });
+  }
+
+  tieneInversion(emisor: string): boolean {
+    if (!emisor || this.misEmisoresConInversion.size === 0) return false;
+    const name = emisor.toUpperCase().trim();
+    for (let myEmisor of this.misEmisoresConInversion) {
+      if (name.includes(myEmisor) || myEmisor.includes(name)) return true;
+      const cleanName = name.replace(/[^A-Z0-9]/g, '');
+      const cleanMyEmisor = myEmisor.replace(/[^A-Z0-9]/g, '');
+      if (cleanName.length >= 4 && cleanMyEmisor.length >= 4) {
+        if (cleanName.includes(cleanMyEmisor) || cleanMyEmisor.includes(cleanName)) return true;
+      }
+    }
+    return false;
   }
 
   onPageChangeRF(event: any): void {

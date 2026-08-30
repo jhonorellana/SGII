@@ -202,6 +202,28 @@
   letter-spacing: -0.02em;
 }
 
+.emisor-destacado-portafolio {
+  color: #047857 !important;
+  font-weight: 500 !important;
+  background-color: #d1fae5 !important;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #a7f3d0;
+  display: inline-block;
+}
+
+.bg-emerald-subtle {
+  background-color: #d1fae5 !important;
+}
+
+.text-emerald {
+  color: #047857 !important;
+}
+
+.border-emerald-subtle {
+  border-color: #a7f3d0 !important;
+}
+
 .kpi-value.positive {
   color: #10b981;
 }
@@ -253,34 +275,38 @@
 
 /* Sección de Tablas */
 .tables-section {
-  padding: 1rem;
+  padding: 0;
 }
 
 ::ng-deep .p-tabview-nav {
   background: transparent !important;
-  border-bottom: 2px solid #e2e8f0 !important;
-  gap: 1rem !important;
-  margin-bottom: 1rem !important;
+  border: none !important;
+  gap: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
+  padding: 0 !important;
 }
 
 ::ng-deep .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-  background: transparent !important;
-  border: none !important;
-  color: #64748b !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+  color: #475569 !important;
   font-weight: 600 !important;
-  font-size: 0.95rem !important;
-  padding: 0.75rem 1rem !important;
+  font-size: 0.9rem !important;
+  padding: 0.5rem 1.25rem !important;
   transition: all 0.2s ease !important;
 }
 
 ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  color: #3b82f6 !important;
-  border-bottom: 3px solid #3b82f6 !important;
+  background: #047857 !important;
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+  font-weight: 600 !important;
 }
 
 ::ng-deep .p-tabview .p-tabview-panels {
   background: transparent !important;
-  padding: 0.5rem 0 0 0 !important;
+  padding: 0 !important;
 }
 
 /* Estilos de Tabla Polished */

@@ -10,6 +10,10 @@ export interface SnapshotCarteraDiaria {
   cantidad_posicion: string;
   costo_promedio: string;
   precio_mercado: string;
+  precio_anterior?: number;
+  cambio_diario?: number;
+  variacion_diaria_pct?: number;
+  fecha_cierre?: string;
   valor_mercado: string;
   pl_no_realizado: string;
   porcentaje_no_realizado: string;

@@ -1,87 +1,194 @@
-<div class="dashboard-container">
-  <div class="dashboard-header">
-    <div class="header-content">
-      <h1 class="dashboard-title">Mi Portafolio</h1>
-      <p class="dashboard-subtitle">Análisis detallado y alertas de inversión</p>
-    </div>
-    <div class="header-actions">
-      <!-- Future: Refresh button or filters -->
-    </div>
+<div class="indicadores-dashboard-wrapper">
+  <div *ngIf="loading" class="text-center p-5">
+    <i class="pi pi-spin pi-spinner text-primary text-3xl mb-2"></i>
+    <p class="text-muted">Cargando indicadores del portafolio...</p>
   </div>
 
-  <div *ngIf="loading" class="loading-state">
-    <div class="spinner"></div>
-    <p>Cargando indicadores...</p>
+  <div *ngIf="error" class="alert alert-danger">
+    <i class="pi pi-exclamation-triangle me-2"></i>{{ error }}
   </div>
 
-  <div *ngIf="error" class="error-state">
-    <p>{{ error }}</p>
-  </div>
+  <div *ngIf="!loading && !error" class="table-container">
+    <p-table 
+      [value]="indicadores" 
+      [paginator]="true" 
+      [rows]="10" 
+      [rowsPerPageOptions]="[10, 20, 50]" 
+      showCurrentPageReport="true" 
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} posiciones" 
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown CurrentPageReport" 
+      responsiveLayout="scroll" 
+      styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines" 
+      #dtIndicadores 
+      [globalFilterFields]="['emisor.nombre', 'emisor.sigla', 'cantidad_posicion', 'costo_promedio', 'precio_mercado', 'precio_anterior', 'pl_no_realizado']">
+      
+      <ng-template pTemplate="caption">
+        <div class="d-flex justify-content-between align-items-center table-header-caption py-1">
+          <span class="table-caption-title font-semibold text-gray-700">Indicadores de Cartera</span>
+          <span class="p-input-icon-left search-wrapper">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" (input)="dtIndicadores.filterGlobal($any($event.target).value, 'contains')" placeholder="Buscar en portafolio..." class="p-inputtext-sm search-filter-input" />
+          </span>
+        </div>
+      </ng-template>
 
-  <div *ngIf="!loading && !error" class="card p-3">
-    <div class="table-responsive">
-      <table class="premium-table">
-        <thead>
-          <tr>
-            <th title="Empresa emisora de las acciones">Emisor</th>
-            <th class="text-right" title="Número total de acciones en su posición actual">Cantidad</th>
-            <th class="text-right" title="Costo promedio ponderado de compra por acción">Costo Prom.</th>
-            <th class="text-right" title="Último precio de mercado registrado">Precio Actual</th>
-            <th class="text-right" title="Ganancia o pérdida potencial si vendiera hoy (P&L = Profit and Loss)">P&L No Realizado</th>
-            <th class="text-right" title="Variación porcentual diaria del precio de la acción">Var. %</th>
-            <th class="text-center" title="Tendencia del precio frente a sus medias móviles simples (Simple Moving Average) de 5 y 20 días">SMA 5 / 20</th>
-            <th class="text-right" title="Volumen Relativo: Relación entre el volumen negociado reciente y su promedio de 30 días">VR</th>
-            <th class="text-center" title="Cantidad de días consecutivos sin operaciones registradas en el mercado">Días Inactivo</th>
-            <th title="Señales técnicas y operativas detectadas por el sistema">Alertas</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="indicadores.length === 0">
-            <td colspan="10" class="text-center empty-state">No se encontraron posiciones en su portafolio para la fecha actual.</td>
-          </tr>
-          <tr *ngFor="let row of indicadores" class="table-row-hover">
-            <td class="font-bold text-accent">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</td>
-            <td class="text-right">{{ row.cantidad_posicion | number:'1.0-0' }}</td>
-            <td class="text-right">{{ row.costo_promedio | currency:'USD' }}</td>
-            <td class="text-right">{{ row.precio_mercado | currency:'USD' }}</td>
-            <td class="text-right" [ngClass]="{'text-success': +row.pl_no_realizado > 0, 'text-danger': +row.pl_no_realizado < 0}">
-              {{ row.pl_no_realizado | currency:'USD' }}
-            </td>
-            <td class="text-right" [ngClass]="{'text-success': +row.porcentaje_no_realizado > 0, 'text-danger': +row.porcentaje_no_realizado < 0}">
-              <span class="trend-indicator" *ngIf="+row.porcentaje_no_realizado > 0">↑</span>
-              <span class="trend-indicator" *ngIf="+row.porcentaje_no_realizado < 0">↓</span>
-              {{ row.porcentaje_no_realizado }}%
-            </td>
-            <td class="text-center" style="white-space: nowrap;">
-              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_5 ? 'badge-bullish' : 'badge-bearish'">
-                5d: {{ row.sma_5 | number:'1.2-2' }}
-              </span>
-              <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_20 ? 'badge-bullish' : 'badge-bearish'">
-                20d: {{ row.sma_20 | number:'1.2-2' }}
-              </span>
-            </td>
-            <td class="text-right">{{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}</td>
-            <td class="text-center">{{ row.dias_sin_negociacion }}</td>
-            <td class="alerts-cell">
-              <span *ngFor="let alert of row.alertas" class="alert-badge" [ngClass]="getAlertClass(alert)" [title]="getAlertTooltip(alert)">
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="emisor.nombre" [title]="'Empresa emisora de las acciones'">
+            Emisor <p-sortIcon field="emisor.nombre"></p-sortIcon>
+          </th>
+          <th pSortableColumn="cantidad_posicion" class="text-right" [title]="'Número total de acciones en su posición actual'">
+            Cantidad <p-sortIcon field="cantidad_posicion"></p-sortIcon>
+          </th>
+          <th pSortableColumn="costo_promedio" class="text-right" [title]="'Costo promedio ponderado de compra por acción'">
+            Compra prom. <p-sortIcon field="costo_promedio"></p-sortIcon>
+          </th>
+          <th pSortableColumn="precio_mercado" class="text-right" [title]="'Último precio de mercado registrado en Bolsa'">
+            Último Precio <p-sortIcon field="precio_mercado"></p-sortIcon>
+          </th>
+          <th pSortableColumn="precio_anterior" class="text-right" [title]="'Precio promedio de cierre anterior registrado en Bolsa'">
+            Precio Ant. <p-sortIcon field="precio_anterior"></p-sortIcon>
+          </th>
+          <th pSortableColumn="pl_no_realizado" class="text-right" [title]="'Ganancia o pérdida potencial si vendiera hoy ($)'">
+            P&L No Realizado <p-sortIcon field="pl_no_realizado"></p-sortIcon>
+          </th>
+          <th pSortableColumn="porcentaje_no_realizado" class="text-right" [title]="'Rendimiento porcentual acumulado sobre costo de compra'">
+            Plusvalía % <p-sortIcon field="porcentaje_no_realizado"></p-sortIcon>
+          </th>
+          <th pSortableColumn="variacion_diaria_pct" class="text-right" [title]="'Variación porcentual diaria del precio en la Bolsa'">
+            Var. Diaria <p-sortIcon field="variacion_diaria_pct"></p-sortIcon>
+          </th>
+          <th class="text-center" [title]="'Medias móviles simples de 5 y 20 días'">
+            SMA 5 / 20
+          </th>
+          <th pSortableColumn="vr" class="text-right" [title]="'Volumen Relativo frente al promedio de 30 días'">
+            VR <p-sortIcon field="vr"></p-sortIcon>
+          </th>
+          <th pSortableColumn="dias_sin_negociacion" class="text-center" [title]="'Días consecutivos sin operaciones en el mercado'">
+            Días Inactivo <p-sortIcon field="dias_sin_negociacion"></p-sortIcon>
+          </th>
+          <th [title]="'Señales y alertas operativas detectadas'">
+            Alertas
+          </th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <!-- Emisor -->
+          <td>
+            <span class="font-bold text-gray-800">
+              {{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}
+            </span>
+          </td>
+
+          <!-- Cantidad -->
+          <td class="text-right font-semibold">
+            {{ row.cantidad_posicion | number:'1.0-0' }}
+          </td>
+
+          <!-- Compra prom. -->
+          <td class="text-right text-muted">
+            {{ row.costo_promedio | currency:'USD' }}
+          </td>
+
+          <!-- Último Precio -->
+          <td class="text-right font-bold text-gray-900">
+            {{ row.precio_mercado | currency:'USD' }}
+          </td>
+
+          <!-- Precio Ant. -->
+          <td class="text-right text-muted">
+            {{ row.precio_anterior ? (row.precio_anterior | currency:'USD') : '-' }}
+          </td>
+
+          <!-- P&L No Realizado ($) -->
+          <td class="text-right font-bold" [ngClass]="{'text-success': +row.pl_no_realizado > 0, 'text-danger': +row.pl_no_realizado < 0}">
+            {{ +row.pl_no_realizado > 0 ? '+' : '' }}{{ row.pl_no_realizado | currency:'USD' }}
+          </td>
+
+          <!-- Plusvalía % -->
+          <td class="text-right font-semibold" [ngClass]="{'text-success': +row.porcentaje_no_realizado > 0, 'text-danger': +row.porcentaje_no_realizado < 0}">
+            <i class="pi pi-arrow-up text-xs me-1" *ngIf="+row.porcentaje_no_realizado > 0"></i>
+            <i class="pi pi-arrow-down text-xs me-1" *ngIf="+row.porcentaje_no_realizado < 0"></i>
+            {{ +row.porcentaje_no_realizado > 0 ? '+' : '' }}{{ row.porcentaje_no_realizado }}%
+          </td>
+
+          <!-- Var. Diaria (%) -->
+          <td class="text-right font-semibold" [ngClass]="{'text-success': +(row.variacion_diaria_pct || 0) > 0, 'text-danger': +(row.variacion_diaria_pct || 0) < 0, 'text-secondary': !(row.variacion_diaria_pct || 0)}">
+            <span *ngIf="+(row.variacion_diaria_pct || 0) > 0">
+              <i class="pi pi-arrow-up text-xs me-1"></i>+{{ row.variacion_diaria_pct | number:'1.2-2' }}%
+            </span>
+            <span *ngIf="+(row.variacion_diaria_pct || 0) < 0">
+              <i class="pi pi-arrow-down text-xs me-1"></i>{{ row.variacion_diaria_pct | number:'1.2-2' }}%
+            </span>
+            <span *ngIf="!(row.variacion_diaria_pct || 0)">0.00%</span>
+          </td>
+
+          <!-- SMA 5 / 20 -->
+          <td class="text-center" style="white-space: nowrap;">
+            <span class="badge me-1" [ngClass]="+row.precio_mercado > +row.sma_5 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+              5d: {{ row.sma_5 | number:'1.2-2' }}
+            </span>
+            <span class="badge" [ngClass]="+row.precio_mercado > +row.sma_20 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+              20d: {{ row.sma_20 | number:'1.2-2' }}
+            </span>
+          </td>
+
+          <!-- VR -->
+          <td class="text-right text-muted">
+            {{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}
+          </td>
+
+          <!-- Días Inactivo -->
+          <td class="text-center font-mono">
+            {{ row.dias_sin_negociacion }}
+          </td>
+
+          <!-- Alertas -->
+          <td style="white-space: normal;">
+            <div class="d-flex flex-wrap gap-1">
+              <span *ngFor="let alert of row.alertas" class="badge rounded-pill px-2 py-1" [ngClass]="getAlertClass(alert)" [title]="getAlertTooltip(alert)" style="font-size: 0.75rem;">
                 {{ alert }}
               </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-    <!-- Leyenda Explicativa -->
-    <div class="dashboard-legend mt-4 p-3 rounded" style="background-color: #f8f9fa; border: 1px solid #dee2e6; font-size: 0.85rem;">
-      <h5 class="mb-2" style="font-size: 0.95rem; font-weight: 600; color: #495057;">Guía Rápida de Alertas y Columnas</h5>
-      <p class="mb-2 text-muted">Pase el cursor sobre los encabezados de la tabla para ver el significado de cada métrica. Las alertas principales significan lo siguiente:</p>
-      <ul class="mb-0 text-muted" style="padding-left: 1.5rem;">
-        <li><span class="font-semibold text-success">No Realizado > X%</span>: Tu ganancia latente supera el umbral esperado.</li>
-        <li><span class="font-semibold text-danger">No Realizado < X%</span>: Tu pérdida latente ha caído por debajo del margen de riesgo establecido.</li>
-        <li><span class="font-semibold text-success">Variacion diaria > X%</span> / <span class="font-semibold text-danger">Variacion diaria < X%</span>: El precio de la acción tuvo un movimiento atípico hoy.</li>
-        <li><span class="font-semibold" style="color: #6c757d;">Sin negociacion > X dias</span>: Acción ilíquida que no ha tenido actividad bursátil recientemente.</li>
-      </ul>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="12" class="text-center p-4 text-muted">
+            No se encontraron posiciones o indicadores para la búsqueda actual.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Guía Rápida de Alertas -->
+  <div class="mt-4 p-3 rounded bg-light border" style="font-size: 0.85rem;">
+    <h6 class="mb-2 font-semibold text-secondary">
+      <i class="pi pi-info-circle me-1"></i>Guía Rápida de Alertas y Métricas
+    </h6>
+    <p class="mb-2 text-muted">Pase el cursor sobre los encabezados de la tabla para ver el significado de cada métrica. Significado de alertas:</p>
+    <div class="row g-2 text-muted">
+      <div class="col-md-6 col-lg-3">
+        <span class="badge bg-success-subtle text-success border border-success-subtle me-1">No Realizado > X%</span>
+        <span>Ganancia latente supera umbral.</span>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">No Realizado < X%</span>
+        <span>Pérdida latente supera umbral.</span>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <span class="badge bg-success-subtle text-success border border-success-subtle me-1">Variacion diaria > X%</span>
+        <span>Movimiento alcista atípico.</span>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle me-1">Sin negociacion > X dias</span>
+        <span>Acción ilíquida en bolsa.</span>
+      </div>
     </div>
   </div>
 </div>

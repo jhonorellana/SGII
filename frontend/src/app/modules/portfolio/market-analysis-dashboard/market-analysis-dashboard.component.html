@@ -23,9 +23,23 @@
 
   <div *ngIf="!loading && !error" class="market-grid">
     <div *ngFor="let row of indicadores" class="card premium-card glass-panel market-card">
-      <div class="card-header app-custom-header text-white">
-        <h3 class="emisor-title">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</h3>
-        <span class="price-tag">{{ row.precio_mercado | currency:'USD' }}</span>
+      <div class="card-header app-custom-header text-white d-flex justify-content-between align-items-center">
+        <div>
+          <h3 class="emisor-title mb-0">{{ row.emisor?.nombre || row.emisor?.sigla || 'Desconocido' }}</h3>
+          <small class="text-white-50 text-xs d-block" *ngIf="row.fecha_cierre" style="font-size: 0.7rem; opacity: 0.85;">
+            Cierre Bolsa: {{ row.fecha_cierre }}
+          </small>
+        </div>
+        <div class="text-end">
+          <span class="price-tag d-block">{{ row.precio_mercado | currency:'USD' }}</span>
+          <span class="badge px-2 py-1 mt-1 font-semibold d-inline-block" 
+                [ngClass]="+(row.variacion_diaria_pct || 0) > 0 ? 'bg-success text-white' : (+(row.variacion_diaria_pct || 0) < 0 ? 'bg-danger text-white' : 'bg-secondary text-white')" 
+                style="font-size: 0.75rem; border-radius: 4px;">
+            <i class="bi bi-arrow-up-short" *ngIf="+(row.variacion_diaria_pct || 0) > 0"></i>
+            <i class="bi bi-arrow-down-short" *ngIf="+(row.variacion_diaria_pct || 0) < 0"></i>
+            {{ +(row.variacion_diaria_pct || 0) > 0 ? '+' : '' }}{{ (row.variacion_diaria_pct || 0) | number:'1.2-2' }}%
+          </span>
+        </div>
       </div>
       <div class="card-body">
         <!-- Primer Bloque: Mi Posición en Portafolio -->
@@ -73,6 +87,10 @@
 
         <!-- Segundo Bloque: Métricas Técnicas de Mercado -->
         <div class="metrics-grid mb-3">
+          <div class="metric" title="Precio promedio de cierre registrado el día anterior en bolsa">
+            <span class="metric-label">Precio Ant.</span>
+            <span class="metric-value text-muted">{{ row.precio_anterior ? (row.precio_anterior | currency:'USD') : '-' }}</span>
+          </div>
           <div class="metric" title="Tendencia del precio frente a la Media Móvil Simple de 5 días">
             <span class="metric-label">SMA 5</span>
             <span class="metric-value">{{ row.sma_5 | currency:'USD' }}</span>
@@ -82,7 +100,7 @@
             <span class="metric-value">{{ row.sma_20 | currency:'USD' }}</span>
           </div>
           <div class="metric" title="Volumen Relativo: Relación entre el volumen reciente y su promedio de 30 días">
-            <span class="metric-label">Volumen Relativo</span>
+            <span class="metric-label">Vol. Relativo</span>
             <span class="metric-value">{{ row.vr ? (row.vr | number:'1.2-2') : 'N/A' }}</span>
           </div>
           <div class="metric" title="Días consecutivos sin negociaciones de esta acción en bolsa">

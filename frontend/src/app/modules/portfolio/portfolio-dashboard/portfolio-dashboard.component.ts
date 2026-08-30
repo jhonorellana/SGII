@@ -2,11 +2,14 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PortfolioIndicadoresService, SnapshotCarteraDiaria } from '../../../services/portfolio-indicadores/portfolio-indicadores.service';
 import { HttpClientModule } from '@angular/common/http';
+import { TableModule } from 'primeng/table';
+import { InputTextModule } from 'primeng/inputtext';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-portfolio-dashboard',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, HttpClientModule, TableModule, InputTextModule, TagModule],
   templateUrl: './portfolio-dashboard.component.html',
   styleUrl: './portfolio-dashboard.component.css',
   providers: [PortfolioIndicadoresService]
@@ -43,10 +46,16 @@ export class PortfolioDashboardComponent implements OnInit {
 
   getAlertClass(alerta: string): string {
     const alertLower = alerta.toLowerCase();
-    if (alertLower.includes('no realizado >') || alertLower.includes('variacion diaria >') || alertLower.includes('variación diaria >')) return 'alert-success-badge';
-    if (alertLower.includes('no realizado <') || alertLower.includes('variacion diaria <') || alertLower.includes('variación diaria <')) return 'alert-danger-badge';
-    if (alertLower.includes('rsi')) return 'alert-warning-badge';
-    return 'alert-info-badge';
+    if (alertLower.includes('no realizado >') || alertLower.includes('variacion diaria >') || alertLower.includes('variación diaria >')) {
+      return 'bg-success-subtle text-success border border-success-subtle';
+    }
+    if (alertLower.includes('no realizado <') || alertLower.includes('variacion diaria <') || alertLower.includes('variación diaria <')) {
+      return 'bg-danger-subtle text-danger border border-danger-subtle';
+    }
+    if (alertLower.includes('rsi')) {
+      return 'bg-warning-subtle text-warning border border-warning-subtle';
+    }
+    return 'bg-secondary-subtle text-secondary border border-secondary-subtle';
   }
 
   getAlertTooltip(alerta: string): string {

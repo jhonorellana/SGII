@@ -26,6 +26,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import { ModalActionsComponent } from '../../../core/modal-actions';
+import { PortfolioDashboardComponent } from '../../portfolio/portfolio-dashboard/portfolio-dashboard.component';
 
 @Component({
   selector: 'app-portafolio-list',
@@ -44,7 +45,8 @@ import { ModalActionsComponent } from '../../../core/modal-actions';
     TagModule,
     InputSwitchModule,
     DialogModule,
-    ModalActionsComponent
+    ModalActionsComponent,
+    PortfolioDashboardComponent
   ],
   templateUrl: './portafolio-list.component.html',
   styleUrl: './portafolio-list.component.css'

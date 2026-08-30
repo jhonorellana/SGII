@@ -144,50 +144,45 @@ body {
 }
 
 .p-tabview .p-tabview-nav {
-  background: linear-gradient(135deg, #166534 0%, #22c55e 100%) !important;
-  border: 1px solid #15803d !important;
-  border-radius: 8px 8px 0 0 !important;
-  padding: 8px 0.5rem 0 0.5rem !important;
-  margin-bottom: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 0.75rem !important;
+  display: flex !important;
+  gap: 0.5rem !important;
 }
 
 .p-tabview .p-tabview-nav li {
   background: transparent !important;
   border: none !important;
-  margin-right: 6px !important; /* Espacio entre pestañas */
+  margin-right: 0 !important;
 }
 
 .p-tabview .p-tabview-nav li .p-tabview-nav-link {
-  border-radius: 6px 6px 0 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
+  border-radius: 6px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #475569 !important;
   font-weight: 600 !important;
-  padding: 12px 18px !important;
-  font-size: 0.95rem !important;
+  padding: 8px 16px !important;
+  font-size: 0.9rem !important;
   transition: all 0.2s ease-in-out !important;
 }
 
 /* Pestañas inactivas */
-.p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link {
-  background-color: #dcfce7 !important; /* Verde medio */
-  color: #166534 !important; /* Texto verde oscuro */
-  border-bottom: 2px solid transparent !important;
-}
-
 .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover {
-  background-color: #bbf7d0 !important; /* Verde un poco más oscuro al pasar el ratón */
-  border-bottom: 2px solid #86efac !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
 }
 
-/* Pestaña activa con color sólido blanco */
+/* Pestaña activa */
 .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
-  background: #ffffff !important; /* Blanco sólido */
-  border-top: 3px solid #22c55e !important;
-  border-bottom: none !important;
-  font-weight: 700 !important;
-  color: #166534 !important;
-  padding: 12px 18px !important;
+  background: #047857 !important;
+  color: #ffffff !important;
+  border: 1px solid #047857 !important;
+  font-weight: 600 !important;
+  padding: 8px 16px !important;
   font-size: 0.95rem !important;
   transition: all 0.2s ease-in-out !important;
 }
