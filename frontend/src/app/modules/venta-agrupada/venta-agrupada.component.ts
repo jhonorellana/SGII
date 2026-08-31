@@ -834,9 +834,13 @@ export class VentaAgrupadaComponent implements OnInit {
       saldoRes: this.movimientoCapitalService.getSaldoEsperado().pipe(catchError(() => of(null)))
     }).subscribe({
       next: ({ bromaRes, saldoRes }: any) => {
-        let broma = "¡A comprar y vender se ha dicho! 🚀";
+        let saludoDinámico = "🌅 *¡Buenos días estimado José Luis! Así arrancamos hoy con las Notas de Crédito:*";
         if (bromaRes && bromaRes.success && bromaRes.data) {
-          broma = bromaRes.data;
+          let textoLimpio = bromaRes.data.trim().replace(/^_+|_+$/g, '').replace(/^\*+|\*+$/g, '');
+          if (!/^(¡?(buenos|muy buenos|hola|estimado))/i.test(textoLimpio)) {
+            textoLimpio = `¡Buenos días estimado José Luis! ${textoLimpio}`;
+          }
+          saludoDinámico = `🌅 *${textoLimpio}*`;
         }
 
         let saldoDisponibleLine = '';
@@ -847,12 +851,11 @@ export class VentaAgrupadaComponent implements OnInit {
           }
         }
 
-        this.mensajeGeneradoIA = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n` +
+        this.mensajeGeneradoIA = `${saludoDinámico}\n\n` +
           `• 💰 *Nominal Total:* ${nominal}\n` +
           `• 💵 *Capital Invertido:* ${capital}\n` +
           `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n` +
-          `${saldoDisponibleLine}\n` +
-          `_${broma}_`;
+          `${saldoDisponibleLine}`;
 
         this.generandoMensaje = false;
         this.messageService.add({
@@ -863,11 +866,10 @@ export class VentaAgrupadaComponent implements OnInit {
       },
       error: (err: any) => {
         console.error('Error al generar resumen:', err);
-        this.mensajeGeneradoIA = `🌅 *¡Buenos días! Así arrancamos hoy con las Notas de Crédito:*\n` +
+        this.mensajeGeneradoIA = `🌅 *¡Buenos días estimado José Luis! Así arrancamos hoy con las Notas de Crédito:*\n\n` +
           `• 💰 *Nominal Total:* ${nominal}\n` +
           `• 💵 *Capital Invertido:* ${capital}\n` +
-          `• 📈 *Diferencia a favor:* ${diferencia}${diasText}\n\n` +
-          `_¡A seguir moviendo esas notas en el mercado!_ 🚀`;
+          `• 📈 *Diferencia a favor:* ${diferencia}${diasText}`;
 
         this.generandoMensaje = false;
       }

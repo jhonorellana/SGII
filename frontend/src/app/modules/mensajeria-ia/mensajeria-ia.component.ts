@@ -51,6 +51,9 @@ export class MensajeriaIaComponent implements OnInit {
 
   // TAB 2: Cierre del Día (Contabilidad)
   saldoEsperadoVal: number | null = null;
+  saldosPersonasTexto = '';
+  totalGeneralMovimientos = 0;
+  cantidadPersonasConSaldo = 0;
   loadingContabilidad = false;
   contextoTab2 = '';
   promptTab2 = '';
@@ -134,17 +137,28 @@ export class MensajeriaIaComponent implements OnInit {
     });
 
     const diferencia = nominalTotal - capitalTotal;
+    let saldoMovTexto = '';
+    if (this.saldosPersonasTexto && this.saldosPersonasTexto.trim().length > 0 && !this.saldosPersonasTexto.includes('Error') && !this.saldosPersonasTexto.includes('Sin saldos')) {
+      saldoMovTexto = `\n• 💳 Fondos disponibles para seguir comprando Notas de Crédito:\n${this.saldosPersonasTexto}`;
+    }
+
     this.contextoTab1 = `• Nominal Total: ${this.formatCurrency(nominalTotal)}\n` +
       `• Capital Invertido: ${this.formatCurrency(capitalTotal)}\n` +
-      `• Diferencia a favor: ${this.formatCurrency(diferencia)} (${seleccionadas.length} notas seleccionadas)`;
+      `• Diferencia a favor: ${this.formatCurrency(diferencia)} (${seleccionadas.length} notas seleccionadas)` +
+      `${saldoMovTexto}`;
 
     this.actualizarPromptTab1();
   }
 
   actualizarPromptTab1(): void {
-    const basePrompt = 'Genera una sola frase motivacional o saludo breve y entusiasta en español sobre finanzas para iniciar la jornada, dirigida a José Luis Vásquez, Presidente de la Casa de Valores Santa Fé. No incluyas ni repitas ninguna cifra o monto de dinero. Máximo 25 palabras. Usa siempre el trato formal de "Usted" y un emoji al final.';
+    const basePrompt = 'Genera 3 elementos breves en español (máximo 60 palabras en total) para el mensaje de inicio de día de Notas de Crédito dirigido a José Luis Vásquez (Presidente de la Casa de Valores Santa Fé). Trato formal de "Usted", sin cifras numéricas.\n\n' +
+      'DEBES RESPONDER ÚNICAMENTE CON EL SIGUIENTE FORMATO DE 3 LÍNEAS:\n' +
+      'SALUDO: [Escribe aquí un saludo matutino variado a José Luis Vásquez, ej: ¡Buenos días estimado José Luis! / ¡Muy buenos días, Sr. José Luis!]\n' +
+      'ARRANQUE: [Escribe aquí una frase variada indicando que a continuación se presenta el estado actual de las Notas de Crédito, ej: Así arrancamos hoy con las Notas de Crédito: / Le comparto los valores de apertura para las Notas de Crédito:]\n' +
+      'CIERRE: [Escribe aquí una frase graciosa, alegre o motivacional sobre inversiones para alentar el día laboral]';
+
     if (this.contextoTab1 && this.contextoTab1.trim().length > 0) {
-      this.promptTab1 = `${basePrompt}\nIndicación: Inicio de jornada laboral con notas de crédito activas.`;
+      this.promptTab1 = `${basePrompt}\nIndicación: Generar SALUDO, ARRANQUE y CIERRE variados para hoy.`;
     } else {
       this.promptTab1 = basePrompt;
     }
@@ -165,30 +179,64 @@ export class MensajeriaIaComponent implements OnInit {
     const capital = this.formatCurrency(capitalTotal);
     const diferencia = this.formatCurrency(nominalTotal - capitalTotal);
 
-    forkJoin({
-      bromaRes: this.ventaService.getBromaDiaria(this.contextoTab1, this.promptTab1).pipe(catchError(() => of(null))),
-      saldoRes: this.movimientoCapitalService.getSaldoEsperado().pipe(catchError(() => of(null)))
-    }).subscribe({
-      next: ({ bromaRes, saldoRes }: any) => {
-        let broma = "¡A comprar y vender se ha dicho! 🚀";
-        if (bromaRes && bromaRes.success && bromaRes.data) {
-          broma = bromaRes.data;
-        }
+    this.ventaService.getBromaDiaria(this.contextoTab1, this.promptTab1).pipe(catchError(() => of(null))).subscribe({
+      next: (bromaRes: any) => {
+        let saludoText = "¡Buenos días estimado José Luis!";
+        let arranqueText = "Así arrancamos hoy con las Notas de Crédito:";
+        let cierreText = "¡A comprar y vender se ha dicho! 🚀";
 
-        let saldoLine = '';
-        if (saldoRes) {
-          const saldoVal = saldoRes.saldo_esperado !== undefined ? saldoRes.saldo_esperado : (saldoRes.data ? (saldoRes.data as any).saldo_esperado : null);
-          if (saldoVal !== null && saldoVal !== undefined) {
-            saldoLine = `• 💳 *Saldo disponible para inversión:* ${this.formatCurrency(saldoVal)}\n`;
+        if (bromaRes && bromaRes.success && bromaRes.data) {
+          const rawText = bromaRes.data.trim();
+          
+          const saludoMatch = rawText.match(/SALUDO:\s*([^\n]+)/i);
+          const arranqueMatch = rawText.match(/ARRANQUE:\s*([^\n]+)/i);
+          const cierreMatch = rawText.match(/CIERRE:\s*([\s\S]+)/i);
+
+          if (saludoMatch && saludoMatch[1]) {
+            saludoText = saludoMatch[1].trim().replace(/^_*|_+$/g, '').replace(/^\*+|\*+$/g, '');
+          }
+          if (arranqueMatch && arranqueMatch[1]) {
+            arranqueText = arranqueMatch[1].trim().replace(/^_*|_+$/g, '').replace(/^\*+|\*+$/g, '');
+          }
+          if (cierreMatch && cierreMatch[1]) {
+            cierreText = cierreMatch[1].trim().replace(/^_*|_+$/g, '').replace(/^\*+|\*+$/g, '');
+          }
+
+          // Fallback en caso de que no haya venido alguna de las etiquetas
+          if (!saludoMatch && !arranqueMatch && !cierreMatch) {
+            const lines = rawText.split('\n').filter((l: string) => l.trim().length > 0);
+            if (lines.length >= 1) saludoText = lines[0].trim();
+            if (lines.length >= 2) arranqueText = lines[1].trim();
+            if (lines.length >= 3) cierreText = lines[2].trim();
+          }
+
+          // Garantizar que el saludo incluya a José Luis y buenos días
+          if (!/José Luis/i.test(saludoText)) {
+            saludoText = `¡Buenos días estimado José Luis!`;
+          }
+          if (!/^(¡?(buenos|muy buenos|hola|estimado))/i.test(saludoText)) {
+            saludoText = `¡Buenos días! ${saludoText}`;
+          }
+
+          // Garantizar que el arranque mencione Notas de Crédito o estado
+          if (!/notas/i.test(arranqueText) && !/arrancamos/i.test(arranqueText) && !/estado/i.test(arranqueText)) {
+            arranqueText = `${arranqueText} Así arrancamos hoy con las Notas de Crédito:`;
           }
         }
 
-        this.mensajeFinalTab1 = `🌅 *¡Buenos días estimado José Luis! Así arrancamos hoy con las Notas de Crédito:*\n` +
+        const headerText = `${saludoText} ${arranqueText}`.replace(/\s+/g, ' ').trim();
+
+        let saldoLine = '';
+        if (this.saldosPersonasTexto && this.saldosPersonasTexto.trim().length > 0 && !this.saldosPersonasTexto.includes('Error') && !this.saldosPersonasTexto.includes('Sin saldos')) {
+          saldoLine = `\n• 💳 *Fondos disponibles para seguir comprando Notas de Crédito:*\n${this.saldosPersonasTexto}`;
+        }
+
+        this.mensajeFinalTab1 = `🌅 *${headerText}*\n\n` +
           `• 💰 *Nominal Total:* ${nominal}\n` +
           `• 💵 *Capital Invertido:* ${capital}\n` +
-          `• 📈 *Diferencia a favor:* ${diferencia}\n` +
-          `${saldoLine}\n` +
-          `_${broma}_`;
+          `• 📈 *Diferencia a favor:* ${diferencia}` +
+          `${saldoLine}\n\n` +
+          `_${cierreText}_`;
 
         this.generandoTab1 = false;
         this.messageService.add({
@@ -206,10 +254,6 @@ export class MensajeriaIaComponent implements OnInit {
   // ==========================================
   // TAB 2: CIERRE DEL DÍA (CONTABILIDAD)
   // ==========================================
-  saldosPersonasTexto = '';
-  totalGeneralMovimientos = 0;
-  cantidadPersonasConSaldo = 0;
-
   cargarDatosTab2(): void {
     this.loadingContabilidad = true;
     this.movimientoCapitalService.getAll().subscribe({
@@ -275,6 +319,7 @@ export class MensajeriaIaComponent implements OnInit {
           : '• _Sin saldos activos por persona_';
 
         this.actualizarContextoTab2();
+        this.actualizarContextoTab1();
         this.loadingContabilidad = false;
       },
       error: () => {
@@ -282,6 +327,7 @@ export class MensajeriaIaComponent implements OnInit {
         this.totalGeneralMovimientos = 0;
         this.cantidadPersonasConSaldo = 0;
         this.actualizarContextoTab2();
+        this.actualizarContextoTab1();
         this.loadingContabilidad = false;
       }
     });
