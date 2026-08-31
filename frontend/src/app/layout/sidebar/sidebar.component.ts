@@ -195,6 +195,11 @@ export class SidebarComponent implements OnInit {
         }
       ]
     },
+    {
+      title: 'Mensajes IA',
+      icon: 'bi-chat-quote-fill',
+      path: '/mensajes-ia'
+    },
 
     {
       title: 'Datos Maestros',

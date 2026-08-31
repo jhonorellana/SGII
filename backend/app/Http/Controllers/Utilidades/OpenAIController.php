@@ -27,9 +27,9 @@ class OpenAIController extends Controller
             if (!empty($promptCustom)) {
                 $userMessage = $promptCustom;
             } else {
-                $userMessage = 'Genera una frase amigable, ingeniosa y breve (máximo 30 palabras) escrita en primera persona desde la perspectiva de un inversionista que le escribe a su corredor de bolsa en Ecuador. Debe hacer un comentario con toque de humor entusiasta sobre el estado reciente de sus acciones y pedir su recomendación u opinión experta. Usa emojis al final. La casa de Valores se llama Santa Fé. La persona a quien va dirigido el mensaje es José Luis. Usa la información del portafolio para generar la frase.';
+                $userMessage = 'Genera una frase amigable, ingeniosa y breve (máximo 50 palabras) escrita en primera persona desde la perspectiva del inversionista que le escribe a su corredor de bolsa en Ecuador. Debe hacer un comentario con toque de humor entusiasta sobre el estado reciente de sus acciones y pedir su recomendación u opinión experta. Usa emojis al final. El mensaje va dirigido al Presidente de la Casa de Valores Santa Fé, su nombre es José Luis. Usa la información del portafolio para generar la frase. El trato debe ser de usted.';
                 if (!empty($contexto)) {
-                    $userMessage .= " El estado y movimientos recientes de su portafolio son: '{$contexto}'.";
+                    $userMessage .= " El estado y movimientos recientes de mi portafolio son: '{$contexto}'.";
                 }
             }
 
@@ -40,7 +40,7 @@ class OpenAIController extends Controller
                     'messages' => [
                         [
                             'role' => 'system',
-                            'content' => 'Eres un inversionista en Ecuador entusiasta, inteligente y amigable, que le escribe a su corredor de bolsa para consultar su recomendación u opinión experta sobre los movimientos de su portafolio de acciones.'
+                            'content' => 'Eres un inversionista en Ecuador entusiasta, inteligente y amigable, que le escribe a su corredor de bolsa o contadora. Mantén siempre un trato formal y respetuoso usando de "Usted".'
                         ],
                         [
                             'role' => 'user',

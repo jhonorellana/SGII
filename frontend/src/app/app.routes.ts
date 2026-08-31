@@ -38,6 +38,7 @@ import { DividendoListComponent } from './modules/renta-variable/dividendos/divi
 import { PortfolioDashboardComponent } from './modules/portfolio/portfolio-dashboard/portfolio-dashboard.component';
 import { MarketAnalysisDashboardComponent } from './modules/portfolio/market-analysis-dashboard/market-analysis-dashboard.component';
 import { ResumenGerencialComponent } from './reportes/resumen-gerencial/resumen-gerencial.component';
+import { MensajeriaIaComponent } from './modules/mensajeria-ia/mensajeria-ia.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -47,6 +48,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      { path: 'mensajes-ia', component: MensajeriaIaComponent },
       { path: 'catalogos', component: CatalogoListComponent },
       { path: 'catalogos/new', component: CatalogoFormComponent },
       { path: 'catalogos/:id/edit', component: CatalogoFormComponent },

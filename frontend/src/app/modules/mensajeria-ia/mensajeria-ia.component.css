@@ -1,0 +1,44 @@
+.mensajeria-container {
+  background-color: #f8fafc;
+  min-height: calc(100vh - 70px);
+}
+
+.fs-7 {
+  font-size: 0.83rem !important;
+}
+
+/* Compact Table Padding */
+.table-compact td, .table-compact th {
+  padding: 4px 8px !important;
+}
+
+/* Estilos de Pestañas PrimeNG Compactos */
+::ng-deep .custom-ia-tabview .p-tabview-nav {
+  border-bottom: 2px solid #e2e8f0;
+  background: transparent;
+  gap: 6px;
+  margin-bottom: 0 !important;
+}
+
+::ng-deep .custom-ia-tabview .p-tabview-nav li .p-tabview-nav-link {
+  border: 1px solid #cbd5e1;
+  border-bottom: none;
+  background: #ffffff;
+  color: #475569;
+  font-weight: 600;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding: 7px 14px !important;
+  transition: all 0.2s ease-in-out;
+}
+
+::ng-deep .custom-ia-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%);
+  color: #ffffff !important;
+  border-color: #15803d;
+}
+
+::ng-deep .custom-ia-tabview .p-tabview-panels {
+  background: transparent;
+  padding: 6px 0 0 0 !important;
+}

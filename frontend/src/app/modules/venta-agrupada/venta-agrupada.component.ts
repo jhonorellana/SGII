@@ -69,9 +69,9 @@ export class VentaAgrupadaComponent implements OnInit {
   rowsPerPage: number = 10;
 
   actualizarPromptIA(): void {
-    const basePrompt = 'Genera una frase amigable, ingeniosa y breve (máximo 30 palabras) escrita en primera persona desde la perspectiva de un inversionista que le escribe a su corredor de bolsa en Ecuador. Debe hacer un comentario con toque de humor entusiasta sobre el estado reciente de sus acciones y pedir su recomendación u opinión experta. Usa emojis al final. La casa de Valores se llama Santa Fé. La persona a quien va dirigido el mensaje es José Luis. Usa la información del portafolio para generar la frase.';
+    const basePrompt = 'Genera una frase amigable, ingeniosa y breve (máximo 50 palabras) escrita en primera persona desde la perspectiva del inversionista que le escribe a su corredor de bolsa en Ecuador. Debe hacer un comentario con toque de humor entusiasta sobre el estado reciente de sus acciones y pedir su recomendación u opinión experta. Usa emojis al final. El mensaje va dirigido al Presidente de la Casa de Valores Santa Fé, su nombre es José Luis. Usa la información del portafolio para generar la frase. El trato debe ser de Usted.';
     if (this.contextoIA && this.contextoIA.trim().length > 0) {
-      this.promptIA = `${basePrompt}\n\nEl estado y movimientos recientes de su portafolio son:\n'${this.contextoIA}'`;
+      this.promptIA = `${basePrompt} El estado y movimientos recientes de mi portafolio son:\n'${this.contextoIA}'`;
     } else {
       this.promptIA = basePrompt;
     }

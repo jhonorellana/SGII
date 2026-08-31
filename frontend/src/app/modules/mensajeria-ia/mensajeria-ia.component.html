@@ -1,0 +1,233 @@
+<p-toast></p-toast>
+
+<div class="mensajeria-container p-2">
+  <!-- CABECERA INSTITUCIONAL SIPRO -->
+  <div class="app-custom-header d-flex align-items-center justify-content-between rounded-3 mb-2 shadow-sm py-2 px-3">
+    <div class="d-flex align-items-center gap-3">
+      <i class="pi pi-sparkles text-white fs-2 ms-1 me-1"></i>
+      <div>
+        <h2 class="title text-white m-0 font-bold fs-5">Generador de Mensajes IA</h2>
+        <p class="subtitle text-white-50 m-0 fs-6">Comunicaciones inteligentes personalizadas para Notas de Crédito, Contabilidad y Renta Variable</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PESTAÑAS PRINCIPALES -->
+  <p-tabView styleClass="custom-ia-tabview">
+
+    <!-- PESTAÑA 1: INICIO DE DÍA (NOTAS DE CRÉDITO) -->
+    <p-tabPanel header="1. Inicio de Día (Notas de Crédito)" leftIcon="pi pi-sun">
+      <div class="row g-2 mt-0">
+
+        <!-- LADO IZQUIERDO: SELECCIÓN DE NOTAS CON MÁS COLUMNAS -->
+        <div class="col-12 col-xl-7">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-2 px-3 d-flex justify-content-between align-items-center">
+              <h6 class="m-0 text-success fw-bold">
+                <i class="bi bi-receipt me-2"></i>Notas de Crédito Activas
+              </h6>
+              <span class="badge bg-success-subtle text-success border border-success-subtle">
+                {{ inversionesSeleccionadasTab1.length }} de {{ inversionesNotas.length }} seleccionadas
+              </span>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-hover table-compact align-middle mb-0" style="font-size: 0.82rem;">
+                  <thead class="table-light sticky-top">
+                    <tr>
+                      <th style="width: 36px;" class="text-center">
+                        <p-checkbox [binary]="true" (onChange)="toggleSeleccionTodas($event)"></p-checkbox>
+                      </th>
+                      <th class="text-center" style="width: 60px;">ID</th>
+                      <th>Propietario</th>
+                      <th class="text-center" style="width: 95px;">F. Compra</th>
+                      <th class="text-center" style="width: 55px;">Días</th>
+                      <th class="text-end" style="width: 75px;">Precio</th>
+                      <th class="text-end" style="width: 95px;">Nominal</th>
+                      <th class="text-end" style="width: 95px;">Capital</th>
+                      <th class="text-end" style="width: 95px;">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let nota of inversionesNotas" (click)="inversionesSeleccionadasMap[nota.id_inversion!] = !inversionesSeleccionadasMap[nota.id_inversion!]; actualizarContextoTab1();" style="cursor: pointer;">
+                      <td class="text-center" (click)="$event.stopPropagation()">
+                        <p-checkbox [binary]="true" [(ngModel)]="inversionesSeleccionadasMap[nota.id_inversion!]" (onChange)="actualizarContextoTab1()"></p-checkbox>
+                      </td>
+                      <td class="text-center fw-bold text-secondary">#{{ nota.id_inversion }}</td>
+                      <td>
+                        <span class="fw-semibold">{{ getNombrePropietario(nota) }}</span>
+                      </td>
+                      <td class="text-center text-muted fs-7">{{ nota.fecha_compra | date:'yyyy-MM-dd' }}</td>
+                      <td class="text-center text-primary font-bold fs-7">{{ getDiasTranscurridos(nota.fecha_compra) }}d</td>
+                      <td class="text-end text-muted fs-7">{{ getPrecioCompraPercent(nota) }}</td>
+                      <td class="text-end fw-bold text-success">{{ formatCurrency(nota.valor_nominal) }}</td>
+                      <td class="text-end">{{ formatCurrency(nota.capital_invertido) }}</td>
+                      <td class="text-end fw-bold text-warning">{{ formatCurrency(getDiferencia(nota)) }}</td>
+                    </tr>
+                    <tr *ngIf="inversionesNotas.length === 0">
+                      <td colspan="9" class="text-center py-3 text-muted">No hay notas de crédito activas registradas.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- LADO DERECHO: CONTEXTO, PROMPT Y GENERACIÓN -->
+        <div class="col-12 col-xl-5">
+          <div class="d-flex flex-column gap-2">
+
+            <!-- 1 y 2. Contexto y Prompt lado a lado -->
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <label class="form-label fw-bold text-secondary mb-1 fs-7">
+                      <i class="pi pi-sparkles text-primary me-1"></i> 1. Contexto de Datos (Notas):
+                    </label>
+                    <textarea pInputTextarea [(ngModel)]="contextoTab1" (ngModelChange)="actualizarPromptTab1()" rows="6" class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <label class="form-label fw-bold text-secondary mb-1 fs-7">
+                      <i class="pi pi-send text-warning me-1"></i> 2. Prompt a OpenAI (Editable):
+                    </label>
+                    <textarea pInputTextarea [(ngModel)]="promptTab1" rows="6" class="form-control p-inputtext-sm font-monospace bg-light fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Mensaje Generado -->
+            <div class="card border-0 shadow-sm border-start border-success border-4">
+              <div class="card-body p-2 px-3">
+                <label class="form-label fw-bold text-success mb-1 fs-7">
+                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                </label>
+                <textarea pInputTextarea [(ngModel)]="mensajeFinalTab1" rows="8" placeholder="Haz clic en 'Generar Mensaje Matutino con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+              </div>
+            </div>
+
+            <!-- Botones al final de la página -->
+            <div class="d-flex justify-content-end gap-2 mt-1">
+              <button pButton type="button" label="Generar Mensaje Matutino con IA" [icon]="generandoTab1 ? 'pi pi-spinner pi-spin' : 'pi pi-bolt'" class="p-button-success shadow-sm p-button-sm" (click)="generarMensajeTab1()" [disabled]="generandoTab1"></button>
+              <button pButton type="button" label="Copiar al Portapapeles" icon="pi pi-copy" class="p-button-outlined p-button-success shadow-sm p-button-sm" (click)="copiarAlPortapapeles(mensajeFinalTab1, 'Mensaje Matutino')" [disabled]="!mensajeFinalTab1"></button>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </p-tabPanel>
+
+    <!-- PESTAÑA 2: CIERRE DEL DÍA (CONTABILIDAD) -->
+    <p-tabPanel header="2. Cierre del Día (Contabilidad)" leftIcon="pi pi-moon">
+      <div class="row g-2 mt-0">
+        <div class="col-12">
+          <div class="d-flex flex-column gap-2">
+
+            <!-- 1 y 2. Contexto y Prompt Lado a Lado -->
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <label class="form-label fw-bold text-secondary mb-1 fs-7">
+                      <i class="pi pi-calculator text-primary me-1"></i> 1. Contexto del Cierre Contable:
+                    </label>
+                    <textarea pInputTextarea [(ngModel)]="contextoTab2" (ngModelChange)="actualizarPromptTab2()" rows="7" class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <label class="form-label fw-bold text-secondary mb-1 fs-7">
+                      <i class="pi pi-send text-warning me-1"></i> 2. Prompt a OpenAI (Editable):
+                    </label>
+                    <textarea pInputTextarea [(ngModel)]="promptTab2" rows="7" class="form-control p-inputtext-sm font-monospace bg-light fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Mensaje Final -->
+            <div class="card border-0 shadow-sm border-start border-success border-4">
+              <div class="card-body p-2 px-3">
+                <label class="form-label fw-bold text-success mb-1 fs-7">
+                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                </label>
+                <textarea pInputTextarea [(ngModel)]="mensajeFinalTab2" rows="8" placeholder="Haz clic en 'Generar Reporte de Cierre con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+              </div>
+            </div>
+
+            <!-- Botones al final de la página -->
+            <div class="d-flex justify-content-end gap-2 mt-1 mb-1">
+              <button pButton type="button" label="Generar Reporte de Cierre con IA" [icon]="generandoTab2 ? 'pi pi-spinner pi-spin' : 'pi pi-bolt'" class="p-button-success shadow-sm p-button-sm" (click)="generarMensajeTab2()" [disabled]="generandoTab2"></button>
+              <button pButton type="button" label="Copiar al Portapapeles" icon="pi pi-copy" class="p-button-outlined p-button-success shadow-sm p-button-sm" (click)="copiarAlPortapapeles(mensajeFinalTab2, 'Reporte de Cierre Contable')" [disabled]="!mensajeFinalTab2"></button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- PESTAÑA 3: RENTA VARIABLE (SANTA FÉ - JOSÉ LUIS) -->
+    <p-tabPanel header="3. Renta Variable (Santa Fé - José Luis)" leftIcon="pi pi-chart-line">
+      <div class="row g-2 mt-0">
+        <div class="col-12">
+          <div class="d-flex flex-column gap-2">
+
+            <!-- 1 y 2. Contexto y Prompt Lado a Lado -->
+            <div class="row g-2">
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <label class="form-label fw-bold text-secondary m-0 fs-7">
+                        <i class="pi pi-chart-bar text-primary me-1"></i> 1. Situación de Renta Variable (Cierre):
+                      </label>
+                      <button pButton type="button" icon="pi pi-refresh" class="p-button-text p-button-sm p-0" (click)="cargarDatosTab3()" pTooltip="Recargar variaciones"></button>
+                    </div>
+                    <textarea pInputTextarea [(ngModel)]="contextoTab3" (ngModelChange)="actualizarPromptTab3()" rows="7" class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-2 px-3">
+                    <label class="form-label fw-bold text-secondary mb-1 fs-7">
+                      <i class="pi pi-send text-warning me-1"></i> 2. Prompt a OpenAI (Santa Fé / José Luis):
+                    </label>
+                    <textarea pInputTextarea [(ngModel)]="promptTab3" rows="7" class="form-control p-inputtext-sm font-monospace bg-light fs-7"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Mensaje Final -->
+            <div class="card border-0 shadow-sm border-start border-success border-4">
+              <div class="card-body p-2 px-3">
+                <label class="form-label fw-bold text-success mb-1 fs-7">
+                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                </label>
+                <textarea pInputTextarea [(ngModel)]="mensajeFinalTab3" rows="8" placeholder="Haz clic en 'Generar Consulta de Renta Variable con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
+              </div>
+            </div>
+
+            <!-- Botones al final de la página -->
+            <div class="d-flex justify-content-end gap-2 mt-1 mb-2">
+              <button pButton type="button" label="Generar Consulta de Renta Variable con IA" [icon]="generandoTab3 ? 'pi pi-spinner pi-spin' : 'pi pi-bolt'" class="p-button-success shadow-sm p-button-sm" (click)="generarMensajeTab3()" [disabled]="generandoTab3"></button>
+              <button pButton type="button" label="Copiar al Portapapeles" icon="pi pi-copy" class="p-button-outlined p-button-success shadow-sm p-button-sm" (click)="copiarAlPortapapeles(mensajeFinalTab3, 'Consulta de Renta Variable')" [disabled]="!mensajeFinalTab3"></button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+  </p-tabView>
+</div>
