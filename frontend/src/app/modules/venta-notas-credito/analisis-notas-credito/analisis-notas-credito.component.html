@@ -1,0 +1,255 @@
+<div class="container-fluid py-4">
+  <!-- Header del Módulo (Estándar de la Aplicación) -->
+  <div class="card mb-4 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-header app-custom-header text-white d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 py-3">
+      <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-graph-up-arrow fs-2 text-white"></i>
+        <div>
+          <h4 class="mb-0 text-white font-bold">Análisis de Rendimiento (Notas de Crédito)</h4>
+          <small class="text-white-50">Visualización temporal del capital invertido, utilidades cobradas y margen de retorno por periodo</small>
+        </div>
+      </div>
+
+      <!-- Controls & Toggle Button Group -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <div class="btn-group bg-white p-1 rounded-pill shadow-xs" role="group">
+          <button 
+            type="button" 
+            (click)="cambiarPeriodo('semanal')" 
+            class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+            [ngClass]="{'btn-success text-white shadow-xs': periodoSeleccionado === 'semanal', 'btn-light text-dark': periodoSeleccionado !== 'semanal'}">
+            <i class="bi bi-calendar-week me-1"></i> Semanal
+          </button>
+          <button 
+            type="button" 
+            (click)="cambiarPeriodo('mensual')" 
+            class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+            [ngClass]="{'btn-success text-white shadow-xs': periodoSeleccionado === 'mensual', 'btn-light text-dark': periodoSeleccionado !== 'mensual'}">
+            <i class="bi bi-calendar-month me-1"></i> Mensual
+          </button>
+        </div>
+
+        <button (click)="cargarDatosVentas()" class="btn btn-sm btn-light text-dark rounded-pill px-3 py-1 font-medium shadow-xs" title="Actualizar Datos">
+          <i class="bi bi-arrow-clockwise me-1" [ngClass]="{'spin-animation': loading}"></i> Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-info" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3 text-muted font-medium">Procesando operaciones de Notas de Crédito...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="alert alert-danger shadow-sm border-0 rounded-12 mb-4">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error">
+    <!-- 4 KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+      <!-- 1. Capital Invertido Promedio -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-stat-card border-start border-info border-4" style="background-color: #f0fdfa; border-radius: 12px;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-circle bg-info-subtle text-info me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; font-size: 1.25rem;">
+              <i class="bi bi-cart-check-fill"></i>
+            </div>
+            <div>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider d-block mb-1">Monto Promedio / Venta</span>
+              <h3 class="mb-0 font-bold" style="color: #0284c7;">{{ montoPromedioGlobalVenta | currency:'USD':'symbol':'1.2-2' }}</h3>
+              <small class="text-muted" style="font-size: 0.75rem;">Total Rotado: {{ totalCapitalInvertido | currency:'USD':'symbol':'1.0-0' }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Utilidad Obtenida -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-stat-card border-start border-success border-4" style="background-color: #ecfdf5; border-radius: 12px;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-circle bg-success-subtle text-success me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; font-size: 1.25rem;">
+              <i class="bi bi-cash-stack"></i>
+            </div>
+            <div>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider d-block mb-1">Utilidad Neta Cobrada</span>
+              <h3 class="mb-0 font-bold text-success">{{ totalUtilidadObtenida | currency:'USD':'symbol':'1.2-2' }}</h3>
+              <small class="text-success font-medium" style="font-size: 0.75rem;">Ganancia efectiva en ventas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Margen ROI Global -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-stat-card border-start border-warning border-4" style="background-color: #fffbe6; border-radius: 12px;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-circle bg-warning-subtle text-warning-emphasis me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; font-size: 1.25rem;">
+              <i class="bi bi-percent"></i>
+            </div>
+            <div>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider d-block mb-1">Margen ROI Global</span>
+              <h3 class="mb-0 font-bold" style="color: #d97706;">+{{ roiGlobalPct | number:'1.2-2' }}%</h3>
+              <small class="text-muted" style="font-size: 0.75rem;">Rendimiento promedio general</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Total Operaciones -->
+      <div class="col-xl-3 col-md-6">
+        <div class="card border-0 shadow-sm h-100 kpi-stat-card border-start border-primary border-4" style="background-color: #f8fafc; border-radius: 12px;">
+          <div class="card-body p-3 d-flex align-items-center">
+            <div class="rounded-circle bg-primary-subtle text-primary me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px; font-size: 1.25rem;">
+              <i class="bi bi-receipt-cutoff"></i>
+            </div>
+            <div>
+              <span class="text-muted text-uppercase font-semibold text-xs tracking-wider d-block mb-1">Ventas Registradas</span>
+              <h3 class="mb-0 font-bold text-dark">{{ totalOperaciones }}</h3>
+              <small class="text-muted" style="font-size: 0.75rem;">Operaciones de NC procesadas</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart Card -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 14px;">
+      <div class="card-header bg-white border-0 py-3 px-4 d-flex flex-column flex-xl-row justify-content-between align-items-xl-center gap-3">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-bar-chart-line-fill text-success fs-4"></i>
+          <div>
+            <h5 class="mb-0 font-bold text-dark">Evolución de Inversión vs. Utilidad en Notas de Crédito</h5>
+            <small class="text-muted">Comparativa gráfica agrupada por periodo {{ periodoSeleccionado === 'semanal' ? 'semanal' : 'mensual' }}</small>
+          </div>
+        </div>
+        
+        <!-- Controls: Modo Inversión & Switcher de Vista -->
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Selector Modo de Inversión (Promedio vs Total) -->
+          <div class="btn-group bg-slate-100 p-1 rounded-pill border shadow-xs" role="group">
+            <button 
+              type="button" 
+              (click)="cambiarModoInversion('promedio')" 
+              class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+              [ngClass]="{'btn-primary text-white shadow-xs': modoInversion === 'promedio', 'btn-light text-dark': modoInversion !== 'promedio'}"
+              title="Muestra el monto promedio invertido por cada venta en el periodo">
+              <i class="bi bi-calculator me-1"></i> Promedio / Venta
+            </button>
+            <button 
+              type="button" 
+              (click)="cambiarModoInversion('total')" 
+              class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+              [ngClass]="{'btn-primary text-white shadow-xs': modoInversion === 'total', 'btn-light text-dark': modoInversion !== 'total'}"
+              title="Muestra la suma total de capital reinvertido/rotado en el periodo">
+              <i class="bi bi-arrow-repeat me-1"></i> Total Rotado
+            </button>
+          </div>
+
+          <!-- Switcher de Serie Visible -->
+          <div class="btn-group bg-light p-1 rounded-pill border shadow-xs" role="group">
+            <button 
+              type="button" 
+              (click)="cambiarVistaGrafico('doble_eje')" 
+              class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+              [ngClass]="{'btn-dark text-white shadow-xs': vistaGrafico === 'doble_eje', 'btn-light text-muted': vistaGrafico !== 'doble_eje'}"
+              title="Mostrar Inversión y Utilidad en Doble Eje Y">
+              <i class="bi bi-sliders me-1"></i> Doble Eje
+            </button>
+            <button 
+              type="button" 
+              (click)="cambiarVistaGrafico('inversion')" 
+              class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+              [ngClass]="{'btn-info text-white shadow-xs': vistaGrafico === 'inversion', 'btn-light text-muted': vistaGrafico !== 'inversion'}"
+              title="Ver únicamente Inversión">
+              <i class="bi bi-cart-fill me-1"></i> Inversión
+            </button>
+            <button 
+              type="button" 
+              (click)="cambiarVistaGrafico('utilidad')" 
+              class="btn btn-sm rounded-pill font-medium px-3 py-1 text-nowrap transition-all"
+              [ngClass]="{'btn-success text-white shadow-xs': vistaGrafico === 'utilidad', 'btn-light text-muted': vistaGrafico !== 'utilidad'}"
+              title="Ver únicamente Utilidad Obtenida">
+              <i class="bi bi-cash-stack me-1"></i> Utilidades
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <div *ngIf="chartData" style="height: 340px; position: relative;">
+          <p-chart type="bar" [data]="chartData" [options]="chartOptions" height="340px"></p-chart>
+        </div>
+
+        <div *ngIf="!chartData" class="text-center py-5 text-muted">
+          <i class="bi bi-inbox fs-1 text-secondary mb-2 d-block"></i>
+          <p class="mb-0">No hay datos de operaciones registradas para el periodo seleccionado.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Table Card -->
+    <div class="card border-0 shadow-sm" style="border-radius: 14px;">
+      <div class="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-table text-primary fs-5"></i>
+          <h5 class="mb-0 font-bold text-dark">Desglose Detallado por Periodo</h5>
+        </div>
+        <span class="text-muted small">Total: <strong>{{ desglosePeriodos.length }}</strong> periodos activos</span>
+      </div>
+
+      <div class="card-body p-0">
+        <p-table [value]="desglosePeriodos" responsiveLayout="scroll" [rows]="12" [paginator]="desglosePeriodos.length > 12" styleClass="p-datatable-striped">
+          <ng-template pTemplate="header">
+            <tr class="bg-light text-uppercase text-muted text-xs">
+              <th style="padding: 1rem;">Periodo</th>
+              <th>Rango de Fechas</th>
+              <th class="text-center">N° Ventas</th>
+              <th class="text-end">Monto Promedio / Venta ($)</th>
+              <th class="text-end">Total Rotado ($)</th>
+              <th class="text-end">Utilidad Obtenida ($)</th>
+              <th class="text-end">Margen ROI (%)</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td class="fw-bold text-dark" style="padding: 0.85rem 1rem;">
+                <span class="badge bg-slate-100 text-dark border px-2 py-1 me-2">{{ item.label }}</span>
+              </td>
+              <td class="text-muted small">{{ item.rangoFechas }}</td>
+              <td class="text-center">
+                <span class="badge rounded-pill bg-light text-dark border px-2 py-1">{{ item.ventasCount }}</span>
+              </td>
+              <td class="text-end font-semibold text-info-emphasis">
+                {{ item.montoPromedioVenta | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+              <td class="text-end font-semibold text-secondary">
+                {{ item.montoInvertidoTotal | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+              <td class="text-end font-semibold text-success">
+                {{ item.utilidadObtenida | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+              <td class="text-end">
+                <span class="badge rounded-pill px-2 py-1 font-bold" [ngClass]="{'bg-success-subtle text-success': item.roiPct >= 0, 'bg-danger-subtle text-danger': item.roiPct < 0}">
+                  {{ item.roiPct >= 0 ? '+' : '' }}{{ item.roiPct | number:'1.2-2' }}%
+                </span>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                No se encontraron registros de ventas de Notas de Crédito.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+</div>

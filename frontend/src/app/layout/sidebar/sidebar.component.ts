@@ -123,6 +123,11 @@ export class SidebarComponent implements OnInit {
           title: 'Venta Notas Crédito',
           icon: 'bi-layers',
           path: '/venta-agrupada'
+        },
+        {
+          title: 'Análisis de Rendimiento',
+          icon: 'bi-graph-up-arrow',
+          path: '/notas-credito/analisis-rendimiento'
         }
       ]
     },
