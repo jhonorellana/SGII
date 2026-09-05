@@ -18,6 +18,7 @@ import { AccionDividendoService } from '../../../core/accion-dividendo.service';
 import { AccionOperacionService } from '../../../core/accion-operacion.service';
 import { PersonaService } from '../../../core/persona.service';
 import { InstrumentoService } from '../../../core/instrumento.service';
+import { HistoricoIndicadorService } from '../../../core/historico-indicador.service';
 import { AccionPosicion, AccionDividendo, AccionOperacion } from '../../../core/models/accion-models';
 
 import * as XLSX from 'xlsx';
@@ -88,6 +89,10 @@ export class PortafolioListComponent implements OnInit {
   totalDividendosCobrados = 0;
 
   // Chart data and configurations
+  historicoChartData: any;
+  historicoChartOptions: any;
+  historicoList: any[] = [];
+
   emisorChartData: any;
   emisorChartOptions: any;
   emisorLegend: any[] = [];
@@ -133,6 +138,7 @@ export class PortafolioListComponent implements OnInit {
     private personaService: PersonaService,
     private instrumentoService: InstrumentoService,
     private operacionService: AccionOperacionService,
+    private historicoService: HistoricoIndicadorService,
     private cdr: ChangeDetectorRef
   ) {
     this.setupChartOptions();
@@ -215,6 +221,7 @@ export class PortafolioListComponent implements OnInit {
 
     this.loadFiltros();
     this.loadData();
+    this.loadHistoricoChart();
   }
 
   loadFiltros(): void {
@@ -624,6 +631,154 @@ export class PortafolioListComponent implements OnInit {
       },
       responsive: true,
       maintainAspectRatio: false
+    };
+  }
+
+  loadHistoricoChart(): void {
+    this.historicoService.getHistorico().subscribe({
+      next: (res) => {
+        if (res.success && Array.isArray(res.data)) {
+          // Ordenar cronológicamente por fecha_captura ASC
+          this.historicoList = res.data.sort((a: any, b: any) => 
+            new Date(a.fecha_captura).getTime() - new Date(b.fecha_captura).getTime()
+          );
+
+          const labels = this.historicoList.map(item => {
+            if (!item.fecha_captura) return '-';
+            const parts = item.fecha_captura.split('-');
+            if (parts.length === 3) {
+              return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return item.fecha_captura;
+          });
+
+          const capitalData = this.historicoList.map(item => {
+            if (item.capital_renta_variable && item.capital_renta_variable > 0) {
+              return Number(item.capital_renta_variable);
+            }
+            return Number(item.patrimonio_base || 0);
+          });
+
+          const valorMercadoData = this.historicoList.map(item => {
+            if (item.valor_mercado_renta_variable && item.valor_mercado_renta_variable > 0) {
+              return Number(item.valor_mercado_renta_variable);
+            }
+            const cap = Number(item.capital_renta_variable || item.patrimonio_base || 0);
+            const plus = Number(item.plusvalia_acciones || 0);
+            return cap + plus;
+          });
+
+          const plusvaliaData = this.historicoList.map(item => {
+            if (item.plusvalia_latente_rv !== undefined && item.plusvalia_latente_rv !== null && item.plusvalia_latente_rv !== 0) {
+              return Number(item.plusvalia_latente_rv);
+            }
+            return Number(item.plusvalia_acciones || 0);
+          });
+
+          this.historicoChartData = {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Valor de Mercado ($)',
+                data: valorMercadoData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2.5,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#ffffff',
+                pointHoverRadius: 6,
+                pointRadius: 4
+              },
+              {
+                label: 'Capital Invertido ($)',
+                data: capitalData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'transparent',
+                fill: false,
+                tension: 0.35,
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointHoverRadius: 5,
+                pointRadius: 3
+              },
+              {
+                label: 'Plusvalía Latente ($)',
+                data: plusvaliaData,
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                fill: true,
+                tension: 0.35,
+                borderWidth: 2,
+                pointBackgroundColor: '#8b5cf6',
+                pointBorderColor: '#ffffff',
+                pointHoverRadius: 5,
+                pointRadius: 3
+              }
+            ]
+          };
+
+          this.setupHistoricoChartOptions();
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar grafico historico de RV:', err);
+      }
+    });
+  }
+
+  setupHistoricoChartOptions(): void {
+    this.historicoChartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            usePointStyle: true,
+            padding: 15,
+            font: { size: 12, weight: 'bold' }
+          }
+        },
+        datalabels: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)',
+          padding: 12,
+          titleFont: { size: 13, weight: 'bold' },
+          bodyFont: { size: 12 },
+          callbacks: {
+            label: (context: any) => {
+              const value = context.raw;
+              const formatted = this.formatCurrency(value);
+              return ` ${context.dataset.label}: ${formatted}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(226, 232, 240, 0.8)' },
+          ticks: {
+            font: { size: 11 },
+            callback: (value: any) => this.formatCurrency(value)
+          }
+        }
+      }
     };
   }
 

@@ -16,6 +16,8 @@ export interface HistoricoIndicadorData {
   plusvalia_acciones: number;
   capital_renta_fija: number;
   capital_renta_variable: number;
+  valor_mercado_renta_variable?: number;
+  plusvalia_latente_rv?: number;
   capital_notas_credito: number;
   valor_compra_nc: number;
   valor_venta_nc: number;

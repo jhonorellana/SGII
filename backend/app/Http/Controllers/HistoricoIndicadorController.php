@@ -51,6 +51,8 @@ class HistoricoIndicadorController extends Controller
                 'plusvalia_acciones' => 'numeric',
                 'capital_renta_fija' => 'numeric',
                 'capital_renta_variable' => 'numeric',
+                'valor_mercado_renta_variable' => 'nullable|numeric',
+                'plusvalia_latente_rv' => 'nullable|numeric',
                 'capital_notas_credito' => 'numeric',
                 'valor_compra_nc' => 'numeric',
                 'valor_venta_nc' => 'numeric',

@@ -232,6 +232,11 @@ export class ValoracionHistoricaAccionesComponent implements OnInit {
       y: r.costo_invertido
     }));
 
+    const plusvaliaAcumuladaData = this.serieRecords.map(r => ({
+      x: new Date(r.fecha),
+      y: r.plusvalia_monto ?? (r.valor_mercado - r.costo_invertido)
+    }));
+
     this.chartData = {
       datasets: [
         {
@@ -258,6 +263,19 @@ export class ValoracionHistoricaAccionesComponent implements OnInit {
           pointRadius: 0,
           pointHoverRadius: 5,
           fill: false,
+          tension: 0.2,
+          datalabels: { display: false }
+        },
+        {
+          type: 'line',
+          label: 'Plusvalía Acumulada ($)',
+          data: plusvaliaAcumuladaData,
+          borderColor: '#8b5cf6', // Púrpura elegante
+          backgroundColor: 'rgba(139, 92, 246, 0.08)',
+          borderWidth: 2,
+          pointRadius: 1,
+          pointHoverRadius: 5,
+          fill: true,
           tension: 0.2,
           datalabels: { display: false }
         }

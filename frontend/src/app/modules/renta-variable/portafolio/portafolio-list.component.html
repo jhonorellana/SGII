@@ -288,7 +288,31 @@
       </div>
     </p-tabPanel>
 
-    <!-- Pestaña 3: Gráficos y Dashboard -->
+    <!-- Pestaña 3: Evolución Histórica -->
+    <p-tabPanel header="Evolución Histórica" leftIcon="pi pi-chart-line">
+      <div class="chart-card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h5 class="mb-0 font-bold text-dark d-flex align-items-center gap-2">
+              <i class="pi pi-chart-line text-success"></i> Evolución Histórica de Renta Variable
+            </h5>
+            <small class="text-muted" style="font-size: 0.82rem;">Tendencia en el tiempo de Capital Invertido, Valor de Mercado y Plusvalía Latente</small>
+          </div>
+          <button pButton type="button" icon="pi pi-refresh" label="Actualizar Gráfico" class="p-button-outlined p-button-success p-button-sm rounded-pill" (click)="loadHistoricoChart()"></button>
+        </div>
+
+        <div *ngIf="historicoList.length > 0" style="height: 420px; position: relative;">
+          <p-chart type="line" [data]="historicoChartData" [options]="historicoChartOptions" [style]="{width: '100%', height: '100%'}"></p-chart>
+        </div>
+
+        <div *ngIf="historicoList.length === 0" class="no-data-msg text-center py-5 text-muted">
+          <i class="pi pi-history text-4xl mb-3 d-block text-secondary"></i>
+          Aún no hay capturas históricas registradas. Haz clic en "Guardar Histórico" en la parte superior para generar el primer registro.
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- Pestaña 4: Gráficos y Dashboard -->
     <p-tabPanel header="Gráficos y Dashboard" leftIcon="pi pi-chart-pie">
       <div class="charts-grid">
         <!-- Gráfico de Concentración por Emisor -->

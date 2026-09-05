@@ -110,6 +110,7 @@ export class DashboardComponent implements OnInit {
 
   // Modo Máquina del Tiempo
   isTimeMachineActive: boolean = false;
+  activeSnapshotFecha: string | null = null;
   historicosOptions: any[] = [];
   selectedHistoricoId: string = 'REAL_TIME';
   rawHistoricos: any[] = [];
@@ -525,6 +526,18 @@ export class DashboardComponent implements OnInit {
       capitalRentaFijaConsolidado: this.capitalRentaFijaConsolidado,
       capitalRentaVariableConsolidado: this.capitalRentaVariableConsolidado,
       capitalNotasCreditoConsolidado: this.capitalNotasCreditoConsolidado,
+
+      patrimonioDividendosAcciones: this.patrimonioDividendosAcciones,
+      patrimonioPlusvaliaAcciones: this.patrimonioPlusvaliaAcciones,
+      dividendosEfectivo: this.dividendosEfectivo,
+      capitalInvertidoAcciones: this.capitalInvertidoAcciones,
+      valorMercadoAcciones: this.valorMercadoAcciones,
+      gananciaNoRealizadaAcciones: this.gananciaNoRealizadaAcciones,
+
+      valorCompraTotalNotasCredito: this.valorCompraTotalNotasCredito,
+      valorVentaTotalNotasCredito: this.valorVentaTotalNotasCredito,
+      utilidadTotalNotasCredito: this.utilidadTotalNotasCredito,
+
       momPatrimonioBase: this.momPatrimonioBase,
       momPatrimonioConsolidado: this.momPatrimonioConsolidado,
       momProyeccion: this.momProyeccion,
@@ -554,16 +567,24 @@ export class DashboardComponent implements OnInit {
   onTimeMachineChange(event: any): void {
     const val = event?.target?.value || event?.value;
     if (val === 'REAL_TIME' || !val) {
-      this.isTimeMachineActive = false;
-      this.restoreRealTimeData();
-      this.buildChartData(this.patrimonioDesglose);
+      this.resetTimeMachine();
     } else {
       this.isTimeMachineActive = true;
+      this.selectedHistoricoId = String(val);
       const snapshot = this.rawHistoricos.find(h => String(h.id_historico) === String(val));
       if (snapshot) {
+        this.activeSnapshotFecha = snapshot.fecha_captura;
         this.applyTimeMachineSnapshot(snapshot);
       }
     }
+  }
+
+  resetTimeMachine(): void {
+    this.isTimeMachineActive = false;
+    this.selectedHistoricoId = 'REAL_TIME';
+    this.activeSnapshotFecha = null;
+    this.restoreRealTimeData();
+    this.buildChartData(this.patrimonioDesglose);
   }
 
   restoreRealTimeData(): void {
@@ -579,6 +600,17 @@ export class DashboardComponent implements OnInit {
     this.capitalRentaFijaConsolidado = c.capitalRentaFijaConsolidado;
     this.capitalRentaVariableConsolidado = c.capitalRentaVariableConsolidado;
     this.capitalNotasCreditoConsolidado = c.capitalNotasCreditoConsolidado;
+
+    this.patrimonioDividendosAcciones = c.patrimonioDividendosAcciones;
+    this.patrimonioPlusvaliaAcciones = c.patrimonioPlusvaliaAcciones;
+    this.dividendosEfectivo = c.dividendosEfectivo;
+    this.capitalInvertidoAcciones = c.capitalInvertidoAcciones;
+    this.valorMercadoAcciones = c.valorMercadoAcciones;
+    this.gananciaNoRealizadaAcciones = c.gananciaNoRealizadaAcciones;
+
+    this.valorCompraTotalNotasCredito = c.valorCompraTotalNotasCredito;
+    this.valorVentaTotalNotasCredito = c.valorVentaTotalNotasCredito;
+    this.utilidadTotalNotasCredito = c.utilidadTotalNotasCredito;
     
     this.momPatrimonioBase = c.momPatrimonioBase;
     this.momPatrimonioConsolidado = c.momPatrimonioConsolidado;
@@ -601,9 +633,27 @@ export class DashboardComponent implements OnInit {
     this.interesesEsperadosProyeccion = Number(snapshot.intereses_esperados || 0);
     this.patrimonioTotalCorriente = Number(snapshot.total_corriente || 0);
 
+    // Desglose de Renta Variable, Dividendos y Plusvalía
+    this.patrimonioDividendosAcciones = Number(snapshot.dividendos_acciones || 0);
+    this.patrimonioPlusvaliaAcciones = Number(snapshot.plusvalia_acciones || 0);
+    this.dividendosEfectivo = Number(snapshot.dividendos_efectivo || 0);
+
+    const capRV = Number(snapshot.capital_renta_variable || 0);
+    const valMercadoRV = Number(snapshot.valor_mercado_renta_variable || 0);
+    const plusvaliaLatenteRV = Number(snapshot.plusvalia_latente_rv || 0);
+
+    this.capitalInvertidoAcciones = capRV;
+    this.valorMercadoAcciones = valMercadoRV > 0 ? valMercadoRV : (capRV + plusvaliaLatenteRV);
+    this.gananciaNoRealizadaAcciones = plusvaliaLatenteRV > 0 ? plusvaliaLatenteRV : (this.patrimonioPlusvaliaAcciones + this.patrimonioDividendosAcciones);
+
+    // Notas de Crédito
+    this.valorCompraTotalNotasCredito = Number(snapshot.valor_compra_nc || 0);
+    this.valorVentaTotalNotasCredito = Number(snapshot.valor_venta_nc || 0);
+    this.utilidadTotalNotasCredito = Number(snapshot.utilidad_nc || 0);
+
     // Chart Data (Desglose simulado para el gráfico)
     this.capitalRentaFijaConsolidado = Number(snapshot.capital_renta_fija || 0);
-    this.capitalRentaVariableConsolidado = Number(snapshot.capital_renta_variable || 0);
+    this.capitalRentaVariableConsolidado = capRV;
     this.capitalNotasCreditoConsolidado = Number(snapshot.capital_notas_credito || 0);
     
     const mockItems = [
@@ -828,7 +878,9 @@ export class DashboardComponent implements OnInit {
       dividendos_efectivo: this.dividendosEfectivo,
       plusvalia_acciones: this.patrimonioPlusvaliaAcciones,
       capital_renta_fija: this.capitalRentaFijaConsolidado,
-      capital_renta_variable: this.capitalRentaVariableConsolidado,
+      capital_renta_variable: this.capitalInvertidoAcciones || 114753.06,
+      valor_mercado_renta_variable: (this.capitalInvertidoAcciones || 114753.06) + (this.patrimonioPlusvaliaAcciones + this.patrimonioDividendosAcciones),
+      plusvalia_latente_rv: this.patrimonioPlusvaliaAcciones + this.patrimonioDividendosAcciones,
       capital_notas_credito: this.capitalNotasCreditoConsolidado,
       valor_compra_nc: this.valorCompraTotalNotasCredito,
       valor_venta_nc: this.valorVentaTotalNotasCredito,

@@ -16,7 +16,6 @@
       <div class="d-flex gap-2 align-items-center flex-wrap flex-sm-nowrap">
         <!-- Modo Máquina del Tiempo -->
         <div class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 d-flex align-items-center text-nowrap" style="font-size: 0.85rem;">
-          <i class="bi bi-clock-history text-success me-1"></i>
           <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-3" style="width: auto; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right center;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId">
             <option *ngFor="let opt of historicosOptions" [value]="opt.value" class="text-dark">{{ opt.label }}</option>
           </select>
@@ -29,7 +28,20 @@
           <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
         </a>
       </div>
+  </div>
+
+  <!-- Alert Banner Modo Máquina del Tiempo Activado -->
+  <div *ngIf="isTimeMachineActive" class="alert border-0 shadow-sm d-flex justify-content-between align-items-center mb-4 px-4 py-2" style="background: linear-gradient(135deg, #fffbebe6 0%, #fef3c7 100%); border-left: 5px solid #f59e0b !important; border-radius: 10px;">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-clock-history text-warning fs-3"></i>
+      <div>
+        <strong class="d-block text-dark" style="font-size: 0.95rem;">Modo Máquina del Tiempo Activo</strong>
+        <span class="small text-secondary">Visualizando el Snapshot Cierre del <strong>{{ activeSnapshotFecha }}</strong>. Todos los indicadores principales y desgloses fueron reconstruidos a este instante (las tablas de proyección futura se ocultan en modo histórico).</span>
+      </div>
     </div>
+    <button (click)="resetTimeMachine()" class="btn btn-sm btn-warning text-dark font-bold rounded-pill px-3 py-1 shadow-xs text-nowrap" style="font-size: 0.82rem;">
+      <i class="bi bi-arrow-counterclockwise me-1"></i> Volver a Tiempo Real
+    </button>
   </div>
 
   <div *ngIf="loading" class="loading-state text-center py-5">
@@ -44,17 +56,6 @@
   </div>
 
   <div *ngIf="!loading && !error" class="dashboard-content">
-
-    <!-- TIME MACHINE BANNER -->
-    <div *ngIf="isTimeMachineActive" class="alert alert-info border-info border-start border-4 shadow-sm mb-4 d-flex align-items-center" role="alert" style="border-radius: 8px;">
-      <i class="bi bi-clock-history fs-3 text-info me-3"></i>
-      <div>
-        <h6 class="alert-heading fw-bold mb-1 text-dark">Modo Máquina del Tiempo Activo</h6>
-        <p class="mb-0 text-dark">
-          Estás visualizando datos históricos. Los indicadores principales y la gráfica corresponden al snapshot seleccionado. Las tablas de proyección futura han sido ocultadas temporalmente.
-        </p>
-      </div>
-    </div>
 
     <!-- NIVEL 1: 🏆 BANNER HERO - LOS 6 PILARES ESTRATÉGICOS DEL PATRIMONIO -->
     <div class="row g-2 mb-4">

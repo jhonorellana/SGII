@@ -29,6 +29,8 @@ class HistoricoIndicador extends Model
         'plusvalia_acciones',
         'capital_renta_fija',
         'capital_renta_variable',
+        'valor_mercado_renta_variable',
+        'plusvalia_latente_rv',
         'capital_notas_credito',
         'valor_compra_nc',
         'valor_venta_nc',
