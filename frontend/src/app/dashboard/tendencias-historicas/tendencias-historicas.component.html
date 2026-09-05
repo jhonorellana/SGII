@@ -18,7 +18,124 @@
     No hay datos históricos registrados. Haz clic en "Guardar Histórico" en el panel principal para comenzar a graficar tus tendencias.
   </div>
 
-  <div *ngIf="!loading && historicoData.length > 0" class="row g-4">
+  <div *ngIf="!loading && historicoData.length > 0">
+    <!-- SECCIÓN 1: CUADRO DE CRECIMIENTO MENSUAL (MoM - MONTH OVER MONTH) -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 14px; overflow: hidden; background: #ffffff;">
+      <div class="card-header app-custom-header text-white p-3 d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="mb-0 fw-bold d-flex align-items-center gap-2" style="font-size: 1.1rem; color: #ffffff !important;">
+            <i class="bi bi-calendar-range text-white"></i>
+            Cuadro de Crecimiento Mensual (MoM - Month over Month)
+          </h5>
+          <small class="text-white opacity-90">Análisis comparativo intermensual del incremento patrimonial y rendimiento por activo</small>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button (click)="exportarMoMExcel()" [disabled]="momTableData.length === 0" class="btn btn-light btn-sm fw-bold shadow-xs rounded-pill px-3 py-1 text-success d-flex align-items-center gap-1" style="font-size: 0.82rem; background-color: #ffffff !important; border: 1px solid #d1fae5 !important; color: #047857 !important;">
+            <i class="bi bi-file-earmark-excel-fill text-success"></i> Excel MoM
+          </button>
+          <span class="badge rounded-pill px-3 py-1 fw-bold" style="background-color: #064e3b !important; color: #ffffff !important; font-size: 0.8rem; border: 1px solid #059669;">
+            Serie Mensual
+          </span>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <!-- Tarjetas Hero Resumen MoM -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-3 col-sm-6">
+            <div class="p-3 rounded-3 bg-light border border-slate-light h-100">
+              <span class="text-secondary small fw-semibold d-block mb-1">Crecimiento Promedio Mensual ($)</span>
+              <h4 class="mb-0 text-dark fw-bold">{{ formatCurrency(momResumen.promedio_crecimiento_monto) }}</h4>
+              <small class="text-muted">Incremento neto medio por mes</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="p-3 rounded-3 bg-light border border-slate-light h-100">
+              <span class="text-secondary small fw-semibold d-block mb-1">Rendimiento MoM Promedio (%)</span>
+              <h4 class="mb-0 fw-bold" [ngClass]="momResumen.promedio_crecimiento_pct >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatPct(momResumen.promedio_crecimiento_pct) }}
+              </h4>
+              <small class="text-muted">Tasa media mensual de variación</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="p-3 rounded-3 bg-light border border-slate-light h-100">
+              <span class="text-secondary small fw-semibold d-block mb-1">Máximo Crecimiento Mensual ($)</span>
+              <h4 class="mb-0 text-success fw-bold">{{ formatCurrency(momResumen.max_crecimiento_monto) }}</h4>
+              <small class="text-muted">Mejor registro de incremento mensual</small>
+            </div>
+          </div>
+          <div class="col-md-3 col-sm-6">
+            <div class="p-3 rounded-3 bg-light border border-slate-light h-100">
+              <span class="text-secondary small fw-semibold d-block mb-1">Variación Último Mes (%)</span>
+              <h4 class="mb-0 fw-bold" [ngClass]="momResumen.ultimo_mes_pct >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatPct(momResumen.ultimo_mes_pct) }}
+              </h4>
+              <small class="text-muted">Tasa de variación del último período</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla Ejecutiva MoM -->
+        <div class="table-responsive rounded-3 border">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="table-light text-dark fw-bold border-bottom">
+              <tr>
+                <th class="py-3 ps-3">Período (Mes / Año)</th>
+                <th class="py-3 text-center">Cierre Snapshot</th>
+                <th class="py-3 text-end">Patrimonio Consolidado</th>
+                <th class="py-3 text-end">Ganancia/Pérdida MoM ($)</th>
+                <th class="py-3 text-center">Variación MoM (%)</th>
+                <th class="py-3 text-end">Patrimonio Base</th>
+                <th class="py-3 text-end">Renta Variable (Mercado)</th>
+                <th class="py-3 text-end">Renta Fija</th>
+                <th class="py-3 text-center pe-3">Tendencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of momTableData">
+                <td class="ps-3 fw-bold text-dark">
+                  <i class="bi bi-calendar3 me-1 text-primary"></i>
+                  {{ row.periodo }}
+                </td>
+                <td class="text-center text-muted small">{{ row.fecha_cierre }}</td>
+                <td class="text-end fw-bold text-dark">{{ formatCurrency(row.patrimonio_consolidado) }}</td>
+                <td class="text-end fw-bold" [ngClass]="(row.ganancia_neta_mensual || 0) >= 0 ? 'text-success' : 'text-danger'">
+                  <span *ngIf="row.ganancia_neta_mensual !== null">
+                    {{ (row.ganancia_neta_mensual || 0) >= 0 ? '+' : '' }}{{ formatCurrency(row.ganancia_neta_mensual) }}
+                  </span>
+                  <span *ngIf="row.ganancia_neta_mensual === null" class="text-muted">-</span>
+                </td>
+                <td class="text-center">
+                  <span *ngIf="row.patrimonio_consolidado_mom_pct !== null" class="badge rounded-pill px-3 py-1 fw-bold" [ngClass]="row.patrimonio_consolidado_mom_pct >= 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle'">
+                    <i class="bi me-1" [ngClass]="row.patrimonio_consolidado_mom_pct >= 0 ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+                    {{ formatPct(row.patrimonio_consolidado_mom_pct) }}
+                  </span>
+                  <span *ngIf="row.patrimonio_consolidado_mom_pct === null" class="badge bg-secondary-subtle text-secondary px-3 py-1">Inicial</span>
+                </td>
+                <td class="text-end">{{ formatCurrency(row.patrimonio_base) }}</td>
+                <td class="text-end fw-semibold text-emerald-dark">{{ formatCurrency(row.valor_mercado_rv) }}</td>
+                <td class="text-end">{{ formatCurrency(row.capital_renta_fija) }}</td>
+                <td class="text-center pe-3">
+                  <span *ngIf="row.patrimonio_consolidado_mom_pct !== null && row.patrimonio_consolidado_mom_pct > 0" class="text-success fw-bold" title="Crecimiento Positivo">
+                    <i class="bi bi-graph-up-arrow fs-6"></i>
+                  </span>
+                  <span *ngIf="row.patrimonio_consolidado_mom_pct !== null && row.patrimonio_consolidado_mom_pct < 0" class="text-danger fw-bold" title="Contracción">
+                    <i class="bi bi-graph-down-arrow fs-6"></i>
+                  </span>
+                  <span *ngIf="row.patrimonio_consolidado_mom_pct === null || row.patrimonio_consolidado_mom_pct === 0" class="text-muted" title="Sin cambio/Inicial">
+                    <i class="bi bi-dash-circle fs-6"></i>
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: GRÁFICOS ANALÍTICOS DE TENDENCIA -->
+    <div class="row g-4">
     <!-- Crecimiento Patrimonial -->
     <div class="col-xl-6">
       <div class="card border-0 shadow-sm h-100 chart-card" style="border-radius: 12px; overflow: hidden;">

@@ -436,6 +436,7 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+
   calcularTIR(historicos: any[]): void {
     if (historicos.length === 0) return;
 
