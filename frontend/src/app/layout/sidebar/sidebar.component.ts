@@ -101,6 +101,11 @@ export class SidebarComponent implements OnInit {
           title: 'Historial de acciones',
           icon: 'bi-clock-history',
           path: '/reportes/historico-acciones'
+        },
+        {
+          title: 'Valoración Histórica Acciones',
+          icon: 'bi-graph-up-arrow',
+          path: '/reportes/valoracion-historica-acciones'
         }
       ]
     },

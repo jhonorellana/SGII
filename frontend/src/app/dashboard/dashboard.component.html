@@ -3,29 +3,29 @@
 <div class="dashboard-container p-3">
   <!-- Banner Ejecutivo de Bienvenida -->
   <div class="hero-banner card border-0 shadow-sm p-3 mb-4" style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius: 14px;">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 text-white">
+    <div class="d-flex justify-content-between align-items-center flex-wrap flex-lg-nowrap gap-3 text-white">
       <div>
-        <h3 class="welcome-title mb-1 text-white font-bold d-flex align-items-center gap-2">
+        <h3 class="welcome-title mb-1 text-white font-bold d-flex align-items-center gap-2" style="font-size: 1.35rem;">
           <i class="bi bi-speedometer2"></i>
           Centro de Control y Consolidado de Inversiones
         </h3>
-        <p class="welcome-subtitle mb-0 text-light opacity-90" style="font-size: 0.9rem;">
+        <p class="welcome-subtitle mb-0 text-light opacity-90" style="font-size: 0.85rem;">
           Bienvenido(a), <strong>{{ userName }}</strong>. Visión estratégica en tiempo real de tu patrimonio y activos.
         </p>
       </div>
-      <div class="d-flex gap-2 align-items-center">
+      <div class="d-flex gap-2 align-items-center flex-wrap flex-sm-nowrap">
         <!-- Modo Máquina del Tiempo -->
-        <div class="bg-white text-dark rounded-pill px-2 py-1 shadow-sm d-flex align-items-center me-2">
-          <i class="bi bi-clock-history text-primary me-2 ms-1"></i>
-          <select class="form-select form-select-sm border-0 bg-transparent fw-bold" style="width: auto; cursor: pointer; box-shadow: none; outline: none; padding-right: 2rem;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId">
-            <option *ngFor="let opt of historicosOptions" [value]="opt.value">{{ opt.label }}</option>
+        <div class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 d-flex align-items-center text-nowrap" style="font-size: 0.85rem;">
+          <i class="bi bi-clock-history text-success me-1"></i>
+          <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-3" style="width: auto; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right center;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId">
+            <option *ngFor="let opt of historicosOptions" [value]="opt.value" class="text-dark">{{ opt.label }}</option>
           </select>
         </div>
 
-        <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
+        <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap" style="font-size: 0.85rem;">
           <i class="bi bi-camera me-1"></i> Guardar Histórico
         </button>
-        <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-4">
+        <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap" style="font-size: 0.85rem;">
           <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
         </a>
       </div>

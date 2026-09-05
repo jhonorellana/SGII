@@ -125,6 +125,18 @@ export class MarketAnalysisDashboardComponent implements OnInit {
               myDivEfectivoRecibido: divEfectivoRecibido
             };
           });
+
+          // Ordenar descendente de acuerdo al capital invertido (primero el emisor con mayor capital invertido)
+          this.indicadores.sort((a, b) => {
+            const capA = a.myCapitalInvertido || 0;
+            const capB = b.myCapitalInvertido || 0;
+            if (capB !== capA) {
+              return capB - capA;
+            }
+            const nameA = (a.emisor?.nombre || '').toUpperCase();
+            const nameB = (b.emisor?.nombre || '').toUpperCase();
+            return nameA.localeCompare(nameB);
+          });
         } else {
           this.error = 'No se pudieron cargar los indicadores de mercado.';
         }

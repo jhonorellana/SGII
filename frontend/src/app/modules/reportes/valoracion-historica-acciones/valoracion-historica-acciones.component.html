@@ -1,0 +1,213 @@
+<div class="valoracion-container">
+  <!-- Header de la Página -->
+  <div class="page-header mb-3">
+    <div class="d-flex align-items-baseline gap-2 flex-wrap">
+      <h1 class="page-title mb-0">Valoración Histórica de Acciones</h1>
+      <span class="text-muted small">Evolución en el tiempo de la cantidad de acciones en posesión multiplicada por el precio promedio diario de mercado</span>
+    </div>
+  </div>
+
+  <!-- Tarjeta de Filtros -->
+  <div class="card filter-card mb-3 border-0 shadow-sm">
+    <div class="card-body py-2">
+      <div class="row g-2 align-items-center">
+        <!-- Fecha Inicio -->
+        <div class="col-md-3 col-lg-3">
+          <label class="form-label text-secondary small fw-bold mb-1">Fecha Inicio</label>
+          <input 
+            type="date" 
+            class="form-control form-control-sm" 
+            [(ngModel)]="fechaInicio" 
+            (change)="onFiltersChange()" />
+        </div>
+
+        <!-- Fecha Fin -->
+        <div class="col-md-3 col-lg-3">
+          <label class="form-label text-secondary small fw-bold mb-1">Fecha Fin</label>
+          <input 
+            type="date" 
+            class="form-control form-control-sm" 
+            [(ngModel)]="fechaFin" 
+            (change)="onFiltersChange()" />
+        </div>
+
+        <!-- Empresa Selector -->
+        <div class="col-md-4 col-lg-4">
+          <label class="form-label text-secondary small fw-bold mb-1">Empresa Emisora</label>
+          <p-dropdown 
+            [options]="empresas" 
+            [(ngModel)]="selectedEmpresa" 
+            (onChange)="onFiltersChange()" 
+            placeholder="Todos los Emisores" 
+            [filter]="true" 
+            filterBy="label"
+            [style]="{'width':'100%'}"
+            styleClass="w-100 p-dropdown-sm">
+          </p-dropdown>
+        </div>
+
+        <!-- Botón Exportar -->
+        <div class="col-md-2 col-lg-2 text-end mt-md-4 pt-md-1">
+          <button 
+            class="btn btn-outline-success btn-sm border-2 fw-bold w-100" 
+            [disabled]="!hasData" 
+            (click)="exportarExcel()">
+            <i class="bi bi-file-earmark-excel me-1"></i> Excel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="row g-2 mb-3" *ngIf="hasData">
+    <!-- Card 1: Valoración Actual -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card border-start border-4 border-emerald">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Valoración de Mercado</span>
+            <div class="kpi-icon-wrapper bg-emerald-light text-emerald">
+              <i class="bi bi-wallet2"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0 text-emerald">{{ formatCurrency(resumen.valor_mercado_actual) }}</h3>
+          <span class="kpi-subtitle text-muted small">A la fecha de corte</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: Acciones en Posesión -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card border-start border-4 border-blue">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Acciones en Posesión</span>
+            <div class="kpi-icon-wrapper bg-blue-light text-blue">
+              <i class="bi bi-stack"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0 text-primary">{{ formatNumber(resumen.cantidad_actual) }}</h3>
+          <span class="kpi-subtitle text-muted small">Acciones acumuladas</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Capital Invertido -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card border-start border-4 border-slate">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Capital Invertido</span>
+            <div class="kpi-icon-wrapper bg-slate-light text-secondary">
+              <i class="bi bi-bank"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0 text-dark">{{ formatCurrency(resumen.costo_actual) }}</h3>
+          <span class="kpi-subtitle text-muted small">Costo desembolsado</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 4: Plusvalía / Ganancia -->
+    <div class="col-sm-6 col-lg-3">
+      <div class="kpi-card shadow-sm border-0 h-100 card border-start border-4" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'border-success' : 'border-danger'">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="kpi-label text-secondary small fw-semibold">Plusvalía Acumulada</span>
+            <div class="kpi-icon-wrapper" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'bg-success-light text-success' : 'bg-danger-light text-danger'">
+              <i class="bi" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'"></i>
+            </div>
+          </div>
+          <h3 class="kpi-value mb-0" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'text-success' : 'text-danger'">
+            {{ formatCurrency(resumen.plusvalia_actual_monto) }}
+          </h3>
+          <span class="kpi-subtitle small" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'text-success' : 'text-danger'">
+            <i class="bi" [ngClass]="resumen.plusvalia_actual_monto >= 0 ? 'bi-arrow-up-right' : 'bi-arrow-down-right'"></i>
+            {{ resumen.plusvalia_actual_pct }}% rendimiento
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="d-flex justify-content-center my-5 py-5" *ngIf="loading">
+    <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
+      <span class="visually-hidden">Cargando datos de valoración...</span>
+    </div>
+  </div>
+
+  <!-- Content Section (Chart & Table) -->
+  <div [class.d-none]="loading || !hasData">
+    <!-- Chart Card -->
+    <div class="card chart-card mb-3 border-0 shadow-sm">
+      <div class="card-header bg-dark text-white py-2">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 class="mb-0 fw-bold fs-6">
+            <i class="bi bi-graph-up me-2 text-emerald"></i>
+            Curva de Valoración de Mercado vs. Costo Invertido
+          </h5>
+          <span class="badge bg-emerald text-dark fw-bold">Serie Temporal</span>
+        </div>
+      </div>
+      <div class="card-body chart-card-body">
+        <div class="chart-container" style="height: 440px; position: relative;">
+          <p-chart *ngIf="chartData" type="line" [data]="chartData" [options]="chartOptions" height="420px" [style]="{width: '100%'}"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card table-card border-0 shadow-sm">
+      <div class="card-header bg-secondary text-white py-2">
+        <h5 class="mb-0 fw-bold fs-6">
+          <i class="bi bi-table me-2"></i>
+          Registro de Serie Temporal de Valoración
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <p-table 
+          [value]="serieRecords" 
+          [paginator]="true" 
+          [(rows)]="rowsPerPage" 
+          [rowsPerPageOptions]="[10, 25, 50, 100]"
+          styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+          responsiveLayout="scroll"
+          showCurrentPageReport="true"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} fechas">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="fecha" style="width: 15%">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
+              <th pSortableColumn="cantidad_acciones" style="width: 15%" class="text-end">Acciones Poseídas <p-sortIcon field="cantidad_acciones"></p-sortIcon></th>
+              <th pSortableColumn="precio_promedio_mercado" style="width: 17%" class="text-end">Precio Prom. Mercado <p-sortIcon field="precio_promedio_mercado"></p-sortIcon></th>
+              <th pSortableColumn="valor_mercado" style="width: 18%" class="text-end">Valor de Mercado <p-sortIcon field="valor_mercado"></p-sortIcon></th>
+              <th pSortableColumn="costo_invertido" style="width: 18%" class="text-end">Costo Invertido <p-sortIcon field="costo_invertido"></p-sortIcon></th>
+              <th pSortableColumn="plusvalia_monto" style="width: 17%" class="text-end">Plusvalía ($) <p-sortIcon field="plusvalia_monto"></p-sortIcon></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-record>
+            <tr>
+              <td class="fw-semibold">{{ record.fecha }}</td>
+              <td class="text-end">{{ formatNumber(record.cantidad_acciones) }}</td>
+              <td class="text-end text-primary fw-semibold">${{ record.precio_promedio_mercado.toFixed(4) }}</td>
+              <td class="text-end text-emerald fw-bold">{{ formatCurrency(record.valor_mercado) }}</td>
+              <td class="text-end text-secondary">{{ formatCurrency(record.costo_invertido) }}</td>
+              <td class="text-end fw-bold" [ngClass]="record.plusvalia_monto >= 0 ? 'text-success' : 'text-danger'">
+                {{ formatCurrency(record.plusvalia_monto) }}
+                <span class="small ms-1">({{ record.plusvalia_pct }}%)</span>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                No hay datos disponibles para el rango y emisor seleccionado.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+</div>

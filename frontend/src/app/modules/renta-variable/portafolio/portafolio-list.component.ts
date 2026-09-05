@@ -77,6 +77,8 @@ export class PortafolioListComponent implements OnInit {
   error = '';
   @ViewChild('dt') dt: Table | undefined;
   globalSearchQuery = '';
+  sortField = 'capital_invertido';
+  sortOrder = -1;
 
   // Indicators (KPI Cards)
   totalInvertido = 0;
@@ -200,9 +202,16 @@ export class PortafolioListComponent implements OnInit {
     const savedSocio = localStorage.getItem('portafolio_selected_socio');
     const savedInstrumento = localStorage.getItem('portafolio_selected_instrumento');
     const savedConsolidado = localStorage.getItem('portafolio_modo_consolidado');
+    const savedSortField = localStorage.getItem('portafolio_sort_field');
+    const savedSortOrder = localStorage.getItem('portafolio_sort_order');
+    const savedSearchQuery = localStorage.getItem('portafolio_search_query');
+
     this.selectedSocio = savedSocio ? Number(savedSocio) : null;
     this.selectedInstrumento = savedInstrumento ? Number(savedInstrumento) : null;
     this.modoConsolidado = savedConsolidado === 'true';
+    this.sortField = savedSortField || 'capital_invertido';
+    this.sortOrder = savedSortOrder ? Number(savedSortOrder) : -1;
+    this.globalSearchQuery = savedSearchQuery || '';
 
     this.loadFiltros();
     this.loadData();
@@ -279,6 +288,13 @@ export class PortafolioListComponent implements OnInit {
             this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
             this.loading = false;
+
+            if (this.globalSearchQuery && this.dt) {
+              setTimeout(() => {
+                this.dt?.filterGlobal(this.globalSearchQuery, 'contains');
+              }, 100);
+            }
+
             this.cdr.detectChanges();
           },
           error: (err) => {
@@ -299,6 +315,13 @@ export class PortafolioListComponent implements OnInit {
             this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
             this.loading = false;
+
+            if (this.globalSearchQuery && this.dt) {
+              setTimeout(() => {
+                this.dt?.filterGlobal(this.globalSearchQuery, 'contains');
+              }, 100);
+            }
+
             this.cdr.detectChanges();
           }
         });
@@ -309,6 +332,24 @@ export class PortafolioListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  onSort(event: any): void {
+    if (event && event.field) {
+      this.sortField = event.field;
+      this.sortOrder = event.order;
+      localStorage.setItem('portafolio_sort_field', this.sortField);
+      localStorage.setItem('portafolio_sort_order', this.sortOrder.toString());
+    }
+  }
+
+  onSearchInput(event: Event): void {
+    const val = (event.target as HTMLInputElement).value || '';
+    this.globalSearchQuery = val;
+    localStorage.setItem('portafolio_search_query', val);
+    if (this.dt) {
+      this.dt.filterGlobal(val, 'contains');
+    }
   }
 
   onFilterChange(): void {
@@ -346,10 +387,17 @@ export class PortafolioListComponent implements OnInit {
     this.selectedSocio = null;
     this.selectedInstrumento = null;
     this.modoConsolidado = false;
+    this.globalSearchQuery = '';
+    this.sortField = 'capital_invertido';
+    this.sortOrder = -1;
+
     localStorage.removeItem('portafolio_selected_socio');
     localStorage.removeItem('portafolio_selected_instrumento');
     localStorage.removeItem('portafolio_modo_consolidado');
-    this.globalSearchQuery = '';
+    localStorage.removeItem('portafolio_sort_field');
+    localStorage.removeItem('portafolio_sort_order');
+    localStorage.removeItem('portafolio_search_query');
+
     if (this.dt) {
       this.dt.reset();
     }
@@ -583,6 +631,36 @@ export class PortafolioListComponent implements OnInit {
     if (this.dt) {
       this.dt.filterGlobal((event.target as HTMLInputElement).value, 'contains');
     }
+  }
+
+  get tableTotalAcciones(): number {
+    const list = (this.dt?.filteredValue !== undefined && this.dt?.filteredValue !== null) 
+      ? this.dt.filteredValue 
+      : this.displayPosiciones;
+    return list.reduce((sum, item) => sum + (Number(item.cantidad_actual) || 0), 0);
+  }
+
+  get tableTotalCapitalInvertido(): number {
+    const list = (this.dt?.filteredValue !== undefined && this.dt?.filteredValue !== null) 
+      ? this.dt.filteredValue 
+      : this.displayPosiciones;
+    return list.reduce((sum, item) => sum + (Number(item.capital_invertido) || 0), 0);
+  }
+
+  get tableTotalValorMercado(): number {
+    const list = (this.dt?.filteredValue !== undefined && this.dt?.filteredValue !== null) 
+      ? this.dt.filteredValue 
+      : this.displayPosiciones;
+    return list.reduce((sum, item) => sum + (Number(item.valor_mercado) || 0), 0);
+  }
+
+  get tableTotalDiferencia(): number {
+    return this.tableTotalValorMercado - this.tableTotalCapitalInvertido;
+  }
+
+  get tableTotalCostoPromedio(): number {
+    const totalAcc = this.tableTotalAcciones;
+    return totalAcc > 0 ? this.tableTotalCapitalInvertido / totalAcc : 0;
   }
 
   formatCurrency(value: number | null | undefined): string {

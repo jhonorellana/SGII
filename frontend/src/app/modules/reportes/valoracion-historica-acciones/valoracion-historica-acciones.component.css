@@ -1,0 +1,65 @@
+.valoracion-container {
+  padding: 1rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.filter-card {
+  background: #ffffff;
+  border-radius: 10px;
+}
+
+.kpi-card {
+  border-radius: 10px;
+  background: #ffffff;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.kpi-icon-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.bg-emerald-light { background-color: #d1fae5; }
+.text-emerald { color: #059669 !important; }
+.border-emerald { border-color: #059669 !important; }
+.bg-emerald { background-color: #10b981 !important; }
+
+.bg-blue-light { background-color: #dbeafe; }
+.text-blue { color: #2563eb !important; }
+.border-blue { border-color: #2563eb !important; }
+
+.bg-slate-light { background-color: #f1f5f9; }
+
+.bg-success-light { background-color: #dcfce7; }
+.bg-danger-light { background-color: #fee2e2; }
+
+.kpi-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.chart-card, .table-card {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.chart-card-body {
+  background-color: #ffffff;
+  padding: 1rem;
+}

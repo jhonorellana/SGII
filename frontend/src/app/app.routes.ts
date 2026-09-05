@@ -28,6 +28,7 @@ import { VentaNotasCreditoListComponent } from './modules/venta-notas-credito/ve
 import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.component';
 import { DashboardInversionesComponent } from './modules/reportes/dashboard-inversiones/dashboard-inversiones.component';
 import { HistoricoAccionesComponent } from './modules/reportes/historico-acciones/historico-acciones.component';
+import { ValoracionHistoricaAccionesComponent } from './modules/reportes/valoracion-historica-acciones/valoracion-historica-acciones.component';
 import { ResumenDiarioBolsaComponent } from './modules/reportes/resumen-diario-bolsa/resumen-diario-bolsa.component';
 import { HistoricoPatrimonioListComponent } from './modules/historico-patrimonio/historico-patrimonio-list/historico-patrimonio-list.component';
 import { HistoricoPatrimonioReportComponent } from './modules/reportes/historico-patrimonio-report/historico-patrimonio-report.component';
@@ -70,6 +71,7 @@ export const routes: Routes = [
       { path: 'reportes/proyeccion-interes-anual', component: ProyeccionInteresAnualComponent },
       { path: 'reportes/dashboard-inversiones', component: DashboardInversionesComponent },
       { path: 'reportes/historico-acciones', component: HistoricoAccionesComponent },
+      { path: 'reportes/valoracion-historica-acciones', component: ValoracionHistoricaAccionesComponent },
       { path: 'reportes/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: 'reportes/historico-patrimonio', component: HistoricoPatrimonioReportComponent },
       { path: 'reportes/tendencias-historicas', component: TendenciasHistoricasComponent },
