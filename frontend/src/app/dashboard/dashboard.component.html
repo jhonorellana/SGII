@@ -15,8 +15,10 @@
       </div>
       <div class="d-flex gap-2 align-items-center flex-wrap flex-sm-nowrap">
         <!-- Modo Máquina del Tiempo -->
-        <div class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 d-flex align-items-center text-nowrap" style="font-size: 0.85rem;">
-          <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-3" style="width: auto; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right center;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId">
+        <div class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 d-flex align-items-center text-nowrap" style="font-size: 0.85rem;" [class.disabled]="loading">
+          <i class="bi bi-clock-history me-1 text-success"></i>
+          <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-3" style="width: auto; min-width: 140px; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right center;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId" [disabled]="loading">
+            <option value="REAL_TIME" *ngIf="historicosOptions.length === 0">⏳ Tiempo Real (Hoy)</option>
             <option *ngFor="let opt of historicosOptions" [value]="opt.value" class="text-dark">{{ opt.label }}</option>
           </select>
         </div>
@@ -24,10 +26,19 @@
         <button (click)="guardarSnapshot()" [disabled]="loading" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap" style="font-size: 0.85rem;">
           <i class="bi bi-camera me-1"></i> Guardar Histórico
         </button>
-        <a routerLink="/reportes/patrimonio-consolidado" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap" style="font-size: 0.85rem;">
+        <a routerLink="/reportes/patrimonio-consolidado" [class.disabled]="loading" [style.pointer-events]="loading ? 'none' : 'auto'" class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap" style="font-size: 0.85rem;">
           <i class="bi bi-file-earmark-bar-graph me-1"></i> Ver Reporte Consolidado
         </a>
       </div>
+    </div>
+
+    <!-- Area de Carga sobre el Fondo Verde del Banner -->
+    <div *ngIf="loading" class="loading-state text-center py-5 my-2">
+      <div class="spinner-border text-white" style="width: 2.75rem; height: 2.75rem;" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-white font-medium fs-6 opacity-90 mb-0">Cargando métricas en tiempo real del patrimonio e inversiones...</p>
+    </div>
   </div>
 
   <!-- Alert Banner Modo Máquina del Tiempo Activado -->
@@ -42,13 +53,6 @@
     <button (click)="resetTimeMachine()" class="btn btn-sm btn-warning text-dark font-bold rounded-pill px-3 py-1 shadow-xs text-nowrap" style="font-size: 0.82rem;">
       <i class="bi bi-arrow-counterclockwise me-1"></i> Volver a Tiempo Real
     </button>
-  </div>
-
-  <div *ngIf="loading" class="loading-state text-center py-5">
-    <div class="spinner-border text-success" role="status">
-      <span class="visually-hidden">Cargando...</span>
-    </div>
-    <p class="mt-3 text-muted font-medium">Cargando métricas en tiempo real del patrimonio e inversiones...</p>
   </div>
 
   <div *ngIf="error" class="alert alert-warning text-center my-3">

@@ -111,7 +111,7 @@ export class DashboardComponent implements OnInit {
   // Modo Máquina del Tiempo
   isTimeMachineActive: boolean = false;
   activeSnapshotFecha: string | null = null;
-  historicosOptions: any[] = [];
+  historicosOptions: any[] = [{ label: '⏳ Tiempo Real (Hoy)', value: 'REAL_TIME' }];
   selectedHistoricoId: string = 'REAL_TIME';
   rawHistoricos: any[] = [];
   realTimeCache: any = null;
