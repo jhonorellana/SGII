@@ -2,6 +2,9 @@
   font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   color: #1e293b;
   min-height: 100vh;
+  background: linear-gradient(135deg, #064e3b 0%, #047857 100%);
+  border-radius: 16px;
+  padding: 1.5rem !important;
 }
 
 .kpi-card {

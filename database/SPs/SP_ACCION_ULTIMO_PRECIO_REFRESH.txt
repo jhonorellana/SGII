@@ -1,7 +1,15 @@
-DELIMITER $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACCION_ULTIMO_PRECIO_REFRESH`()
 BEGIN
 
+UPDATE Inversion I
+INNER JOIN instrumento Ins
+    ON I.id_instrumento = Ins.id_instrumento
+SET 
+    I.id_estado_inversion = 131,
+    I.fecha_actualizacion = NOW()
+WHERE 
+    I.id_estado_inversion = 128
+    AND Ins.fecha_vencimiento < CURDATE();
     
 
     INSERT INTO sipro_desa.catalogo_valor
@@ -229,5 +237,4 @@ BEGIN
     DELETE FROM snapshot_cartera_diaria
     WHERE fecha < CURDATE() - INTERVAL IFNULL(@v_retention, 1825) DAY;
 
-END$$
-DELIMITER ;
+END
