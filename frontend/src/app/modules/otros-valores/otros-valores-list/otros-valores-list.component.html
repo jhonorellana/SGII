@@ -64,11 +64,14 @@
   <div *ngIf="!loading && !error">
     <p-table
       #dt
-      [value]="filteredValores"
+      [value]="valores"
       [paginator]="true"
       [rows]="rowsPerPage"
       [rowsPerPageOptions]="[10, 20, 50, 100]"
       (onPage)="onPageChange($event)"
+      (onFilter)="onFilter($event)"
+      stateStorage="session"
+      stateKey="otros-valores-table-state"
       [tableStyle]="{'min-width': '80rem'}"
       styleClass="p-datatable-sm p-datatable-gridlines hide-global-filter"
       [loading]="loading"
@@ -94,15 +97,15 @@
         </tr>
         <tr>
           <th></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'grupoFamiliarNombre', 'contains')" class="w-100" placeholder="Filtrar grupo"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietarioNombre', 'contains')" class="w-100" placeholder="Filtrar propietario"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tipoNombre', 'contains')" class="w-100" placeholder="Filtrar tipo"/></th>
-          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" class="w-100" placeholder="Filtrar descripción"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'grupoFamiliarNombre', 'contains')" [value]="$any(dt.filters['grupoFamiliarNombre'])?.value || ''" class="w-100" placeholder="Filtrar grupo"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'propietarioNombre', 'contains')" [value]="$any(dt.filters['propietarioNombre'])?.value || ''" class="w-100" placeholder="Filtrar propietario"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'tipoNombre', 'contains')" [value]="$any(dt.filters['tipoNombre'])?.value || ''" class="w-100" placeholder="Filtrar tipo"/></th>
+          <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'descripcion', 'contains')" [value]="$any(dt.filters['descripcion'])?.value || ''" class="w-100" placeholder="Filtrar descripción"/></th>
           <th class="text-end"></th>
           <th></th>
           <th></th>
           <th>
-            <select (change)="onActivoFilterChange($any($event.target).value)" class="form-select form-select-sm">
+            <select (change)="onActivoFilterChange($any($event.target).value)" [value]="$any(dt.filters['activo'])?.value === true ? '1' : ($any(dt.filters['activo'])?.value === false ? '0' : '')" class="form-select form-select-sm">
               <option value="">Todos</option>
               <option value="1">Activo</option>
               <option value="0">Inactivo</option>

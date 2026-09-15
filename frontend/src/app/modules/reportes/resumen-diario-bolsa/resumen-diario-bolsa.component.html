@@ -174,7 +174,7 @@
               </ng-template>
               <ng-template pTemplate="header">
                 <tr>
-                  <th pSortableColumn="tipo">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
+                  <th pSortableColumn="tipo" style="width: 140px;" class="text-center">Tipo <p-sortIcon field="tipo"></p-sortIcon></th>
                   <th pSortableColumn="emisor">Emisor / Decreto <p-sortIcon field="emisor"></p-sortIcon></th>
                   <th pSortableColumn="plazo" class="text-right">Plazo (Días) <p-sortIcon field="plazo"></p-sortIcon></th>
                   <th pSortableColumn="tasa" class="text-right">Tasa (%) <p-sortIcon field="tasa"></p-sortIcon></th>
@@ -187,8 +187,8 @@
               </ng-template>
               <ng-template pTemplate="body" let-item>
                 <tr>
-                  <td>
-                    <p-tag [severity]="obtenerTipoBadge(item.tipo)" [value]="item.tipo"></p-tag>
+                  <td class="text-center">
+                    <p-tag styleClass="tipo-tag-fixed" [severity]="obtenerTipoBadge(item.tipo)" [value]="item.tipo"></p-tag>
                   </td>
                   <td><span class="font-medium text-dark">{{ item.emisor }}</span></td>
                   <td class="text-right font-mono">{{ item.plazo }}</td>

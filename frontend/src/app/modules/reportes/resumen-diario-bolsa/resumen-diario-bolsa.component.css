@@ -676,3 +676,19 @@
   opacity: 0.85;
 }
 
+/* Badges de Tipo de Instrumento (Renta Fija) con ancho fijo idéntico */
+::ng-deep .p-datatable .p-datatable-tbody > tr > td .tipo-tag-fixed,
+::ng-deep .tipo-tag-fixed {
+  width: 125px !important;
+  min-width: 125px !important;
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 6px !important;
+}
+

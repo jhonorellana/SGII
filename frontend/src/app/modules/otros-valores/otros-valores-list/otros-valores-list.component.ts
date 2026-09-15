@@ -427,9 +427,10 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   }
 
   calcularResumen(): void {
-    this.totalActivos = this.otroValorService.calcularActivos(this.filteredValores);
-    this.totalPasivos = this.otroValorService.calcularPasivos(this.filteredValores);
-    this.patrimonioNeto = this.otroValorService.calcularPatrimonio(this.filteredValores);
+    const data = (this.table && this.table.filteredValue) ? this.table.filteredValue : (this.filteredValores.length > 0 ? this.filteredValores : this.valores);
+    this.totalActivos = this.otroValorService.calcularActivos(data);
+    this.totalPasivos = this.otroValorService.calcularPasivos(data);
+    this.patrimonioNeto = this.otroValorService.calcularPatrimonio(data);
   }
 
   private markFormAsDirty(): void {
@@ -457,20 +458,23 @@ export class OtrosValoresListComponent implements OnInit, OnDestroy {
   }
 
   onFilter(event: any): void {
-    // Actualizar totalRecords cuando se filtra la tabla
     if (event.filteredValue) {
+      this.filteredValores = event.filteredValue;
       this.totalRecords = event.filteredValue.length;
     } else {
+      this.filteredValores = [...this.valores];
       this.totalRecords = this.valores.length;
     }
+    this.calcularResumen();
   }
 
   onActivoFilterChange(value: string): void {
-    if (value === '') {
-      this.filteredValores = [...this.valores];
+    if (value === '1') {
+      this.table.filter(true, 'activo', 'equals');
+    } else if (value === '0') {
+      this.table.filter(false, 'activo', 'equals');
     } else {
-      const activo = value === '1';
-      this.filteredValores = this.valores.filter(item => item.activo === activo);
+      this.table.filter(null, 'activo', 'equals');
     }
   }
 
