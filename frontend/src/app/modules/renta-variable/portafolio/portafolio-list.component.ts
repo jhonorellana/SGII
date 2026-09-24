@@ -813,6 +813,11 @@ export class PortafolioListComponent implements OnInit {
     return this.tableTotalValorMercado - this.tableTotalCapitalInvertido;
   }
 
+  get tableTotalPlusvaliaPct(): number {
+    const cap = this.tableTotalCapitalInvertido;
+    return cap > 0 ? (this.tableTotalDiferencia / cap) * 100 : 0;
+  }
+
   get tableTotalCostoPromedio(): number {
     const totalAcc = this.tableTotalAcciones;
     return totalAcc > 0 ? this.tableTotalCapitalInvertido / totalAcc : 0;

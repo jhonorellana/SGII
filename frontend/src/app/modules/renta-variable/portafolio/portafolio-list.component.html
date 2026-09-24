@@ -239,12 +239,9 @@
                   {{ (row.valor_mercado - row.capital_invertido) >= 0 ? '+' : '' }}{{ formatCurrency(row.valor_mercado - row.capital_invertido) }}
                 </span>
 
-                <!-- Plusvalía / Minusvalía -->
-                <span *ngIf="col.field === 'utilidad_perdida_no_realizada'" [ngClass]="row.utilidad_perdida_no_realizada >= 0 ? 'text-success font-semibold' : 'text-danger font-semibold'">
-                  {{ row.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatCurrency(row.utilidad_perdida_no_realizada) }}
-                  <small class="d-block text-xs" [ngClass]="row.utilidad_perdida_no_realizada >= 0 ? 'text-success' : 'text-danger'">
-                    {{ row.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatNumber((row.utilidad_perdida_no_realizada / (row.capital_invertido || 1)) * 100, 2) }}%
-                  </small>
+                <!-- Plusvalía / Minusvalía (%) -->
+                <span *ngIf="col.field === 'utilidad_perdida_no_realizada'" class="font-semibold" [ngClass]="row.utilidad_perdida_no_realizada >= 0 ? 'text-success' : 'text-danger'">
+                  {{ row.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatNumber((row.utilidad_perdida_no_realizada / (row.capital_invertido || 1)) * 100, 2) }}%
                 </span>
                 
               </td>
@@ -265,6 +262,9 @@
               <td class="text-end font-bold text-primary">{{ formatCurrency(tableTotalValorMercado) }}</td>
               <td class="text-end font-bold" [ngClass]="tableTotalDiferencia >= 0 ? 'text-success' : 'text-danger'">
                 {{ tableTotalDiferencia >= 0 ? '+' : '' }}{{ formatCurrency(tableTotalDiferencia) }}
+              </td>
+              <td class="text-end font-bold" [ngClass]="tableTotalPlusvaliaPct >= 0 ? 'text-success' : 'text-danger'">
+                {{ tableTotalPlusvaliaPct >= 0 ? '+' : '' }}{{ formatNumber(tableTotalPlusvaliaPct, 2) }}%
               </td>
             </tr>
           </ng-template>
