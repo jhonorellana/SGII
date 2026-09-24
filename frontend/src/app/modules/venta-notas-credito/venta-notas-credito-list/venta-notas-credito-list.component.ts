@@ -213,14 +213,31 @@ export class VentaNotasCreditoListComponent implements OnInit {
               diferenciaPrecio = Number(venta.precio_venta) - precioCompraPromedio;
             }
 
+            let capVendido = Number(venta.valor_venta_con_comision || 0) - Number(venta.utilidad_con_comision || 0);
+            if (capVendido <= 0 && valorCompra > 0) {
+              capVendido = valorCompra;
+            }
+
+            const roiVentaCalculado = capVendido > 0 ? (Number(venta.utilidad_con_comision || 0) / capVendido) * 100 : Number(venta.roi || 0);
+            const roiTotalCalculado = capVendido > 0 ? (Number(venta.rendimiento_total || 0) / capVendido) * 100 : Number(venta.roi || 0);
+            const dias = Number(venta.dias_transcurridos || 0);
+
+            const ganAnualVentaCalculada = dias > 0 ? (roiVentaCalculado * 365) / dias : 0;
+            const ganAnualTotalCalculada = dias > 0 ? (roiTotalCalculado * 365) / dias : 0;
+
             return {
               ...venta,
               inversionDisplay: this.formatInversionDisplay(venta),
               instrumentoDisplay: this.formatInstrumentoDisplay(venta),
               valorNominalTotal: valorNominal,
+              valor_nominal: valorNominal,
               valorCompraTotal: valorCompra,
               precioCompraPromedio: precioCompraPromedio,
-              diferenciaPrecio: diferenciaPrecio
+              diferenciaPrecio: diferenciaPrecio,
+              roi_venta: venta.roi_venta != null ? Number(venta.roi_venta) : roiVentaCalculado,
+              roi_total: venta.roi_total != null ? Number(venta.roi_total) : roiTotalCalculado,
+              ganancia_anual_venta: venta.ganancia_anual_venta != null ? Number(venta.ganancia_anual_venta) : ganAnualVentaCalculada,
+              ganancia_anual_total: venta.ganancia_anual_total != null ? Number(venta.ganancia_anual_total) : ganAnualTotalCalculada
             };
           });
           this.totalRecords = ventasFiltradas.length;
@@ -759,70 +776,96 @@ export class VentaNotasCreditoListComponent implements OnInit {
     return Number(this.resumenInversiones?.rendimiento_promedio || 0);
   }
 
-  // Cobros recibidos hasta la fecha
-  getCobrosCapital(): number {
-    if (this.selectedInversion) {
-      return Number(this.selectedInversion.capital_cobrado || 0);
+  getFactorProporcionalVenta(): number {
+    const nominalDisponible = this.getAvailableNominalBase();
+    if (nominalDisponible <= 0) return 1;
+    const nominalVendido = Number(this.ventaForm.get('valor_nominal_vendido')?.value) || 0;
+    if (nominalVendido <= 0) {
+      const pct = Number(this.ventaForm.get('porcentaje_vendido')?.value) || 0;
+      return Math.min(Math.max(pct / 100, 0), 1);
     }
-    return Number(this.resumenInversiones?.capital_cobrado_acumulado || 0);
+    return Math.min(Math.max(nominalVendido / nominalDisponible, 0), 1);
+  }
+
+  getCapitalInvertidoVendido(): number {
+    const capitalBase = this.getAvailableCapitalBase();
+    return capitalBase * this.getFactorProporcionalVenta();
+  }
+
+  // Cobros recibidos hasta la fecha (Prorrateados según la porción vendida)
+  getCobrosCapital(): number {
+    const factor = this.getFactorProporcionalVenta();
+    if (this.selectedInversion) {
+      return Number(this.selectedInversion.capital_cobrado || 0) * factor;
+    }
+    return Number(this.resumenInversiones?.capital_cobrado_acumulado || 0) * factor;
   }
 
   getCobrosInteres(): number {
+    const factor = this.getFactorProporcionalVenta();
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.interes_cobrado || 0);
+      return Number(this.selectedInversion.interes_cobrado || 0) * factor;
     }
-    return Number(this.resumenInversiones?.interes_cobrado_acumulado || 0);
+    return Number(this.resumenInversiones?.interes_cobrado_acumulado || 0) * factor;
   }
 
   getCobrosPremio(): number {
+    const factor = this.getFactorProporcionalVenta();
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.premio_cobrado || 0);
+      return Number(this.selectedInversion.premio_cobrado || 0) * factor;
     }
-    return Number(this.resumenInversiones?.premio_cobrado_acumulado || 0);
+    return Number(this.resumenInversiones?.premio_cobrado_acumulado || 0) * factor;
   }
 
   getCobrosInteresMasPremio(): number {
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.interes_mas_premio_cobrado || (this.getCobrosInteres() + this.getCobrosPremio()));
+      const totalInversion = Number(this.selectedInversion.interes_mas_premio_cobrado || (Number(this.selectedInversion.interes_cobrado || 0) + Number(this.selectedInversion.premio_cobrado || 0)));
+      return totalInversion * this.getFactorProporcionalVenta();
     }
-    return Number(this.resumenInversiones?.interes_mas_premio_cobrado_acumulado || (this.getCobrosInteres() + this.getCobrosPremio()));
+    return (this.getCobrosInteres() + this.getCobrosPremio());
   }
 
   getCobrosTotalFlujo(): number {
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.total_flujo_cobrado || (this.getCobrosCapital() + this.getCobrosInteresMasPremio()));
+      const totalInversion = Number(this.selectedInversion.total_flujo_cobrado || (Number(this.selectedInversion.capital_cobrado || 0) + this.getCobrosInteresMasPremio()));
+      return totalInversion * this.getFactorProporcionalVenta();
     }
-    return Number(this.resumenInversiones?.total_flujo_cobrado_acumulado || (this.getCobrosCapital() + this.getCobrosInteresMasPremio()));
+    return (this.getCobrosCapital() + this.getCobrosInteresMasPremio());
   }
 
-  // Intereses y premios futuros pendientes (Costo de oportunidad dejado de ganar)
+  // Intereses y premios futuros pendientes (Costo de oportunidad dejado de ganar para la fracción vendida)
   getInteresFuturoPendiente(): number {
+    const factor = this.getFactorProporcionalVenta();
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.interes_pendiente || 0);
+      return Number(this.selectedInversion.interes_pendiente || 0) * factor;
     }
-    return Number(this.resumenInversiones?.interes_pendiente_acumulado || 0);
+    return Number(this.resumenInversiones?.interes_pendiente_acumulado || 0) * factor;
   }
 
   getPremioFuturoPendiente(): number {
+    const factor = this.getFactorProporcionalVenta();
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.premio_pendiente || 0);
+      return Number(this.selectedInversion.premio_pendiente || 0) * factor;
     }
-    return Number(this.resumenInversiones?.premio_pendiente_acumulado || 0);
+    return Number(this.resumenInversiones?.premio_pendiente_acumulado || 0) * factor;
   }
 
   getInteresMasPremioFuturoPendiente(): number {
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.interes_mas_premio_pendiente || (this.getInteresFuturoPendiente() + this.getPremioFuturoPendiente()));
+      const totalPendiente = Number(this.selectedInversion.interes_mas_premio_pendiente || (Number(this.selectedInversion.interes_pendiente || 0) + Number(this.selectedInversion.premio_pendiente || 0)));
+      return totalPendiente * this.getFactorProporcionalVenta();
     }
-    return Number(this.resumenInversiones?.interes_mas_premio_pendiente_acumulado || (this.getInteresFuturoPendiente() + this.getPremioFuturoPendiente()));
+    return (this.getInteresFuturoPendiente() + this.getPremioFuturoPendiente());
   }
 
   // Comisiones
   getComisionesCompra(): number {
+    const factor = this.getFactorProporcionalVenta();
     if (this.selectedInversion) {
-      return Number(this.selectedInversion.total_comisiones_compra || (Number(this.selectedInversion.comision_casa_valores || 0) + Number(this.selectedInversion.comision_bolsa || 0)));
+      const totalComision = Number(this.selectedInversion.total_comisiones_compra || (Number(this.selectedInversion.comision_casa_valores || 0) + Number(this.selectedInversion.comision_bolsa || 0)));
+      return totalComision * factor;
     }
-    return Number(this.resumenInversiones?.total_comisiones_compra_acumulado || 0);
+    return Number(this.resumenInversiones?.total_comisiones_compra_acumulado || 0) * factor;
   }
 
   getComisionesVenta(): number {
@@ -838,30 +881,53 @@ export class VentaNotasCreditoListComponent implements OnInit {
   // Utilidad y ROI Transacción Venta
   getUtilidadEstimadaVenta(): number {
     const totalNeto = Number(this.ventaForm.get('total_vendedor_neto')?.value) || 0;
-    const capitalBase = this.getAvailableCapitalBase();
-    return totalNeto - capitalBase;
+    const capitalVendido = this.getCapitalInvertidoVendido();
+    return totalNeto - capitalVendido;
   }
 
   getRendimientoEstimadoVenta(): number {
-    const capitalBase = this.getAvailableCapitalBase();
-    if (capitalBase <= 0) return 0;
+    const capitalVendido = this.getCapitalInvertidoVendido();
+    if (capitalVendido <= 0) return 0;
     const utilidad = this.getUtilidadEstimadaVenta();
-    return (utilidad / capitalBase) * 100;
+    return (utilidad / capitalVendido) * 100;
   }
 
-  // Utilidad y ROI Global del Ciclo de Vida Completo (Flujos + Venta - Capital Invertido Original)
+  // Utilidad y ROI Global de la Fracción Vendida
   getUtilidadTotalHistorica(): number {
     const totalNetoVenta = Number(this.ventaForm.get('total_vendedor_neto')?.value) || 0;
     const flujosCobrados = this.getCobrosTotalFlujo();
-    const capitalOrig = this.getCapitalInvertidoOriginalBase();
-    return (flujosCobrados + totalNetoVenta) - capitalOrig;
+    const capitalVendido = this.getCapitalInvertidoVendido();
+    return (flujosCobrados + totalNetoVenta) - capitalVendido;
   }
 
   getRoiTotalHistorico(): number {
-    const capitalOrig = this.getCapitalInvertidoOriginalBase();
-    if (capitalOrig <= 0) return 0;
+    const capitalVendido = this.getCapitalInvertidoVendido();
+    if (capitalVendido <= 0) return 0;
     const utilidadTotal = this.getUtilidadTotalHistorica();
-    return (utilidadTotal / capitalOrig) * 100;
+    return (utilidadTotal / capitalVendido) * 100;
+  }
+
+  getDiasTranscurridosEstimados(): number {
+    const fechaVentaStr = this.ventaForm.get('fecha_venta')?.value;
+    const fechaCompraStr = this.selectedInversion?.fecha_compra;
+    if (fechaVentaStr && fechaCompraStr) {
+      const fCompra = new Date(fechaCompraStr);
+      const fVenta = new Date(fechaVentaStr);
+      const diffTime = Math.abs(fVenta.getTime() - fCompra.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 0 ? diffDays : 1;
+    }
+    return 1;
+  }
+
+  getGananciaAnualVentaEstimada(): number {
+    const dias = this.getDiasTranscurridosEstimados();
+    return (this.getRendimientoEstimadoVenta() * 365) / dias;
+  }
+
+  getGananciaAnualTotalEstimada(): number {
+    const dias = this.getDiasTranscurridosEstimados();
+    return (this.getRoiTotalHistorico() * 365) / dias;
   }
 
   previsualizarVenta(): void {

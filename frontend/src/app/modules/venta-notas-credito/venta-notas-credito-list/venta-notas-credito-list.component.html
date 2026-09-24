@@ -88,7 +88,7 @@
         <th pSortableColumn="valorCompraTotal" class="text-end">Valor Compra <p-sortIcon field="valorCompraTotal"></p-sortIcon></th>
         <th pSortableColumn="valor_venta_con_comision" class="text-end">Valor Venta <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
         <th pSortableColumn="utilidad_con_comision" class="text-end">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
-        <th pSortableColumn="roi" class="text-end">ROI Total <p-sortIcon field="roi"></p-sortIcon></th>
+        <th pSortableColumn="roi" class="text-end">ROI <p-sortIcon field="roi"></p-sortIcon></th>
         <th pSortableColumn="ganancia_anual" class="text-end">% Anual <p-sortIcon field="ganancia_anual"></p-sortIcon></th>
         <th class="text-center">Acciones</th>
       </tr>
@@ -129,15 +129,11 @@
             {{ venta.utilidad_con_comision | currency:'USD':'symbol':'1.2-2' }}
           </span>
         </td>
-        <td class="text-end">
-          <span [class]="venta.roi >= 0 ? 'text-success' : 'text-danger'">
-            {{ venta.roi | number:'1.2-2' }}%
-          </span>
+        <td class="text-end fw-bold text-primary">
+          {{ (venta.roi_venta != null ? venta.roi_venta : venta.roi) | number:'1.2-2' }}%
         </td>
-        <td class="text-end">
-          <span [class]="venta.ganancia_anual >= 0 ? 'text-success' : 'text-danger'">
-            {{ venta.ganancia_anual | number:'1.2-2' }}%
-          </span>
+        <td class="text-end fw-bold text-primary">
+          {{ (venta.ganancia_anual_venta != null ? venta.ganancia_anual_venta : venta.ganancia_anual) | number:'1.2-2' }}%
         </td>
         <td class="text-center">
           <div class="d-flex justify-content-center gap-1">
@@ -441,10 +437,10 @@
         </div>
       </div>
 
-      <!-- 2. BANNER COMPACTO DE INDICADORES Y GANANCIA/COSTO DE OPORTUNIDAD -->
+      <!-- 2. BANNER COMPACTO DE INDICADORES Y GANANCIA -->
       <div class="row g-2 mb-3">
         <!-- Vendedor Neto -->
-        <div class="col-md-3">
+        <div class="col-md-6">
           <div class="p-2 border rounded bg-light text-center shadow-sm h-100">
             <div class="text-uppercase text-muted fw-bold small" style="font-size: 10px;">TOTAL VENDEDOR NETO</div>
             <div class="fs-6 fw-bold text-primary mb-0">{{ formatCurrency(ventaForm.get('total_vendedor_neto')?.value) }}</div>
@@ -452,8 +448,8 @@
           </div>
         </div>
 
-        <!-- Ganancia Solo por la Venta (DESTACADO PRINCIPAL) -->
-        <div class="col-md-3">
+        <!-- Ganancia por la Venta -->
+        <div class="col-md-6">
           <div class="p-2 border rounded text-center shadow-sm h-100"
                [class.bg-success-subtle]="getUtilidadEstimadaVenta() >= 0"
                [class.border-success]="getUtilidadEstimadaVenta() >= 0"
@@ -462,7 +458,7 @@
             <div class="text-uppercase fw-bold small" style="font-size: 10px;"
                  [class.text-success]="getUtilidadEstimadaVenta() >= 0"
                  [class.text-danger]="getUtilidadEstimadaVenta() < 0">
-              GANANCIA SOLO POR LA VENTA
+              GANANCIA POR LA VENTA
             </div>
             <div class="fs-6 fw-bold mb-0"
                  [class.text-success]="getUtilidadEstimadaVenta() >= 0"
@@ -472,34 +468,8 @@
             <div class="small fw-bold" style="font-size: 10px;"
                  [class.text-success]="getUtilidadEstimadaVenta() >= 0"
                  [class.text-danger]="getUtilidadEstimadaVenta() < 0">
-              Rend. Venta: {{ formatPercentage(getRendimientoEstimadoVenta()) }}
+              ROI: {{ formatPercentage(getRendimientoEstimadoVenta()) }} | Anual: {{ formatPercentage(getGananciaAnualVentaEstimada()) }}
             </div>
-          </div>
-        </div>
-
-        <!-- Interés Futuro Dejado de Ganar (Costo de Oportunidad) -->
-        <div class="col-md-3">
-          <div class="p-2 border border-warning rounded bg-warning-subtle text-center shadow-sm h-100">
-            <div class="text-uppercase text-dark fw-bold small" style="font-size: 10px;">
-              INTERÉS DEJADO DE GANAR
-            </div>
-            <div class="fs-6 fw-bold text-danger mb-0">
-              - {{ formatCurrency(getInteresMasPremioFuturoPendiente()) }}
-            </div>
-            <div class="small text-danger fw-semibold" style="font-size: 10px;">Futuro no percibido</div>
-          </div>
-        </div>
-
-        <!-- Utilidad Total Acumulada + ROI -->
-        <div class="col-md-3">
-          <div class="p-2 border rounded bg-light text-center shadow-sm h-100">
-            <div class="text-uppercase text-muted fw-bold small" style="font-size: 10px;">UTILIDAD TOTAL ACUM. + ROI</div>
-            <div class="fs-6 fw-bold mb-0"
-                 [class.text-success]="getUtilidadTotalHistorica() >= 0"
-                 [class.text-danger]="getUtilidadTotalHistorica() < 0">
-              {{ formatCurrency(getUtilidadTotalHistorica()) }}
-            </div>
-            <div class="small text-muted" style="font-size: 10px;">ROI Total: <strong>{{ formatPercentage(getRoiTotalHistorico()) }}</strong></div>
           </div>
         </div>
       </div>
@@ -591,10 +561,13 @@
             <strong>Valor con Comisión:</strong> {{ formatCurrency(selectedVenta.valor_venta_con_comision) }}
           </div>
           <div class="col-md-6">
-            <strong>ROI Total:</strong> {{ formatPercentage(selectedVenta.roi) }}
+            <strong>ROI Venta:</strong> {{ formatPercentage(selectedVenta.roi_venta != null ? selectedVenta.roi_venta : selectedVenta.roi) }}
           </div>
           <div class="col-md-6">
-            <strong>Rendimiento Total:</strong> {{ formatPercentage(selectedVenta.rendimiento_total) }}
+            <strong>Ganancia Anual:</strong> {{ formatPercentage(selectedVenta.ganancia_anual_venta != null ? selectedVenta.ganancia_anual_venta : selectedVenta.ganancia_anual) }}
+          </div>
+          <div class="col-md-6">
+            <strong>Utilidad Venta ($):</strong> {{ formatCurrency(selectedVenta.utilidad_con_comision) }}
           </div>
         </div>
       </div>

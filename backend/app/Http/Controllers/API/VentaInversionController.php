@@ -45,6 +45,48 @@ class VentaInversionController extends Controller
 
         $ventas = $query->orderBy('fecha_venta', 'desc')->get();
 
+        // Mapear y corregir formato de ganancia anual, ROI dual y valor nominal para la lista
+        $ventas->map(function ($v) {
+            // El capital invertido vendido por definición contable es: Valor Venta con Comisión - Utilidad con Comisión
+            $capitalVendido = (float) ($v->valor_venta_con_comision - $v->utilidad_con_comision);
+            if ($capitalVendido <= 0) {
+                if ($v->detalles && $v->detalles->first() && $v->detalles->first()->valor_compra > 0) {
+                    $capitalVendido = (float) $v->detalles->first()->valor_compra;
+                } elseif ($v->inversion && $v->inversion->capital_invertido > 0) {
+                    $capitalVendido = (float) $v->inversion->capital_invertido;
+                }
+            }
+
+            if ($capitalVendido > 0) {
+                $roiVenta = ($v->utilidad_con_comision / $capitalVendido) * 100;
+                $roiTotal = ($v->rendimiento_total / $capitalVendido) * 100;
+            } else {
+                $roiVenta = (float) ($v->roi ?? 0);
+                $roiTotal = (float) ($v->roi ?? 0);
+            }
+
+            if ($v->dias_transcurridos > 0) {
+                $gananciaAnualVenta = ($roiVenta * 365) / $v->dias_transcurridos;
+                $gananciaAnualTotal = ($roiTotal * 365) / $v->dias_transcurridos;
+            } else {
+                $gananciaAnualVenta = 0;
+                $gananciaAnualTotal = 0;
+            }
+
+            $v->setAttribute('roi_venta', $roiVenta);
+            $v->setAttribute('roi_total', $roiTotal);
+            $v->setAttribute('ganancia_anual_venta', $gananciaAnualVenta);
+            $v->setAttribute('ganancia_anual_total', $gananciaAnualTotal);
+
+            // Sincronizar valor_nominal para la tabla si no está directo en la cabecera
+            if ((!$v->valor_nominal || $v->valor_nominal == 0) && $v->detalles && $v->detalles->first()) {
+                $v->setAttribute('valor_nominal', $v->detalles->first()->valor_nominal);
+            } elseif ((!$v->valor_nominal || $v->valor_nominal == 0) && $v->inversion) {
+                $v->setAttribute('valor_nominal', $v->inversion->valor_nominal);
+            }
+            return $v;
+        });
+
         return response()->json([
             'success' => true,
             'data' => $ventas
@@ -109,8 +151,11 @@ class VentaInversionController extends Controller
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            // Determinar tipo de venta (total o parcial)
+            // Determinar tipo de venta (total o parcial) y factor de porcentaje
             $esVentaTotal = !$request->porcentaje_vendido || $request->porcentaje_vendido >= 100;
+            $porcentajeVendidoFactor = ($request->porcentaje_vendido && $request->porcentaje_vendido > 0)
+                ? min(max($request->porcentaje_vendido / 100, 0), 1)
+                : 1;
 
             // Calcular total de valor nominal para prorrateo
             $valorNominalTotal = $inversiones->sum('valor_nominal');
@@ -125,12 +170,16 @@ class VentaInversionController extends Controller
                 $retenciones = ($request->retenciones ?? 0) * $factor;
                 $interesPrevioVenta = ($request->interes_previo_venta ?? 0) * $factor;
 
+                // Capital y base financiera prorrateados según la porción vendida
+                $capitalInvertidoBase = ($inversion->capital_invertido ?? 0) * $porcentajeVendidoFactor;
+                $valorSinComisionBase = ($inversion->valor_sin_comision ?? 0) * $porcentajeVendidoFactor;
+
                 // Calcular valores financieros según las fórmulas de Excel
-                $valorVentaSinComision = (($request->precio_venta ?? 0) * $inversion->valor_nominal) / 100;
+                $valorVentaSinComision = (($request->precio_venta ?? 0) * ($inversion->valor_nominal * $porcentajeVendidoFactor)) / 100;
                 $valorVentaConComision = $valorVentaSinComision - $comisionOperador - $comisionBolsa;
 
-                $utilidadSinComision = $valorVentaSinComision - ($inversion->valor_sin_comision ?? 0);
-                $utilidadConComision = $valorVentaConComision - ($inversion->capital_invertido ?? 0);
+                $utilidadSinComision = $valorVentaSinComision - $valorSinComisionBase;
+                $utilidadConComision = $valorVentaConComision - $capitalInvertidoBase;
                 $gananciaPerdida = $utilidadConComision;
 
                 // Calcular días transcurridos
@@ -141,13 +190,14 @@ class VentaInversionController extends Controller
                     $diasTranscurridos = $fechaCompra->diffInDays($fechaVenta);
                 }
 
-                // Obtener interés recibido (de amortizaciones pagadas)
-                $interesRecibido = $inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0;
+                // Obtener interés recibido (de amortizaciones pagadas) prorrateado
+                $interesRecibidoTotal = $inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0;
+                $interesRecibido = $interesRecibidoTotal * $porcentajeVendidoFactor;
                 $rendimientoTotal = $utilidadConComision + $interesRecibido + $interesPrevioVenta;
 
-                // Calcular ROI (Tasa de Rentabilidad Porcentual) = Rendimiento Total / Capital Invertido
-                $roi = ($inversion->capital_invertido > 0)
-                    ? ($rendimientoTotal / $inversion->capital_invertido) * 100
+                // Calcular ROI (Tasa de Rentabilidad Porcentual) = Rendimiento Total / Capital Invertido Prorrateado
+                $roi = ($capitalInvertidoBase > 0)
+                    ? ($rendimientoTotal / $capitalInvertidoBase) * 100
                     : 0;
 
                 // Calcular ganancia anualizada (% Ganancia Anual estimado) = ROI * 365 / días
@@ -602,9 +652,9 @@ class VentaInversionController extends Controller
             ? ($utilidadConComision / $inversion->capital_invertido) * 100
             : 0;
 
-        // Calcular ganancia anualizada
+        // Calcular ganancia anualizada (% p.a.)
         $gananciaAnual = ($diasTranscurridos > 0)
-            ? ($utilidadConComision / $diasTranscurridos) * 365
+            ? ($roi * 365 / $diasTranscurridos)
             : 0;
 
         // Obtener interés recibido (de amortizaciones pagadas)
@@ -797,9 +847,9 @@ class VentaInversionController extends Controller
             ? ($utilidadConComision / $inversionVendida->capital_invertido) * 100
             : 0;
 
-        // Calcular ganancia anualizada
+        // Calcular ganancia anualizada (% p.a.)
         $gananciaAnual = ($diasTranscurridos > 0)
-            ? ($utilidadConComision / $diasTranscurridos) * 365
+            ? ($roi * 365 / $diasTranscurridos)
             : 0;
 
         // Obtener interés recibido (proporcional al porcentaje vendido)
@@ -838,7 +888,22 @@ class VentaInversionController extends Controller
             'fecha_creacion' => now(),
             'fecha_actualizacion' => now()
         ]);
- 
+
+        // Paso 6.5: Crear detalle en venta_inversion_detalle para la parte vendida
+        VentaInversionDetalle::create([
+            'id_venta_inversion' => $venta->id_venta_inversion,
+            'id_inversion' => $inversionVendida->id_inversion,
+            'valor_nominal' => $inversionVendida->valor_nominal,
+            'valor_compra' => $inversionVendida->capital_invertido,
+            'porcentaje_compra' => 100,
+            'valor_venta_asignado' => $valorVentaConComision,
+            'porcentaje_venta' => $porcentajeVender,
+            'utilidad' => $utilidadConComision,
+            'rendimiento' => $roi,
+            'fecha_creacion' => now(),
+            'fecha_actualizacion' => now()
+        ]);
+
         // Paso 7: Crear movimiento_capital (solo de la parte vendida)
         MovimientoCapital::create([
             'id_tipo_movimiento' => 182,
@@ -1059,6 +1124,51 @@ class VentaInversionController extends Controller
                 'success' => false,
                 'message' => 'Venta no encontrada'
             ], Response::HTTP_NOT_FOUND);
+        }
+
+        // Si la venta no tiene registros en detalles (ventas creadas anteriormente), construir detalle dinámico
+        if ($venta->detalles->isEmpty() && $venta->inversion) {
+            $inv = $venta->inversion;
+            $virtualDetalle = new VentaInversionDetalle([
+                'id_venta_inversion_detalle' => 0,
+                'id_venta_inversion' => $venta->id_venta_inversion,
+                'id_inversion' => $inv->id_inversion,
+                'valor_nominal' => $inv->valor_nominal,
+                'valor_compra' => $inv->capital_invertido,
+                'porcentaje_compra' => 100,
+                'valor_venta_asignado' => $venta->valor_venta_con_comision,
+                'porcentaje_venta' => $venta->porcentaje_vendido,
+                'utilidad' => $venta->utilidad_con_comision,
+                'rendimiento' => $venta->roi
+            ]);
+            $virtualDetalle->setRelation('inversion', $inv);
+            $venta->setRelation('detalles', collect([$virtualDetalle]));
+        }
+
+        // Calcular métricas duales (Venta vs Total Return)
+        $capitalVendido = (float) ($venta->valor_venta_con_comision - $venta->utilidad_con_comision);
+        if ($capitalVendido <= 0) {
+            if ($venta->detalles && $venta->detalles->first() && $venta->detalles->first()->valor_compra > 0) {
+                $capitalVendido = (float) $venta->detalles->first()->valor_compra;
+            } elseif ($venta->inversion && $venta->inversion->capital_invertido > 0) {
+                $capitalVendido = (float) $venta->inversion->capital_invertido;
+            }
+        }
+
+        if ($capitalVendido > 0) {
+            $venta->roi_venta = ($venta->utilidad_con_comision / $capitalVendido) * 100;
+            $venta->roi_total = ($venta->rendimiento_total / $capitalVendido) * 100;
+        } else {
+            $venta->roi_venta = (float) ($venta->roi ?? 0);
+            $venta->roi_total = (float) ($venta->roi ?? 0);
+        }
+
+        if ($venta->dias_transcurridos > 0) {
+            $venta->ganancia_anual_venta = ($venta->roi_venta * 365) / $venta->dias_transcurridos;
+            $venta->ganancia_anual_total = ($venta->roi_total * 365) / $venta->dias_transcurridos;
+        } else {
+            $venta->ganancia_anual_venta = 0;
+            $venta->ganancia_anual_total = 0;
         }
 
         return response()->json([

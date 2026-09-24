@@ -24,21 +24,21 @@
 
     <ng-template pTemplate="header">
       <tr>
-        <th pSortableColumn="id_venta_inversion" class="text-center" style="width: 60px;">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
-        <th pSortableColumn="liquidacion_venta" class="text-center" style="width: 140px;">Liquidación <p-sortIcon field="liquidacion_venta"></p-sortIcon></th>
-        <th pSortableColumn="id_instrumento" style="width: 250px;">Instrumento <p-sortIcon field="id_instrumento"></p-sortIcon></th>
-        <th pSortableColumn="fecha_venta" class="text-center" style="width: 100px;">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
-        <th pSortableColumn="valor_nominal" class="text-end" style="width: 110px;">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
-        <th pSortableColumn="precio_venta" class="text-end" style="width: 90px;">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
-        <th pSortableColumn="valor_venta_con_comision" class="text-end" style="width: 110px;">Valor Venta con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
-        <th pSortableColumn="valor_recibido" class="text-end" style="width: 110px;">Valor Recibido <p-sortIcon field="valor_recibido"></p-sortIcon></th>
-        <th pSortableColumn="utilidad_con_comision" class="text-end" style="width: 110px;">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
-        <th pSortableColumn="rendimiento_total" class="text-end" style="width: 110px;">Rendimiento Total <p-sortIcon field="rendimiento_total"></p-sortIcon></th>
-        <th pSortableColumn="dias_transcurridos" class="text-center" style="width: 90px;">Días Transcurridos <p-sortIcon field="dias_transcurridos"></p-sortIcon></th>
-        <th pSortableColumn="roi" class="text-end" style="width: 80px;">ROI <p-sortIcon field="roi"></p-sortIcon></th>
+        <th pSortableColumn="id_venta_inversion" class="text-center" style="width: 50px;">ID <p-sortIcon field="id_venta_inversion"></p-sortIcon></th>
+        <th pSortableColumn="liquidacion_venta" class="text-center" style="width: 100px;">Liquidación <p-sortIcon field="liquidacion_venta"></p-sortIcon></th>
+        <th pSortableColumn="id_instrumento" style="width: 210px; font-size: 11px;">Instrumento <p-sortIcon field="id_instrumento"></p-sortIcon></th>
+        <th pSortableColumn="fecha_venta" class="text-center" style="width: 90px;">Fecha Venta <p-sortIcon field="fecha_venta"></p-sortIcon></th>
+        <th pSortableColumn="valor_nominal" class="text-end" style="width: 100px;">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+        <th pSortableColumn="precio_venta" class="text-end" style="width: 80px;">Precio Venta <p-sortIcon field="precio_venta"></p-sortIcon></th>
+        <th pSortableColumn="valor_venta_con_comision" class="text-end" style="width: 100px;">Valor Venta con Comisión <p-sortIcon field="valor_venta_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="valor_recibido" class="text-end" style="width: 100px;">Valor Recibido <p-sortIcon field="valor_recibido"></p-sortIcon></th>
+        <th pSortableColumn="utilidad_con_comision" class="text-end" style="width: 90px;">Utilidad <p-sortIcon field="utilidad_con_comision"></p-sortIcon></th>
+        <th pSortableColumn="rendimiento_total" class="text-end" style="width: 100px;">Rendimiento Total <p-sortIcon field="rendimiento_total"></p-sortIcon></th>
+        <th pSortableColumn="dias_transcurridos" class="text-center" style="width: 85px;">Días Transcurridos <p-sortIcon field="dias_transcurridos"></p-sortIcon></th>
+        <th pSortableColumn="roi" class="text-end" style="width: 95px;">ROI <p-sortIcon field="roi"></p-sortIcon></th>
         <th pSortableColumn="ganancia_anual" class="text-end" style="width: 100px;">Ganancia Anual <p-sortIcon field="ganancia_anual"></p-sortIcon></th>
-        <th class="text-center" style="width: 80px;">Tipo</th>
-        <th class="text-center" style="width: 100px;">Acciones</th>
+        <th class="text-center" style="width: 75px;">Tipo</th>
+        <th class="text-center" style="width: 90px;">Acciones</th>
       </tr>
       <tr>
         <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'id_venta_inversion', 'contains')" [value]="$any(dt.filters['id_venta_inversion'])?.value || ''" class="w-100" placeholder="Filtrar ID"/></th>
@@ -63,7 +63,7 @@
       <tr>
         <td class="text-center">{{ venta.id_venta_inversion }}</td>
         <td class="text-center">{{ venta.liquidacion_venta || '-' }}</td>
-        <td>{{ venta.instrumentoDisplay }}</td>
+        <td style="font-size: 11px;">{{ venta.instrumentoDisplay }}</td>
         <td class="text-center">{{ formatDate(venta.fecha_venta) }}</td>
         <td class="text-end">{{ formatCurrency(venta.valor_nominal) }}</td>
         <td class="text-end">{{ formatPrecioVenta(venta.precio_venta) }}</td>
@@ -71,9 +71,23 @@
         <td class="text-end">{{ formatCurrency(venta.valor_recibido) }}</td>
         <td class="text-end">{{ formatCurrency(venta.utilidad_con_comision) }}</td>
         <td class="text-end">{{ formatCurrency(venta.rendimiento_total) }}</td>
-        <td class="text-center">{{ venta.dias_transcurridos != null ? venta.dias_transcurridos : '-' }}</td>
-        <td class="text-end">{{ venta.roi != null ? (venta.roi | number:'1.2-2') + '%' : '-' }}</td>
-        <td class="text-end">{{ venta.ganancia_anual != null ? (venta.ganancia_anual | number:'1.2-2') + '%' : '-' }}</td>
+        <td class="text-center fw-semibold">{{ venta.dias_transcurridos != null ? venta.dias_transcurridos : '-' }}</td>
+        <td class="text-end">
+          <div class="fw-bold text-primary" style="font-size: 10px;" pTooltip="ROI Venta (Transacción)">
+            {{ (venta.roi_venta != null ? venta.roi_venta : venta.roi) | number:'1.2-2' }}% <span class="badge bg-light text-primary border" style="font-size: 7px;">Venta</span>
+          </div>
+          <div class="small fw-bold text-success" style="font-size: 10px;" pTooltip="ROI Total (Total Return)">
+            {{ (venta.roi_total != null ? venta.roi_total : venta.roi) | number:'1.2-2' }}% <span class="badge bg-light text-success border" style="font-size: 7px;">Total</span>
+          </div>
+        </td>
+        <td class="text-end">
+          <div class="fw-bold text-primary" style="font-size: 10px;" pTooltip="Ganancia Anual Venta (% p.a.)">
+            {{ (venta.ganancia_anual_venta != null ? venta.ganancia_anual_venta : venta.ganancia_anual) | number:'1.2-2' }}% <span class="badge bg-light text-primary border" style="font-size: 7px;">Venta</span>
+          </div>
+          <div class="small fw-bold text-success" style="font-size: 10px;" pTooltip="Ganancia Anual Total (% p.a. Total Return)">
+            {{ (venta.ganancia_anual_total != null ? venta.ganancia_anual_total : venta.ganancia_anual) | number:'1.2-2' }}% <span class="badge bg-light text-success border" style="font-size: 7px;">Total</span>
+          </div>
+        </td>
         <td class="text-center">
           <p-tag [value]="venta.tipoVenta?.nombre || (venta.id_tipo_venta === 1 ? 'Total' : 'Parcial')" [severity]="venta.id_tipo_venta === 1 ? 'success' : 'info'"></p-tag>
         </td>
@@ -390,10 +404,13 @@
             <strong>Valor con Comisión:</strong> {{ formatCurrency(selectedVenta.valor_venta_con_comision) }}
           </div>
           <div class="col-md-6">
-            <strong>ROI Total:</strong> {{ formatPercentage(selectedVenta.roi) }}
+            <strong>ROI Venta / Total:</strong> {{ formatPercentage(selectedVenta.roi_venta != null ? selectedVenta.roi_venta : selectedVenta.roi) }} / <span class="text-success fw-bold">{{ formatPercentage(selectedVenta.roi_total != null ? selectedVenta.roi_total : selectedVenta.roi) }}</span>
           </div>
           <div class="col-md-6">
-            <strong>Rendimiento Total:</strong> {{ formatPercentage(selectedVenta.rendimiento_total) }}
+            <strong>G. Anual Venta / Total:</strong> {{ formatPercentage(selectedVenta.ganancia_anual_venta != null ? selectedVenta.ganancia_anual_venta : selectedVenta.ganancia_anual) }} / <span class="text-success fw-bold">{{ formatPercentage(selectedVenta.ganancia_anual_total != null ? selectedVenta.ganancia_anual_total : selectedVenta.ganancia_anual) }}</span>
+          </div>
+          <div class="col-md-6">
+            <strong>Rendimiento Total ($):</strong> {{ formatCurrency(selectedVenta.rendimiento_total) }}
           </div>
         </div>
       </div>
@@ -624,7 +641,7 @@
             <div class="small fw-bold" style="font-size: 10px;"
                  [class.text-success]="getUtilidadEstimadaVenta() >= 0"
                  [class.text-danger]="getUtilidadEstimadaVenta() < 0">
-              Rend. Venta: {{ formatPercentage(getRendimientoEstimadoVenta()) }}
+              ROI Venta: {{ formatPercentage(getRendimientoEstimadoVenta()) }} | Anual: {{ formatPercentage(getGananciaAnualVentaEstimada()) }}
             </div>
           </div>
         </div>
@@ -651,7 +668,9 @@
                  [class.text-danger]="getUtilidadTotalHistorica() < 0">
               {{ formatCurrency(getUtilidadTotalHistorica()) }}
             </div>
-            <div class="small text-muted" style="font-size: 10px;">ROI Total: <strong>{{ formatPercentage(getRoiTotalHistorico()) }}</strong></div>
+            <div class="small text-muted" style="font-size: 10px;">
+              ROI Total: <strong>{{ formatPercentage(getRoiTotalHistorico()) }}</strong> | Anual: <strong>{{ formatPercentage(getGananciaAnualTotalEstimada()) }}</strong>
+            </div>
           </div>
         </div>
       </div>
@@ -706,7 +725,11 @@
                 </tr>
                 <tr>
                   <td>Saldo Capital Invertido Disponible Actual:</td>
-                  <td class="text-end fw-bold text-primary">{{ formatCurrency(getAvailableCapitalBase()) }}</td>
+                  <td class="text-end fw-bold text-secondary">{{ formatCurrency(getAvailableCapitalBase()) }}</td>
+                </tr>
+                <tr *ngIf="getFactorProporcionalVenta() < 1">
+                  <td>Capital Invertido Proporcional (Porción Vendida - {{ formatPercentage(getFactorProporcionalVenta() * 100) }}):</td>
+                  <td class="text-end fw-bold text-primary">{{ formatCurrency(getCapitalInvertidoVendido()) }}</td>
                 </tr>
                 <tr>
                   <td>Comisiones Pagadas a la Compra (Operador + Bolsa):</td>

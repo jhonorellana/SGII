@@ -42,6 +42,11 @@ export interface VentaInversion {
   diferenciaPrecio?: number;
   inversionDisplay?: string;
   instrumentoDisplay?: string;
+  roi_venta?: number;
+  roi_total?: number;
+  ganancia_anual_venta?: number;
+  ganancia_anual_total?: number;
+  valor_nominal?: number;
 }
 
 export interface VentaInversionDetalle {
