@@ -49,8 +49,16 @@ class AccionPosicionController extends Controller
             // Silencioso si no hay conexión a mysql_inversion
         }
 
+        // Obtener mapeo oficial de emisores legacy
+        $emisorMap = [];
+        try {
+            $emisorMap = DB::table('map_emisor_legacy')
+                ->pluck('id_emisor_legacy', 'id_emisor')
+                ->toArray();
+        } catch (\Exception $e) {}
+
         // Mapear los costos y variaciones en las posiciones
-        $posicionesMap = $posiciones->map(function ($pos) use ($costos, $lastDates) {
+        $posicionesMap = $posiciones->map(function ($pos) use ($costos, $lastDates, $emisorMap) {
             $key = $pos->id_persona . '_' . $pos->id_instrumento;
             
             $cpu = 0.0;
@@ -69,22 +77,8 @@ class AccionPosicionController extends Controller
             $pos->capital_invertido = $capitalInvertido;
             $pos->utilidad_perdida_no_realizada = $utilidadPerdidaNoRealizada;
 
-            // Buscar coincidencia en shares_lastdate por nombre de instrumento/emisor primero
-            $v = null;
-            foreach ($lastDates as $ld) {
-                if ($this->matchEmisor($pos->instrumento, $ld->SHA_ISSUER) || $this->matchEmisor($pos->emisor_nombre, $ld->SHA_ISSUER)) {
-                    $v = $ld;
-                    break;
-                }
-            }
-            if (!$v) {
-                foreach ($lastDates as $ld) {
-                    if (!empty($ld->SHA_ISSUER_ID) && $pos->id_emisor == $ld->SHA_ISSUER_ID) {
-                        $v = $ld;
-                        break;
-                    }
-                }
-            }
+            // Buscar coincidencia en shares_lastdate (Tabla map_emisor_legacy -> respaldo inteligente)
+            $v = $this->findBestMatch($pos->instrumento, $pos->emisor_nombre, $pos->id_emisor, $emisorMap, $lastDates);
 
             if ($v) {
                 $precioUlt = (float)($v->AVG_PRICE ?? $v->MAX_PRICE ?? $pos->precio_ultimo);
@@ -94,7 +88,7 @@ class AccionPosicionController extends Controller
                     $pos->utilidad_perdida_no_realizada = $pos->valor_mercado - $capitalInvertido;
                 }
 
-                $pos->precio_anterior = (float)($v->PREV_AVG_PRICE ?? 0);
+                $pos->precio_anterior = ($v->PREV_AVG_PRICE !== null && $v->PREV_AVG_PRICE > 0) ? (float)$v->PREV_AVG_PRICE : null;
                 $pos->fecha_anterior = $v->PREV_DATE ?? null;
                 $pos->cambio_diario = (float)($v->DAILY_CHANGE ?? 0);
                 $pos->variacion_diaria_pct = (float)($v->DAILY_VARIATION_PCT ?? 0);
@@ -244,32 +238,57 @@ class AccionPosicionController extends Controller
         return $costos;
     }
 
-    private function matchEmisor($name1, $name2)
+    private function cleanEmisorName($str)
     {
-        if (empty($name1) || empty($name2)) return false;
-        $n1 = trim(mb_strtoupper($name1));
-        $n2 = trim(mb_strtoupper($name2));
-        if ($n1 === $n2) return true;
+        if (empty($str)) return '';
+        $s = mb_strtoupper(trim($str));
+        $s = preg_replace('/\b(DE|DEL|LA|LAS|LOS|EL|SA|S\.A\.|C\.A\.|CA|INC|CORP|CORPORACION|SOCIEDAD|ANONIMA|COMPANIA|CIA)\b/u', '', $s);
+        return preg_replace('/[^A-Z0-9]/', '', $s);
+    }
 
-        $clean1 = preg_replace('/[^A-Z0-9]/', '', $n1);
-        $clean2 = preg_replace('/[^A-Z0-9]/', '', $n2);
-        if (!empty($clean1) && !empty($clean2)) {
-            if ($clean1 === $clean2) return true;
-            if (strlen($clean1) >= 5 && strlen($clean2) >= 5) {
-                if (strpos($clean1, $clean2) !== false || strpos($clean2, $clean1) !== false) return true;
+    private function findBestMatch($targetName1, $targetName2, $idEmisor, $emisorMap, $lastDates)
+    {
+        // 1. Prioridad principal: consultar tabla de conversión map_emisor_legacy por ID de emisor
+        if ($idEmisor && isset($emisorMap[$idEmisor])) {
+            $legacyId = $emisorMap[$idEmisor];
+            foreach ($lastDates as $ld) {
+                if (!empty($ld->SHA_ISSUER_ID) && $ld->SHA_ISSUER_ID == $legacyId) {
+                    return $ld;
+                }
             }
         }
 
-        $ignore = ['BANCO', 'DE', 'LA', 'EL', 'LOS', 'LAS', 'SA', 'CA', 'SOCIEDAD', 'ANONIMA', 'CORPORACION', 'COMPANIA', 'FONDO', 'INVERSION', 'ACCIONES'];
-        $words1 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n1)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
-        $words2 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n2)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
+        // 2. Respaldo por coincidencia de nombres si el emisor no está registrado aún en map_emisor_legacy
+        $clean1 = $this->cleanEmisorName($targetName1);
+        $clean2 = $this->cleanEmisorName($targetName2);
 
-        foreach ($words1 as $w1) {
-            foreach ($words2 as $w2) {
-                if ($w1 === $w2) return true;
+        $bestMatch = null;
+        $bestScore = 0;
+
+        foreach ($lastDates as $ld) {
+            $cleanCand = $this->cleanEmisorName($ld->SHA_ISSUER);
+            if (empty($cleanCand)) continue;
+
+            if (($clean1 && $clean1 === $cleanCand) || ($clean2 && $clean2 === $cleanCand)) {
+                return $ld;
+            }
+
+            foreach ([$clean1, $clean2] as $cTarget) {
+                if (empty($cTarget) || strlen($cTarget) < 4 || strlen($cleanCand) < 4) continue;
+
+                if (strpos($cleanCand, $cTarget) !== false || strpos($cTarget, $cleanCand) !== false) {
+                    $minLen = min(strlen($cTarget), strlen($cleanCand));
+                    $maxLen = max(strlen($cTarget), strlen($cleanCand));
+                    $score = 80 + (($minLen / $maxLen) * 20);
+
+                    if ($score > $bestScore) {
+                        $bestScore = $score;
+                        $bestMatch = $ld;
+                    }
+                }
             }
         }
 
-        return false;
+        return $bestMatch;
     }
 }

@@ -45,24 +45,17 @@ class PortfolioIndicadoresController extends Controller
                 $lastDates = DB::connection('mysql_inversion')->table('shares_lastdate')->get();
             } catch (\Exception $e) {}
 
+            // Obtener mapeo oficial de emisores legacy
+            $emisorMap = [];
+            try {
+                $emisorMap = DB::table('map_emisor_legacy')
+                    ->pluck('id_emisor_legacy', 'id_emisor')
+                    ->toArray();
+            } catch (\Exception $e) {}
+
             foreach ($snapshots as $snap) {
                 $emisorNombre = $snap->emisor ? $snap->emisor->nombre : '';
-                $matched = null;
-
-                foreach ($lastDates as $ld) {
-                    if ($this->matchEmisor($emisorNombre, $ld->SHA_ISSUER)) {
-                        $matched = $ld;
-                        break;
-                    }
-                }
-                if (!$matched) {
-                    foreach ($lastDates as $ld) {
-                        if (!empty($ld->SHA_ISSUER_ID) && $snap->id_emisor == $ld->SHA_ISSUER_ID) {
-                            $matched = $ld;
-                            break;
-                        }
-                    }
-                }
+                $matched = $this->findBestMatch($emisorNombre, $snap->id_emisor, $emisorMap, $lastDates);
 
                 if ($matched) {
                     $precioUlt = (float)($matched->AVG_PRICE ?? $matched->MAX_PRICE ?? 0);
@@ -76,7 +69,7 @@ class PortfolioIndicadoresController extends Controller
                         }
                     }
 
-                    $snap->precio_anterior = (float)($matched->PREV_AVG_PRICE ?? 0);
+                    $snap->precio_anterior = ($matched->PREV_AVG_PRICE !== null && $matched->PREV_AVG_PRICE > 0) ? (float)$matched->PREV_AVG_PRICE : null;
                     $snap->fecha_anterior = $matched->PREV_DATE ?? null;
                     $snap->fecha_cierre = $matched->MAX_DATE ?? null;
                     $snap->cambio_diario = (float)($matched->DAILY_CHANGE ?? 0);
@@ -107,32 +100,53 @@ class PortfolioIndicadoresController extends Controller
         }
     }
 
-    private function matchEmisor($name1, $name2)
+    private function cleanEmisorName($str)
     {
-        if (empty($name1) || empty($name2)) return false;
-        $n1 = trim(mb_strtoupper($name1));
-        $n2 = trim(mb_strtoupper($name2));
-        if ($n1 === $n2) return true;
+        if (empty($str)) return '';
+        $s = mb_strtoupper(trim($str));
+        $s = preg_replace('/\b(DE|DEL|LA|LAS|LOS|EL|SA|S\.A\.|C\.A\.|CA|INC|CORP|CORPORACION|SOCIEDAD|ANONIMA|COMPANIA|CIA)\b/u', '', $s);
+        return preg_replace('/[^A-Z0-9]/', '', $s);
+    }
 
-        $clean1 = preg_replace('/[^A-Z0-9]/', '', $n1);
-        $clean2 = preg_replace('/[^A-Z0-9]/', '', $n2);
-        if (!empty($clean1) && !empty($clean2)) {
-            if ($clean1 === $clean2) return true;
-            if (strlen($clean1) >= 5 && strlen($clean2) >= 5) {
-                if (strpos($clean1, $clean2) !== false || strpos($clean2, $clean1) !== false) return true;
+    private function findBestMatch($targetName, $idEmisor, $emisorMap, $lastDates)
+    {
+        if ($idEmisor && isset($emisorMap[$idEmisor])) {
+            $legacyId = $emisorMap[$idEmisor];
+            foreach ($lastDates as $ld) {
+                if (!empty($ld->SHA_ISSUER_ID) && $ld->SHA_ISSUER_ID == $legacyId) {
+                    return $ld;
+                }
             }
         }
 
-        $ignore = ['BANCO', 'DE', 'LA', 'EL', 'LOS', 'LAS', 'SA', 'CA', 'SOCIEDAD', 'ANONIMA', 'CORPORACION', 'COMPANIA', 'FONDO', 'INVERSION', 'ACCIONES'];
-        $words1 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n1)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
-        $words2 = array_filter(explode(' ', preg_replace('/[^A-Z0-9 ]/', '', $n2)), fn($w) => strlen($w) >= 5 && !in_array($w, $ignore));
+        $cleanTarget = $this->cleanEmisorName($targetName);
+        if (empty($cleanTarget)) return null;
 
-        foreach ($words1 as $w1) {
-            foreach ($words2 as $w2) {
-                if ($w1 === $w2) return true;
+        $bestMatch = null;
+        $bestScore = 0;
+
+        foreach ($lastDates as $ld) {
+            $cleanCand = $this->cleanEmisorName($ld->SHA_ISSUER);
+            if (empty($cleanCand)) continue;
+
+            if ($cleanTarget === $cleanCand) {
+                return $ld;
+            }
+
+            if (strlen($cleanTarget) >= 4 && strlen($cleanCand) >= 4) {
+                if (strpos($cleanCand, $cleanTarget) !== false || strpos($cleanTarget, $cleanCand) !== false) {
+                    $minLen = min(strlen($cleanTarget), strlen($cleanCand));
+                    $maxLen = max(strlen($cleanTarget), strlen($cleanCand));
+                    $score = 80 + (($minLen / $maxLen) * 20);
+
+                    if ($score > $bestScore) {
+                        $bestScore = $score;
+                        $bestMatch = $ld;
+                    }
+                }
             }
         }
 
-        return false;
+        return $bestMatch;
     }
 }
