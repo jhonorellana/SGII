@@ -1,0 +1,247 @@
+<div class="analisis-container fade-in">
+  <!-- Header del Módulo -->
+  <div class="header-card">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>Análisis de Ventas de Acciones</h1>
+        <p class="subtitle">Evaluación de plusvalía realizada, ROI y costo base ponderado en Renta Variable</p>
+      </div>
+      <div class="action-buttons">
+        <button class="btn btn-outline-emerald" (click)="exportarExcel()" [disabled]="ventas.length === 0">
+          <i class="bi bi-file-earmark-excel me-1"></i> Excel
+        </button>
+        <button class="btn btn-outline-danger" (click)="exportarPDF()" [disabled]="ventas.length === 0">
+          <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+        </button>
+        <button class="btn btn-emerald" (click)="cargarAnalisisVentas()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra de Filtros -->
+  <div class="filter-card">
+    <div class="filter-grid">
+      <div class="filter-item">
+        <label class="filter-label"><i class="bi bi-person me-1"></i> Socio / Propietario</label>
+        <select class="form-select" [(ngModel)]="idPersonaFiltro">
+          <option [ngValue]="null">Todos los socios</option>
+          <option *ngFor="let p of personas" [ngValue]="p.id">{{ p.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label"><i class="bi bi-building me-1"></i> Emisor</label>
+        <select class="form-select" [(ngModel)]="idEmisorFiltro">
+          <option [ngValue]="null">Todos los emisores</option>
+          <option *ngFor="let e of emisores" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label"><i class="bi bi-collection me-1"></i> Acción / Instrumento</label>
+        <select class="form-select" [(ngModel)]="idInstrumentoFiltro">
+          <option [ngValue]="null">Todas las acciones</option>
+          <option *ngFor="let inst of instrumentos" [ngValue]="inst.id">{{ inst.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label"><i class="bi bi-calendar-event me-1"></i> Fecha Desde</label>
+        <input type="date" class="form-control" [(ngModel)]="fechaDesdeFiltro" />
+      </div>
+
+      <div class="filter-item">
+        <label class="filter-label"><i class="bi bi-calendar-event me-1"></i> Fecha Hasta</label>
+        <input type="date" class="form-control" [(ngModel)]="fechaHastaFiltro" />
+      </div>
+
+      <div class="filter-item filter-actions">
+        <button class="btn btn-secondary w-100" (click)="limpiarFiltros()">
+          <i class="bi bi-x-circle me-1"></i> Limpiar
+        </button>
+        <button class="btn btn-primary w-100" (click)="cargarAnalisisVentas()">
+          <i class="bi bi-search me-1"></i> Buscar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading / Spinner -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-emerald" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-2 text-muted">Reconstruyendo historial y calculando plusvalía de ventas...</p>
+  </div>
+
+  <!-- Error Alert -->
+  <div *ngIf="error" class="alert alert-danger mt-3">
+    <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <!-- Grid de Tarjetas KPI -->
+    <div class="kpi-grid">
+      <!-- KPI 1: Venta Neta Total -->
+      <div class="kpi-card card-neto">
+        <div class="kpi-header">
+          <span class="kpi-title">Venta Neta Recibida</span>
+          <div class="kpi-icon icon-blue">
+            <i class="bi bi-currency-dollar"></i>
+          </div>
+        </div>
+        <div class="kpi-value">${{ summary.total_valor_neto | number:'1.2-2' }}</div>
+        <div class="kpi-footer">
+          <span>{{ summary.total_ventas_count }} operación(es) de venta en total</span>
+        </div>
+      </div>
+
+      <!-- KPI 2: Costo Base Total -->
+      <div class="kpi-card card-base">
+        <div class="kpi-header">
+          <span class="kpi-title">Costo Base Invertido</span>
+          <div class="kpi-icon icon-purple">
+            <i class="bi bi-bank"></i>
+          </div>
+        </div>
+        <div class="kpi-value">${{ summary.total_costo_base | number:'1.2-2' }}</div>
+        <div class="kpi-footer">
+          <span>Basado en el costo promedio ponderado de compra</span>
+        </div>
+      </div>
+
+      <!-- KPI 3: Ganancia / Pérdida Realizada -->
+      <div class="kpi-card" [ngClass]="summary.total_utilidad_perdida >= 0 ? 'card-gain' : 'card-loss'">
+        <div class="kpi-header">
+          <span class="kpi-title">Ganancia / Pérdida Realizada</span>
+          <div class="kpi-icon" [ngClass]="summary.total_utilidad_perdida >= 0 ? 'icon-emerald' : 'icon-red'">
+            <i class="bi" [ngClass]="summary.total_utilidad_perdida >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'"></i>
+          </div>
+        </div>
+        <div class="kpi-value" [ngClass]="summary.total_utilidad_perdida >= 0 ? 'text-gain' : 'text-loss'">
+          {{ summary.total_utilidad_perdida >= 0 ? '+' : '' }}${{ summary.total_utilidad_perdida | number:'1.2-2' }}
+        </div>
+        <div class="kpi-footer">
+          <span class="badge badge-gain me-1">{{ summary.ventas_ganancia_count }} con ganancia</span>
+          <span *ngIf="summary.ventas_perdida_count > 0" class="badge badge-loss">{{ summary.ventas_perdida_count }} con pérdida</span>
+        </div>
+      </div>
+
+      <!-- KPI 4: ROI Promedio Ponderado -->
+      <div class="kpi-card card-roi">
+        <div class="kpi-header">
+          <span class="kpi-title">ROI Realizado Promedio</span>
+          <div class="kpi-icon icon-amber">
+            <i class="bi bi-pie-chart-fill"></i>
+          </div>
+        </div>
+        <div class="kpi-value" [ngClass]="summary.roi_promedio_ponderado >= 0 ? 'text-gain' : 'text-loss'">
+          {{ summary.roi_promedio_ponderado >= 0 ? '+' : '' }}{{ summary.roi_promedio_ponderado | number:'1.2-2' }}%
+        </div>
+        <div class="kpi-footer">
+          <span>Comisiones totales pagadas: ${{ summary.total_comisiones | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección de Gráficos Analíticos -->
+    <div class="chart-section card mt-4">
+      <div class="card-header d-flex justify-content-between align-items-center bg-transparent">
+        <h5 class="chart-title mb-0">
+          <i class="bi bi-bar-chart-line-fill text-emerald me-2"></i> Gráfico Analítico de Rentabilidad
+        </h5>
+        <div class="chart-toggles">
+          <button class="btn btn-sm btn-toggle" [class.active]="vistaGrafico === 'emisor'" (click)="vistaGrafico = 'emisor'">
+            Por Emisor
+          </button>
+          <button class="btn btn-sm btn-toggle" [class.active]="vistaGrafico === 'anio'" (click)="vistaGrafico = 'anio'">
+            Evolución Anual
+          </button>
+          <button class="btn btn-sm btn-toggle" [class.active]="vistaGrafico === 'socio'" (click)="vistaGrafico = 'socio'">
+            Por Socio
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div *ngIf="vistaGrafico === 'emisor'" class="chart-wrapper">
+          <p-chart type="bar" [data]="chartEmisorData" [options]="chartEmisorOptions" height="320px"></p-chart>
+        </div>
+        <div *ngIf="vistaGrafico === 'anio'" class="chart-wrapper">
+          <p-chart type="bar" [data]="chartAnioData" [options]="chartAnioOptions" height="320px"></p-chart>
+        </div>
+        <div *ngIf="vistaGrafico === 'socio'" class="chart-wrapper">
+          <p-chart type="pie" [data]="chartSocioData" [options]="chartSocioOptions" height="320px"></p-chart>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla Detallada de Operaciones de Venta -->
+    <div class="table-card card mt-4">
+      <div class="card-header d-flex justify-content-between align-items-center bg-transparent">
+        <h5 class="table-title mb-0">
+          <i class="bi bi-table text-primary me-2"></i> Detalle de Ventas Realizadas y Plusvalía Obtenida
+        </h5>
+        <div class="search-box">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" class="form-control form-control-sm search-input" placeholder="Buscar en el listado..." (input)="dt?.filterGlobal($any($event.target).value, 'contains')" />
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <p-table #dt [value]="ventas" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]" [globalFilterFields]="['socio_nombre', 'emisor_nombre', 'instrumento_nombre', 'liquidacion', 'fecha_operacion']" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Socio / Propietario</th>
+              <th>Acción / Emisor</th>
+              <th class="text-end">Cantidad</th>
+              <th class="text-end">P. Unitario</th>
+              <th class="text-end">Costo CPU</th>
+              <th class="text-end">V. Neto Recibido</th>
+              <th class="text-end">Costo Base Total</th>
+              <th class="text-end">Ganancia / Pérdida ($)</th>
+              <th class="text-end">ROI (%)</th>
+              <th>Liquidación</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-v>
+            <tr>
+              <td><span class="badge-id">#{{ v.id_accion_operacion }}</span></td>
+              <td>{{ v.fecha_operacion }}</td>
+              <td><strong>{{ v.socio_nombre }}</strong></td>
+              <td>{{ v.emisor_nombre }}</td>
+              <td class="text-end fw-semibold">{{ v.cantidad | number:'1.0-4' }}</td>
+              <td class="text-end">${{ v.precio_unitario | number:'1.2-4' }}</td>
+              <td class="text-end text-muted">${{ v.costo_promedio_unitario | number:'1.2-4' }}</td>
+              <td class="text-end text-primary fw-semibold">${{ v.valor_neto | number:'1.2-2' }}</td>
+              <td class="text-end text-secondary">${{ v.costo_base_total | number:'1.2-2' }}</td>
+              <td class="text-end">
+                <span class="result-badge" [ngClass]="v.utilidad_perdida >= 0 ? 'bg-gain' : 'bg-loss'">
+                  {{ v.utilidad_perdida >= 0 ? '+' : '' }}${{ v.utilidad_perdida | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="text-end">
+                <span class="roi-badge" [ngClass]="v.roi_porcentaje >= 0 ? 'roi-positive' : 'roi-negative'">
+                  {{ v.roi_porcentaje >= 0 ? '+' : '' }}{{ v.roi_porcentaje | number:'1.2-2' }}%
+                </span>
+              </td>
+              <td><span class="text-muted small">{{ v.liquidacion || '-' }}</span></td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="12" class="text-center py-4 text-muted">
+                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                No se encontraron ventas de acciones que coincidan con los filtros seleccionados.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+</div>

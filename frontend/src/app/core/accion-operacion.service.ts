@@ -70,6 +70,33 @@ export class AccionOperacionService {
     return this.http.delete<ApiResponse<any>>(`${this.apiUrl}/${id}`);
   }
 
+  getAnalisisVentas(filters?: {
+    id_persona?: number;
+    id_instrumento?: number;
+    id_emisor?: number;
+    fecha_desde?: string | null;
+    fecha_hasta?: string | null;
+  }): Observable<any> {
+    let params = new HttpParams();
+    if (filters?.id_persona) {
+      params = params.set('id_persona', filters.id_persona.toString());
+    }
+    if (filters?.id_instrumento) {
+      params = params.set('id_instrumento', filters.id_instrumento.toString());
+    }
+    if (filters?.id_emisor) {
+      params = params.set('id_emisor', filters.id_emisor.toString());
+    }
+    if (filters?.fecha_desde) {
+      params = params.set('fecha_desde', filters.fecha_desde);
+    }
+    if (filters?.fecha_hasta) {
+      params = params.set('fecha_hasta', filters.fecha_hasta);
+    }
+
+    return this.http.get<any>(`${environment.apiUrl}/acciones/analisis-ventas`, { params });
+  }
+
   private castNumericFields(op: AccionOperacion): AccionOperacion {
     return {
       ...op,

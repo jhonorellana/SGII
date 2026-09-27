@@ -162,6 +162,7 @@ Route::apiResource('acciones/operaciones', AccionOperacionController::class);
 Route::apiResource('acciones/dividendos', AccionDividendoController::class);
 Route::get('acciones/posicion', [AccionPosicionController::class, 'index']);
 Route::get('acciones/posicion/info', [AccionPosicionController::class, 'getSocioPosicion']);
+Route::get('acciones/analisis-ventas', [App\Http\Controllers\API\AccionAnalisisVentasController::class, 'index']);
 
 // Rutas protegidas (aquí irán las demás rutas)
 Route::middleware('auth:sanctum')->group(function () {

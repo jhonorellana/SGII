@@ -83,6 +83,11 @@ export class SidebarComponent implements OnInit {
           path: '/renta-variable/dividendos'
         },
         {
+          title: 'Análisis de Ventas',
+          icon: 'bi-graph-up-arrow',
+          path: '/renta-variable/analisis-ventas'
+        },
+        {
           title: 'Dashboard Portafolio',
           icon: 'bi-speedometer2',
           path: '/renta-variable/dashboard-portfolio'
