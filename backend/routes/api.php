@@ -180,3 +180,22 @@ Route::post('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorCon
 Route::match(['get', 'post'], '/utilidades/broma-diaria', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaDiaria']);
 
 Route::match(['get', 'post'], '/utilidades/broma-cierre', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaCierre']);
+
+// Rutas de Descarga e Importación de Archivos de la Bolsa de Valores de Quito (BVQ)
+Route::post('bvq/descargar', [App\Http\Controllers\API\BvqDownloaderController::class, 'descargar']);
+Route::get('bvq/historial', [App\Http\Controllers\API\BvqDownloaderController::class, 'historial']);
+Route::post('bvq/importar-acciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarAcciones']);
+Route::post('bvq/importar-bonos', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarBonos']);
+Route::post('bvq/importar-dividendos', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarDividendos']);
+Route::post('bvq/importar-facturas', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarFacturas']);
+Route::post('bvq/importar-genericos', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarGenericos']);
+Route::post('bvq/importar-obligaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarObligaciones']);
+Route::post('bvq/importar-papeles', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarPapeles']);
+Route::post('bvq/importar-titularizaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarTitularizaciones']);
+
+
+
+
+
+
+

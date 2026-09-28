@@ -1,0 +1,673 @@
+<div class="container-fluid fade-in px-4 py-3">
+  <!-- Header principal -->
+  <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+    <div>
+      <h2 class="module-title d-flex align-items-center gap-2 mb-1">
+        <i class="bi bi-bank2 text-primary"></i> Descarga de Archivos BVQ
+      </h2>
+      <p class="text-muted subtitle mb-0">Automatización de descarga directa e importación a la base de datos de la Bolsa de Valores de Quito</p>
+    </div>
+    <!-- Pestañas de Navegación con Estilo Uniforme -->
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 cursor-pointer rounded-pill transition-all" 
+              [ngClass]="activeTab === 'descarga' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'" 
+              (click)="activeTab = 'descarga'">
+        <i class="bi bi-speedometer2"></i>
+        <span>Tablero Principal</span>
+      </button>
+      <button class="btn btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 cursor-pointer rounded-pill transition-all" 
+              [ngClass]="activeTab === 'historial' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'" 
+              (click)="activeTab = 'historial'">
+        <i class="bi bi-clock-history"></i>
+        <span>Historial de Archivos</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tab: Descarga -->
+  <div *ngIf="activeTab === 'descarga'">
+    
+    <!-- Panel Principal de Control Compacto en 1 Sola Fila -->
+    <div class="card control-panel-card mb-3 shadow-sm border-0">
+      <div class="card-body p-3 px-4">
+        <div class="row align-items-center g-3">
+          <!-- Selector de Fecha -->
+          <div class="col-xl-3 col-lg-3 col-md-4">
+            <label class="form-label font-weight-semibold text-dark mb-1 extra-small d-flex align-items-center gap-1">
+              <i class="bi bi-calendar-event text-primary"></i> Fecha de Descarga
+            </label>
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar3"></i></span>
+              <input type="date" class="form-control border-start-0 fw-semibold" [(ngModel)]="fechaSeleccionada" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" />
+            </div>
+          </div>
+
+          <!-- Master Auto-Import Switch -->
+          <div class="col-xl-3 col-lg-3 col-md-4">
+            <div class="master-switch-box p-2 px-3 rounded border bg-light d-flex justify-content-between align-items-center">
+              <div>
+                <strong class="d-block text-dark extra-small"><i class="bi bi-toggle-on text-success me-1"></i> Auto-Importación Masiva</strong>
+                <span class="text-muted extra-small" style="font-size: 0.72rem;">Incluir los 8 módulos</span>
+              </div>
+              <div class="form-check form-switch fs-5 mb-0 ms-2">
+                <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="masterSwitch" [(ngModel)]="masterAutoImport" (ngModelChange)="toggleAllSwitches($event)" [disabled]="loading || loadingOnlyDownload" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones Masivas y Log (Ver Log + Los 3 Botones Principales) -->
+          <div class="col-xl-6 col-lg-6 col-md-12 d-flex align-items-center justify-content-end gap-2 flex-wrap pt-md-2 pt-lg-0">
+            
+            <!-- Botón Ver Log de Ejecución (Bajado al panel de control) -->
+            <button class="btn btn-outline-dark btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5 me-auto" (click)="abrirLogModal()" pTooltip="Ver historial de log de descarga e importación">
+              <i class="bi bi-journal-text text-primary"></i>
+              <span>Ver Log</span>
+            </button>
+
+            <!-- Botón 1: Descargar todo -->
+            <button class="btn btn-outline-primary btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarSoloDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Solo descarga los 42 boletines a carpetas sin modificar la BD">
+              <i class="bi" [ngClass]="loadingOnlyDownload ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill text-primary'"></i>
+              <span>Descargar todo</span>
+            </button>
+
+            <!-- Botón 2: Importar todo -->
+            <button class="btn btn-outline-success btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarImportarTodo()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesa e importa los archivos previamente descargados a las tablas habilitadas">
+              <i class="bi" [ngClass]="(loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones) ? 'bi-hourglass-split spin' : 'bi-database-fill-gear text-success'"></i>
+              <span>Importar todo</span>
+            </button>
+
+            <!-- Botón 3: Descargar e Importar todo -->
+            <button class="btn btn-success btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 shadow-sm" (click)="ejecutarDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Ejecuta la descarga completa de boletines e importación automática a la BD">
+              <i class="bi" [ngClass]="loading ? 'bi-hourglass-split spin' : 'bi-rocket-takeoff-fill'"></i>
+              <span>Descargar e Importar todo</span>
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Indicador de Progreso Global -->
+        <div *ngIf="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" class="mt-4 pt-3 border-top">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-primary fw-semibold fs-7 d-flex align-items-center gap-2">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              {{ loadingOnlyDownload ? 'Descargando 42 boletines desde la BVQ (Sin importación a BD)...' : (loading ? 'Descargando e Importando boletines a la BD...' : (loadingImport ? 'Importando Acciones (shares)...' : (loadingImportBonds ? 'Importando Bonos (bond_his)...' : (loadingImportDividends ? 'Importando Dividendos (dividendos_his)...' : (loadingImportFacturas ? 'Importando Facturas Comerciales (facturas_his)...' : (loadingImportGenericos ? 'Importando Valores Genéricos (genericos_his)...' : (loadingImportObligaciones ? 'Importando Obligaciones (obligaciones_his)...' : (loadingImportPapeles ? 'Importando Papel Comercial (papeles_his)...' : 'Importando Titularizaciones (titularizaciones_his)...')))))))) }}
+            </span>
+            <span class="badge bg-light text-primary border">En proceso</span>
+          </div>
+          <p-progressBar mode="indeterminate" [style]="{ height: '6px' }"></p-progressBar>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Alert Global -->
+    <div *ngIf="error" class="alert alert-danger shadow-sm border-0 mb-4 d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <div><strong>Atención:</strong> {{ error }}</div>
+      </div>
+      <button class="btn btn-sm btn-danger shadow-2xs fw-bold px-3 d-flex align-items-center gap-1" (click)="abrirLogModal()">
+        <i class="bi bi-journal-text"></i> Ver Log de Errores
+      </button>
+    </div>
+
+    <!-- Seccion de Módulos (Tabla Dashboard Ejecutiva) -->
+    <div class="card module-table-card shadow-sm border-0 mb-4">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
+        <div>
+          <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-table text-primary"></i> Módulos de Valores & Tablas BD (8 Módulos)
+          </h6>
+          <small class="text-muted">Configure los interruptores para la descarga masiva o procese archivos Excel individualmente</small>
+        </div>
+        <span class="badge bg-light text-dark border px-3 py-2">8 Tablas Mapeadas</span>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 220px;" class="ps-4">Módulo / Tipo de Valor</th>
+                <th style="width: 170px;">Tabla BD Destino</th>
+                <th style="width: 170px;">Estado / Última Fecha</th>
+                <th style="width: 160px;" class="text-center">Auto-Importación</th>
+                <th>Resultado de Última Importación</th>
+                <th style="width: 150px;" class="text-end pe-4">Acción Manual</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              <!-- Row 1: ACCIONES -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Acciones</strong>
+                      <span class="extra-small text-muted">Transacciones Renta Variable</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">shares</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateSharesInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swShares" [(ngModel)]="autoImportAcciones" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionAcciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImport ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImport ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 2: BONOS -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-bank"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Bonos</strong>
+                      <span class="extra-small text-muted">Histórico Bonos de Deuda</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">bond_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateBondsInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swBonds" [(ngModel)]="autoImportBonos" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportBondsResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportBondsResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportBondsResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionBonos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportBonds ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportBonds ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 3: DIVIDENDOS -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Dividendos</strong>
+                      <span class="extra-small text-muted">Histórico Dividendos Pagados</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">dividendos_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-database me-1 text-muted"></i>{{ totalDividendsInDb ? (totalDividendsInDb + ' reg.') : 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swDivs" [(ngModel)]="autoImportDividendos" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportDividendsResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportDividendsResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportDividendsResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionDividendos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportDividends ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportDividends ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 4: FACTURAS COMERCIALES -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-receipt"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Facturas Comerciales</strong>
+                      <span class="extra-small text-muted">Facturas de Negociación</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">facturas_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateFacturasInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swFacturas" [(ngModel)]="autoImportFacturas" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportFacturasResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportFacturasResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportFacturasResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionFacturas()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportFacturas ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportFacturas ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 5: GENÉRICOS -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-tags"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Valores Genéricos</strong>
+                      <span class="extra-small text-muted">Poderes / Títulos Genéricos</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">genericos_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateGenericosInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swGenericos" [(ngModel)]="autoImportGenericos" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportGenericosResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportGenericosResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportGenericosResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionGenericos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportGenericos ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportGenericos ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 6: OBLIGACIONES -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-file-earmark-text"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Obligaciones</strong>
+                      <span class="extra-small text-muted">Obligaciones Corporativas</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">obligaciones_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateObligacionesInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swObligaciones" [(ngModel)]="autoImportObligaciones" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportObligacionesResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportObligacionesResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportObligacionesResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionObligaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportObligaciones ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportObligaciones ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 7: PAPEL COMERCIAL -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-file-earmark-ruled"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Papel Comercial</strong>
+                      <span class="extra-small text-muted">Valores de Corto Plazo</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">papeles_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDatePapelesInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swPapeles" [(ngModel)]="autoImportPapeles" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportPapelesResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportPapelesResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportPapelesResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionPapeles()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportPapeles ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportPapeles ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Row 8: TITULARIZACIONES -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-layers"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Titularizaciones</strong>
+                      <span class="extra-small text-muted">Procesos de Titularización</span>
+                    </div>
+                  </div>
+                </td>
+                <td><code class="px-2 py-1 bg-light rounded text-dark border">titularizaciones_his</code></td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateTitularizacionesInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swTitularizaciones" [(ngModel)]="autoImportTitularizaciones" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportTitularizacionesResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportTitularizacionesResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportTitularizacionesResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <button class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1" (click)="ejecutarSoloImportacionTitularizaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones">
+                    <i class="bi" [ngClass]="loadingImportTitularizaciones ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                    <span>{{ loadingImportTitularizaciones ? 'Procesando...' : 'Procesar XL' }}</span>
+                  </button>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resultados de la Última Ejecución (Boletines Descargados) -->
+    <div *ngIf="lastDownloadResult" class="card result-card mb-4 shadow-sm border-0">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
+        <h5 class="mb-0 text-dark fw-bold d-flex align-items-center gap-2 fs-6">
+          <i class="bi bi-check-circle-fill text-success"></i> Resumen de Descarga para {{ lastDownloadResult.fecha }}
+        </h5>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-dark fw-semibold" (click)="abrirLogModal()">
+            <i class="bi bi-journal-text text-primary me-1"></i> Ver Log Completo
+          </button>
+          <span class="badge bg-dark text-white px-3 py-2 rounded-pill fs-7">
+            <i class="bi bi-clock me-1"></i> Tiempo: {{ lastDownloadResult.tiempo_ejecucion_segundos }}s
+          </span>
+        </div>
+      </div>
+      <div class="card-body p-4">
+        <!-- KPIs del Proceso -->
+        <div class="row text-center g-3 mb-4">
+          <div class="col-md-4">
+            <div class="p-3 border rounded bg-light shadow-2xs">
+              <div class="text-muted small">Archivos Totales</div>
+              <div class="fs-3 fw-bold text-dark">{{ lastDownloadResult.total_archivos }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded bg-success-soft shadow-2xs">
+              <div class="text-success small fw-bold">Descargados con Éxito</div>
+              <div class="fs-3 fw-bold text-success">{{ lastDownloadResult.exitosos }}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="p-3 border rounded shadow-2xs" [ngClass]="lastDownloadResult.fallidos > 0 ? 'bg-danger-soft' : 'bg-light'">
+              <div class="small fw-bold" [ngClass]="lastDownloadResult.fallidos > 0 ? 'text-danger' : 'text-muted'">Fallidos</div>
+              <div class="fs-3 fw-bold" [ngClass]="lastDownloadResult.fallidos > 0 ? 'text-danger' : 'text-secondary'">{{ lastDownloadResult.fallidos }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <span class="text-muted small">Carpeta Destino del Sistema:</span>
+          <code class="d-block p-2 bg-dark text-success rounded mt-1 extra-small">{{ lastDownloadResult.directorio_base }}</code>
+        </div>
+
+        <!-- Tabla de Detalle de los 42 Archivos -->
+        <p-table [value]="lastDownloadResult.archivos" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped border rounded">
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Carpeta Categoría</th>
+              <th>Nombre de Archivo</th>
+              <th class="text-end">Tamaño</th>
+              <th class="text-center">Estado</th>
+              <th>Detalle de Diagnóstico</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-item>
+            <tr>
+              <td><span class="badge bg-secondary extra-small">{{ item.carpeta }}</span></td>
+              <td><strong class="small text-dark">{{ item.archivo }}</strong></td>
+              <td class="text-end extra-small">{{ formatBytes(item.size_bytes) }}</td>
+              <td class="text-center">
+                <span *ngIf="item.status === 'SUCCESS'" class="badge bg-success-soft text-success border border-success-subtle extra-small">
+                  <i class="bi bi-check-circle-fill me-1"></i> OK
+                </span>
+                <span *ngIf="item.status === 'FAILED'" class="badge bg-danger-soft text-danger border border-danger-subtle extra-small">
+                  <i class="bi bi-x-circle-fill me-1"></i> FALLO
+                </span>
+              </td>
+              <td>
+                <span *ngIf="item.status === 'SUCCESS'" class="text-success extra-small"><i class="bi bi-check2 me-1"></i>Archivo almacenado</span>
+                <span *ngIf="item.status === 'FAILED'" class="text-danger extra-small fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.error || 'Error de descarga' }}</span>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Historial -->
+  <div *ngIf="activeTab === 'historial'" class="card history-card shadow-sm border-0">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
+      <h5 class="mb-0 text-dark fw-bold d-flex align-items-center gap-2 fs-6">
+        <i class="bi bi-folder-check text-primary"></i> Carpetas de Descargas Anteriores Almacenadas
+      </h5>
+      <button class="btn btn-sm btn-outline-secondary" (click)="cargarHistorial()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Refrescar
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <p-table [value]="historial" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Fecha Descarga</th>
+            <th>Carpeta Día</th>
+            <th class="text-end">Archivos Guardados</th>
+            <th class="text-end">Tamaño Total</th>
+            <th>Ruta del Sistema</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-h>
+          <tr>
+            <td><strong>{{ h.fecha }}</strong></td>
+            <td><span class="badge bg-info text-dark extra-small">{{ h.carpeta }}</span></td>
+            <td class="text-end fw-bold text-success">{{ h.total_archivos }} archivos</td>
+            <td class="text-end">{{ h.tamano_total_mb }} MB</td>
+            <td><code class="extra-small text-muted">{{ h.ruta_completa }}</code></td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="text-center py-4 text-muted">
+              No se han encontrado descargas almacenadas aún en el directorio base.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Log de Ejecución -->
+<p-dialog [(visible)]="displayLogModal" [modal]="true" [style]="{ width: '90vw', maxWidth: '1000px' }" header="Log Completo de Descargas e Importaciones BVQ">
+  <div class="p-3">
+    <!-- Header del Log / KPIs -->
+    <div *ngIf="lastDownloadResult" class="row text-center g-2 mb-3">
+      <div class="col-md-3">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block">Fecha Ejecutada</small>
+          <strong class="text-dark">{{ lastDownloadResult.fecha }}</strong>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block">Total Archivos</small>
+          <strong class="text-dark">{{ lastDownloadResult.total_archivos }}</strong>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-2 border rounded bg-success-soft">
+          <small class="text-success d-block fw-bold">Exitosos</small>
+          <strong class="text-success fs-5">{{ lastDownloadResult.exitosos }}</strong>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="p-2 border rounded" [ngClass]="lastDownloadResult.fallidos > 0 ? 'bg-danger-soft' : 'bg-light'">
+          <small [ngClass]="lastDownloadResult.fallidos > 0 ? 'text-danger fw-bold' : 'text-muted'" class="d-block">Fallidos</small>
+          <strong [ngClass]="lastDownloadResult.fallidos > 0 ? 'text-danger fs-5' : 'text-dark'">{{ lastDownloadResult.fallidos }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros de Log y Botón Copiar -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div class="btn-group btn-group-sm">
+        <button class="btn" [class.btn-dark]="selectedLogFilter === 'ALL'" [class.btn-outline-secondary]="selectedLogFilter !== 'ALL'" (click)="selectedLogFilter = 'ALL'">Todos los 42 Archivos</button>
+        <button class="btn" [class.btn-success]="selectedLogFilter === 'SUCCESS'" [class.btn-outline-secondary]="selectedLogFilter !== 'SUCCESS'" (click)="selectedLogFilter = 'SUCCESS'">Solo Exitosos</button>
+        <button class="btn" [class.btn-danger]="selectedLogFilter === 'FAILED'" [class.btn-outline-secondary]="selectedLogFilter !== 'FAILED'" (click)="selectedLogFilter = 'FAILED'">Solo Errores / Fallidos</button>
+      </div>
+
+      <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" (click)="copiarLogAlPortapapeles()">
+        <i class="bi" [ngClass]="copiadoExitoso ? 'bi-check-lg text-success' : 'bi-clipboard'"></i>
+        <span>{{ copiadoExitoso ? '¡Log Copiado!' : 'Copiar Log' }}</span>
+      </button>
+    </div>
+
+    <!-- Tabla de Detalle del Log -->
+    <div *ngIf="lastDownloadResult && lastDownloadResult.archivos" class="table-responsive border rounded" style="max-height: 450px; overflow-y: auto;">
+      <table class="table table-sm table-striped align-middle mb-0">
+        <thead class="table-dark sticky-top">
+          <tr>
+            <th>#</th>
+            <th>Carpeta Categoría</th>
+            <th>Nombre del Archivo</th>
+            <th class="text-end">Tamaño</th>
+            <th class="text-center">Estado</th>
+            <th>Diagnóstico / Detalle del Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of getLogArchivosFiltrados(); let i = index">
+            <td><small class="text-muted">{{ i + 1 }}</small></td>
+            <td><span class="badge bg-secondary extra-small">{{ item.carpeta }}</span></td>
+            <td><strong class="extra-small text-dark">{{ item.archivo }}</strong></td>
+            <td class="text-end extra-small">{{ formatBytes(item.size_bytes) }}</td>
+            <td class="text-center">
+              <span *ngIf="item.status === 'SUCCESS'" class="badge bg-success-soft text-success border border-success-subtle extra-small">
+                <i class="bi bi-check-circle-fill me-1"></i> ÉXITO
+              </span>
+              <span *ngIf="item.status === 'FAILED'" class="badge bg-danger-soft text-danger border border-danger-subtle extra-small">
+                <i class="bi bi-x-circle-fill me-1"></i> FALLO
+              </span>
+            </td>
+            <td>
+              <span *ngIf="item.status === 'SUCCESS'" class="text-success extra-small"><i class="bi bi-check2 me-1"></i>Guardado en {{ item.carpeta }}</span>
+              <span *ngIf="item.status === 'FAILED'" class="text-danger extra-small fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.error || 'Error desconocido al descargar' }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!lastDownloadResult" class="p-4 text-center text-muted">
+      <i class="bi bi-info-circle fs-3 d-block mb-2 text-secondary"></i>
+      No se ha ejecutado ninguna descarga en esta sesión aún. Ejecute "Descargar todo" para generar el log detallado.
+    </div>
+  </div>
+</p-dialog>
+
+

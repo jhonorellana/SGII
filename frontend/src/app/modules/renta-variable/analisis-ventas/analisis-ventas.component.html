@@ -1,27 +1,25 @@
-<div class="analisis-container fade-in">
-  <!-- Header del Módulo -->
-  <div class="header-card">
-    <div class="header-content">
-      <div class="title-section">
-        <h1>Análisis de Ventas de Acciones</h1>
-        <p class="subtitle">Evaluación de plusvalía realizada, ROI y costo base ponderado en Renta Variable</p>
-      </div>
-      <div class="action-buttons">
-        <button class="btn btn-outline-emerald" (click)="exportarExcel()" [disabled]="ventas.length === 0">
-          <i class="bi bi-file-earmark-excel me-1"></i> Excel
-        </button>
-        <button class="btn btn-outline-danger" (click)="exportarPDF()" [disabled]="ventas.length === 0">
-          <i class="bi bi-file-earmark-pdf me-1"></i> PDF
-        </button>
-        <button class="btn btn-emerald" (click)="cargarAnalisisVentas()">
-          <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
-        </button>
-      </div>
+<div class="container-fluid fade-in">
+  <!-- Top bar estándar -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h2 class="module-title">Análisis de Ventas de Acciones</h2>
+      <p class="text-muted subtitle mb-0">Evaluación de plusvalía realizada, ROI y costo base ponderado en Renta Variable</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success" (click)="exportarExcel()" [disabled]="ventas.length === 0">
+        <i class="bi bi-file-earmark-excel me-1"></i> Excel
+      </button>
+      <button class="btn btn-outline-danger" (click)="exportarPDF()" [disabled]="ventas.length === 0">
+        <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+      </button>
+      <button class="btn btn-success" (click)="cargarAnalisisVentas()">
+        <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+      </button>
     </div>
   </div>
 
   <!-- Barra de Filtros -->
-  <div class="filter-card">
+  <div class="filter-card mb-3">
     <div class="filter-grid">
       <div class="filter-item">
         <label class="filter-label"><i class="bi bi-person me-1"></i> Socio / Propietario</label>
@@ -61,7 +59,7 @@
         <button class="btn btn-secondary w-100" (click)="limpiarFiltros()">
           <i class="bi bi-x-circle me-1"></i> Limpiar
         </button>
-        <button class="btn btn-primary w-100" (click)="cargarAnalisisVentas()">
+        <button class="btn btn-success w-100" (click)="cargarAnalisisVentas()">
           <i class="bi bi-search me-1"></i> Buscar
         </button>
       </div>
@@ -70,7 +68,7 @@
 
   <!-- Loading / Spinner -->
   <div *ngIf="loading" class="text-center py-5">
-    <div class="spinner-border text-emerald" role="status">
+    <div class="spinner-border text-success" role="status">
       <span class="visually-hidden">Cargando...</span>
     </div>
     <p class="mt-2 text-muted">Reconstruyendo historial y calculando plusvalía de ventas...</p>
@@ -150,7 +148,7 @@
     <div class="chart-section card mt-4">
       <div class="card-header d-flex justify-content-between align-items-center bg-transparent">
         <h5 class="chart-title mb-0">
-          <i class="bi bi-bar-chart-line-fill text-emerald me-2"></i> Gráfico Analítico de Rentabilidad
+          <i class="bi bi-bar-chart-line-fill text-success me-2"></i> Gráfico Analítico de Rentabilidad
         </h5>
         <div class="chart-toggles">
           <button class="btn btn-sm btn-toggle" [class.active]="vistaGrafico === 'emisor'" (click)="vistaGrafico = 'emisor'">

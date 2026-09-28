@@ -59,6 +59,11 @@ export class SidebarComponent implements OnInit {
           title: 'Resumen Diario de la Bolsa',
           icon: 'bi-journal-check',
           path: '/reportes/resumen-diario-bolsa'
+        },
+        {
+          title: 'Descarga Archivos BVQ',
+          icon: 'bi-cloud-arrow-down-fill',
+          path: '/descarga-bvq'
         }
       ]
     },

@@ -41,6 +41,7 @@ import { AnalisisVentaAccionComponent } from './modules/renta-variable/analisis-
 import { PortfolioDashboardComponent } from './modules/portfolio/portfolio-dashboard/portfolio-dashboard.component';
 import { MarketAnalysisDashboardComponent } from './modules/portfolio/market-analysis-dashboard/market-analysis-dashboard.component';
 import { ResumenGerencialComponent } from './reportes/resumen-gerencial/resumen-gerencial.component';
+import { BvqDownloaderComponent } from './modules/bvq-downloader/bvq-downloader.component';
 import { MensajeriaIaComponent } from './modules/mensajeria-ia/mensajeria-ia.component';
 
 export const routes: Routes = [
@@ -51,6 +52,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', component: DashboardComponent },
+      { path: 'descarga-bvq', component: BvqDownloaderComponent },
       { path: 'mensajes-ia', component: MensajeriaIaComponent },
       { path: 'catalogos', component: CatalogoListComponent },
       { path: 'catalogos/new', component: CatalogoFormComponent },
