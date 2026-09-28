@@ -232,6 +232,121 @@ class BvqDownloaderService
     }
 
     /**
+     * Descarga un archivo individual de un módulo específico de la BVQ (ej: 'acciones', 'bonos', 'dividendos', etc.)
+     */
+    public function downloadSingleModule(string $module, ?string $fechaInput = null): array
+    {
+        $timestamp = $fechaInput ? strtotime($fechaInput) : time();
+        $aaaa = date('Y', $timestamp);
+        $mm = date('m', $timestamp);
+        $dd = date('d', $timestamp);
+
+        $baseDir = rtrim($this->getBaseDirectory(), '\\/') . DIRECTORY_SEPARATOR;
+        $monthFolder = "{$aaaa}_{$mm}";
+        $dayFolder = "{$aaaa}_{$mm}_{$dd}";
+        $targetDayPath = $baseDir . $monthFolder . DIRECTORY_SEPARATOR . $dayFolder;
+
+        // Mapeo de módulos a su URL y subcarpeta destino
+        $moduleMap = [
+            'acciones' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/acciones.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "acciones_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'bonos' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/bonos.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "bonos_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'dividendos' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/renta-variable/dividendos.xls',
+                'folder' => '008_RentaVariable',
+                'filename' => "dividendos_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'facturas' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/facturas-comerciales.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "facturas-comerciales_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'genericos' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/valores-genericos.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "valores-genericos_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'obligaciones' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/obligaciones.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "obligaciones_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'papeles' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/papel-comercial.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "papel-comercial_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'titularizaciones' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/titularizaciones.xls',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "titularizaciones_{$aaaa}_{$mm}_{$dd}.xls"
+            ]
+        ];
+
+        $key = strtolower(trim($module));
+        if (!isset($moduleMap[$key])) {
+            return [
+                'success' => false,
+                'message' => "El módulo '{$module}' no es válido para descarga individual.",
+                'size_bytes' => 0
+            ];
+        }
+
+        $info = $moduleMap[$key];
+        $targetFolder = $targetDayPath . DIRECTORY_SEPARATOR . $info['folder'];
+        if (!File::exists($targetFolder)) {
+            File::makeDirectory($targetFolder, 0755, true);
+        }
+
+        $filePath = $targetFolder . DIRECTORY_SEPARATOR . $info['filename'];
+
+        try {
+            $response = Http::withoutVerifying()
+                ->withHeaders([
+                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept' => '*/*'
+                ])
+                ->timeout(15)
+                ->get($info['url']);
+
+            if ($response->successful()) {
+                File::put($filePath, $response->body());
+                return [
+                    'success' => true,
+                    'module' => $key,
+                    'fecha' => "{$aaaa}-{$mm}-{$dd}",
+                    'archivo' => $info['filename'],
+                    'carpeta' => $info['folder'],
+                    'path' => $filePath,
+                    'size_bytes' => strlen($response->body()),
+                    'message' => "El archivo {$info['filename']} fue descargado exitosamente."
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'module' => $key,
+                    'message' => "Fallo HTTP " . $response->status() . " al descargar el archivo desde la BVQ.",
+                    'size_bytes' => 0
+                ];
+            }
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'module' => $key,
+                'message' => "Excepción al descargar archivo: " . $e->getMessage(),
+                'size_bytes' => 0
+            ];
+        }
+    }
+
+    /**
      * Escanea el historial de descargas realizadas en el directorio base
      */
     public function getHistory(): array

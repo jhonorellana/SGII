@@ -183,6 +183,7 @@ Route::match(['get', 'post'], '/utilidades/broma-cierre', [App\Http\Controllers\
 
 // Rutas de Descarga e Importación de Archivos de la Bolsa de Valores de Quito (BVQ)
 Route::post('bvq/descargar', [App\Http\Controllers\API\BvqDownloaderController::class, 'descargar']);
+Route::post('bvq/descargar-modulo', [App\Http\Controllers\API\BvqDownloaderController::class, 'descargarModulo']);
 Route::get('bvq/historial', [App\Http\Controllers\API\BvqDownloaderController::class, 'historial']);
 Route::post('bvq/importar-acciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarAcciones']);
 Route::post('bvq/importar-bonos', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarBonos']);

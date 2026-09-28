@@ -116,6 +116,38 @@ class BvqDownloaderController extends Controller
     }
 
     /**
+     * Descarga únicamente el archivo Excel correspondiente a un módulo específico
+     */
+    public function descargarModulo(Request $request)
+    {
+        try {
+            $modulo = $request->input('modulo');
+            $fecha = $request->input('fecha', date('Y-m-d'));
+
+            if (!$modulo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Se requiere el parámetro "modulo"'
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
+            $resultado = $this->downloaderService->downloadSingleModule($modulo, $fecha);
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => "Error al descargar el módulo {$request->input('modulo')}",
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Importa las cotizaciones de acciones desde el Excel descargado a la tabla 'shares'
      */
     public function importarAcciones(Request $request)

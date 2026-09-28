@@ -29,18 +29,25 @@ class ObligacionesImportService
         $excelFilePath = $baseDir . $fileRelativePath;
 
         if (!file_exists($excelFilePath)) {
-            // Buscar cualquier archivo *obligaciones*.xls en la carpeta del día
-            $dayFolderPath = $baseDir . "{$aaaa}_{$mm}" . DIRECTORY_SEPARATOR . "{$aaaa}_{$mm}_{$dd}" . DIRECTORY_SEPARATOR . "007_CotizacionesHistoricas";
-            $matchingFiles = glob($dayFolderPath . DIRECTORY_SEPARATOR . "*obligaciones*.xls");
-            if (!empty($matchingFiles)) {
-                $excelFilePath = $matchingFiles[0];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => "No se encontró el archivo de obligaciones en: {$excelFilePath}",
-                    'imported_count' => 0,
-                    'last_date_in_db' => $this->getLastDateInObligaciones()
-                ];
+            // Intentar auto-descargar el archivo si no existe localmente
+            $dlResult = $this->downloaderService->downloadSingleModule('obligaciones', $fechaInput);
+            
+            // Re-verificar la ruta original
+            if (!file_exists($excelFilePath)) {
+                // Buscar cualquier archivo *obligaciones*.xls en la carpeta del día
+                $dayFolderPath = $baseDir . "{$aaaa}_{$mm}" . DIRECTORY_SEPARATOR . "{$aaaa}_{$mm}_{$dd}" . DIRECTORY_SEPARATOR . "007_CotizacionesHistoricas";
+                $matchingFiles = glob($dayFolderPath . DIRECTORY_SEPARATOR . "*obligaciones*.xls");
+                if (!empty($matchingFiles)) {
+                    $excelFilePath = $matchingFiles[0];
+                } else {
+                    $dlMsg = isset($dlResult['message']) ? " (Intento de descarga: {$dlResult['message']})" : "";
+                    return [
+                        'success' => false,
+                        'message' => "No se encontró el archivo de obligaciones en: {$excelFilePath}{$dlMsg}",
+                        'imported_count' => 0,
+                        'last_date_in_db' => $this->getLastDateInObligaciones()
+                    ];
+                }
             }
         }
 

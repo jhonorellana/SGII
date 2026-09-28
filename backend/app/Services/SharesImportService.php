@@ -37,12 +37,18 @@ class SharesImportService
             if (!empty($matchingFiles)) {
                 $excelFilePath = $matchingFiles[0];
             } else {
-                return [
-                    'success' => false,
-                    'message' => "No se encontró el archivo de cotizaciones históricas de acciones en: {$excelFilePath}",
-                    'imported_count' => 0,
-                    'last_date_in_db' => $this->getLastDateInShares()
-                ];
+                // Intentar descargar automáticamente el archivo de acciones si no existe en disco
+                $dlRes = $this->downloaderService->downloadSingleModule('acciones', $fechaInput);
+                if ($dlRes['success'] && file_exists($dlRes['path'])) {
+                    $excelFilePath = $dlRes['path'];
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => "No se encontró el archivo de cotizaciones de acciones en disco y falló la descarga automática desde la BVQ.",
+                        'imported_count' => 0,
+                        'last_date_in_db' => $this->getLastDateInShares()
+                    ];
+                }
             }
         }
 

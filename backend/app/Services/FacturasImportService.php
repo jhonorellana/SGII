@@ -29,18 +29,25 @@ class FacturasImportService
         $excelFilePath = $baseDir . $fileRelativePath;
 
         if (!file_exists($excelFilePath)) {
-            // Buscar cualquier archivo facturas*.xls en la carpeta de cotizaciones históricas del día
-            $dayFolderPath = $baseDir . "{$aaaa}_{$mm}" . DIRECTORY_SEPARATOR . "{$aaaa}_{$mm}_{$dd}" . DIRECTORY_SEPARATOR . "007_CotizacionesHistoricas";
-            $matchingFiles = glob($dayFolderPath . DIRECTORY_SEPARATOR . "*facturas*.xls");
-            if (!empty($matchingFiles)) {
-                $excelFilePath = $matchingFiles[0];
-            } else {
-                return [
-                    'success' => false,
-                    'message' => "No se encontró el archivo de facturas comerciales en: {$excelFilePath}",
-                    'imported_count' => 0,
-                    'last_date_in_db' => $this->getLastDateInFacturas()
-                ];
+            // Intentar auto-descargar el archivo si no existe localmente
+            $dlResult = $this->downloaderService->downloadSingleModule('facturas', $fechaInput);
+            
+            // Re-verificar la ruta original
+            if (!file_exists($excelFilePath)) {
+                // Buscar cualquier archivo facturas*.xls en la carpeta de cotizaciones históricas del día
+                $dayFolderPath = $baseDir . "{$aaaa}_{$mm}" . DIRECTORY_SEPARATOR . "{$aaaa}_{$mm}_{$dd}" . DIRECTORY_SEPARATOR . "007_CotizacionesHistoricas";
+                $matchingFiles = glob($dayFolderPath . DIRECTORY_SEPARATOR . "*facturas*.xls");
+                if (!empty($matchingFiles)) {
+                    $excelFilePath = $matchingFiles[0];
+                } else {
+                    $dlMsg = isset($dlResult['message']) ? " (Intento de descarga: {$dlResult['message']})" : "";
+                    return [
+                        'success' => false,
+                        'message' => "No se encontró el archivo de facturas comerciales en: {$excelFilePath}{$dlMsg}",
+                        'imported_count' => 0,
+                        'last_date_in_db' => $this->getLastDateInFacturas()
+                    ];
+                }
             }
         }
 

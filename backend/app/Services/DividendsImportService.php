@@ -35,12 +35,18 @@ class DividendsImportService
             if (!empty($matchingFiles)) {
                 $excelFilePath = $matchingFiles[0];
             } else {
-                return [
-                    'success' => false,
-                    'message' => "No se encontró el archivo de dividendos de renta variable en: {$excelFilePath}",
-                    'imported_count' => 0,
-                    'total_records_in_db' => $this->getTotalRecordsInDividends()
-                ];
+                // Intentar descargar automáticamente el archivo de dividendos si no existe en disco
+                $dlRes = $this->downloaderService->downloadSingleModule('dividendos', $fechaInput);
+                if ($dlRes['success'] && file_exists($dlRes['path'])) {
+                    $excelFilePath = $dlRes['path'];
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => "No se encontró el archivo de dividendos en disco y falló la descarga automática desde la BVQ.",
+                        'imported_count' => 0,
+                        'total_records_in_db' => $this->getTotalRecordsInDividends()
+                    ];
+                }
             }
         }
 

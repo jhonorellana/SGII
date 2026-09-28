@@ -115,6 +115,10 @@ export class BvqDownloaderService {
     });
   }
 
+  descargarModulo(modulo: string, fecha?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/descargar-modulo`, { modulo, fecha });
+  }
+
   importarAcciones(fecha?: string): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/importar-acciones`, { fecha });
   }

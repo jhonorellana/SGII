@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
-import { BvqDownloaderService, BvqDownloadResponse, BvqHistoryItem } from '../../core/bvq-downloader.service';
+import { BvqDownloaderService, BvqDownloadResponse, BvqFileResult, BvqHistoryItem } from '../../core/bvq-downloader.service';
 
 @Component({
   selector: 'app-bvq-downloader',
@@ -33,6 +33,7 @@ export class BvqDownloaderComponent implements OnInit {
   loadingImportObligaciones: boolean = false;
   loadingImportPapeles: boolean = false;
   loadingImportTitularizaciones: boolean = false;
+  loadingDownloadMap: { [key: string]: boolean } = {};
   fechaSeleccionada: string = new Date().toISOString().split('T')[0];
   autoImportAcciones: boolean = true;
   autoImportBonos: boolean = true;
@@ -49,18 +50,7 @@ export class BvqDownloaderComponent implements OnInit {
   selectedLogFilter: 'ALL' | 'SUCCESS' | 'FAILED' = 'ALL';
   copiadoExitoso: boolean = false;
 
-  toggleAllSwitches(value: boolean): void {
-    this.masterAutoImport = value;
-    this.autoImportAcciones = value;
-    this.autoImportBonos = value;
-    this.autoImportDividendos = value;
-    this.autoImportFacturas = value;
-    this.autoImportGenericos = value;
-    this.autoImportObligaciones = value;
-    this.autoImportPapeles = value;
-    this.autoImportTitularizaciones = value;
-  }
-
+  // Resultados y Estado de BD
   lastDownloadResult: BvqDownloadResponse['data'] | null = null;
   lastImportResult: any = null;
   lastImportBondsResult: any = null;
@@ -83,9 +73,98 @@ export class BvqDownloaderComponent implements OnInit {
 
   activeTab: 'descarga' | 'historial' = 'descarga';
 
+  toggleAllSwitches(value: boolean): void {
+    this.masterAutoImport = value;
+    this.autoImportAcciones = value;
+    this.autoImportBonos = value;
+    this.autoImportDividendos = value;
+    this.autoImportFacturas = value;
+    this.autoImportGenericos = value;
+    this.autoImportObligaciones = value;
+    this.autoImportPapeles = value;
+    this.autoImportTitularizaciones = value;
+    this.guardarAjustes();
+  }
+
+  setTab(tab: 'descarga' | 'historial'): void {
+    this.activeTab = tab;
+    this.guardarAjustes();
+  }
+
+  setLogFilter(filter: 'ALL' | 'SUCCESS' | 'FAILED'): void {
+    this.selectedLogFilter = filter;
+    this.guardarAjustes();
+  }
+
+  private readonly STORAGE_KEY = 'bvq_downloader_settings';
+
+  guardarAjustes(): void {
+    try {
+      const data = {
+        fechaSeleccionada: this.fechaSeleccionada,
+        masterAutoImport: this.masterAutoImport,
+        autoImportAcciones: this.autoImportAcciones,
+        autoImportBonos: this.autoImportBonos,
+        autoImportDividendos: this.autoImportDividendos,
+        autoImportFacturas: this.autoImportFacturas,
+        autoImportGenericos: this.autoImportGenericos,
+        autoImportObligaciones: this.autoImportObligaciones,
+        autoImportPapeles: this.autoImportPapeles,
+        autoImportTitularizaciones: this.autoImportTitularizaciones,
+        activeTab: this.activeTab,
+        selectedLogFilter: this.selectedLogFilter,
+        lastDownloadResult: this.lastDownloadResult,
+        lastImportResult: this.lastImportResult,
+        lastImportBondsResult: this.lastImportBondsResult,
+        lastImportDividendsResult: this.lastImportDividendsResult,
+        lastImportFacturasResult: this.lastImportFacturasResult,
+        lastImportGenericosResult: this.lastImportGenericosResult,
+        lastImportObligacionesResult: this.lastImportObligacionesResult,
+        lastImportPapelesResult: this.lastImportPapelesResult,
+        lastImportTitularizacionesResult: this.lastImportTitularizacionesResult
+      };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+      console.warn('No se pudo guardar la configuración en localStorage:', e);
+    }
+  }
+
+  cargarAjustesGuardados(): void {
+    try {
+      const raw = localStorage.getItem(this.STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.fechaSeleccionada) this.fechaSeleccionada = data.fechaSeleccionada;
+        if (data.masterAutoImport !== undefined) this.masterAutoImport = data.masterAutoImport;
+        if (data.autoImportAcciones !== undefined) this.autoImportAcciones = data.autoImportAcciones;
+        if (data.autoImportBonos !== undefined) this.autoImportBonos = data.autoImportBonos;
+        if (data.autoImportDividendos !== undefined) this.autoImportDividendos = data.autoImportDividendos;
+        if (data.autoImportFacturas !== undefined) this.autoImportFacturas = data.autoImportFacturas;
+        if (data.autoImportGenericos !== undefined) this.autoImportGenericos = data.autoImportGenericos;
+        if (data.autoImportObligaciones !== undefined) this.autoImportObligaciones = data.autoImportObligaciones;
+        if (data.autoImportPapeles !== undefined) this.autoImportPapeles = data.autoImportPapeles;
+        if (data.autoImportTitularizaciones !== undefined) this.autoImportTitularizaciones = data.autoImportTitularizaciones;
+        if (data.activeTab) this.activeTab = data.activeTab;
+        if (data.selectedLogFilter) this.selectedLogFilter = data.selectedLogFilter;
+        if (data.lastDownloadResult) this.lastDownloadResult = data.lastDownloadResult;
+        if (data.lastImportResult) this.lastImportResult = data.lastImportResult;
+        if (data.lastImportBondsResult) this.lastImportBondsResult = data.lastImportBondsResult;
+        if (data.lastImportDividendsResult) this.lastImportDividendsResult = data.lastImportDividendsResult;
+        if (data.lastImportFacturasResult) this.lastImportFacturasResult = data.lastImportFacturasResult;
+        if (data.lastImportGenericosResult) this.lastImportGenericosResult = data.lastImportGenericosResult;
+        if (data.lastImportObligacionesResult) this.lastImportObligacionesResult = data.lastImportObligacionesResult;
+        if (data.lastImportPapelesResult) this.lastImportPapelesResult = data.lastImportPapelesResult;
+        if (data.lastImportTitularizacionesResult) this.lastImportTitularizacionesResult = data.lastImportTitularizacionesResult;
+      }
+    } catch (e) {
+      console.warn('Error al cargar la configuración de localStorage:', e);
+    }
+  }
+
   constructor(private bvqService: BvqDownloaderService) {}
 
   ngOnInit(): void {
+    this.cargarAjustesGuardados();
     this.cargarHistorial();
   }
 
@@ -134,17 +213,59 @@ export class BvqDownloaderComponent implements OnInit {
     return this.lastDownloadResult.archivos;
   }
 
-  copiarLogAlPortapapeles(): void {
-    if (!this.lastDownloadResult) return;
-    const lines: string[] = [];
-    lines.push(`LOG DE DESCARGA BVQ - FECHA: ${this.lastDownloadResult.fecha}`);
-    lines.push(`Directorio: ${this.lastDownloadResult.directorio_base}`);
-    lines.push(`Totales: ${this.lastDownloadResult.total_archivos} | Exitosos: ${this.lastDownloadResult.exitosos} | Fallidos: ${this.lastDownloadResult.fallidos}`);
-    lines.push(`--------------------------------------------------------------------------------`);
+  getModuleImportLogs(): Array<{ modulo: string; tabla: string; result: any }> {
+    return [
+      { modulo: 'Acciones', tabla: 'shares', result: this.lastImportResult },
+      { modulo: 'Bonos', tabla: 'bond_his', result: this.lastImportBondsResult },
+      { modulo: 'Dividendos', tabla: 'dividendos_his', result: this.lastImportDividendsResult },
+      { modulo: 'Facturas Comerciales', tabla: 'facturas_his', result: this.lastImportFacturasResult },
+      { modulo: 'Valores Genéricos', tabla: 'genericos_his', result: this.lastImportGenericosResult },
+      { modulo: 'Obligaciones', tabla: 'obligaciones_his', result: this.lastImportObligacionesResult },
+      { modulo: 'Papel Comercial', tabla: 'papeles_his', result: this.lastImportPapelesResult },
+      { modulo: 'Titularizaciones', tabla: 'titularizaciones_his', result: this.lastImportTitularizacionesResult }
+    ];
+  }
 
-    this.lastDownloadResult.archivos.forEach(a => {
-      lines.push(`[${a.status}] ${a.carpeta}/${a.archivo} - ${a.status === 'SUCCESS' ? this.formatBytes(a.size_bytes) : 'Error: ' + a.error}`);
+  getModuleImportLogsFiltrados(): Array<{ modulo: string; tabla: string; result: any }> {
+    const logs = this.getModuleImportLogs();
+    if (this.selectedLogFilter === 'SUCCESS') {
+      return logs.filter(m => m.result && m.result.success);
+    }
+    if (this.selectedLogFilter === 'FAILED') {
+      return logs.filter(m => m.result && !m.result.success);
+    }
+    return logs.filter(m => m.result !== null);
+  }
+
+  copiarLogAlPortapapeles(): void {
+    const lines: string[] = [];
+    lines.push(`================================================================================`);
+    lines.push(`LOG DE DESCARGA E IMPORTACIÓN BVQ - FECHA SELECCIONADA: ${this.fechaSeleccionada}`);
+    lines.push(`================================================================================`);
+
+    lines.push(`\n--- RESULTADOS DE IMPORTACIÓN A BASE DE DATOS (ETL) ---`);
+    const moduleLogs = this.getModuleImportLogs();
+    moduleLogs.forEach(m => {
+      if (m.result) {
+        const status = m.result.success ? 'ÉXITO' : 'ERROR';
+        const errDetail = m.result.error || (m.result.detalles && m.result.detalles.error) ? ` | ERROR TÉCNICO: ${m.result.error || m.result.detalles.error}` : '';
+        lines.push(`[${status}] Módulo ${m.modulo} (${m.tabla}): ${m.result.message}${errDetail}`);
+      } else {
+        lines.push(`[PENDIENTE] Módulo ${m.modulo} (${m.tabla}): Esperando procesamiento...`);
+      }
     });
+
+    if (this.lastDownloadResult) {
+      lines.push(`\n--- RESULTADOS DE DESCARGA DE BOLETINES (HTTP/CURL) ---`);
+      lines.push(`Directorio Base: ${this.lastDownloadResult.directorio_base}`);
+      lines.push(`Totales: ${this.lastDownloadResult.total_archivos} | Exitosos: ${this.lastDownloadResult.exitosos} | Fallidos: ${this.lastDownloadResult.fallidos}`);
+      lines.push(`--------------------------------------------------------------------------------`);
+      if (this.lastDownloadResult.archivos) {
+        this.lastDownloadResult.archivos.forEach(a => {
+          lines.push(`[${a.status}] ${a.carpeta}/${a.archivo} - ${a.status === 'SUCCESS' ? this.formatBytes(a.size_bytes) : 'Error: ' + a.error}`);
+        });
+      }
+    }
 
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
       this.copiadoExitoso = true;
@@ -163,6 +284,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.lastImportObligacionesResult = null;
     this.lastImportPapelesResult = null;
     this.lastImportTitularizacionesResult = null;
+    this.guardarAjustes();
   }
 
   ejecutarSoloDescarga(): void {
@@ -183,6 +305,7 @@ export class BvqDownloaderComponent implements OnInit {
             this.error = `Se completó la descarga: ${res.data.exitosos} exitosos y ${res.data.fallidos} fallidos. Revise el detalle abajo.`;
           }
         }
+        this.guardarAjustes();
         this.cargarHistorial();
       },
       error: (err) => {
@@ -192,6 +315,7 @@ export class BvqDownloaderComponent implements OnInit {
           this.lastDownloadResult = err.error.data;
         }
         this.error = err?.error?.message || 'Ocurrió un error al descargar los archivos de la BVQ.';
+        this.guardarAjustes();
       }
     });
   }
@@ -265,6 +389,7 @@ export class BvqDownloaderComponent implements OnInit {
             this.lastDateTitularizacionesInDb = res.data.importacion_titularizaciones.last_date_in_db || this.lastDateTitularizacionesInDb;
           }
         }
+        this.guardarAjustes();
         this.cargarHistorial();
       },
       error: (err) => {
@@ -434,6 +559,50 @@ export class BvqDownloaderComponent implements OnInit {
         this.loadingImportTitularizaciones = false;
         console.error('Error al importar titularizaciones:', err);
         this.error = 'Ocurrió un error al procesar e importar las titularizaciones.';
+      }
+    });
+  }
+
+  isDownloadingModulo(modulo: string): boolean {
+    return !!this.loadingDownloadMap[modulo];
+  }
+
+  ejecutarDescargarModulo(modulo: string): void {
+    this.loadingDownloadMap[modulo] = true;
+    this.error = '';
+
+    this.bvqService.descargarModulo(modulo, this.fechaSeleccionada).subscribe({
+      next: (res) => {
+        this.loadingDownloadMap[modulo] = false;
+        if (res.data) {
+          if (!this.lastDownloadResult) {
+            this.lastDownloadResult = {
+              fecha: this.fechaSeleccionada,
+              directorio_base: res.data.directorio_base || '',
+              total_archivos: 1,
+              exitosos: res.data.success ? 1 : 0,
+              fallidos: res.data.success ? 0 : 1,
+              tiempo_ejecucion_segundos: res.data.tiempo_ejecucion_segundos || 0,
+              archivos: res.data.archivos || []
+            };
+          } else {
+            if (res.data.archivos && Array.isArray(res.data.archivos)) {
+              this.lastDownloadResult.archivos = [
+                ...this.lastDownloadResult.archivos.filter(
+                  a => !res.data.archivos.some((newA: BvqFileResult) => newA.archivo === a.archivo)
+                ),
+                ...res.data.archivos
+              ];
+            }
+          }
+        }
+        this.guardarAjustes();
+        this.cargarHistorial();
+      },
+      error: (err) => {
+        this.loadingDownloadMap[modulo] = false;
+        console.error(`Error al descargar módulo ${modulo}:`, err);
+        this.error = err?.error?.message || `Ocurrió un error al descargar el archivo de ${modulo}.`;
       }
     });
   }
