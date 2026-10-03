@@ -26,6 +26,38 @@ export class SidebarComponent implements OnInit {
 
   menuItems: MenuItem[] = [
     {
+      title: 'Resumen Diario Bolsa',
+      icon: 'bi-journal-bookmark-fill',
+      path: '/reportes/resumen-diario-bolsa',
+      children: [
+        {
+          title: 'Descarga Archivos BVQ',
+          icon: 'bi-cloud-arrow-down-fill',
+          path: '/descarga-bvq'
+        },
+        {
+          title: 'Descarga Archivos BVG',
+          icon: 'bi-building-fill-down',
+          path: '/descarga-bvg'
+        },
+        {
+          title: 'Historial de acciones',
+          icon: 'bi-clock-history',
+          path: '/reportes/historico-acciones'
+        },
+        {
+          title: 'Análisis Bolsa R. Variable',
+          icon: 'bi-journal-check',
+          path: '/renta-variable/resumen-diario-bolsa'
+        },
+        {
+          title: 'Análisis Bolsa R. Fija',
+          icon: 'bi-journal-check',
+          path: '/reportes/resumen-diario-bolsa'
+        }
+      ]
+    },
+    {
       title: 'Renta Fija',
       icon: 'bi-currency-dollar',
       path: '/inversiones',
@@ -54,16 +86,6 @@ export class SidebarComponent implements OnInit {
           title: 'Amortizaciones',
           icon: 'bi-calculator',
           path: '/amortizaciones'
-        },
-        {
-          title: 'Resumen Diario de la Bolsa',
-          icon: 'bi-journal-check',
-          path: '/reportes/resumen-diario-bolsa'
-        },
-        {
-          title: 'Descarga Archivos BVQ',
-          icon: 'bi-cloud-arrow-down-fill',
-          path: '/descarga-bvq'
         }
       ]
     },
@@ -101,16 +123,6 @@ export class SidebarComponent implements OnInit {
           title: 'Análisis de Mercado',
           icon: 'bi-pie-chart',
           path: '/renta-variable/dashboard-mercado'
-        },
-        {
-          title: 'Resumen Diario de la Bolsa',
-          icon: 'bi-journal-check',
-          path: '/renta-variable/resumen-diario-bolsa'
-        },
-        {
-          title: 'Historial de acciones',
-          icon: 'bi-clock-history',
-          path: '/reportes/historico-acciones'
         },
         {
           title: 'Valoración Histórica Acciones',
@@ -279,7 +291,7 @@ export class SidebarComponent implements OnInit {
 
   constructor(
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.router.events.pipe(
