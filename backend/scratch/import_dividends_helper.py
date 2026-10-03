@@ -252,6 +252,61 @@ def run_import(excel_file_path):
         imported_count = cursor.rowcount
         cnx.commit()
 
+        # Homologar emisor_id contra el maestro de emisores sipro_desa.emisor
+        try:
+            cursor.execute("SELECT id_emisor, nombre, sigla FROM sipro_desa.emisor ORDER BY id_emisor ASC")
+            master_emisores = cursor.fetchall()
+            
+            manual_overrides = {
+                'BANCO DE LA PRODUCCIÓN S.A. PRODUBANCO': 6,
+                'BANCO DE LA PRODUCCION S.A. PRODUBANCO': 6,
+                'BANCO COFIEC S.A.': 4,
+                'CORPORACIÓN MULTIBG S.A.': 52,
+                'DOLMEN S.A.': None,
+                'CENTRO GRAFICO': None,
+            }
+
+            def clean_str(s):
+                if not s: return ""
+                return str(s).upper().replace('.', ' ').replace(',', ' ').replace('-', ' ').replace('Á', 'A').replace('É', 'E').replace('Í', 'I').replace('Ó', 'O').replace('Ú', 'U').strip()
+
+            cursor.execute("SELECT DISTINCT emisor FROM dividendos_his WHERE emisor IS NOT NULL")
+            unique_emisores = [r[0] for r in cursor.fetchall()]
+
+            for raw_name in unique_emisores:
+                target_id = None
+                if raw_name in manual_overrides:
+                    target_id = manual_overrides[raw_name]
+                else:
+                    clean_raw = clean_str(raw_name)
+                    best_match = None
+                    best_score = 0
+                    for m in master_emisores:
+                        m_id, m_nombre, m_sigla = m[0], m[1], m[2]
+                        m_name_clean = clean_str(m_nombre)
+                        m_sigla_clean = clean_str(m_sigla)
+
+                        raw_tokens = set(clean_raw.split()) - {'S', 'A', 'C', 'DE', 'DEL', 'LA', 'EL', 'LOS', 'LAS', 'COMPAÑIA', 'CORPORACION', 'SOCIEDAD', 'ANONIMA'}
+                        m_tokens = set(m_name_clean.split()) - {'S', 'A', 'C', 'DE', 'DEL', 'LA', 'EL', 'LOS', 'LAS', 'COMPAÑIA', 'CORPORACION', 'SOCIEDAD', 'ANONIMA'}
+
+                        common = raw_tokens.intersection(m_tokens)
+                        score = len(common)
+                        if m_sigla_clean and m_sigla_clean in raw_tokens:
+                            score += 3
+                        if score > best_score:
+                            best_score = score
+                            best_match = m_id
+                    
+                    if best_match and best_score >= 1:
+                        target_id = best_match
+
+                if target_id is not None:
+                    cursor.execute("UPDATE dividendos_his SET emisor_id = %s WHERE emisor = %s", (target_id, raw_name))
+            
+            cnx.commit()
+        except Exception as hex:
+            pass
+
         cursor.close()
         cnx.close()
 

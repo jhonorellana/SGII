@@ -199,6 +199,12 @@ Route::post('bvg/descargar', [App\Http\Controllers\API\BvgDownloaderController::
 Route::post('bvg/descargar-modulo', [App\Http\Controllers\API\BvgDownloaderController::class, 'descargarModulo']);
 Route::get('bvg/historial', [App\Http\Controllers\API\BvgDownloaderController::class, 'historial']);
 
+// Rutas de Radar de Oportunidades de Inversión y Dividendos
+Route::get('dividendos/radar', [App\Http\Controllers\API\DividendAnalyticsController::class, 'radar']);
+Route::post('dividendos/simular', [App\Http\Controllers\API\DividendAnalyticsController::class, 'simular']);
+Route::get('dividendos/mi-portafolio', [App\Http\Controllers\API\DividendAnalyticsController::class, 'portafolio']);
+
+
 
 
 

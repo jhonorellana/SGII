@@ -1,0 +1,120 @@
+.module-title {
+  color: #1a1a2e;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+}
+
+.extra-small {
+  font-size: 0.75rem;
+}
+
+.fs-7 {
+  font-size: 0.8rem;
+}
+
+.uppercase {
+  text-transform: uppercase;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.module-table-card {
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.hover-shadow {
+  transition: all 0.25s ease-in-out;
+}
+
+.hover-shadow:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1), 0 6px 6px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.nav-tabs .nav-link {
+  color: #64748b;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+  color: #1e293b;
+  border-bottom: 3px solid #cbd5e1;
+}
+
+.nav-tabs .nav-link.active {
+  color: #059669;
+  border: none;
+  border-bottom: 3px solid #059669;
+  background: transparent;
+}
+
+.portfolio-card-header {
+  background: linear-gradient(135deg, #058c54 0%, #03693e 100%);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.bg-emerald-light {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.text-emerald-dark {
+  color: #ffffff !important;
+}
+
+/* GRID 4 TARJETAS POR FILA EXACTO (Estilo Screenshot 2) */
+.portfolio-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 1199px) {
+  .portfolio-cards-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 991px) {
+  .portfolio-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 575px) {
+  .portfolio-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
