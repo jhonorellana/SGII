@@ -1,0 +1,819 @@
+<div class="container-fluid fade-in px-4 py-3">
+  <!-- Header Principal -->
+  <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+    <div>
+      <h2 class="module-title d-flex align-items-center gap-2 mb-1 text-dark fw-bold">
+        <i class="bi bi-shield-lock-fill text-success"></i> Radar de Renta Fija & Portafolio de Deuda
+      </h2>
+      <p class="text-muted subtitle mb-0">
+        Valoración a Precios de Mercado (Mark-to-Market) de Obligaciones, Papel Comercial, Titularizaciones y Bonos.
+        <span class="badge bg-light text-dark border ms-2" *ngIf="latestDate">
+          <i class="bi bi-calendar-event text-primary me-1"></i> Vector BVQ: {{ latestDate }}
+        </span>
+      </p>
+    </div>
+    
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-success btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 rounded-pill shadow-sm" (click)="loadMarketRadar()">
+        <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': loading}"></i>
+        <span>Actualizar Datos</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- NAVEGACIÓN POR PESTAÑAS (TABS) -->
+  <ul class="nav nav-tabs border-bottom mb-3">
+    <li class="nav-item">
+      <button 
+        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
+        [class.active]="activeTab === 'MERCADO'" 
+        (click)="setTab('MERCADO')">
+        <i class="bi bi-radar text-success fs-5"></i>
+        <span>Radar de Mercado ({{ kpis.total_titulos }} Títulos)</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button 
+        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
+        [class.active]="activeTab === 'PORTAFOLIO'" 
+        (click)="setTab('PORTAFOLIO')">
+        <i class="bi bi-briefcase-fill text-primary fs-5"></i>
+        <span>Mi Portafolio M2M</span>
+        <span class="badge bg-primary rounded-pill px-2 py-0.5 extra-small ms-1">{{ portfolioSummary.total_posiciones }}</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- ========================================== -->
+  <!-- TAB 1: RADAR DE MERCADO                    -->
+  <!-- ========================================== -->
+  <div *ngIf="activeTab === 'MERCADO'" class="fade-in">
+    <!-- TARJETAS KPI DE RESUMEN EJECUTIVO (COMPACT 4-COLUMN GRID) -->
+    <div class="kpi-grid mb-3">
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-success-subtle p-2 text-success fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-percent"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">TIR Promedio Mercado</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ kpis.tir_promedio | number:'1.2-2' }}%</div>
+            <div class="extra-small text-muted">Renta Fija Cotizada</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-primary-subtle p-2 text-primary fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-piggy-bank"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Tasa Cupón Promedio</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ kpis.tasa_cupon_promedio | number:'1.2-2' }}%</div>
+            <div class="extra-small text-muted">Tasa Nominal Emisiones</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-purple-subtle p-2 text-purple fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Plazo Promedio Remanente</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ kpis.plazo_promedio_dias }} <span class="fs-7 text-muted fw-normal">días</span></div>
+            <div class="extra-small text-muted">Vencimiento Medio</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-amber-subtle p-2 text-amber fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-pie-chart-fill"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Valor Portafolio M2M</div>
+            <div class="fs-6 fw-bold text-dark lh-1 my-1">${{ portfolioSummary.total_valor_mercado | number:'1.2-2' }}</div>
+            <div class="extra-small fw-semibold" [ngClass]="portfolioSummary.total_ganancia_usd >= 0 ? 'text-success' : 'text-danger'">
+              {{ portfolioSummary.total_ganancia_usd >= 0 ? '+' : '' }}${{ portfolioSummary.total_ganancia_usd | number:'1.2-2' }} ({{ portfolioSummary.total_ganancia_pct }}%)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros y Controles -->
+    <div class="card border-0 shadow-2xs mb-3 rounded-3 bg-white">
+      <div class="card-body p-2.5">
+        <div class="filters-bar">
+          <div class="filter-search">
+            <div class="p-input-icon-left w-100">
+              <i class="pi pi-search"></i>
+              <input 
+                type="text" 
+                pInputText 
+                class="form-control form-control-sm" 
+                placeholder="Buscar por emisor, nemotécnico o código ISIN/BVQ..."
+                [(ngModel)]="searchTerm"
+                (keyup.enter)="onSearch()" />
+            </div>
+          </div>
+
+          <div class="filter-dropdown">
+            <p-dropdown 
+              [options]="clasesOptions" 
+              [(ngModel)]="selectedClase" 
+              (onChange)="onSearch()"
+              styleClass="w-100 p-dropdown-sm"
+              placeholder="Clase de Título">
+            </p-dropdown>
+          </div>
+
+          <div class="filter-dropdown">
+            <p-dropdown 
+              [options]="ratingOptions" 
+              [(ngModel)]="selectedRating" 
+              (onChange)="onSearch()"
+              styleClass="w-100 p-dropdown-sm"
+              placeholder="Calificación">
+            </p-dropdown>
+          </div>
+
+          <div class="filter-actions">
+            <button 
+              class="btn btn-sm" 
+              [class.btn-primary]="viewMode === 'TABLE'" 
+              [class.btn-outline-secondary]="viewMode !== 'TABLE'"
+              (click)="setViewMode('TABLE')" 
+              pTooltip="Vista Tabla Ejecutiva">
+              <i class="bi bi-table me-1"></i> Tabla
+            </button>
+            <button 
+              class="btn btn-sm" 
+              [class.btn-primary]="viewMode === 'CARDS'" 
+              [class.btn-outline-secondary]="viewMode !== 'CARDS'"
+              (click)="setViewMode('CARDS')" 
+              pTooltip="Vista Tarjetas">
+              <i class="bi bi-grid-3x3-gap-fill me-1"></i> Tarjetas
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA DE TABLA EJECUTIVA (PREDETERMINADA) -->
+    <div class="card border-0 shadow-2xs rounded-3 overflow-hidden bg-white" *ngIf="viewMode === 'TABLE'">
+      <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-table text-success"></i>
+          Matriz de Valoración de Deuda a Precios de Mercado
+        </h6>
+        <span class="badge bg-light text-muted border px-2 py-1">
+          Mostrando {{ instruments.length }} títulos cotizados
+        </span>
+      </div>
+
+      <p-table 
+        #dtMarket
+        [value]="instruments" 
+        [paginator]="true" 
+        [rows]="15" 
+        [rowsPerPageOptions]="[15, 30, 50, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} títulos"
+        [responsiveLayout]="'scroll'"
+        styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="nombre_emisor" style="width: 26%">
+              Emisor <p-sortIcon field="nombre_emisor"></p-sortIcon>
+            </th>
+            <th pSortableColumn="codigo_titulo_vector" style="width: 15%">
+              Código ISIN/BVQ <p-sortIcon field="codigo_titulo_vector"></p-sortIcon>
+            </th>
+            <th pSortableColumn="clase_titulo" style="width: 14%">
+              Clase Título <p-sortIcon field="clase_titulo"></p-sortIcon>
+            </th>
+            <th pSortableColumn="calificacion_riesgo" class="text-center" style="width: 9%">
+              Rating <p-sortIcon field="calificacion_riesgo"></p-sortIcon>
+            </th>
+            <th pSortableColumn="precio_porcentaje" class="text-end" style="width: 10%">
+              Precio Vector % <p-sortIcon field="precio_porcentaje"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tasa_descuento_tir" class="text-end" style="width: 10%">
+              TIR Mercado % <p-sortIcon field="tasa_descuento_tir"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tasa_cupon" class="text-end" style="width: 8%">
+              Cupón % <p-sortIcon field="tasa_cupon"></p-sortIcon>
+            </th>
+            <th pSortableColumn="plazo_dias_remanentes" class="text-end" style="width: 10%">
+              Plazo Remanente <p-sortIcon field="plazo_dias_remanentes"></p-sortIcon>
+            </th>
+            <th pSortableColumn="fecha_vencimiento" class="text-center" style="width: 10%">
+              Vencimiento <p-sortIcon field="fecha_vencimiento"></p-sortIcon>
+            </th>
+          </tr>
+
+          <!-- FILA DE FILTROS POR COLUMNA DE MERCADO -->
+          <tr class="bg-light-subtle">
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5" placeholder="Filtrar emisor..." (input)="dtMarket.filter($any($event.target).value, 'nombre_emisor', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5" placeholder="ISIN/BVQ..." (input)="dtMarket.filter($any($event.target).value, 'codigo_titulo_vector', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5" placeholder="Clase..." (input)="dtMarket.filter($any($event.target).value, 'clase_titulo', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-center" placeholder="Rating..." (input)="dtMarket.filter($any($event.target).value, 'calificacion_riesgo', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="P. Vector..." (input)="dtMarket.filter($any($event.target).value, 'precio_porcentaje', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="TIR..." (input)="dtMarket.filter($any($event.target).value, 'tasa_descuento_tir', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Cupón..." (input)="dtMarket.filter($any($event.target).value, 'tasa_cupon', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Plazo..." (input)="dtMarket.filter($any($event.target).value, 'plazo_dias_remanentes', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-center" placeholder="Vencim..." (input)="dtMarket.filter($any($event.target).value, 'fecha_vencimiento', 'contains')" /></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td>
+              <div class="fw-bold text-dark text-truncate" style="max-width: 300px;" [title]="item.nombre_emisor">
+                {{ item.nombre_emisor }}
+              </div>
+              <div class="small text-muted" *ngIf="item.nemo_emisor">
+                <span class="badge bg-light text-secondary border me-1">{{ item.nemo_emisor }}</span>
+              </div>
+            </td>
+            <td>
+              <code class="px-2 py-0.5 bg-light border rounded text-dark fs-7 font-monospace fw-semibold">{{ item.codigo_titulo_vector }}</code>
+            </td>
+            <td>
+              <span class="badge bg-secondary text-wrap text-start border">{{ item.clase_titulo }}</span>
+            </td>
+            <td class="text-center">
+              <p-tag [value]="item.calificacion_riesgo" [severity]="getRatingSeverity(item.calificacion_riesgo)"></p-tag>
+            </td>
+            <td class="text-end fw-bold text-primary fs-6">
+              {{ item.precio_porcentaje | number:'1.2-2' }}%
+            </td>
+            <td class="text-end fw-bold text-success fs-6">
+              {{ item.tasa_descuento_tir | number:'1.2-2' }}%
+            </td>
+            <td class="text-end font-monospace">
+              {{ item.tasa_cupon | number:'1.2-2' }}%
+            </td>
+            <td class="text-end fw-bold" [ngClass]="item.plazo_dias_remanentes < 30 ? 'text-danger' : (item.plazo_dias_remanentes < 90 ? 'text-warning' : 'text-secondary')">
+              {{ item.plazo_dias_remanentes }} días
+            </td>
+            <td class="text-center font-monospace small">
+              {{ item.fecha_vencimiento || 'N/A' }}
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="9" class="text-center p-4 text-muted">
+              <i class="bi bi-search fs-2 d-block mb-2 text-secondary"></i>
+              No se encontraron títulos de Renta Fija con los filtros seleccionados.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- VISTA DE TARJETAS EJECUTIVAS -->
+    <div class="row g-3" *ngIf="viewMode === 'CARDS'">
+      <div class="col-12 col-md-6 col-lg-4 col-xl-3" *ngFor="let item of instruments">
+        <div class="card h-100 border-0 shadow-2xs hover-card rounded-3 overflow-hidden bg-white">
+          <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+            <span class="badge bg-secondary text-wrap text-start text-truncate max-w-75" [title]="item.clase_titulo">
+              {{ item.clase_titulo }}
+            </span>
+            <p-tag 
+              [value]="item.calificacion_riesgo" 
+              [severity]="getRatingSeverity(item.calificacion_riesgo)">
+            </p-tag>
+          </div>
+
+          <div class="card-body p-3">
+            <h6 class="fw-bold text-dark mb-1 two-line-header" [title]="item.nombre_emisor">
+              {{ item.nombre_emisor }}
+            </h6>
+            <div class="text-muted small mb-3">
+              <code>{{ item.codigo_titulo_vector }}</code>
+            </div>
+
+            <div class="row g-2 mb-3 bg-body-tertiary p-2 rounded-2 text-center">
+              <div class="col-6 border-end">
+                <span class="text-muted small d-block">Precio Vector %</span>
+                <span class="fs-5 fw-bold text-primary">{{ item.precio_porcentaje | number:'1.2-2' }}%</span>
+              </div>
+              <div class="col-6">
+                <span class="text-muted small d-block">TIR Mercado %</span>
+                <span class="fs-5 fw-bold text-success">{{ item.tasa_descuento_tir | number:'1.2-2' }}%</span>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <span>Tasa Cupón:</span>
+              <strong class="text-dark">{{ item.tasa_cupon }}%</strong>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <span>Vencimiento:</span>
+              <strong class="text-dark">{{ item.fecha_vencimiento || 'N/A' }}</strong>
+            </div>
+
+            <div class="d-flex justify-content-between small text-muted mb-2">
+              <span>Plazo Remanente:</span>
+              <strong class="text-primary">{{ item.plazo_dias_remanentes }} días</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 2: MI PORTAFOLIO DE DEUDA              -->
+  <!-- ========================================== -->
+  <div *ngIf="activeTab === 'PORTAFOLIO'" class="fade-in">
+    <!-- TARJETAS KPI RESUMEN DE CARTERA (COMPACT 4-COLUMN GRID) -->
+    <div class="kpi-grid mb-3">
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-primary-subtle p-2 text-primary fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-cash-coin"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Valor Total Compra</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">${{ portfolioSummary.total_valor_compra | number:'1.2-2' }}</div>
+            <div class="extra-small text-muted">Capital Invertido Original</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-success-subtle p-2 text-success fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-pie-chart-fill"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Valor Mercado M2M Actual</div>
+            <div class="fs-5 fw-bold text-primary lh-1 my-1">${{ portfolioSummary.total_valor_mercado | number:'1.2-2' }}</div>
+            <div class="extra-small text-muted">Cotización Vector BVQ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-amber-subtle p-2 text-amber fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Plusvalía / Minusvalía No Realizada</div>
+            <div class="fs-6 fw-bold lh-1 my-1" [ngClass]="getGainSeverity(portfolioSummary.total_ganancia_usd)">
+              {{ portfolioSummary.total_ganancia_usd >= 0 ? '+' : '' }}${{ portfolioSummary.total_ganancia_usd | number:'1.2-2' }}
+            </div>
+            <div class="extra-small fw-semibold" [ngClass]="portfolioSummary.total_ganancia_usd >= 0 ? 'text-success' : 'text-danger'">
+              ({{ portfolioSummary.total_ganancia_pct }}% retorno)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-purple-subtle p-2 text-purple fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-briefcase-fill"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Posiciones Activas</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ portfolioSummary.total_posiciones }} <span class="fs-7 text-muted fw-normal">títulos</span></div>
+            <div class="extra-small text-muted">Excluye Notas de Crédito</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Filtros Portafolio -->
+    <div class="card border-0 shadow-2xs mb-3 rounded-3 bg-white">
+      <div class="card-body p-2.5">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 400px;">
+            <p-dropdown 
+              [options]="clasesOptions" 
+              [(ngModel)]="portfolioClaseFilter" 
+              (onChange)="loadPortfolio()"
+              styleClass="w-100 p-dropdown-sm"
+              placeholder="Filtrar por Clase de Título">
+            </p-dropdown>
+          </div>
+
+          <!-- Switch para incluir o filtrar vencidos -->
+          <div class="form-check form-switch mb-0">
+            <input 
+              class="form-check-input" 
+              type="checkbox" 
+              id="switchVencidos"
+              [(ngModel)]="includeExpired"
+              (change)="loadPortfolio()" />
+            <label class="form-check-label small fw-semibold text-dark cursor-pointer" for="switchVencidos">
+              Incluir Títulos Vencidos
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla MTM Portafolio -->
+    <div class="card border-0 shadow-2xs rounded-3 overflow-hidden bg-white">
+      <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+          <i class="bi bi-briefcase text-primary"></i>
+          Posiciones en Cartera de Renta Fija
+        </h6>
+        <span class="badge bg-light text-muted border px-2 py-1">
+          {{ portfolioHoldings.length }} posiciones cargadas
+        </span>
+      </div>
+
+      <p-table 
+        #dtPortfolio
+        [value]="portfolioHoldings" 
+        [paginator]="true"
+        [rows]="15"
+        [rowsPerPageOptions]="[15, 30, 50, 100]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} posiciones"
+        [responsiveLayout]="'scroll'"
+        styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines">
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="nombre_emisor" style="width: 20%">
+              ID / Instrumento / Emisor <p-sortIcon field="nombre_emisor"></p-sortIcon>
+            </th>
+            <th pSortableColumn="fecha_compra" class="text-center" style="width: 8%">
+              F. Compra <p-sortIcon field="fecha_compra"></p-sortIcon>
+            </th>
+            <th pSortableColumn="fecha_vencimiento" class="text-center" style="width: 8%">
+              F. Vencim <p-sortIcon field="fecha_vencimiento"></p-sortIcon>
+            </th>
+            <th pSortableColumn="capital_invertido" class="text-end" style="width: 9%">
+              Invertido <p-sortIcon field="capital_invertido"></p-sortIcon>
+            </th>
+            <th pSortableColumn="tasa_cupon_compra" class="text-end" style="width: 5%">
+              Cupón <p-sortIcon field="tasa_cupon_compra"></p-sortIcon>
+            </th>
+            <th pSortableColumn="rendimiento_compra" class="text-end" style="width: 6%">
+              Rend. <p-sortIcon field="rendimiento_compra"></p-sortIcon>
+            </th>
+            <th pSortableColumn="precio_compra_porcentaje" class="text-end" style="width: 6%">
+              P. Compra <p-sortIcon field="precio_compra_porcentaje"></p-sortIcon>
+            </th>
+            <th pSortableColumn="precio_vector_porcentaje" class="text-end" style="width: 6%">
+              P. Vector <p-sortIcon field="precio_vector_porcentaje"></p-sortIcon>
+            </th>
+            <th pSortableColumn="valor_mercado_actual" class="text-end" style="width: 9%">
+              M2M Actual <p-sortIcon field="valor_mercado_actual"></p-sortIcon>
+            </th>
+            <th pSortableColumn="ganancia_no_realizada_usd" class="text-end" style="width: 8%">
+              Var. ($) <p-sortIcon field="ganancia_no_realizada_usd"></p-sortIcon>
+            </th>
+            <th pSortableColumn="ganancia_no_realizada_pct" class="text-end" style="width: 6%">
+              Var. % <p-sortIcon field="ganancia_no_realizada_pct"></p-sortIcon>
+            </th>
+            <th pSortableColumn="calificacion_riesgo" class="text-center" style="width: 4%">
+              Rating <p-sortIcon field="calificacion_riesgo"></p-sortIcon>
+            </th>
+            <th pSortableColumn="plazo_dias_remanentes" class="text-end" style="width: 5%">
+              Días Rem. <p-sortIcon field="plazo_dias_remanentes"></p-sortIcon>
+            </th>
+          </tr>
+
+          <!-- FILA DE FILTROS POR COLUMNA DE PORTAFOLIO -->
+          <tr class="bg-light-subtle">
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5" placeholder="Filtrar..." (input)="dtPortfolio.filter($any($event.target).value, 'nombre_emisor', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-center" placeholder="Compra..." (input)="dtPortfolio.filter($any($event.target).value, 'fecha_compra', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-center" placeholder="Vencim..." (input)="dtPortfolio.filter($any($event.target).value, 'fecha_vencimiento', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Invertido..." (input)="dtPortfolio.filter($any($event.target).value, 'capital_invertido', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Cupón..." (input)="dtPortfolio.filter($any($event.target).value, 'tasa_cupon_compra', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Rend..." (input)="dtPortfolio.filter($any($event.target).value, 'rendimiento_compra', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="P. Compra..." (input)="dtPortfolio.filter($any($event.target).value, 'precio_compra_porcentaje', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="P. Vector..." (input)="dtPortfolio.filter($any($event.target).value, 'precio_vector_porcentaje', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="M2M..." (input)="dtPortfolio.filter($any($event.target).value, 'valor_mercado_actual', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Var ($)..." (input)="dtPortfolio.filter($any($event.target).value, 'ganancia_no_realizada_usd', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Var (%)..." (input)="dtPortfolio.filter($any($event.target).value, 'ganancia_no_realizada_pct', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-center" placeholder="Rating..." (input)="dtPortfolio.filter($any($event.target).value, 'calificacion_riesgo', 'contains')" /></th>
+            <th class="p-1"><input type="text" pInputText class="form-control form-control-sm extra-small py-1 px-1.5 text-end" placeholder="Días..." (input)="dtPortfolio.filter($any($event.target).value, 'plazo_dias_remanentes', 'contains')" /></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-h>
+          <tr (click)="openHoldingDetail(h)" class="cursor-pointer hover-row">
+            <td>
+              <div class="d-flex align-items-center gap-1.5 mb-0.5">
+                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle font-monospace px-1.5 py-0.5 extra-small" title="ID Inversión">#{{ h.id_inversion }}</span>
+                <span class="fw-bold text-dark text-truncate" style="max-width: 200px;" [title]="h.nombre_emisor">{{ h.nombre_emisor }}</span>
+              </div>
+              <div class="small text-muted text-truncate mb-1" style="max-width: 240px;" [title]="h.nombre_instrumento">{{ h.nombre_instrumento }}</div>
+              <div class="d-flex flex-wrap align-items-center gap-1">
+                <code class="px-1.5 py-0.5 bg-light border rounded text-dark fs-7 font-monospace fw-semibold" [title]="h.codigo_titulo_vector">{{ h.codigo_titulo_vector || 'N/A' }}</code>
+                <div *ngIf="h.sugerencia_vector" (click)="$event.stopPropagation()">
+                  <button class="btn btn-xs btn-outline-warning text-dark py-0 px-1.5 extra-small border-warning shadow-2xs d-flex align-items-center gap-1 rounded-pill"
+                          (click)="applyVectorSuggestion(h.id_instrumento, h.sugerencia_vector.codigo_titulo_vector, $event)"
+                          pTooltip="Clic para vincular automáticamente el vector sugerido a este instrumento">
+                    <i class="bi bi-magic text-warning-emphasis"></i>
+                    <span>Sugerido: <strong>{{ h.sugerencia_vector.codigo_titulo_vector }}</strong></span>
+                  </button>
+                </div>
+              </div>
+            </td>
+            <td class="text-center font-monospace small text-dark">{{ h.fecha_compra || 'N/A' }}</td>
+            <td class="text-center font-monospace small text-primary fw-semibold">{{ h.fecha_vencimiento || 'N/A' }}</td>
+            <td class="text-end fw-semibold text-dark">${{ h.capital_invertido | number:'1.2-2' }}</td>
+            <td class="text-end font-monospace text-dark">{{ h.tasa_cupon_compra | number:'1.2-2' }}%</td>
+            <td class="text-end font-monospace">
+              <div class="fw-bold text-success fs-6">{{ h.rendimiento_compra || h.tir_vector | number:'1.2-2' }}%</div>
+              <div class="extra-small text-muted" *ngIf="h.tir_vector && h.tir_vector !== h.rendimiento_compra" title="TIR a Precios de Mercado (Vector BVQ)">
+                Mkt: {{ h.tir_vector | number:'1.2-2' }}%
+              </div>
+            </td>
+            <td class="text-end font-monospace">{{ h.precio_compra_porcentaje | number:'1.2-2' }}%</td>
+            <td class="text-end fw-bold text-primary font-monospace">{{ h.precio_vector_porcentaje | number:'1.2-2' }}%</td>
+            <td class="text-end fw-bold text-dark fs-6">${{ h.valor_mercado_actual | number:'1.2-2' }}</td>
+            <td class="text-end fw-bold" [ngClass]="getGainSeverity(h.ganancia_no_realizada_usd)">
+              {{ h.ganancia_no_realizada_usd >= 0 ? '+' : '' }}${{ h.ganancia_no_realizada_usd | number:'1.2-2' }}
+            </td>
+            <td class="text-end fw-bold">
+              <span class="badge" [ngClass]="h.ganancia_no_realizada_pct >= 0 ? 'bg-success' : 'bg-danger'">
+                {{ h.ganancia_no_realizada_pct >= 0 ? '+' : '' }}{{ h.ganancia_no_realizada_pct | number:'1.2-2' }}%
+              </span>
+            </td>
+            <td class="text-center">
+              <p-tag [value]="h.calificacion_riesgo" [severity]="getRatingSeverity(h.calificacion_riesgo)"></p-tag>
+            </td>
+            <td class="text-end fw-bold" [ngClass]="h.plazo_dias_remanentes <= 0 ? 'text-muted' : (h.plazo_dias_remanentes < 30 ? 'text-danger' : 'text-primary')">
+              {{ h.plazo_dias_remanentes }} d
+            </td>
+          </tr>
+        </ng-template>
+
+        <!-- FILA DE TOTALES EN EL PIE DE LA TABLA -->
+        <ng-template pTemplate="footer">
+          <tr class="fw-bold bg-light border-top border-2 border-dark text-dark font-monospace">
+            <td colspan="3" class="text-start text-uppercase fw-bold text-dark fs-7 py-2.5">
+              <i class="bi bi-calculator-fill text-primary me-1"></i> Totales Cartera ({{ portfolioHoldings.length }} Posiciones)
+            </td>
+            <td class="text-end text-dark fs-6 font-monospace py-2.5">
+              ${{ portfolioTotalCapital | number:'1.2-2' }}
+            </td>
+            <td class="text-end text-muted small py-2.5">-</td>
+            <td class="text-end text-muted small py-2.5">-</td>
+            <td class="text-end text-muted small py-2.5">-</td>
+            <td class="text-end text-muted small py-2.5">-</td>
+            <td class="text-end text-primary fs-6 font-monospace py-2.5">
+              ${{ portfolioTotalM2M | number:'1.2-2' }}
+            </td>
+            <td class="text-end font-monospace fs-6 py-2.5" [ngClass]="getGainSeverity(portfolioTotalGainUsd)">
+              {{ portfolioTotalGainUsd >= 0 ? '+' : '' }}${{ portfolioTotalGainUsd | number:'1.2-2' }}
+            </td>
+            <td class="text-end py-2.5">
+              <span class="badge" [ngClass]="portfolioTotalGainPct >= 0 ? 'bg-success' : 'bg-danger'">
+                {{ portfolioTotalGainPct >= 0 ? '+' : '' }}{{ portfolioTotalGainPct | number:'1.2-2' }}%
+              </span>
+            </td>
+            <td colspan="2" class="py-2.5"></td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="13" class="text-center p-4 text-muted">
+              <i class="bi bi-folder-x fs-1 d-block mb-2 text-secondary"></i>
+              No hay posiciones de Renta Fija registradas con los filtros seleccionados.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- MODAL DE DETALLE DE INVERSIÓN Y AMORTIZACIONES -->
+  <p-dialog 
+    [(visible)]="detailDialogVisible" 
+    [modal]="true" 
+    [style]="{ width: '92vw', maxWidth: '1150px' }" 
+    header="Detalle de Inversión y Cronograma de Amortizaciones"
+    [draggable]="false" 
+    [resizable]="false"
+    styleClass="app-custom-modal custom-detail-dialog">
+    
+    <div *ngIf="loadingDetail" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="min-height: 280px;">
+      <div class="spinner-border text-success mb-3" style="width: 2.5rem; height: 2.5rem;" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <div class="text-dark fw-bold">Cargando información detallada y cuotas de amortización...</div>
+      <small class="text-muted mt-1">Por favor espere un momento</small>
+    </div>
+
+    <div *ngIf="!loadingDetail && !investmentDetail" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="min-height: 250px;">
+      <i class="bi bi-exclamation-triangle-fill text-warning fs-1 mb-2"></i>
+      <h6 class="fw-bold text-dark mb-1">No se pudo obtener la información de la inversión</h6>
+      <p class="text-muted small">Intente seleccionar nuevamente la inversión desde el portafolio.</p>
+    </div>
+
+    <div *ngIf="!loadingDetail && investmentDetail" class="fade-in pt-1">
+      <!-- TARJETA ÚNICA DE INFORMACIÓN EJECUTIVA DE LA INVERSIÓN -->
+      <div class="card border border-light-subtle shadow-2xs bg-white mb-3 rounded-3 overflow-hidden">
+        <!-- Encabezado de la Tarjeta: Emisor, Instrumento, IDs y Código Vector -->
+        <div class="bg-light p-3 border-bottom">
+          <div class="row g-2 align-items-center">
+            <div class="col-md-8">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-0.5 fw-bold font-monospace">
+                  ID Inversión #{{ investmentDetail.inversion.id_inversion }} | Inst #{{ investmentDetail.inversion.id_instrumento }}
+                </span>
+                <code class="px-2 py-0.5 bg-white border rounded text-dark font-monospace fw-bold small" *ngIf="investmentDetail.inversion.codigo_titulo_vector" title="Código ISIN/BVQ">
+                  {{ investmentDetail.inversion.codigo_titulo_vector }}
+                </code>
+              </div>
+              <h5 class="fw-bold text-dark mb-0 fs-5">{{ investmentDetail.inversion.nombre_emisor }}</h5>
+              <div class="text-secondary small fw-semibold mt-0.5">{{ investmentDetail.inversion.nombre_instrumento }}</div>
+            </div>
+            
+            <div class="col-md-4 text-md-end">
+              <div class="mb-1" *ngIf="investmentDetail.inversion.propietario_nombre">
+                <span class="badge bg-white text-dark border shadow-2xs px-2 py-1 text-nowrap">
+                  <i class="bi bi-person-fill text-primary me-1"></i>
+                  <span class="text-muted extra-small text-uppercase">Propietario:</span> <strong>{{ investmentDetail.inversion.propietario_nombre }}</strong>
+                </span>
+              </div>
+              <div class="extra-small text-muted text-uppercase fw-bold mb-1">Rating Emisor / Vector</div>
+              <p-tag [value]="investmentDetail.inversion.calificacion_riesgo" [severity]="getRatingSeverity(investmentDetail.inversion.calificacion_riesgo)"></p-tag>
+            </div>
+          </div>
+
+          <!-- Sub-línea: Código Vector Manual & Acción -->
+          <div class="mt-2 pt-2 border-top border-secondary-subtle d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 480px;">
+              <label class="form-label mb-0 extra-small fw-bold text-muted text-uppercase text-nowrap">Código Vector (ISIN/BVQ):</label>
+              <input type="text" class="form-control form-control-sm font-monospace fw-bold" [(ngModel)]="customVectorInput" placeholder="Ej: a045040100201280426" />
+            </div>
+            <button class="btn btn-outline-primary btn-sm px-3 fw-semibold rounded-pill" [disabled]="updatingVector" (click)="saveCustomVectorCode(investmentDetail.inversion.id_instrumento)">
+              <i class="bi bi-save me-1"></i> Guardar Código Vector
+            </button>
+          </div>
+        </div>
+
+        <!-- Alerta de Vector Sugerido (si existe) dentro de la misma tarjeta -->
+        <div class="bg-warning-subtle p-2.5 px-3 border-bottom border-warning-subtle" *ngIf="investmentDetail.inversion.sugerencia_vector">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="small text-dark">
+              <i class="bi bi-lightbulb-fill text-warning me-1.5 fs-6"></i>
+              <span>Vector Sugerido Encontrado: <strong class="font-monospace">{{ investmentDetail.inversion.sugerencia_vector.codigo_titulo_vector }}</strong> (Precio: {{ investmentDetail.inversion.sugerencia_vector.precio_porcentaje }}% | TIR: {{ investmentDetail.inversion.sugerencia_vector.tasa_descuento_tir }}%)</span>
+            </div>
+            <button class="btn btn-warning btn-xs px-2.5 fw-bold rounded-pill text-dark shadow-2xs" [disabled]="updatingVector" (click)="applyVectorSuggestion(investmentDetail.inversion.id_instrumento, investmentDetail.inversion.sugerencia_vector.codigo_titulo_vector)">
+              <i class="bi bi-check-circle-fill me-1"></i> Asignar Código Sugerido
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuerpo de la Tarjeta: 4 Columnas Alineadas Horizontalmente en 1 Sola Fila -->
+        <div class="card-body p-3 bg-white">
+          <div class="row g-3 text-dark align-items-start">
+            <!-- Col 1: Fechas Clave -->
+            <div class="col-3 border-end pe-3">
+              <div class="extra-small text-muted text-uppercase fw-bold mb-2 pb-1 border-bottom d-flex align-items-center gap-1">
+                <i class="bi bi-calendar3 text-primary"></i> Fechas Clave
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">F. Compra:</span>
+                <strong class="font-monospace text-dark text-nowrap ms-2">{{ investmentDetail.inversion.fecha_compra || 'N/A' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">F. Emisión:</span>
+                <strong class="font-monospace text-dark text-nowrap ms-2">{{ investmentDetail.inversion.fecha_emision || 'N/A' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center extra-small">
+                <span class="text-muted text-uppercase">F. Vencim:</span>
+                <strong class="font-monospace text-primary text-nowrap ms-2">{{ investmentDetail.inversion.fecha_vencimiento || 'N/A' }}</strong>
+              </div>
+            </div>
+
+            <!-- Col 2: % Tasas & Rend. -->
+            <div class="col-3 border-end pe-3">
+              <div class="extra-small text-muted text-uppercase fw-bold mb-2 pb-1 border-bottom d-flex align-items-center gap-1">
+                <i class="bi bi-percent text-success"></i> % Tasas & Rend.
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">Tasa Cupón:</span>
+                <strong class="text-success text-nowrap ms-2">{{ investmentDetail.inversion.tasa_cupon_compra | number:'1.2-2' }}%</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">Rend. Compra:</span>
+                <strong class="text-success text-nowrap ms-2">{{ (investmentDetail.inversion.rendimiento_compra || investmentDetail.inversion.tasa_cupon_compra) | number:'1.2-2' }}%</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">Precio Compra:</span>
+                <strong class="font-monospace text-dark text-nowrap ms-2">{{ investmentDetail.inversion.precio_compra_porcentaje | number:'1.2-2' }}%</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center extra-small">
+                <span class="text-muted text-uppercase">TIR Mercado:</span>
+                <strong class="font-monospace text-primary text-nowrap ms-2">{{ (investmentDetail.inversion.tir_vector || investmentDetail.inversion.tasa_cupon_compra) | number:'1.2-2' }}%</strong>
+              </div>
+            </div>
+
+            <!-- Col 3: Capital Invertido -->
+            <div class="col-3 border-end pe-3">
+              <div class="extra-small text-muted text-uppercase fw-bold mb-2 pb-1 border-bottom d-flex align-items-center gap-1">
+                <i class="bi bi-cash-coin text-amber"></i> Capital Invertido
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-2 extra-small">
+                <span class="text-muted text-uppercase">Capital Original:</span>
+                <strong class="font-monospace text-dark text-nowrap ms-2">${{ investmentDetail.inversion.capital_invertido_original | number:'1.2-2' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center extra-small">
+                <span class="text-muted text-uppercase">Saldo Vigente:</span>
+                <strong class="font-monospace text-success fs-6 text-nowrap ms-2">${{ investmentDetail.inversion.saldo_capital_actual | number:'1.2-2' }}</strong>
+              </div>
+            </div>
+
+            <!-- Col 4: Amortización -->
+            <div class="col-3">
+              <div class="extra-small text-muted text-uppercase fw-bold mb-2 pb-1 border-bottom d-flex align-items-center gap-1">
+                <i class="bi bi-pie-chart-fill text-info"></i> Amortización
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">Capital Pagado:</span>
+                <strong class="font-monospace text-primary text-nowrap ms-2">${{ investmentDetail.amortizacion_summary.capital_pagado | number:'1.2-2' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">Interés Recibido:</span>
+                <strong class="font-monospace text-success text-nowrap ms-2">${{ (investmentDetail.amortizacion_summary.interes_pagado || 0) | number:'1.2-2' }}</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mb-1.5 extra-small">
+                <span class="text-muted text-uppercase">% Amortizado:</span>
+                <strong class="text-success text-nowrap ms-2">{{ (investmentDetail.amortizacion_summary.pct_amortizado || 0) | number:'1.2-2' }}%</strong>
+              </div>
+              <div class="d-flex justify-content-between align-items-center extra-small">
+                <span class="text-muted text-uppercase">Cuotas Pagadas:</span>
+                <span class="badge bg-secondary-subtle text-secondary border font-monospace ms-2">
+                  {{ investmentDetail.amortizacion_summary.cuotas_pagadas || 0 }} / {{ investmentDetail.amortizacion_summary.total_cuotas || 0 }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABLA DE CUOTAS DE AMORTIZACIÓN -->
+      <div class="card border-0 shadow-2xs rounded-3 overflow-hidden bg-white">
+        <div class="card-header bg-white py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-calendar-check text-success"></i>
+            Tabla de Amortizaciones ({{ investmentDetail.amortizacion_summary.total_cuotas }} Cuotas)
+          </h6>
+          <div class="extra-small text-muted">
+            <span class="badge bg-success me-2">Pagadas: ${{ investmentDetail.amortizacion_summary.capital_pagado | number:'1.2-2' }}</span>
+            <span class="badge bg-warning text-dark">Pendientes: ${{ investmentDetail.amortizacion_summary.capital_pendiente | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="table-responsive" style="max-height: 320px;">
+          <table class="table table-sm table-hover align-middle mb-0 extra-small">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th class="text-center" style="width: 8%"># Cuota</th>
+                <th style="width: 18%">Fecha Pago</th>
+                <th class="text-end" style="width: 20%">Capital Amortizado ($)</th>
+                <th class="text-end" style="width: 20%">Interés ($)</th>
+                <th class="text-end" style="width: 20%">Total Cuota ($)</th>
+                <th class="text-center" style="width: 14%">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cuota of investmentDetail.cuotas">
+                <td class="text-center fw-bold text-muted">{{ cuota.numero_cuota || '-' }}</td>
+                <td class="font-monospace fw-semibold text-dark">{{ cuota.fecha_pago }}</td>
+                <td class="text-end fw-bold" [ngClass]="cuota.capital > 0 ? 'text-dark' : 'text-muted'">${{ cuota.capital | number:'1.2-2' }}</td>
+                <td class="text-end text-secondary">${{ cuota.interes | number:'1.2-2' }}</td>
+                <td class="text-end fw-bold text-primary">${{ cuota.total | number:'1.2-2' }}</td>
+                <td class="text-center">
+                  <span class="badge" [ngClass]="cuota.id_estado_amortizacion == 135 ? 'bg-success' : (cuota.id_estado_amortizacion == 134 ? 'bg-warning text-dark' : 'bg-secondary')">
+                    {{ cuota.estado_nombre }}
+                  </span>
+                </td>
+              </tr>
+              <tr *ngIf="investmentDetail.cuotas.length === 0">
+                <td colspan="6" class="text-center p-3 text-muted">
+                  No hay tabla de amortización registrada para esta inversión (título al vencimiento / cero cupón).
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </p-dialog>
+</div>
+

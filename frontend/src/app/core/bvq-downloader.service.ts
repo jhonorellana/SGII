@@ -151,6 +151,10 @@ export class BvqDownloaderService {
     return this.http.post<any>(`${this.apiUrl}/importar-titularizaciones`, { fecha });
   }
 
+  importarVector(file_path?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/importar-vector`, { file_path });
+  }
+
   getHistorial(): Observable<{
     success: boolean;
     last_date_shares?: string;
@@ -161,6 +165,7 @@ export class BvqDownloaderService {
     last_date_obligaciones?: string;
     last_date_papeles?: string;
     last_date_titularizaciones?: string;
+    last_date_vector?: string;
     data: BvqHistoryItem[];
   }> {
     return this.http.get<{
@@ -173,6 +178,7 @@ export class BvqDownloaderService {
       last_date_obligaciones?: string;
       last_date_papeles?: string;
       last_date_titularizaciones?: string;
+      last_date_vector?: string;
       data: BvqHistoryItem[];
     }>(`${this.apiUrl}/historial`);
   }

@@ -1,41 +1,60 @@
-CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACTUALIZAR_AMORTIZACION_INVERSION`(IN `p_fecha_corte` DATE, IN `p_nuevo_estado_cuota` INT)
-BEGIN
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        if (!Schema::hasColumn('inversion', 'saldo_capital_actual')) {
+            Schema::table('inversion', function (Blueprint $table) {
+                $table->decimal('saldo_capital_actual', 18, 2)->nullable()->after('capital_invertido');
+            });
+        }
+
+        // Poblado inicial de saldo_capital_actual para todas las inversiones existentes
+        DB::statement("
+            UPDATE inversion I
+            LEFT JOIN (
+                SELECT id_inversion, 
+                       SUM(CASE WHEN id_estado_amortizacion = 134 THEN capital ELSE 0 END) AS saldo_pendiente,
+                       COUNT(*) AS total_cuotas
+                FROM amortizacion
+                WHERE eliminado = 0
+                GROUP BY id_inversion
+            ) A ON I.id_inversion = A.id_inversion
+            SET I.saldo_capital_actual = CASE 
+                    WHEN I.id_estado_inversion = 129 THEN 0.00
+                    WHEN A.total_cuotas IS NOT NULL AND A.total_cuotas > 0 THEN A.saldo_pendiente
+                    ELSE I.capital_invertido
+                END;
+        ");
+
+        // Actualización del Procedimiento Almacenado SP_ACTUALIZAR_AMORTIZACION_INVERSION
+        DB::unprepared("DROP PROCEDURE IF EXISTS SP_ACTUALIZAR_AMORTIZACION_INVERSION");
+        
+        DB::unprepared("
+            CREATE PROCEDURE `SP_ACTUALIZAR_AMORTIZACION_INVERSION`(IN `p_fecha_corte` DATE, IN `p_nuevo_estado_cuota` INT)
+            BEGIN
                 /*
                   ========================================================================================
                   PROCEDIMIENTO ALMACENADO: SP_ACTUALIZAR_AMORTIZACION_INVERSION
                   PROYECTO: SIPRO_07
                   
-                  DESCRIPCIÃ“N:
-                  Actualiza el estado de las amortizaciones/cuotas vencidas y el estado de las inversiones
-                  cuya fecha de vencimiento (en tabla instrumento) haya transcurrido sin registrarse ventas anticipadas.
-                  Recalcula el saldo_capital_actual vigente de las inversiones y finaliza aquellas cuyo plazo expirÃ³.
+                  DESCRIPCIÓN:
+                  Actualiza el estado de las amortizaciones/cuotas vencidas, recalcula el saldo_capital_actual
+                  vigente de las inversiones y finaliza aquellas cuyo plazo expiró.
                   
-                  PARÃMETROS:
-                  - p_fecha_corte: Fecha lÃ­mite para evaluar vencimiento (Si es NULL se usa CURDATE()).
-                  - p_nuevo_estado_cuota: ID de catÃ¡logo para cuotas vencidas (Ej: 135=Pagada, 136=Morosa). 
+                  PARÁMETROS:
+                  - p_fecha_corte: Fecha límite para evaluar vencimiento (Si es NULL se usa CURDATE()).
+                  - p_nuevo_estado_cuota: ID de catálogo para cuotas vencidas (Ej: 135=Pagada, 136=Morosa). 
                                           Si es NULL por defecto asigna 135 (Pagada).
-
-      CATÃLOGOS RELEVANTES (catalogo_valor):
-      - Estado AmortizaciÃ³n (id_catalogo = 5):
-          134 = Pendiente de pago
-          135 = Pagada
-          136 = Morosa
-          137 = Anulada
-          200 = AnuladaVentParcial
-          227 = Venta Anticipada
-      - Estado InversiÃ³n (id_catalogo = 4):
-          128 = Activa / Vigente
-          129 = Finalizada / Pagada
-          130 = Vendida
-          131 = Anulada
-
-      EJEMPLOS DE USO:
-      1. EjecuciÃ³n estÃ¡ndar (usa la fecha actual y marca cuotas vencidas como 135-Pagada)
-         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION(NULL, NULL);
-      2. EjecuciÃ³n a una fecha de corte especÃ­fica (ej. 31-Julio-2026)
-         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION('2026-07-31', 135);
-      3. EjecuciÃ³n para marcar cuotas vencidas como 136-Morosa
-         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION(CURDATE(), 136);
                   ========================================================================================
                 */
 
@@ -103,3 +122,18 @@ BEGIN
                   );
 
             END
+        ");
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        if (Schema::hasColumn('inversion', 'saldo_capital_actual')) {
+            Schema::table('inversion', function (Blueprint $table) {
+                $table->dropColumn('saldo_capital_actual');
+            });
+        }
+    }
+};

@@ -1,0 +1,94 @@
+DELIMITER $$
+
+DROP PROCEDURE IF EXISTS `SP_ACTUALIZAR_AMORTIZACION_INVERSION`$$
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACTUALIZAR_AMORTIZACION_INVERSION`(
+    IN `p_fecha_corte` DATE,
+    IN `p_nuevo_estado_cuota` INT
+)
+BEGIN
+    /*
+      ========================================================================================
+      PROCEDIMIENTO ALMACENADO: SP_ACTUALIZAR_AMORTIZACION_INVERSION
+      PROYECTO: SIPRO_07
+      
+      DESCRIPCIÓN:
+      Actualiza el estado de las amortizaciones/cuotas vencidas y el estado de las inversiones
+      cuya fecha de vencimiento (en tabla instrumento) haya transcurrido sin registrarse ventas anticipadas.
+      
+      PARÁMETROS:
+      - p_fecha_corte: Fecha límite para evaluar vencimiento (Si es NULL se usa CURDATE()).
+      - p_nuevo_estado_cuota: ID de catálogo para cuotas vencidas (Ej: 135=Pagada, 136=Morosa). 
+                              Si es NULL por defecto asigna 135 (Pagada).
+                              
+      CATÁLOGOS RELEVANTES (catalogo_valor):
+      - Estado Amortización (id_catalogo = 5):
+          134 = Pendiente de pago
+          135 = Pagada
+          136 = Morosa
+          137 = Anulada
+          200 = AnuladaVentParcial
+          227 = Venta Anticipada
+      - Estado Inversión (id_catalogo = 4):
+          128 = Activa / Vigente
+          129 = Finalizada / Pagada
+          130 = Vendida
+          131 = Anulada
+
+      EJEMPLOS DE USO:
+      1. Ejecución estándar (usa la fecha actual y marca cuotas vencidas como 135-Pagada)
+         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION(NULL, NULL);
+      2. Ejecución a una fecha de corte específica (ej. 31-Julio-2026)
+         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION('2026-07-31', 135);
+      3. Ejecución para marcar cuotas vencidas como 136-Morosa
+         CALL SP_ACTUALIZAR_AMORTIZACION_INVERSION(CURDATE(), 136);
+      ========================================================================================
+    */
+
+    -- Manejo de valores por defecto si se envían nulos
+    IF p_fecha_corte IS NULL THEN
+        SET p_fecha_corte = CURDATE();
+    END IF;
+
+    IF p_nuevo_estado_cuota IS NULL THEN
+        SET p_nuevo_estado_cuota = 135; -- Por defecto: 135 (Pagada)
+    END IF;
+
+    -- ========================================================================================
+    -- PASO 1: Actualizar cuotas pendientes (134) cuya fecha de pago sea menor o igual a p_fecha_corte
+    -- ========================================================================================
+    UPDATE amortizacion A
+    INNER JOIN inversion I ON A.id_inversion = I.id_inversion
+    SET A.id_estado_amortizacion = p_nuevo_estado_cuota,
+        A.fecha_actualizacion = NOW()
+    WHERE A.fecha_pago <= p_fecha_corte
+      AND A.id_estado_amortizacion = 134 -- Solo cuotas Pendientes de pago
+      AND A.eliminado = 0
+      AND I.fecha_venta IS NULL        -- Solo inversiones no vendidas
+      AND I.id_estado_inversion = 128  -- Solo inversiones activas
+      AND I.eliminado = 0;
+
+    -- ========================================================================================
+    -- PASO 2: Actualizar inversiones activas (128) cuya fecha de vencimiento (en instrumento)
+    --         expiró a Finalizada (129)
+    -- ========================================================================================
+    UPDATE inversion I
+    INNER JOIN instrumento inst ON I.id_instrumento = inst.id_instrumento
+    SET I.id_estado_inversion = 129,   -- 129 = Finalizada / Pagada
+        I.fecha_actualizacion = NOW()
+    WHERE inst.fecha_vencimiento <= p_fecha_corte
+      AND I.id_estado_inversion = 128  -- Solo inversiones activas
+      AND I.fecha_venta IS NULL        -- Solo inversiones no vendidas
+      AND I.eliminado = 0
+      -- Asegurar que no le queden cuotas pendientes de cobro
+      AND NOT EXISTS (
+          SELECT 1 
+          FROM amortizacion subA 
+          WHERE subA.id_inversion = I.id_inversion 
+            AND subA.id_estado_amortizacion = 134 
+            AND subA.eliminado = 0
+      );
+
+END$$
+
+DELIMITER ;

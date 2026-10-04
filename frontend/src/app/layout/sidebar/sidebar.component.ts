@@ -31,11 +31,6 @@ export class SidebarComponent implements OnInit {
       path: '/reportes/resumen-diario-bolsa',
       children: [
         {
-          title: 'Radar de Oportunidades',
-          icon: 'bi-radar',
-          path: '/renta-variable/radar-oportunidades'
-        },
-        {
           title: 'Descarga Archivos BVQ',
           icon: 'bi-cloud-arrow-down-fill',
           path: '/descarga-bvq'
@@ -45,6 +40,17 @@ export class SidebarComponent implements OnInit {
           icon: 'bi-building-fill-down',
           path: '/descarga-bvg'
         },
+        {
+          title: 'Radar Renta Variable',
+          icon: 'bi-radar',
+          path: '/renta-variable/radar-oportunidades'
+        },
+        {
+          title: 'Radar Renta Fija',
+          icon: 'bi-shield-lock-fill',
+          path: '/renta-fija/radar-deuda'
+        },
+
         {
           title: 'Historial de acciones',
           icon: 'bi-clock-history',

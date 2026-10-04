@@ -46,6 +46,7 @@ import { BvgDownloaderComponent } from './modules/bvg-downloader/bvg-downloader.
 import { MensajeriaIaComponent } from './modules/mensajeria-ia/mensajeria-ia.component';
 
 import { DividendRadarComponent } from './modules/dividend-radar/dividend-radar.component';
+import { FixedIncomeRadarComponent } from './modules/fixed-income-radar/fixed-income-radar.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -101,6 +102,7 @@ export const routes: Routes = [
       { path: 'renta-variable/dashboard-mercado', component: MarketAnalysisDashboardComponent },
       { path: 'renta-variable/resumen-diario-bolsa', component: ResumenDiarioBolsaComponent },
       { path: 'renta-variable/radar-oportunidades', component: DividendRadarComponent },
+      { path: 'renta-fija/radar-deuda', component: FixedIncomeRadarComponent },
       { path: '', redirectTo: '/dashboard', pathMatch: 'full' }
     ]
   },

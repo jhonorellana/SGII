@@ -12,6 +12,7 @@ use App\Services\GenericosImportService;
 use App\Services\ObligacionesImportService;
 use App\Services\PapelesImportService;
 use App\Services\TitularizacionesImportService;
+use App\Services\VectorPreciosEtlService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,6 +27,7 @@ class BvqDownloaderController extends Controller
     protected ObligacionesImportService $obligacionesImportService;
     protected PapelesImportService $papelesImportService;
     protected TitularizacionesImportService $titularizacionesImportService;
+    protected VectorPreciosEtlService $vectorPreciosEtlService;
 
     public function __construct(
         BvqDownloaderService $downloaderService,
@@ -36,7 +38,8 @@ class BvqDownloaderController extends Controller
         GenericosImportService $genericosImportService,
         ObligacionesImportService $obligacionesImportService,
         PapelesImportService $papelesImportService,
-        TitularizacionesImportService $titularizacionesImportService
+        TitularizacionesImportService $titularizacionesImportService,
+        VectorPreciosEtlService $vectorPreciosEtlService
     ) {
         $this->downloaderService = $downloaderService;
         $this->sharesImportService = $sharesImportService;
@@ -47,6 +50,7 @@ class BvqDownloaderController extends Controller
         $this->obligacionesImportService = $obligacionesImportService;
         $this->papelesImportService = $papelesImportService;
         $this->titularizacionesImportService = $titularizacionesImportService;
+        $this->vectorPreciosEtlService = $vectorPreciosEtlService;
     }
 
     /**
@@ -332,6 +336,29 @@ class BvqDownloaderController extends Controller
     }
 
     /**
+     * Importa la matriz de valoración del Vector de Precios Diario (BVQ)
+     */
+    public function importarVector(Request $request)
+    {
+        try {
+            $filePath = $request->input('file_path');
+            $resultado = $this->vectorPreciosEtlService->importVectorPrecios($filePath);
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar el Vector de Precios Diario',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Obtiene el historial de carpetas descargadas previamente y el estado de tablas en BD
      */
     public function historial()
@@ -346,6 +373,7 @@ class BvqDownloaderController extends Controller
             $lastDateObligaciones = $this->obligacionesImportService->getLastDateInObligaciones();
             $lastDatePapeles = $this->papelesImportService->getLastDateInPapeles();
             $lastDateTitularizaciones = $this->titularizacionesImportService->getLastDateInTitularizaciones();
+            $lastDateVector = \Illuminate\Support\Facades\DB::table('vector_precio_diario')->max('fecha_vector');
 
             return response()->json([
                 'success' => true,
@@ -357,6 +385,7 @@ class BvqDownloaderController extends Controller
                 'last_date_obligaciones' => $lastDateObligaciones,
                 'last_date_papeles' => $lastDatePapeles,
                 'last_date_titularizaciones' => $lastDateTitularizaciones,
+                'last_date_vector' => $lastDateVector,
                 'data' => $history
             ], Response::HTTP_OK);
         } catch (\Exception $e) {

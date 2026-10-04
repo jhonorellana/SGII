@@ -193,17 +193,25 @@ Route::post('bvq/importar-genericos', [App\Http\Controllers\API\BvqDownloaderCon
 Route::post('bvq/importar-obligaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarObligaciones']);
 Route::post('bvq/importar-papeles', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarPapeles']);
 Route::post('bvq/importar-titularizaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarTitularizaciones']);
+Route::post('bvq/importar-vector', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarVector']);
 
 // Rutas de Descarga de Archivos de la Bolsa de Valores de Guayaquil (BVG)
 Route::post('bvg/descargar', [App\Http\Controllers\API\BvgDownloaderController::class, 'descargar']);
 Route::post('bvg/descargar-modulo', [App\Http\Controllers\API\BvgDownloaderController::class, 'descargarModulo']);
 Route::get('bvg/historial', [App\Http\Controllers\API\BvgDownloaderController::class, 'historial']);
 
-// Rutas de Radar de Oportunidades de Inversión y Dividendos
+// Rutas de Radar de Oportunidades de Inversión y Dividendos (Renta Variable)
 Route::get('dividendos/radar', [App\Http\Controllers\API\DividendAnalyticsController::class, 'radar']);
 Route::post('dividendos/simular', [App\Http\Controllers\API\DividendAnalyticsController::class, 'simular']);
 Route::get('dividendos/mi-portafolio', [App\Http\Controllers\API\DividendAnalyticsController::class, 'portafolio']);
 Route::post('dividendos/analizar-ia', [App\Http\Controllers\API\DividendAnalyticsController::class, 'analizarIa']);
+
+// Rutas de Radar de Renta Fija & Portafolio de Deuda (Mark-to-Market)
+Route::get('renta-fija/radar', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getMarketRadar']);
+Route::get('renta-fija/mi-portafolio', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getUserPortfolio']);
+Route::get('renta-fija/inversion/{id}', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getInvestmentDetail']);
+Route::post('renta-fija/actualizar-codigo-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'updateVectorCode']);
+Route::post('renta-fija/importar-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'importVector']);
 
 
 
