@@ -22,6 +22,10 @@ export interface DividendOpportunityItem {
   sma20?: number;
   volumen_relativo?: number;
   dias_inactividad?: number;
+  calificacion_riesgo?: string;
+  calificadora_riesgo?: string;
+  fecha_ultima_calificacion?: string;
+  valor_nominal?: number;
   senales?: string[];
 }
 
@@ -88,6 +92,10 @@ export interface PortfolioPositionItem {
   sma20?: number;
   volumen_relativo?: number;
   dias_inactividad?: number;
+  calificacion_riesgo?: string;
+  calificadora_riesgo?: string;
+  fecha_ultima_calificacion?: string;
+  valor_nominal?: number;
   senales?: string[];
   fecha_ultima_operacion: string;
 }

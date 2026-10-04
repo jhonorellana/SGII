@@ -163,6 +163,9 @@ class DividendAnalyticsService
                     ->orderBy('fecha', 'desc')
                     ->first();
 
+                // Datos de Calificación de Riesgo del Emisor
+                $emisorDb = DB::table('emisor')->where('id_emisor', $p->id_emisor)->first();
+
                 $radarItems[] = [
                     'id_emisor' => $p->id_emisor,
                     'emisor' => $emisorNombre,
@@ -182,6 +185,10 @@ class DividendAnalyticsService
                     'sma20' => round((float)($snapshot->sma_20 ?? ($precio * 0.98)), 2),
                     'volumen_relativo' => round((float)($snapshot->vr ?? 0.50), 2),
                     'dias_inactividad' => (int) ($snapshot->dias_sin_negociacion ?? 0),
+                    'calificacion_riesgo' => $emisorDb->calificacion_riesgo ?? null,
+                    'calificadora_riesgo' => $emisorDb->calificadora_riesgo ?? null,
+                    'fecha_ultima_calificacion' => $emisorDb->fecha_ultima_calificacion ?? null,
+                    'valor_nominal' => (float)($emisorDb->valor_nominal ?? 1.00),
                     'senales' => [$margenOportunidadPct >= 0 ? 'Oportunidad Gordon > 0%' : 'Dividend Yield ' . round($yieldPct, 1) . '%']
                 ];
             }
@@ -411,40 +418,47 @@ class DividendAnalyticsService
                 $totalValorPortafolio += $valorMercado;
                 $totalDividendosAnuales += $ingresoAnualEstimado;
 
-                $portafolioItems[] = [
-                    'id_persona' => $pos->id_persona,
-                    'persona' => trim($pos->persona),
-                    'id_emisor' => $idEmisor,
-                    'emisor' => $emisorNombre,
-                    'cantidad_actual' => $cantAcciones,
-                    'capital_invertido' => round($capitalInvertido, 2),
-                    'costo_promedio' => round($costoPromedio, 2),
-                    'precio_ultimo' => round($precioMercado, 4),
-                    'valor_mercado' => round($valorMercado, 2),
-                    'ganancia_perdida' => round($gananciaPerdida, 2),
-                    'dividendo_acciones_cant' => $divAccionesCant,
-                    'val_div_acciones' => round($valDivAcciones, 2),
-                    'div_efectivo_recibido' => round($divEfectivoRecibido, 2),
-                    'ultimo_dividendo_acc' => round($divPorAccion, 4),
-                    'dividendo_por_accion' => round($divPorAccion, 4),
-                    'dividendo_proyectado_d1' => round($d1, 4),
-                    'precio_teorico_gordon' => round($precioTeorico, 2),
-                    'margen_oportunidad_pct' => round($margenOportunidadPct, 2),
-                    'total_dividendos_registrados' => count($validDivs),
-                    'dividend_yield_pct' => round($yieldPct, 2),
-                    'ingreso_anual_estimado_usd' => round($ingresoAnualEstimado, 2),
-                    'estrellas_consistencia' => $estrellas,
-                    'mes_probable_pago' => $mesProbable,
-                    'fecha_ultimo_precio' => $pos->fecha_ultimo_precio ?? '2026-10-02',
-                    'precio_anterior' => round((float)($precioInfo->precio_anterior ?? ($precioMercado * 0.99)), 2),
-                    'variacion_porcentaje' => round((float)($precioInfo->variacion_porcentaje ?? 0.40), 2),
-                    'sma5' => round((float)($snapshot->sma_5 ?? $precioMercado), 2),
-                    'sma20' => round((float)($snapshot->sma_20 ?? ($precioMercado * 0.98)), 2),
-                    'volumen_relativo' => round((float)($snapshot->vr ?? 0.50), 2),
-                    'dias_inactividad' => (int) ($snapshot->dias_sin_negociacion ?? 0),
-                    'senales' => $alertas,
-                    'fecha_ultima_operacion' => $pos->fecha_ultima_operacion
-                ];
+                    // Datos de Calificación del Emisor para Portafolio
+                    $emisorDb = DB::table('emisor')->where('id_emisor', $idEmisor)->first();
+
+                    $portafolioItems[] = [
+                        'id_persona' => $pos->id_persona,
+                        'persona' => trim($pos->persona),
+                        'id_emisor' => $idEmisor,
+                        'emisor' => $emisorNombre,
+                        'cantidad_actual' => $cantAcciones,
+                        'capital_invertido' => round($capitalInvertido, 2),
+                        'costo_promedio' => round($costoPromedio, 2),
+                        'precio_ultimo' => round($precioMercado, 4),
+                        'valor_mercado' => round($valorMercado, 2),
+                        'ganancia_perdida' => round($gananciaPerdida, 2),
+                        'dividendo_acciones_cant' => $divAccionesCant,
+                        'val_div_acciones' => round($valDivAcciones, 2),
+                        'div_efectivo_recibido' => round($divEfectivoRecibido, 2),
+                        'ultimo_dividendo_acc' => round($divPorAccion, 4),
+                        'dividendo_por_accion' => round($divPorAccion, 4),
+                        'dividendo_proyectado_d1' => round($d1, 4),
+                        'precio_teorico_gordon' => round($precioTeorico, 2),
+                        'margen_oportunidad_pct' => round($margenOportunidadPct, 2),
+                        'total_dividendos_registrados' => count($validDivs),
+                        'dividend_yield_pct' => round($yieldPct, 2),
+                        'ingreso_anual_estimado_usd' => round($ingresoAnualEstimado, 2),
+                        'estrellas_consistencia' => $estrellas,
+                        'mes_probable_pago' => $mesProbable,
+                        'fecha_ultimo_precio' => $pos->fecha_ultimo_precio ?? '2026-10-02',
+                        'precio_anterior' => round((float)($precioInfo->precio_anterior ?? ($precioMercado * 0.99)), 2),
+                        'variacion_porcentaje' => round((float)($precioInfo->variacion_porcentaje ?? 0.40), 2),
+                        'sma5' => round((float)($snapshot->sma_5 ?? $precioMercado), 2),
+                        'sma20' => round((float)($snapshot->sma_20 ?? ($precioMercado * 0.98)), 2),
+                        'volumen_relativo' => round((float)($snapshot->vr ?? 0.50), 2),
+                        'dias_inactividad' => (int) ($snapshot->dias_sin_negociacion ?? 0),
+                        'calificacion_riesgo' => $emisorDb->calificacion_riesgo ?? null,
+                        'calificadora_riesgo' => $emisorDb->calificadora_riesgo ?? null,
+                        'fecha_ultima_calificacion' => $emisorDb->fecha_ultima_calificacion ?? null,
+                        'valor_nominal' => (float)($emisorDb->valor_nominal ?? 1.00),
+                        'senales' => $alertas,
+                        'fecha_ultima_operacion' => $pos->fecha_ultima_operacion
+                    ];
             }
 
             $yieldPonderado = $totalValorPortafolio > 0 ? ($totalDividendosAnuales / $totalValorPortafolio) * 100.0 : 0.0;
@@ -507,6 +521,10 @@ class DividendAnalyticsService
 
             $esPortafolio = !empty($stockData['cantidad_actual']) || !empty($stockData['persona']) || isset($stockData['costo_promedio']);
 
+            $califRiesgo = $stockData['calificacion_riesgo'] ?? null;
+            $calificadora = $stockData['calificadora_riesgo'] ?? null;
+            $ratingTxt = !empty($califRiesgo) ? "• Calificación de Riesgo Crediticio Oficial: {$califRiesgo}" . (!empty($calificadora) ? " (Calificadora: {$calificadora})" : "") . "\n" : "";
+
             if (!empty($customPrompt)) {
                 $promptText = $customPrompt;
             } elseif ($esPortafolio) {
@@ -535,6 +553,7 @@ class DividendAnalyticsService
                     "• Dividendos en Efectivo Cobrados Históricamente: \${$divsRecibidos}\n" .
                     "• Ingreso Anual Estimado por Dividendos: \${$ingAnualEst}/año\n\n" .
                     "📊 MÉTRICAS TÉCNICAS Y DE VALORACIÓN DEL MERCADO:\n" .
+                    $ratingTxt .
                     "• Dividend Yield Actual: {$yieldPct}% Anual\n" .
                     "• Dividendo Proyectado (D1): \${$divD1}/acción (Último pagado: \${$ultimoDiv})\n" .
                     "• Valor Justo Intrínseco Teórico (Gordon DDM P0): \${$precioGordon}/acción\n" .
@@ -554,6 +573,7 @@ class DividendAnalyticsService
                     "Por favor analiza los siguientes datos cuantitativos y métricas de dividendo de la empresa emisora '{$emisor}' y genera una recomendación profesional sobre la conveniencia de COMPRAR esta acción:\n\n" .
                     "📊 INFORMACIÓN TÉCNICA Y FINANCIERA DE LA ACCIÓN ({$emisor}):\n" .
                     "• Precio de Cierre Actual: \${$precio}/acción\n" .
+                    $ratingTxt .
                     "• Variación Reciente: +{$variacionPct}%\n" .
                     "• Precio Anterior: \${$precioAnt}\n" .
                     "• Último Dividendo Pagado: \${$ultimoDiv}/acción\n" .

@@ -274,6 +274,10 @@ export class DividendRadarComponent implements OnInit {
     const diasInactividad = item.dias_inactividad || 0;
     const senalesList = Array.isArray(item.senales) ? item.senales.join(', ') : 'Normal';
 
+    const califRiesgo = item.calificacion_riesgo;
+    const calificadora = item.calificadora_riesgo;
+    const ratingTxt = califRiesgo ? `• Calificación de Riesgo Crediticio Oficial: ${califRiesgo}` + (calificadora ? ` (Calificadora: ${calificadora})` : '') + `\n` : '';
+
     const esPortafolio = item.cantidad_actual !== undefined || item.persona !== undefined || item.costo_promedio !== undefined;
 
     if (esPortafolio) {
@@ -302,6 +306,7 @@ export class DividendRadarComponent implements OnInit {
         `• Dividendos en Efectivo Cobrados Históricamente: ${divsRecibidos}\n` +
         `• Ingreso Anual Estimado por Dividendos: ${ingAnualEst}/año\n\n` +
         `📊 MÉTRICAS TÉCNICAS Y DE VALORACIÓN DEL MERCADO:\n` +
+        ratingTxt +
         `• Dividend Yield Actual: ${yieldPct}% Anual\n` +
         `• Dividendo Proyectado (D1): $${divD1}/acción (Último pagado: $${ultimoDiv})\n` +
         `• Valor Justo Intrínseco Teórico (Gordon DDM P0): $${precioGordon}/acción\n` +
@@ -321,6 +326,7 @@ export class DividendRadarComponent implements OnInit {
     return `Actúa como un experto analista financiero sénior y asesor de inversiones del Mercado de Valores de Ecuador (Bolsas de Valores de Quito y Guayaquil). Por favor analiza los siguientes datos cuantitativos y métricas de dividendo de la empresa emisora '${emisor}' y genera una recomendación profesional sobre la conveniencia de COMPRAR esta acción:\n\n` +
       `📊 INFORMACIÓN TÉCNICA Y FINANCIERA DE LA ACCIÓN (${emisor}):\n` +
       `• Precio de Cierre Actual: $${precio}/acción\n` +
+      ratingTxt +
       `• Variación Reciente: +${variacionPct}%\n` +
       `• Precio Anterior: $${precioAnt}\n` +
       `• Último Dividendo Pagado: $${ultimoDiv}/acción\n` +
