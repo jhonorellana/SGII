@@ -94,7 +94,7 @@ class VectorPreciosEtlService
 
             // Insertar en lotes de 200 registros
             foreach (array_chunk($preciosInsert, 200) as $chunk) {
-                DB::table('vector_precio_diario')->upsert(
+                DB::connection('mysql_inversion')->table('vector_precio_diario')->upsert(
                     $chunk,
                     ['fecha_vector', 'codigo_titulo_vector'],
                     [
@@ -119,7 +119,7 @@ class VectorPreciosEtlService
             }
 
             foreach (array_chunk($curvaInsert, 500) as $chunkCurva) {
-                DB::table('vector_curva_rendimiento')->upsert(
+                DB::connection('mysql_inversion')->table('vector_curva_rendimiento')->upsert(
                     $chunkCurva,
                     ['fecha_vector', 'plazo_dias'],
                     ['tasa_tir', 'updated_at']
@@ -127,7 +127,7 @@ class VectorPreciosEtlService
             }
 
             // 3. Actualizar la calificación de riesgo de emisores si coincide con emisor
-            $uniqueEmisores = DB::table('vector_precio_diario')
+            $uniqueEmisores = DB::connection('mysql_inversion')->table('vector_precio_diario')
                 ->where('fecha_vector', $fechaVector)
                 ->whereNotNull('nombre_emisor')
                 ->whereNotNull('calificacion_riesgo')

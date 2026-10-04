@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $schema = Schema::connection('mysql_inversion');
+
         // 1. Tabla vector_precio_diario (Matriz de valoración de títulos de Renta Fija)
-        if (!Schema::hasTable('vector_precio_diario')) {
-            Schema::create('vector_precio_diario', function (Blueprint $table) {
+        if (!$schema->hasTable('vector_precio_diario')) {
+            $schema->create('vector_precio_diario', function (Blueprint $table) {
                 $table->id();
                 $table->date('fecha_vector')->index();
                 $table->string('codigo_titulo_vector', 35)->index(); // Guardado con prefijo 'a' (ej. a685010100001310917)
@@ -35,8 +37,8 @@ return new class extends Migration
         }
 
         // 2. Tabla vector_curva_rendimiento (Puntos de la curva cupón cero)
-        if (!Schema::hasTable('vector_curva_rendimiento')) {
-            Schema::create('vector_curva_rendimiento', function (Blueprint $table) {
+        if (!$schema->hasTable('vector_curva_rendimiento')) {
+            $schema->create('vector_curva_rendimiento', function (Blueprint $table) {
                 $table->id();
                 $table->date('fecha_vector')->index();
                 $table->integer('plazo_dias')->index();
@@ -53,7 +55,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vector_curva_rendimiento');
-        Schema::dropIfExists('vector_precio_diario');
+        $schema = Schema::connection('mysql_inversion');
+        $schema->dropIfExists('vector_curva_rendimiento');
+        $schema->dropIfExists('vector_precio_diario');
     }
 };

@@ -373,7 +373,7 @@ class BvqDownloaderController extends Controller
             $lastDateObligaciones = $this->obligacionesImportService->getLastDateInObligaciones();
             $lastDatePapeles = $this->papelesImportService->getLastDateInPapeles();
             $lastDateTitularizaciones = $this->titularizacionesImportService->getLastDateInTitularizaciones();
-            $lastDateVector = \Illuminate\Support\Facades\DB::table('vector_precio_diario')->max('fecha_vector');
+            $lastDateVector = \Illuminate\Support\Facades\DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
 
             return response()->json([
                 'success' => true,

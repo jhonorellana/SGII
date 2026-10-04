@@ -13,7 +13,7 @@ class FixedIncomeAnalyticsService
     public function getMarketRadar(array $filters = []): array
     {
         // Obtener la fecha más reciente disponible en vector_precio_diario
-        $latestDate = DB::table('vector_precio_diario')->max('fecha_vector');
+        $latestDate = DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
 
         if (!$latestDate) {
             return [
@@ -30,8 +30,8 @@ class FixedIncomeAnalyticsService
 
         $fechaVector = $filters['fecha_vector'] ?? $latestDate;
 
-        $query = DB::table('vector_precio_diario as v')
-            ->leftJoin('emisor as e', function ($join) {
+        $query = DB::connection('mysql_inversion')->table('vector_precio_diario as v')
+            ->leftJoin(DB::raw('sipro_desa.emisor as e'), function ($join) {
                 $join->on('e.sigla', '=', 'v.nemo_emisor')
                      ->orOn('e.nombre', '=', 'v.nombre_emisor');
             })
@@ -134,13 +134,13 @@ class FixedIncomeAnalyticsService
      */
     public function getUserPortfolioMarkToMarket(array $filters = []): array
     {
-        $latestDate = DB::table('vector_precio_diario')->max('fecha_vector');
+        $latestDate = DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
 
         // Consultar inversiones en Renta Fija con su saldo capital vigente (descontando cuotas amortizadas pagadas)
         $query = DB::table('inversion as i')
             ->join('instrumento as inst', 'i.id_instrumento', '=', 'inst.id_instrumento')
             ->leftJoin('emisor as e', 'inst.id_emisor', '=', 'e.id_emisor')
-            ->leftJoin('vector_precio_diario as v', function ($join) use ($latestDate) {
+            ->leftJoin(DB::raw('inversion.vector_precio_diario as v'), function ($join) use ($latestDate) {
                 $join->on(DB::raw("CASE WHEN inst.codigo_titulo_vector LIKE 'a%' THEN inst.codigo_titulo_vector ELSE CONCAT('a', inst.codigo_titulo_vector) END"), '=', 'v.codigo_titulo_vector')
                      ->where('v.fecha_vector', '=', $latestDate);
             })
@@ -258,7 +258,7 @@ class FixedIncomeAnalyticsService
                 $emisorName = $h->nombre_emisor ?? $h->nemo_emisor;
                 $firstWordEmisor = explode(' ', trim($emisorName))[0];
 
-                $candidate = DB::table('vector_precio_diario')
+                $candidate = DB::connection('mysql_inversion')->table('vector_precio_diario')
                     ->where('fecha_vector', $latestDate)
                     ->where(function($q) use ($h, $firstWordEmisor) {
                         if ($h->nemo_emisor) $q->where('nemo_emisor', '=', $h->nemo_emisor);
@@ -335,13 +335,13 @@ class FixedIncomeAnalyticsService
      */
     public function getInvestmentDetail(int $idInversion): ?array
     {
-        $latestDate = DB::table('vector_precio_diario')->max('fecha_vector');
+        $latestDate = DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
 
         $inv = DB::table('inversion as i')
             ->join('instrumento as inst', 'i.id_instrumento', '=', 'inst.id_instrumento')
             ->leftJoin('emisor as e', 'inst.id_emisor', '=', 'e.id_emisor')
             ->leftJoin('persona as prop', 'i.id_propietario', '=', 'prop.id_persona')
-            ->leftJoin('vector_precio_diario as v', function ($join) use ($latestDate) {
+            ->leftJoin(DB::raw('inversion.vector_precio_diario as v'), function ($join) use ($latestDate) {
                 $join->on(DB::raw("CASE WHEN inst.codigo_titulo_vector LIKE 'a%' THEN inst.codigo_titulo_vector ELSE CONCAT('a', inst.codigo_titulo_vector) END"), '=', 'v.codigo_titulo_vector')
                      ->where('v.fecha_vector', '=', $latestDate);
             })
@@ -387,7 +387,7 @@ class FixedIncomeAnalyticsService
             $emisorName = $inv->nombre_emisor ?? $inv->nemo_emisor;
             $firstWordEmisor = explode(' ', trim($emisorName))[0];
 
-            $candidate = DB::table('vector_precio_diario')
+            $candidate = DB::connection('mysql_inversion')->table('vector_precio_diario')
                 ->where('fecha_vector', $latestDate)
                 ->where(function($q) use ($inv, $firstWordEmisor) {
                     if ($inv->nemo_emisor) $q->where('nemo_emisor', '=', $inv->nemo_emisor);
