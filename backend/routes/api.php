@@ -203,6 +203,7 @@ Route::get('bvg/historial', [App\Http\Controllers\API\BvgDownloaderController::c
 Route::get('dividendos/radar', [App\Http\Controllers\API\DividendAnalyticsController::class, 'radar']);
 Route::post('dividendos/simular', [App\Http\Controllers\API\DividendAnalyticsController::class, 'simular']);
 Route::get('dividendos/mi-portafolio', [App\Http\Controllers\API\DividendAnalyticsController::class, 'portafolio']);
+Route::post('dividendos/analizar-ia', [App\Http\Controllers\API\DividendAnalyticsController::class, 'analizarIa']);
 
 
 

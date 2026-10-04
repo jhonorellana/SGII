@@ -62,6 +62,15 @@ export class DividendRadarComponent implements OnInit {
   simulationResult: SimulationResponse['data'] | null = null;
   errorSimulation: string = '';
 
+  // Modal de ChatGPT / IA
+  displayChatGPTModal: boolean = false;
+  selectedStockForAI: any = null;
+  aiPrompt: string = '';
+  chatGptUrl: string = '';
+  aiResponseResult: string = '';
+  loadingAI: boolean = false;
+  copiedPromptToast: boolean = false;
+
   constructor(private radarService: DividendRadarService) {}
 
   ngOnInit(): void {
@@ -244,5 +253,140 @@ export class DividendRadarComponent implements OnInit {
 
   formatMoney(amount: number): string {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  }
+
+  generarPromptLocal(item: any): string {
+    const emisor = item.emisor || 'Emisor';
+    const precio = item.precio_mercado || item.precio_ultimo || 0;
+    const ultimoDiv = item.ultimo_dividendo_acc || item.dividendo_por_accion || 0;
+    const divD1 = item.dividendo_proyectado_d1 || Number((ultimoDiv * 1.03).toFixed(4));
+    const yieldPct = item.yield_pct || item.dividend_yield_pct || 0;
+    const consistencia = item.estrellas_consistencia || 0;
+    const mesPago = item.mes_probable_pago || 'Marzo';
+    const precioGordon = item.precio_teorico_gordon || (divD1 > 0 ? Number((divD1 / (0.10 - 0.03)).toFixed(2)) : 0);
+    const margenReval = item.margen_oportunidad_pct || 0;
+    const totalDivs = item.total_dividendos_registrados || 0;
+    const precioAnt = item.precio_anterior || Number((precio * 0.99).toFixed(2));
+    const variacionPct = item.variacion_porcentaje || 0.40;
+    const sma5 = item.sma5 || precio;
+    const sma20 = item.sma20 || Number((precio * 0.98).toFixed(2));
+    const volRel = item.volumen_relativo || 0.50;
+    const diasInactividad = item.dias_inactividad || 0;
+    const senalesList = Array.isArray(item.senales) ? item.senales.join(', ') : 'Normal';
+
+    const esPortafolio = item.cantidad_actual !== undefined || item.persona !== undefined || item.costo_promedio !== undefined;
+
+    if (esPortafolio) {
+      const cant = new Intl.NumberFormat('en-US').format(item.cantidad_actual || 0);
+      const costoProm = this.formatMoney(item.costo_promedio || 0);
+      const capInvertido = this.formatMoney(item.capital_invertido || 0);
+      const valMercado = this.formatMoney(item.valor_mercado || (precio * (item.cantidad_actual || 1)));
+      const ganPerdVal = item.ganancia_perdida || 0;
+      const ganPerdStr = this.formatMoney(ganPerdVal);
+      const rawCap = item.capital_invertido || 0;
+      const ganPerdPct = rawCap > 0 ? ((ganPerdVal / rawCap) * 100).toFixed(2) : '0.00';
+      const persona = item.persona || 'Mi Portafolio';
+      const divsRecibidos = this.formatMoney(item.div_efectivo_recibido || 0);
+      const ingAnualEst = this.formatMoney(item.ingreso_anual_estimado_usd || 0);
+
+      return `Actúa como un experto analista financiero sénior y gestor de portafolios del Mercado de Valores de Ecuador (Bolsas de Valores de Quito y Guayaquil).\n\n` +
+        `Por favor evalúa la posición actual que mantengo en mi portafolio de inversión para la acción '${emisor}' y proporciona una recomendación profesional sobre si debo COMPRAR MÁS ACCIONES, MANTENER LA POSICIÓN o VENDER (total o parcialmente):\n\n` +
+        `💼 DATOS DE MI POSICIÓN EN PORTAFOLIO (${emisor}):\n` +
+        `• Titular / Cuenta: ${persona}\n` +
+        `• Cantidad de Acciones Mantenidas: ${cant} acciones\n` +
+        `• Precio Costo Promedio de Compra: ${costoProm}/acción\n` +
+        `• Precio de Cotización Actual en Bolsa: $${precio}/acción\n` +
+        `• Capital Total Invertido: ${capInvertido}\n` +
+        `• Valor Actual de Mercado de la Posición: ${valMercado}\n` +
+        `• Ganancia / Pérdida No Realizada: ${ganPerdStr} (${ganPerdPct}%)\n` +
+        `• Dividendos en Efectivo Cobrados Históricamente: ${divsRecibidos}\n` +
+        `• Ingreso Anual Estimado por Dividendos: ${ingAnualEst}/año\n\n` +
+        `📊 MÉTRICAS TÉCNICAS Y DE VALORACIÓN DEL MERCADO:\n` +
+        `• Dividend Yield Actual: ${yieldPct}% Anual\n` +
+        `• Dividendo Proyectado (D1): $${divD1}/acción (Último pagado: $${ultimoDiv})\n` +
+        `• Valor Justo Intrínseco Teórico (Gordon DDM P0): $${precioGordon}/acción\n` +
+        `• Margen de Oportunidad de Revalorización: ${margenReval}%\n` +
+        `• Consistencia Histórica: ${consistencia} de 5 años pagando dividendos continuos\n` +
+        `• Mes Estimado de Cobro: ${mesPago}\n` +
+        `• Promedios Móviles: SMA 5 = $${sma5} | SMA 20 = $${sma20}\n` +
+        `• Volumen Relativo: ${volRel} | Inactividad: ${diasInactividad} días\n\n` +
+        `📝 REQUERIMIENTO DE ESTRATEGIA DE PORTAFOLIO:\n` +
+        `1. Veredicto y Recomendación de Acción Directa (Opciones claras: COMPRAR MÁS / MANTENER / VENDER TOTAL O PARCIALMENTE).\n` +
+        `2. Análisis del Precio Costo Promedio de Compra vs Cotización Actual y Dividend Yield generado.\n` +
+        `3. Evaluación de si el Flujo Pasivo de Dividendos justifica conservar la posición o tomar ganancias/pérdidas.\n` +
+        `4. Riesgos o Factores Clave del Mercado Ecuatoriano para decidir la venta o ampliación de la posición.\n` +
+        `Responde en un formato ejecutivo, claro y estructurado con recomendaciones accionables.`;
+    }
+
+    return `Actúa como un experto analista financiero sénior y asesor de inversiones del Mercado de Valores de Ecuador (Bolsas de Valores de Quito y Guayaquil). Por favor analiza los siguientes datos cuantitativos y métricas de dividendo de la empresa emisora '${emisor}' y genera una recomendación profesional sobre la conveniencia de COMPRAR esta acción:\n\n` +
+      `📊 INFORMACIÓN TÉCNICA Y FINANCIERA DE LA ACCIÓN (${emisor}):\n` +
+      `• Precio de Cierre Actual: $${precio}/acción\n` +
+      `• Variación Reciente: +${variacionPct}%\n` +
+      `• Precio Anterior: $${precioAnt}\n` +
+      `• Último Dividendo Pagado: $${ultimoDiv}/acción\n` +
+      `• Dividendo Proyectado (D1): $${divD1}/acción\n` +
+      `• Dividend Yield (Rendimiento por Dividendo): ${yieldPct}% Anual\n` +
+      `• Consistencia Histórica: ${consistencia} de 5 años pagando dividendos consecutivos\n` +
+      `• Mes de Mayor Probabilidad de Pago: ${mesPago}\n` +
+      `• Valor Justo Intrínseco Teórico (Gordon DDM P0): $${precioGordon}/acción\n` +
+      `• Margen de Oportunidad de Revalorización: ${margenReval}%\n` +
+      `• Histórico de Dividendos Registrados: ${totalDivs} pagos realizados\n` +
+      `• Promedios Móviles: SMA 5 = $${sma5} | SMA 20 = $${sma20}\n` +
+      `• Volumen Relativo (VR): ${volRel} | Inactividad: ${diasInactividad} días\n` +
+      `• Señales Detectadas: ${senalesList}\n\n` +
+      `📝 REQUERIMIENTO DE ANÁLISIS:\n` +
+      `1. Veredicto y Recomendación Clara (Opciones: COMPRAR / MANTENER / ESPERAR UN MEJOR PRECIO).\n` +
+      `2. Análisis de Atractivo por Dividend Yield vs Valor Justo Gordon.\n` +
+      `3. Principales Riesgos o Factores a Considerar en el Mercado Ecuatoriano.\n` +
+      `Responde en un formato ejecutivo, claro y estructurado con puntos clave.`;
+  }
+
+  abrirChatGPTModal(item: any): void {
+    this.selectedStockForAI = item;
+    this.displayChatGPTModal = true;
+    this.loadingAI = false;
+    this.copiedPromptToast = false;
+    this.aiResponseResult = '';
+
+    // Asignación inmediata del prompt para evitar que aparezca el cuadro en blanco
+    this.aiPrompt = this.generarPromptLocal(item);
+    this.chatGptUrl = 'https://chatgpt.com/?q=' + encodeURIComponent(this.aiPrompt);
+
+    this.radarService.analizarConIA(item).subscribe({
+      next: (res) => {
+        if (res.success && res.prompt) {
+          this.aiPrompt = res.prompt;
+          this.chatGptUrl = res.chatgpt_url || ('https://chatgpt.com/?q=' + encodeURIComponent(res.prompt));
+          if (res.ai_response) {
+            this.aiResponseResult = res.ai_response;
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error al solicitar análisis backend de ChatGPT, usando prompt local:', err);
+      }
+    });
+  }
+
+  abrirEnChatGPTCom(): void {
+    if (this.chatGptUrl) {
+      window.open(this.chatGptUrl, '_blank');
+    } else if (this.aiPrompt) {
+      const url = 'https://chatgpt.com/?q=' + encodeURIComponent(this.aiPrompt);
+      window.open(url, '_blank');
+    }
+  }
+
+  copiarPromptAlPortapapeles(): void {
+    if (this.aiPrompt) {
+      navigator.clipboard.writeText(this.aiPrompt).then(() => {
+        this.copiedPromptToast = true;
+        setTimeout(() => this.copiedPromptToast = false, 3000);
+      });
+    }
+  }
+
+  cerrarChatGPTModal(): void {
+    this.displayChatGPTModal = false;
   }
 }

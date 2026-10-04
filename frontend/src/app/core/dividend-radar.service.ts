@@ -127,4 +127,17 @@ export class DividendRadarService {
     }
     return this.http.get<PortfolioResponse>(url);
   }
+
+  analizarConIA(stockData: any, promptCustom?: string): Observable<{
+    success: boolean;
+    emisor: string;
+    prompt: string;
+    chatgpt_url: string;
+    ai_response?: string;
+  }> {
+    return this.http.post<any>(`${this.apiUrl}/analizar-ia`, {
+      ...stockData,
+      prompt: promptCustom || ''
+    });
+  }
 }

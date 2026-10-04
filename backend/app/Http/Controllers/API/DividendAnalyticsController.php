@@ -77,4 +77,23 @@ class DividendAnalyticsController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Prepara el prompt y análisis con ChatGPT (IA) para la compra de acciones
+     */
+    public function analizarIa(Request $request)
+    {
+        try {
+            $stockData = $request->all();
+            $customPrompt = $request->input('prompt', '');
+            $result = $this->analyticsService->analizarConIA($stockData, $customPrompt);
+            return response()->json($result, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el análisis de ChatGPT',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

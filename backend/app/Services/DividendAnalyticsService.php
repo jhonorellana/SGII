@@ -472,4 +472,146 @@ class DividendAnalyticsService
             ];
         }
     }
+
+    /**
+     * Genera el prompt estructurado y la respuesta de IA (ChatGPT) para recomendación de compra de acciones
+     */
+    public function analizarConIA(array $stockData, string $customPrompt = ''): array
+    {
+        try {
+            $emisor = trim($stockData['emisor'] ?? 'Emisor');
+            $precio = (float) ($stockData['precio_mercado'] ?? ($stockData['precio_ultimo'] ?? 0));
+            $ultimoDiv = (float) ($stockData['ultimo_dividendo_acc'] ?? ($stockData['dividendo_por_accion'] ?? 0));
+            $divD1 = (float) ($stockData['dividendo_proyectado_d1'] ?? ($ultimoDiv * 1.03));
+            $yieldPct = (float) ($stockData['yield_pct'] ?? ($stockData['dividend_yield_pct'] ?? 0));
+            $consistencia = (int) ($stockData['estrellas_consistencia'] ?? 0);
+            $mesPago = $stockData['mes_probable_pago'] ?? 'Marzo';
+            $precioGordon = (float) ($stockData['precio_teorico_gordon'] ?? 0);
+            $margenReval = (float) ($stockData['margen_oportunidad_pct'] ?? 0);
+            $totalDivs = (int) ($stockData['total_dividendos_registrados'] ?? 0);
+            $precioAnt = (float) ($stockData['precio_anterior'] ?? ($precio * 0.99));
+            $variacionPct = (float) ($stockData['variacion_porcentaje'] ?? 0.40);
+            $sma5 = (float) ($stockData['sma5'] ?? $precio);
+            $sma20 = (float) ($stockData['sma20'] ?? ($precio * 0.98));
+            $volRel = (float) ($stockData['volumen_relativo'] ?? 0.50);
+            $diasInactividad = (int) ($stockData['dias_inactividad'] ?? 0);
+            $senalesList = is_array($stockData['senales'] ?? null) ? implode(', ', $stockData['senales']) : 'Normal';
+
+            $posicionTxt = '';
+            if (!empty($stockData['cantidad_actual'])) {
+                $cant = number_format((float)$stockData['cantidad_actual'], 0);
+                $valM = number_format((float)$stockData['valor_mercado'], 2);
+                $persona = $stockData['persona'] ?? 'Portafolio';
+                $posicionTxt = "\n• Posición en Portafolio ({$persona}): {$cant} acciones mantenidas (Valor de Mercado: \${$valM})";
+            }
+
+            $esPortafolio = !empty($stockData['cantidad_actual']) || !empty($stockData['persona']) || isset($stockData['costo_promedio']);
+
+            if (!empty($customPrompt)) {
+                $promptText = $customPrompt;
+            } elseif ($esPortafolio) {
+                $cant = number_format((float)($stockData['cantidad_actual'] ?? 0), 0);
+                $costoProm = number_format((float)($stockData['costo_promedio'] ?? 0), 2);
+                $capInvertido = number_format((float)($stockData['capital_invertido'] ?? 0), 2);
+                $valMercado = number_format((float)($stockData['valor_mercado'] ?? ($precio * (float)($stockData['cantidad_actual'] ?? 1))), 2);
+                $ganPerdVal = (float)($stockData['ganancia_perdida'] ?? 0);
+                $ganPerdStr = number_format($ganPerdVal, 2);
+                $rawCap = (float)($stockData['capital_invertido'] ?? 0);
+                $ganPerdPct = $rawCap > 0 ? number_format(($ganPerdVal / $rawCap) * 100, 2) : '0.00';
+                $persona = $stockData['persona'] ?? 'Mi Portafolio';
+                $divsRecibidos = number_format((float)($stockData['div_efectivo_recibido'] ?? 0), 2);
+                $ingAnualEst = number_format((float)($stockData['ingreso_anual_estimado_usd'] ?? 0), 2);
+
+                $promptText = "Actúa como un experto analista financiero sénior y gestor de portafolios del Mercado de Valores de Ecuador (Bolsas de Valores de Quito y Guayaquil).\n\n" .
+                    "Por favor evalúa la posición actual que mantengo en mi portafolio de inversión para la acción '{$emisor}' y proporciona una recomendación profesional sobre si debo COMPRAR MÁS ACCIONES, MANTENER LA POSICIÓN o VENDER (total o parcialmente):\n\n" .
+                    "💼 DATOS DE MI POSICIÓN EN PORTAFOLIO ({$emisor}):\n" .
+                    "• Titular / Cuenta: {$persona}\n" .
+                    "• Cantidad de Acciones Mantenidas: {$cant} acciones\n" .
+                    "• Precio Costo Promedio de Compra: \${$costoProm}/acción\n" .
+                    "• Precio de Cotización Actual en Bolsa: \${$precio}/acción\n" .
+                    "• Capital Total Invertido: \${$capInvertido}\n" .
+                    "• Valor Actual de Mercado de la Posición: \${$valMercado}\n" .
+                    "• Ganancia / Pérdida No Realizada: \${$ganPerdStr} ({$ganPerdPct}%)\n" .
+                    "• Dividendos en Efectivo Cobrados Históricamente: \${$divsRecibidos}\n" .
+                    "• Ingreso Anual Estimado por Dividendos: \${$ingAnualEst}/año\n\n" .
+                    "📊 MÉTRICAS TÉCNICAS Y DE VALORACIÓN DEL MERCADO:\n" .
+                    "• Dividend Yield Actual: {$yieldPct}% Anual\n" .
+                    "• Dividendo Proyectado (D1): \${$divD1}/acción (Último pagado: \${$ultimoDiv})\n" .
+                    "• Valor Justo Intrínseco Teórico (Gordon DDM P0): \${$precioGordon}/acción\n" .
+                    "• Margen de Oportunidad de Revalorización: {$margenReval}%\n" .
+                    "• Consistencia Histórica: {$consistencia} de 5 años pagando dividendos continuos\n" .
+                    "• Mes Estimado de Cobro: {$mesPago}\n" .
+                    "• Promedios Móviles: SMA 5 = \${$sma5} | SMA 20 = \${$sma20}\n" .
+                    "• Volumen Relativo: {$volRel} | Inactividad: {$diasInactividad} días\n\n" .
+                    "📝 REQUERIMIENTO DE ESTRATEGIA DE PORTAFOLIO:\n" .
+                    "1. Veredicto y Recomendación de Acción Directa (Opciones claras: COMPRAR MÁS / MANTENER / VENDER TOTAL O PARCIALMENTE).\n" .
+                    "2. Análisis del Precio Costo Promedio de Compra vs Cotización Actual y Dividend Yield generado.\n" .
+                    "3. Evaluación de si el Flujo Pasivo de Dividendos justifica conservar la posición o tomar ganancias/pérdidas.\n" .
+                    "4. Riesgos o Factores Clave del Mercado Ecuatoriano para decidir la venta o ampliación de la posición.\n" .
+                    "Responde en un formato ejecutivo, claro y estructurado con recomendaciones accionables.";
+            } else {
+                $promptText = "Actúa como un experto analista financiero sénior y asesor de inversiones del Mercado de Valores de Ecuador (Bolsas de Valores de Quito y Guayaquil). " .
+                    "Por favor analiza los siguientes datos cuantitativos y métricas de dividendo de la empresa emisora '{$emisor}' y genera una recomendación profesional sobre la conveniencia de COMPRAR esta acción:\n\n" .
+                    "📊 INFORMACIÓN TÉCNICA Y FINANCIERA DE LA ACCIÓN ({$emisor}):\n" .
+                    "• Precio de Cierre Actual: \${$precio}/acción\n" .
+                    "• Variación Reciente: +{$variacionPct}%\n" .
+                    "• Precio Anterior: \${$precioAnt}\n" .
+                    "• Último Dividendo Pagado: \${$ultimoDiv}/acción\n" .
+                    "• Dividendo Proyectado (D1): \${$divD1}/acción\n" .
+                    "• Dividend Yield (Rendimiento por Dividendo): {$yieldPct}% Anual\n" .
+                    "• Consistencia Histórica: {$consistencia} de 5 años pagando dividendos consecutivos\n" .
+                    "• Mes de Mayor Probabilidad de Pago: {$mesPago}\n" .
+                    "• Valor Justo Intrínseco Teórico (Gordon DDM P0): \${$precioGordon}/acción\n" .
+                    "• Margen de Oportunidad de Revalorización: {$margenReval}%\n" .
+                    "• Histórico de Dividendos Registrados: {$totalDivs} pagos realizados\n" .
+                    "• Promedios Móviles: SMA 5 = \${$sma5} | SMA 20 = \${$sma20}\n" .
+                    "• Volumen Relativo (VR): {$volRel} | Inactividad: {$diasInactividad} días\n" .
+                    "• Señales Detectadas: {$senalesList}\n\n" .
+                    "📝 REQUERIMIENTO DE ANÁLISIS:\n" .
+                    "1. Veredicto y Recomendación Clara (Opciones: COMPRAR / MANTENER / ESPERAR UN MEJOR PRECIO).\n" .
+                    "2. Análisis de Atractivo por Dividend Yield vs Valor Justo Gordon.\n" .
+                    "3. Principales Riesgos o Factores a Considerar en el Mercado Ecuatoriano.\n" .
+                    "Responde en un formato ejecutivo, claro y estructurado con puntos clave.";
+            }
+
+            $chatGptUrl = "https://chatgpt.com/?q=" . urlencode($promptText);
+
+            $aiAnalysisResult = null;
+            $apiKey = env('OPENAI_API_KEY');
+            if ($apiKey) {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+                        ->timeout(15)
+                        ->post('https://api.openai.com/v1/chat/completions', [
+                            'model' => 'gpt-3.5-turbo',
+                            'messages' => [
+                                ['role' => 'system', 'content' => 'Eres un analista financiero experto en Renta Variable y dividendos en Ecuador.'],
+                                ['role' => 'user', 'content' => $promptText]
+                            ],
+                            'temperature' => 0.6
+                        ]);
+
+                    if ($response->successful()) {
+                        $aiAnalysisResult = trim($response->json('choices.0.message.content'));
+                    }
+                } catch (\Exception $ex) {
+                    Log::warning('Call to OpenAI failed in analizarConIA: ' . $ex->getMessage());
+                }
+            }
+
+            return [
+                'success' => true,
+                'emisor' => $emisor,
+                'prompt' => $promptText,
+                'chatgpt_url' => $chatGptUrl,
+                'ai_response' => $aiAnalysisResult
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al preparar el análisis de ChatGPT',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }
