@@ -38,7 +38,7 @@
             </label>
             <div class="input-group input-group-sm">
               <span class="input-group-text bg-light text-muted border-end-0"><i class="bi bi-calendar3"></i></span>
-              <input type="date" class="form-control border-start-0 fw-semibold" [(ngModel)]="fechaSeleccionada" (ngModelChange)="guardarAjustes()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" />
+              <input type="date" class="form-control border-start-0 fw-semibold" [(ngModel)]="fechaSeleccionada" (ngModelChange)="guardarAjustes()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" />
             </div>
           </div>
 
@@ -47,7 +47,7 @@
             <div class="master-switch-box p-2 px-3 rounded border bg-light d-flex justify-content-between align-items-center">
               <div>
                 <strong class="d-block text-dark extra-small"><i class="bi bi-toggle-on text-success me-1"></i> Auto-Importación Masiva</strong>
-                <span class="text-muted extra-small" style="font-size: 0.72rem;">Incluir los 8 módulos</span>
+                <span class="text-muted extra-small" style="font-size: 0.72rem;">Incluir los 9 módulos</span>
               </div>
               <div class="form-check form-switch fs-5 mb-0 ms-2">
                 <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="masterSwitch" [(ngModel)]="masterAutoImport" (ngModelChange)="toggleAllSwitches($event)" [disabled]="loading || loadingOnlyDownload" />
@@ -65,19 +65,19 @@
             </button>
 
             <!-- Botón 1: Descargar todo -->
-            <button class="btn btn-outline-primary btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarSoloDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Solo descarga los 42 boletines a carpetas sin modificar la BD">
+            <button class="btn btn-outline-primary btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarSoloDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Solo descarga los 42 boletines a carpetas sin modificar la BD">
               <i class="bi" [ngClass]="loadingOnlyDownload ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill text-primary'"></i>
               <span>Descargar todo</span>
             </button>
 
             <!-- Botón 2: Importar todo -->
-            <button class="btn btn-outline-success btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarImportarTodo()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesa e importa los archivos previamente descargados a las tablas habilitadas">
-              <i class="bi" [ngClass]="(loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones) ? 'bi-hourglass-split spin' : 'bi-database-fill-gear text-success'"></i>
+            <button class="btn btn-outline-success btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="ejecutarImportarTodo()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar los archivos previamente descargados a las tablas habilitadas">
+              <i class="bi" [ngClass]="(loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector) ? 'bi-hourglass-split spin' : 'bi-database-fill-gear text-success'"></i>
               <span>Importar todo</span>
             </button>
 
             <!-- Botón 3: Descargar e Importar todo -->
-            <button class="btn btn-success btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 shadow-sm" (click)="ejecutarDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Ejecuta la descarga completa de boletines e importación automática a la BD">
+            <button class="btn btn-success btn-sm px-3 py-1.5 fw-semibold d-flex align-items-center gap-1.5 shadow-sm" (click)="ejecutarDescarga()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Ejecuta la descarga completa de boletines e importación automática a la BD">
               <i class="bi" [ngClass]="loading ? 'bi-hourglass-split spin' : 'bi-rocket-takeoff-fill'"></i>
               <span>Descargar e Importar todo</span>
             </button>
@@ -86,11 +86,11 @@
         </div>
 
         <!-- Indicador de Progreso Global -->
-        <div *ngIf="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" class="mt-4 pt-3 border-top">
+        <div *ngIf="loading || loadingOnlyDownload || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" class="mt-4 pt-3 border-top">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <span class="text-primary fw-semibold fs-7 d-flex align-items-center gap-2">
               <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
-              {{ loadingOnlyDownload ? 'Descargando 42 boletines desde la BVQ (Sin importación a BD)...' : (loading ? 'Descargando e Importando boletines a la BD...' : (loadingImport ? 'Importando Acciones (shares)...' : (loadingImportBonds ? 'Importando Bonos (bond_his)...' : (loadingImportDividends ? 'Importando Dividendos (dividendos_his)...' : (loadingImportFacturas ? 'Importando Facturas Comerciales (facturas_his)...' : (loadingImportGenericos ? 'Importando Valores Genéricos (genericos_his)...' : (loadingImportObligaciones ? 'Importando Obligaciones (obligaciones_his)...' : (loadingImportPapeles ? 'Importando Papel Comercial (papeles_his)...' : 'Importando Titularizaciones (titularizaciones_his)...')))))))) }}
+              {{ loadingOnlyDownload ? 'Descargando 42 boletines desde la BVQ (Sin importación a BD)...' : (loading ? 'Descargando e Importando boletines a la BD...' : (loadingImport ? 'Importando Acciones (shares)...' : (loadingImportBonds ? 'Importando Bonos (bond_his)...' : (loadingImportDividends ? 'Importando Dividendos (dividendos_his)...' : (loadingImportFacturas ? 'Importando Facturas Comerciales (facturas_his)...' : (loadingImportGenericos ? 'Importando Valores Genéricos (genericos_his)...' : (loadingImportObligaciones ? 'Importando Obligaciones (obligaciones_his)...' : (loadingImportPapeles ? 'Importando Papel Comercial (papeles_his)...' : (loadingImportTitularizaciones ? 'Importando Titularizaciones (titularizaciones_his)...' : 'Importando Vector de Precios (vector_precio_diario)...'))))))))) }}
             </span>
             <span class="badge bg-light text-primary border">En proceso</span>
           </div>
@@ -115,11 +115,11 @@
       <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
         <div>
           <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
-            <i class="bi bi-table text-primary"></i> Módulos de Valores & Tablas BD (8 Módulos)
+            <i class="bi bi-table text-primary"></i> Módulos de Valores & Tablas BD (9 Módulos)
           </h6>
           <small class="text-muted">Configure los interruptores para la descarga masiva o procese archivos Excel individualmente</small>
         </div>
-        <span class="badge bg-light text-dark border px-3 py-2">8 Tablas Mapeadas</span>
+        <span class="badge bg-light text-dark border px-3 py-2">9 Tablas Mapeadas</span>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -174,7 +174,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('acciones') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('acciones') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionAcciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionAcciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImport ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImport ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -220,7 +220,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('bonos') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('bonos') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionBonos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionBonos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportBonds ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportBonds ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -266,7 +266,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('dividendos') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('dividendos') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionDividendos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionDividendos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportDividends ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportDividends ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -312,7 +312,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('facturas') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('facturas') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionFacturas()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionFacturas()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportFacturas ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportFacturas ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -358,7 +358,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('genericos') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('genericos') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionGenericos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionGenericos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportGenericos ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportGenericos ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -404,7 +404,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('obligaciones') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('obligaciones') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionObligaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionObligaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportObligaciones ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportObligaciones ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -450,7 +450,7 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('papeles') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('papeles') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionPapeles()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionPapeles()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportPapeles ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportPapeles ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
@@ -496,9 +496,58 @@
                       <i class="bi" [ngClass]="isDownloadingModulo('titularizaciones') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                       <span>{{ isDownloadingModulo('titularizaciones') ? 'Bajando...' : 'Descargar XL' }}</span>
                     </button>
-                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionTitularizaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionTitularizaciones()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                       <i class="bi" [ngClass]="loadingImportTitularizaciones ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                       <span>{{ loadingImportTitularizaciones ? 'Procesando...' : 'Procesar XL' }}</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Row 9: VECTOR DE PRECIOS -->
+              <tr>
+                <td class="ps-4">
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="module-icon-box bg-light text-dark border">
+                      <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <div>
+                      <strong class="text-dark d-block">Vector de Precios</strong>
+                      <span class="extra-small text-muted">Matriz de Valoración (Renta Fija)</span>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <code class="px-2 py-1 bg-light rounded text-dark border d-block mb-1 extra-small">vector_precio_diario</code>
+                  <code class="px-2 py-1 bg-light rounded text-dark border d-block extra-small">vector_curva_rendimiento</code>
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark border fw-normal">
+                    <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateVectorInDb || 'Sin registros' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swVector" [(ngModel)]="autoImportVector" (ngModelChange)="guardarAjustes()" [disabled]="loading" />
+                  </div>
+                </td>
+                <td>
+                  <div *ngIf="getSemanticStatus(lastImportVectorResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                    <i class="bi" [ngClass]="st.icon"></i>
+                    <span class="fw-bold">{{ st.text }}</span>
+                    <span class="text-muted extra-small">({{ lastImportVectorResult.message }})</span>
+                  </div>
+                  <span *ngIf="!lastImportVectorResult" class="text-muted extra-small">Esperando procesamiento...</span>
+                </td>
+                <td class="text-end pe-4">
+                  <div class="d-flex align-items-center justify-content-end gap-1.5">
+                    <button class="btn btn-outline-primary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarDescargarModulo('vector')" [disabled]="loading || loadingOnlyDownload || isDownloadingModulo('vector')" pTooltip="Descargar únicamente el archivo Excel del Vector de Precios desde la BVQ">
+                      <i class="bi" [ngClass]="isDownloadingModulo('vector') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
+                      <span>{{ isDownloadingModulo('vector') ? 'Bajando...' : 'Descargar XL' }}</span>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionVector()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                      <i class="bi" [ngClass]="loadingImportVector ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                      <span>{{ loadingImportVector ? 'Procesando...' : 'Procesar XL' }}</span>
                     </button>
                   </div>
                 </td>

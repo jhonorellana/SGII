@@ -287,6 +287,11 @@ class BvqDownloaderService
                 'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/titularizaciones.xls',
                 'folder' => '007_CotizacionesHistoricas',
                 'filename' => "titularizaciones_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'vector' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/valoracion/vector-precios-diario/vector-precios-diario.xls',
+                'folder' => '011_VectorDePreciosDiario',
+                'filename' => "vector-precios-diario_{$aaaa}_{$mm}_{$dd}.xls"
             ]
         ];
 

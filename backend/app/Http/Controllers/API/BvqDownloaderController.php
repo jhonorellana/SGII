@@ -68,6 +68,7 @@ class BvqDownloaderController extends Controller
             $importarObligaciones = $request->boolean('importar_obligaciones', false);
             $importarPapeles = $request->boolean('importar_papeles', false);
             $importarTitularizaciones = $request->boolean('importar_titularizaciones', false);
+            $importarVector = $request->boolean('importar_vector', false);
 
             $resultado = $this->downloaderService->downloadAll($fecha);
 
@@ -101,6 +102,10 @@ class BvqDownloaderController extends Controller
 
             if ($importarTitularizaciones) {
                 $resultado['importacion_titularizaciones'] = $this->titularizacionesImportService->importFromExcel($fecha);
+            }
+
+            if ($importarVector) {
+                $resultado['importacion_vector'] = $this->vectorPreciosEtlService->importVectorPrecios(null, $fecha);
             }
 
             return response()->json([
@@ -341,8 +346,9 @@ class BvqDownloaderController extends Controller
     public function importarVector(Request $request)
     {
         try {
+            $fecha = $request->input('fecha', date('Y-m-d'));
             $filePath = $request->input('file_path');
-            $resultado = $this->vectorPreciosEtlService->importVectorPrecios($filePath);
+            $resultado = $this->vectorPreciosEtlService->importVectorPrecios($filePath, $fecha);
 
             return response()->json([
                 'success' => $resultado['success'],

@@ -7,27 +7,46 @@ use Illuminate\Support\Facades\Log;
 
 class VectorPreciosEtlService
 {
+    protected BvqDownloaderService $downloaderService;
+
+    public function __construct(BvqDownloaderService $downloaderService)
+    {
+        $this->downloaderService = $downloaderService;
+    }
+
     /**
      * Procesa e importa el archivo Excel de Vector de Precios Diario (BVQ)
      */
-    public function importVectorPrecios(?string $filePath = null): array
+    public function importVectorPrecios(?string $filePath = null, ?string $fechaInput = null): array
     {
         $startTime = microtime(true);
+        $timestamp = $fechaInput ? strtotime($fechaInput) : time();
+        $aaaa = date('Y', $timestamp);
+        $mm = date('m', $timestamp);
+        $dd = date('d', $timestamp);
 
         if (!$filePath || !file_exists($filePath)) {
-            // Buscar en la estructura estandar de directorios de descargas
-            $todayPath = 'C:\\Users\\super\\DATOS\\004. DatosBVQ\\' . date('Y_m') . '\\' . date('Y_m_d') . '\\011_VectorDePreciosDiario\\vector-precios-diario_' . date('Y_m_d') . '.xls';
-            if (file_exists($todayPath)) {
-                $filePath = $todayPath;
+            $baseDir = rtrim($this->downloaderService->getBaseDirectory(), '\\/') . DIRECTORY_SEPARATOR;
+            $fileRelativePath = "{$aaaa}_{$mm}" . DIRECTORY_SEPARATOR . "{$aaaa}_{$mm}_{$dd}" . DIRECTORY_SEPARATOR . "011_VectorDePreciosDiario" . DIRECTORY_SEPARATOR . "vector-precios-diario_{$aaaa}_{$mm}_{$dd}.xls";
+            $targetPath = $baseDir . $fileRelativePath;
+
+            if (file_exists($targetPath)) {
+                $filePath = $targetPath;
             } else {
-                // Buscar el archivo vector-precios-diario_*.xls más reciente
-                $searchPattern = 'C:\\Users\\super\\DATOS\\004. DatosBVQ\\*\\*\\011_VectorDePreciosDiario\\vector-precios-diario_*.xls';
-                $files = glob($searchPattern);
-                if (!empty($files)) {
-                    usort($files, function ($a, $b) {
-                        return filemtime($b) - filemtime($a);
-                    });
-                    $filePath = $files[0];
+                // Auto-descarga desde BVQ
+                $dlRes = $this->downloaderService->downloadSingleModule('vector', $fechaInput);
+                if ($dlRes['success'] && file_exists($dlRes['path'])) {
+                    $filePath = $dlRes['path'];
+                } else {
+                    // Fallback al archivo más reciente en disco si el específico del día no está
+                    $searchPattern = $baseDir . '*\\*\\011_VectorDePreciosDiario\\vector-precios-diario_*.xls';
+                    $files = glob($searchPattern);
+                    if (!empty($files)) {
+                        usort($files, function ($a, $b) {
+                            return filemtime($b) - filemtime($a);
+                        });
+                        $filePath = $files[0];
+                    }
                 }
             }
         }
@@ -35,7 +54,7 @@ class VectorPreciosEtlService
         if (!$filePath || !file_exists($filePath)) {
             return [
                 'success' => false,
-                'message' => 'No se encontró el archivo vector-precios-diario.xls en la ruta especificada.',
+                'message' => 'No se encontró el archivo vector-precios-diario.xls en disco y falló la descarga desde la BVQ.',
                 'imported_count' => 0
             ];
         }
@@ -143,6 +162,20 @@ class VectorPreciosEtlService
                         'calificacion_riesgo' => $e->calificacion_riesgo,
                         'fecha_actualizacion' => $now
                     ]);
+            }
+
+            // 4. Retención inteligente quincenal (Conservar inicio de mes, quincena y el vector activo más reciente)
+            $latestMaxDate = DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
+            if ($latestMaxDate) {
+                DB::connection('mysql_inversion')->table('vector_precio_diario')
+                    ->where('fecha_vector', '<', $latestMaxDate)
+                    ->whereRaw('DAY(fecha_vector) NOT IN (1, 2, 3, 15, 16)')
+                    ->delete();
+
+                DB::connection('mysql_inversion')->table('vector_curva_rendimiento')
+                    ->where('fecha_vector', '<', $latestMaxDate)
+                    ->whereRaw('DAY(fecha_vector) NOT IN (1, 2, 3, 15, 16)')
+                    ->delete();
             }
 
             DB::commit();

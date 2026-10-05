@@ -72,6 +72,12 @@ export interface BvqDownloadResponse {
       imported_count: number;
       last_date_in_db?: string;
     };
+    importacion_vector?: {
+      success: boolean;
+      message: string;
+      imported_count: number;
+      last_date_in_db?: string;
+    };
   };
 }
 
@@ -100,7 +106,8 @@ export class BvqDownloaderService {
     importarGenericos: boolean = false,
     importarObligaciones: boolean = false,
     importarPapeles: boolean = false,
-    importarTitularizaciones: boolean = false
+    importarTitularizaciones: boolean = false,
+    importarVector: boolean = false
   ): Observable<BvqDownloadResponse> {
     return this.http.post<BvqDownloadResponse>(`${this.apiUrl}/descargar`, {
       fecha,
@@ -111,7 +118,8 @@ export class BvqDownloaderService {
       importar_genericos: importarGenericos,
       importar_obligaciones: importarObligaciones,
       importar_papeles: importarPapeles,
-      importar_titularizaciones: importarTitularizaciones
+      importar_titularizaciones: importarTitularizaciones,
+      importar_vector: importarVector
     });
   }
 
@@ -151,8 +159,8 @@ export class BvqDownloaderService {
     return this.http.post<any>(`${this.apiUrl}/importar-titularizaciones`, { fecha });
   }
 
-  importarVector(file_path?: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/importar-vector`, { file_path });
+  importarVector(fecha?: string, file_path?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/importar-vector`, { fecha, file_path });
   }
 
   getHistorial(): Observable<{

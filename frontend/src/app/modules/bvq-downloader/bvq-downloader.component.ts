@@ -33,6 +33,7 @@ export class BvqDownloaderComponent implements OnInit {
   loadingImportObligaciones: boolean = false;
   loadingImportPapeles: boolean = false;
   loadingImportTitularizaciones: boolean = false;
+  loadingImportVector: boolean = false;
   loadingDownloadMap: { [key: string]: boolean } = {};
   fechaSeleccionada: string = new Date().toISOString().split('T')[0];
   autoImportAcciones: boolean = true;
@@ -43,6 +44,7 @@ export class BvqDownloaderComponent implements OnInit {
   autoImportObligaciones: boolean = true;
   autoImportPapeles: boolean = true;
   autoImportTitularizaciones: boolean = true;
+  autoImportVector: boolean = true;
   masterAutoImport: boolean = true;
 
   // Estado del Modal de Log
@@ -60,6 +62,7 @@ export class BvqDownloaderComponent implements OnInit {
   lastImportObligacionesResult: any = null;
   lastImportPapelesResult: any = null;
   lastImportTitularizacionesResult: any = null;
+  lastImportVectorResult: any = null;
   lastDateSharesInDb: string | null = null;
   lastDateBondsInDb: string | null = null;
   totalDividendsInDb: number = 0;
@@ -68,6 +71,7 @@ export class BvqDownloaderComponent implements OnInit {
   lastDateObligacionesInDb: string | null = null;
   lastDatePapelesInDb: string | null = null;
   lastDateTitularizacionesInDb: string | null = null;
+  lastDateVectorInDb: string | null = null;
   historial: BvqHistoryItem[] = [];
   error: string = '';
 
@@ -83,6 +87,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.autoImportObligaciones = value;
     this.autoImportPapeles = value;
     this.autoImportTitularizaciones = value;
+    this.autoImportVector = value;
     this.guardarAjustes();
   }
 
@@ -111,6 +116,7 @@ export class BvqDownloaderComponent implements OnInit {
         autoImportObligaciones: this.autoImportObligaciones,
         autoImportPapeles: this.autoImportPapeles,
         autoImportTitularizaciones: this.autoImportTitularizaciones,
+        autoImportVector: this.autoImportVector,
         activeTab: this.activeTab,
         selectedLogFilter: this.selectedLogFilter,
         lastDownloadResult: this.lastDownloadResult,
@@ -121,7 +127,8 @@ export class BvqDownloaderComponent implements OnInit {
         lastImportGenericosResult: this.lastImportGenericosResult,
         lastImportObligacionesResult: this.lastImportObligacionesResult,
         lastImportPapelesResult: this.lastImportPapelesResult,
-        lastImportTitularizacionesResult: this.lastImportTitularizacionesResult
+        lastImportTitularizacionesResult: this.lastImportTitularizacionesResult,
+        lastImportVectorResult: this.lastImportVectorResult
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
@@ -134,7 +141,8 @@ export class BvqDownloaderComponent implements OnInit {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
-        if (data.fechaSeleccionada) this.fechaSeleccionada = data.fechaSeleccionada;
+        // La fecha de descarga siempre inicia con la fecha actual del día por defecto
+        this.fechaSeleccionada = new Date().toISOString().split('T')[0];
         if (data.masterAutoImport !== undefined) this.masterAutoImport = data.masterAutoImport;
         if (data.autoImportAcciones !== undefined) this.autoImportAcciones = data.autoImportAcciones;
         if (data.autoImportBonos !== undefined) this.autoImportBonos = data.autoImportBonos;
@@ -144,6 +152,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.autoImportObligaciones !== undefined) this.autoImportObligaciones = data.autoImportObligaciones;
         if (data.autoImportPapeles !== undefined) this.autoImportPapeles = data.autoImportPapeles;
         if (data.autoImportTitularizaciones !== undefined) this.autoImportTitularizaciones = data.autoImportTitularizaciones;
+        if (data.autoImportVector !== undefined) this.autoImportVector = data.autoImportVector;
         if (data.activeTab) this.activeTab = data.activeTab;
         if (data.selectedLogFilter) this.selectedLogFilter = data.selectedLogFilter;
         if (data.lastDownloadResult) this.lastDownloadResult = data.lastDownloadResult;
@@ -155,6 +164,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.lastImportObligacionesResult) this.lastImportObligacionesResult = data.lastImportObligacionesResult;
         if (data.lastImportPapelesResult) this.lastImportPapelesResult = data.lastImportPapelesResult;
         if (data.lastImportTitularizacionesResult) this.lastImportTitularizacionesResult = data.lastImportTitularizacionesResult;
+        if (data.lastImportVectorResult) this.lastImportVectorResult = data.lastImportVectorResult;
       }
     } catch (e) {
       console.warn('Error al cargar la configuración de localStorage:', e);
@@ -222,7 +232,8 @@ export class BvqDownloaderComponent implements OnInit {
       { modulo: 'Valores Genéricos', tabla: 'genericos_his', result: this.lastImportGenericosResult },
       { modulo: 'Obligaciones', tabla: 'obligaciones_his', result: this.lastImportObligacionesResult },
       { modulo: 'Papel Comercial', tabla: 'papeles_his', result: this.lastImportPapelesResult },
-      { modulo: 'Titularizaciones', tabla: 'titularizaciones_his', result: this.lastImportTitularizacionesResult }
+      { modulo: 'Titularizaciones', tabla: 'titularizaciones_his', result: this.lastImportTitularizacionesResult },
+      { modulo: 'Vector de Precios', tabla: 'vector_precio_diario, vector_curva_rendimiento', result: this.lastImportVectorResult }
     ];
   }
 
@@ -284,6 +295,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.lastImportObligacionesResult = null;
     this.lastImportPapelesResult = null;
     this.lastImportTitularizacionesResult = null;
+    this.lastImportVectorResult = null;
     this.guardarAjustes();
   }
 
@@ -295,7 +307,7 @@ export class BvqDownloaderComponent implements OnInit {
 
     this.bvqService.descargar(
       this.fechaSeleccionada,
-      false, false, false, false, false, false, false, false
+      false, false, false, false, false, false, false, false, false
     ).subscribe({
       next: (res) => {
         this.loadingOnlyDownload = false;
@@ -330,6 +342,7 @@ export class BvqDownloaderComponent implements OnInit {
     if (this.autoImportObligaciones) this.ejecutarSoloImportacionObligaciones();
     if (this.autoImportPapeles) this.ejecutarSoloImportacionPapeles();
     if (this.autoImportTitularizaciones) this.ejecutarSoloImportacionTitularizaciones();
+    if (this.autoImportVector) this.ejecutarSoloImportacionVector();
   }
 
   ejecutarDescarga(): void {
@@ -347,7 +360,8 @@ export class BvqDownloaderComponent implements OnInit {
       this.autoImportGenericos,
       this.autoImportObligaciones,
       this.autoImportPapeles,
-      this.autoImportTitularizaciones
+      this.autoImportTitularizaciones,
+      this.autoImportVector
     ).subscribe({
       next: (res) => {
         this.loading = false;
@@ -387,6 +401,10 @@ export class BvqDownloaderComponent implements OnInit {
           if (res.data.importacion_titularizaciones) {
             this.lastImportTitularizacionesResult = res.data.importacion_titularizaciones;
             this.lastDateTitularizacionesInDb = res.data.importacion_titularizaciones.last_date_in_db || this.lastDateTitularizacionesInDb;
+          }
+          if (res.data.importacion_vector) {
+            this.lastImportVectorResult = res.data.importacion_vector;
+            this.lastDateVectorInDb = res.data.importacion_vector.last_date_in_db || this.lastDateVectorInDb;
           }
         }
         this.guardarAjustes();
@@ -563,6 +581,26 @@ export class BvqDownloaderComponent implements OnInit {
     });
   }
 
+  ejecutarSoloImportacionVector(): void {
+    this.loadingImportVector = true;
+    this.error = '';
+
+    this.bvqService.importarVector(this.fechaSeleccionada).subscribe({
+      next: (res) => {
+        this.loadingImportVector = false;
+        if (res.data) {
+          this.lastImportVectorResult = res.data;
+          this.lastDateVectorInDb = res.data.last_date_in_db || this.lastDateVectorInDb;
+        }
+      },
+      error: (err) => {
+        this.loadingImportVector = false;
+        console.error('Error al importar vector de precios:', err);
+        this.error = 'Ocurrió un error al procesar e importar el vector de precios a la base de datos.';
+      }
+    });
+  }
+
   isDownloadingModulo(modulo: string): boolean {
     return !!this.loadingDownloadMap[modulo];
   }
@@ -620,6 +658,7 @@ export class BvqDownloaderComponent implements OnInit {
           this.lastDateObligacionesInDb = res.last_date_obligaciones || null;
           this.lastDatePapelesInDb = res.last_date_papeles || null;
           this.lastDateTitularizacionesInDb = res.last_date_titularizaciones || null;
+          this.lastDateVectorInDb = res.last_date_vector || null;
         }
       },
       error: (err) => {
