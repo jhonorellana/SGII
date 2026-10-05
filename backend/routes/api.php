@@ -194,6 +194,9 @@ Route::post('bvq/importar-obligaciones', [App\Http\Controllers\API\BvqDownloader
 Route::post('bvq/importar-papeles', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarPapeles']);
 Route::post('bvq/importar-titularizaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarTitularizaciones']);
 Route::post('bvq/importar-vector', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarVector']);
+Route::post('bvq/generar-backup', [App\Http\Controllers\API\BvqDownloaderController::class, 'generarBackup']);
+Route::get('bvq/descargar-backup-file/{filename}', [App\Http\Controllers\API\BvqDownloaderController::class, 'descargarBackupFile']);
+Route::post('bvq/ejecutar-sps', [App\Http\Controllers\API\BvqDownloaderController::class, 'ejecutarProcedimientos']);
 
 // Rutas de Descarga de Archivos de la Bolsa de Valores de Guayaquil (BVG)
 Route::post('bvg/descargar', [App\Http\Controllers\API\BvgDownloaderController::class, 'descargar']);

@@ -190,6 +190,18 @@ export class BvqDownloaderService {
       data: BvqHistoryItem[];
     }>(`${this.apiUrl}/historial`);
   }
+
+  generarBackup(target: 'inversion' | 'sipro_desa' | 'both' = 'both'): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/generar-backup`, { target });
+  }
+
+  getDownloadBackupUrl(filename: string): string {
+    return `${this.apiUrl}/descargar-backup-file/${filename}`;
+  }
+
+  ejecutarProcedimientos(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/ejecutar-sps`, {});
+  }
 }
 
 

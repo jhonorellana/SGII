@@ -52,6 +52,16 @@ export class BvqDownloaderComponent implements OnInit {
   selectedLogFilter: 'ALL' | 'SUCCESS' | 'FAILED' = 'ALL';
   copiadoExitoso: boolean = false;
 
+  // Estado de Copias de Seguridad (Backup BD)
+  loadingBackup: boolean = false;
+  displayBackupModal: boolean = false;
+  lastBackupResult: any = null;
+
+  // Estado de Ejecución de Procedimientos Almacenados (SPs)
+  loadingSps: boolean = false;
+  displaySpsModal: boolean = false;
+  lastSpsResult: any = null;
+
   // Resultados y Estado de BD
   lastDownloadResult: BvqDownloadResponse['data'] | null = null;
   lastImportResult: any = null;
@@ -674,6 +684,53 @@ export class BvqDownloaderComponent implements OnInit {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  ejecutarBackup(target: 'inversion' | 'sipro_desa' | 'both' = 'both'): void {
+    this.loadingBackup = true;
+    this.error = '';
+    this.lastBackupResult = null;
+    this.displayBackupModal = true;
+
+    this.bvqService.generarBackup(target).subscribe({
+      next: (res) => {
+        this.loadingBackup = false;
+        if (res && res.data) {
+          this.lastBackupResult = res.data;
+        }
+      },
+      error: (err) => {
+        this.loadingBackup = false;
+        console.error('Error al generar backup de BD:', err);
+        this.error = err?.error?.message || 'Ocurrió un error al generar la copia de seguridad de la base de datos.';
+      }
+    });
+  }
+
+  descargarArchivoBackup(filename: string): void {
+    const url = this.bvqService.getDownloadBackupUrl(filename);
+    window.open(url, '_blank');
+  }
+
+  ejecutarProcedimientosAlmacenados(): void {
+    this.loadingSps = true;
+    this.error = '';
+    this.lastSpsResult = null;
+    this.displaySpsModal = true;
+
+    this.bvqService.ejecutarProcedimientos().subscribe({
+      next: (res) => {
+        this.loadingSps = false;
+        if (res && res.data) {
+          this.lastSpsResult = res.data;
+        }
+      },
+      error: (err) => {
+        this.loadingSps = false;
+        console.error('Error al ejecutar procedimientos almacenados:', err);
+        this.error = err?.error?.message || 'Ocurrió un error al ejecutar los procedimientos almacenados (SPs).';
+      }
+    });
   }
 }
 

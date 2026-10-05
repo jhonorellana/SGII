@@ -58,10 +58,48 @@
           <!-- Acciones Masivas y Log (Ver Log + Los 3 Botones Principales) -->
           <div class="col-xl-6 col-lg-6 col-md-12 d-flex align-items-center justify-content-end gap-2 flex-wrap pt-md-2 pt-lg-0">
             
-            <!-- Botón Ver Log de Ejecución (Bajado al panel de control) -->
-            <button class="btn btn-outline-dark btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5 me-auto" (click)="abrirLogModal()" pTooltip="Ver historial de log de descarga e importación">
+            <!-- Botón Ver Log de Ejecución -->
+            <button class="btn btn-outline-dark btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5" (click)="abrirLogModal()" pTooltip="Ver historial de log de descarga e importación">
               <i class="bi bi-journal-text text-primary"></i>
               <span>Ver Log</span>
+            </button>
+
+            <!-- Botón de Copia de Seguridad BD -->
+            <div class="dropdown">
+              <button class="btn btn-outline-dark btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" pTooltip="Generar respaldo .zip de las bases de datos inversion y sipro_desa">
+                <i class="bi bi-database-fill-down text-primary"></i>
+                <span>Backup BD (.zip)</span>
+              </button>
+              <ul class="dropdown-menu shadow border-0 text-small">
+                <li>
+                  <button class="dropdown-item d-flex align-items-center gap-2 py-2" (click)="ejecutarBackup('both')">
+                    <i class="bi bi-file-earmark-zip-fill text-success"></i>
+                    <div>
+                      <strong class="d-block text-dark">Ambas BDs (Recomendado)</strong>
+                      <small class="text-muted extra-small">inversion.zip y sipro_desa.zip por separado</small>
+                    </div>
+                  </button>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                  <button class="dropdown-item d-flex align-items-center gap-2 py-1.5" (click)="ejecutarBackup('inversion')">
+                    <i class="bi bi-database-fill text-primary"></i>
+                    <span>Solo BD Inversión (.zip)</span>
+                  </button>
+                </li>
+                <li>
+                  <button class="dropdown-item d-flex align-items-center gap-2 py-1.5" (click)="ejecutarBackup('sipro_desa')">
+                    <i class="bi bi-database-fill text-info"></i>
+                    <span>Solo BD Sipro Desa (.zip)</span>
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <!-- Botón de Ejecución de Procedimientos Almacenados (SPs) -->
+            <button class="btn btn-outline-dark btn-sm px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1.5 me-auto" (click)="ejecutarProcedimientosAlmacenados()" [disabled]="loading || loadingOnlyDownload || loadingImport || loadingBackup || loadingSps" pTooltip="Ejecutar la secuencia de 6 Procedimientos Almacenados (SPs) de actualización y consolidación en BD">
+              <i class="bi" [ngClass]="loadingSps ? 'bi-hourglass-split spin text-warning' : 'bi-play-circle-fill text-warning'"></i>
+              <span>Ejecutar SPs (6)</span>
             </button>
 
             <!-- Botón 1: Descargar todo -->
@@ -840,6 +878,133 @@
     <div *ngIf="!lastDownloadResult && getModuleImportLogsFiltrados().length === 0" class="p-4 text-center text-muted">
       <i class="bi bi-info-circle fs-3 d-block mb-2 text-secondary"></i>
       No se ha ejecutado ningún proceso en esta sesión aún. Ejecute una descarga o importación para generar el log detallado.
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Modal de Copia de Seguridad de Bases de Datos -->
+<p-dialog [(visible)]="displayBackupModal" [modal]="true" [style]="{ width: '90vw', maxWidth: '750px' }" header="Copia de Seguridad de Bases de Datos (Backup .zip)">
+  <div class="p-3">
+    <!-- Indicador de Carga -->
+    <div *ngIf="loadingBackup" class="text-center py-4">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+      <h6 class="fw-bold text-dark mb-1">Generando volcado SQL y compresión .zip...</h6>
+      <p class="text-muted extra-small mb-0">Extrayendo datos de <code>inversion</code> y <code>sipro_desa</code> hacia <code>C:\PROYECTOS\DescargaDiaria\backups</code></p>
+    </div>
+
+    <!-- Resultados del Backup -->
+    <div *ngIf="!loadingBackup && lastBackupResult">
+      <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-check-circle-fill fs-4 text-success"></i>
+        <div>
+          <strong class="d-block text-dark">¡Respaldos generados exitosamente!</strong>
+          <span class="extra-small text-muted">Los archivos <code>.zip</code> han sido guardados en el directorio del servidor:</span>
+          <code class="d-block mt-1 p-2 bg-dark text-success rounded extra-small fw-bold">{{ lastBackupResult.backup_dir }}</code>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- Tarjeta Backup Inversión -->
+        <div *ngIf="lastBackupResult.backups?.inversion as bInv" class="col-md-6">
+          <div class="card border rounded p-3 h-100 shadow-2xs" [ngClass]="bInv.success ? 'bg-light-subtle' : 'bg-danger-soft'">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge bg-primary px-2.5 py-1 extra-small"><i class="bi bi-database me-1"></i>inversion</span>
+              <span class="badge bg-success-soft text-success border border-success-subtle extra-small fw-bold" *ngIf="bInv.success">
+                <i class="bi bi-check-lg me-1"></i>{{ bInv.size_human }}
+              </span>
+            </div>
+            <strong class="d-block text-dark small mb-1">{{ bInv.zip_filename }}</strong>
+            <p class="text-muted extra-small mb-3">{{ bInv.message }}</p>
+            <button class="btn btn-outline-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1.5" (click)="descargarArchivoBackup(bInv.zip_filename)">
+              <i class="bi bi-download"></i> Descargar .zip al Navegador
+            </button>
+          </div>
+        </div>
+
+        <!-- Tarjeta Backup Sipro Desa -->
+        <div *ngIf="lastBackupResult.backups?.sipro_desa as bSipro" class="col-md-6">
+          <div class="card border rounded p-3 h-100 shadow-2xs" [ngClass]="bSipro.success ? 'bg-light-subtle' : 'bg-danger-soft'">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="badge bg-info text-dark px-2.5 py-1 extra-small"><i class="bi bi-database me-1"></i>sipro_desa</span>
+              <span class="badge bg-success-soft text-success border border-success-subtle extra-small fw-bold" *ngIf="bSipro.success">
+                <i class="bi bi-check-lg me-1"></i>{{ bSipro.size_human }}
+              </span>
+            </div>
+            <strong class="d-block text-dark small mb-1">{{ bSipro.zip_filename }}</strong>
+            <p class="text-muted extra-small mb-3">{{ bSipro.message }}</p>
+            <button class="btn btn-outline-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1.5" (click)="descargarArchivoBackup(bSipro.zip_filename)">
+              <i class="bi bi-download"></i> Descargar .zip al Navegador
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<!-- Modal de Ejecución de Procedimientos Almacenados (SPs) -->
+<p-dialog [(visible)]="displaySpsModal" [modal]="true" [style]="{ width: '90vw', maxWidth: '850px' }" header="Ejecución de Procedimientos Almacenados (6 SPs)">
+  <div class="p-3">
+    <!-- Indicador de Carga -->
+    <div *ngIf="loadingSps" class="text-center py-4">
+      <div class="spinner-border text-warning mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+      <h6 class="fw-bold text-dark mb-1">Ejecutando la secuencia de 6 Procedimientos Almacenados (SPs)...</h6>
+      <p class="text-muted extra-small mb-0">Actualizando consolidado de inversiones, amortizaciones, precios y snapshots en <code>inversion</code> y <code>sipro_desa</code></p>
+    </div>
+
+    <!-- Resultados de Ejecución SPs -->
+    <div *ngIf="!loadingSps && lastSpsResult">
+      <div class="alert shadow-2xs border-0 d-flex justify-content-between align-items-center mb-3" [ngClass]="lastSpsResult.success ? 'alert-success' : 'alert-warning'">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi fs-4" [ngClass]="lastSpsResult.success ? 'bi-check-circle-fill text-success' : 'bi-exclamation-triangle-fill text-warning'"></i>
+          <div>
+            <strong class="d-block text-dark">{{ lastSpsResult.message }}</strong>
+            <span class="extra-small text-muted">Procesados: {{ lastSpsResult.total_sps }} SPs | Exitosos: {{ lastSpsResult.exitosos }} | Con Observaciones: {{ lastSpsResult.fallidos }}</span>
+          </div>
+        </div>
+        <span class="badge bg-dark text-white px-3 py-2 rounded-pill fs-7">
+          <i class="bi bi-clock me-1"></i> {{ lastSpsResult.tiempo_total_segundos }}s
+        </span>
+      </div>
+
+      <!-- Tabla de Detalle de Ejecución de SPs -->
+      <div class="table-responsive border rounded bg-white">
+        <table class="table table-sm table-hover align-middle mb-0 extra-small">
+          <thead class="table-light">
+            <tr>
+              <th style="width: 40px;" class="text-center">#</th>
+              <th>Procedimiento Almacenado (SP)</th>
+              <th style="width: 120px;" class="text-center">Estado</th>
+              <th style="width: 90px;" class="text-end">Tiempo</th>
+              <th>Detalle / Diagnóstico</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let sp of lastSpsResult.detalles">
+              <td class="text-center fw-bold text-muted">{{ sp.id }}</td>
+              <td>
+                <strong class="text-dark d-block">{{ sp.name }}</strong>
+                <span class="text-muted extra-small">{{ sp.description }}</span>
+              </td>
+              <td class="text-center">
+                <span *ngIf="sp.success" class="badge bg-success-soft text-success border border-success-subtle extra-small fw-bold">
+                  <i class="bi bi-check-circle-fill me-1"></i> ÉXITO
+                </span>
+                <span *ngIf="!sp.success" class="badge bg-danger-soft text-danger border border-danger-subtle extra-small fw-bold">
+                  <i class="bi bi-x-circle-fill me-1"></i> ERROR
+                </span>
+              </td>
+              <td class="text-end fw-semibold text-dark">{{ sp.tiempo_segundos }}s</td>
+              <td>
+                <span *ngIf="sp.success" class="text-success extra-small fw-semibold"><i class="bi bi-check2 me-1"></i>{{ sp.message }}</span>
+                <div *ngIf="!sp.success" class="text-danger extra-small">
+                  <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ sp.message }}</strong>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </p-dialog>

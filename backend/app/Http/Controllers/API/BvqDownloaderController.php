@@ -13,6 +13,8 @@ use App\Services\ObligacionesImportService;
 use App\Services\PapelesImportService;
 use App\Services\TitularizacionesImportService;
 use App\Services\VectorPreciosEtlService;
+use App\Services\DatabaseBackupService;
+use App\Services\StoredProcedureService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -28,6 +30,8 @@ class BvqDownloaderController extends Controller
     protected PapelesImportService $papelesImportService;
     protected TitularizacionesImportService $titularizacionesImportService;
     protected VectorPreciosEtlService $vectorPreciosEtlService;
+    protected DatabaseBackupService $databaseBackupService;
+    protected StoredProcedureService $storedProcedureService;
 
     public function __construct(
         BvqDownloaderService $downloaderService,
@@ -39,7 +43,9 @@ class BvqDownloaderController extends Controller
         ObligacionesImportService $obligacionesImportService,
         PapelesImportService $papelesImportService,
         TitularizacionesImportService $titularizacionesImportService,
-        VectorPreciosEtlService $vectorPreciosEtlService
+        VectorPreciosEtlService $vectorPreciosEtlService,
+        DatabaseBackupService $databaseBackupService,
+        StoredProcedureService $storedProcedureService
     ) {
         $this->downloaderService = $downloaderService;
         $this->sharesImportService = $sharesImportService;
@@ -51,6 +57,8 @@ class BvqDownloaderController extends Controller
         $this->papelesImportService = $papelesImportService;
         $this->titularizacionesImportService = $titularizacionesImportService;
         $this->vectorPreciosEtlService = $vectorPreciosEtlService;
+        $this->databaseBackupService = $databaseBackupService;
+        $this->storedProcedureService = $storedProcedureService;
     }
 
     /**
@@ -398,6 +406,74 @@ class BvqDownloaderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener el historial de descargas',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Genera copias de seguridad en formato .zip de las bases de datos (inversion, sipro_desa o ambas)
+     * y guarda los archivos en C:\PROYECTOS\DescargaDiaria\backups
+     */
+    public function generarBackup(Request $request)
+    {
+        try {
+            $target = $request->input('target', 'both'); // 'inversion', 'sipro_desa', 'both'
+            $resultado = $this->databaseBackupService->generateBackup($target);
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['success']
+                    ? "Copias de seguridad .zip generadas exitosamente en C:\\PROYECTOS\\DescargaDiaria\\backups"
+                    : "Se procesó la solicitud de backup con observaciones.",
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar la copia de seguridad de las bases de datos',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Descarga un archivo de backup .zip generado previamente
+     */
+    public function descargarBackupFile(string $filename)
+    {
+        $backupDir = 'C:\\PROYECTOS\\DescargaDiaria\\backups';
+        $filePath = $backupDir . DIRECTORY_SEPARATOR . basename($filename);
+
+        if (!file_exists($filePath)) {
+            return response()->json([
+                'success' => false,
+                'message' => "El archivo de backup '{$filename}' no fue encontrado en {$backupDir}."
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->download($filePath, basename($filePath), [
+            'Content-Type' => 'application/zip'
+        ]);
+    }
+
+    /**
+     * Ejecuta la secuencia completa de los 8 procedimientos almacenados (SPs)
+     */
+    public function ejecutarProcedimientos(Request $request)
+    {
+        try {
+            $resultado = $this->storedProcedureService->executeAllProcedures();
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al ejecutar los procedimientos almacenados',
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
