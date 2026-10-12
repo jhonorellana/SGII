@@ -7,7 +7,7 @@ export interface GeneracionParams {
   id_inversion: number;
   frecuencia_pago: number;
   cuotas_diferir: number;
-  tipo_amortizacion: 'A' | 'F';
+  tipo_amortizacion: 'A' | 'F' | 'V';
 }
 
 export interface InversionParametros {

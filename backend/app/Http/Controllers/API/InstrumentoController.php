@@ -28,6 +28,16 @@ class InstrumentoController extends Controller
      */
     public function store(Request $request)
     {
+        $messages = [
+            'fecha_vencimiento.after_or_equal' => 'La fecha de vencimiento debe ser posterior o igual a la fecha de emisión.',
+            'fecha_emision.required' => 'La fecha de emisión es obligatoria.',
+            'fecha_vencimiento.required' => 'La fecha de vencimiento es obligatoria.',
+            'id_emisor.required' => 'El emisor es obligatorio.',
+            'id_tipo_inversion.required' => 'El tipo de inversión es obligatorio.',
+            'codigo_titulo.required' => 'El código de título es obligatorio.',
+            'nombre.required' => 'El nombre es obligatorio.',
+        ];
+
         $validator = Validator::make($request->all(), [
             'id_emisor' => 'required|exists:emisor,id_emisor',
             'id_tipo_inversion' => 'required|exists:catalogo_valor,id_catalogo_valor',
@@ -42,7 +52,7 @@ class InstrumentoController extends Controller
             'codigo_bce' => 'nullable|string|max:50',
             'calificacion_riesgo' => 'nullable|string|max:6',
             'activo' => 'boolean'
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], Response::HTTP_BAD_REQUEST);
@@ -94,6 +104,16 @@ class InstrumentoController extends Controller
             return response()->json(['message' => 'Instrumento no encontrado'], Response::HTTP_NOT_FOUND);
         }
 
+        $messages = [
+            'fecha_vencimiento.after_or_equal' => 'La fecha de vencimiento debe ser posterior o igual a la fecha de emisión.',
+            'fecha_emision.required' => 'La fecha de emisión es obligatoria.',
+            'fecha_vencimiento.required' => 'La fecha de vencimiento es obligatoria.',
+            'id_emisor.required' => 'El emisor es obligatorio.',
+            'id_tipo_inversion.required' => 'El tipo de inversión es obligatorio.',
+            'codigo_titulo.required' => 'El código de título es obligatorio.',
+            'nombre.required' => 'El nombre es obligatorio.',
+        ];
+
         $validator = Validator::make($request->all(), [
             'id_emisor' => 'required|exists:emisor,id_emisor',
             'id_tipo_inversion' => 'required|exists:catalogo_valor,id_catalogo_valor',
@@ -108,7 +128,7 @@ class InstrumentoController extends Controller
             'codigo_bce' => 'nullable|string|max:50',
             'calificacion_riesgo' => 'nullable|string|max:6',
             'activo' => 'boolean'
-        ]);
+        ], $messages);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], Response::HTTP_BAD_REQUEST);

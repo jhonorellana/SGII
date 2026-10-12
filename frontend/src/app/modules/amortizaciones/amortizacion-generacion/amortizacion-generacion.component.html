@@ -61,6 +61,7 @@
                   class="form-select"
                   formControlName="frecuencia_pago"
                   [class.is-invalid]="submitted && f['frecuencia_pago'].errors">
+                  <option [value]="0">Al Vencimiento</option>
                   <option *ngFor="let freq of [1,2,3,4,6,12]" [value]="freq">
                     {{ freq === 1 ? 'Mensual' : freq === 2 ? 'Bimensual' : freq === 3 ? 'Trimestral' : freq === 4 ? 'Cuatrimestral' : freq === 6 ? 'Semestral' : 'Anual' }}
                   </option>
@@ -95,6 +96,7 @@
                   [class.is-invalid]="submitted && f['tipo_amortizacion'].errors">
                   <option value="A">Alemana</option>
                   <option value="F">Francesa</option>
+                  <option value="V">Al Vencimiento</option>
                 </select>
                 <div class="invalid-feedback" *ngIf="submitted && f['tipo_amortizacion'].errors">
                   El tipo de amortización es requerido

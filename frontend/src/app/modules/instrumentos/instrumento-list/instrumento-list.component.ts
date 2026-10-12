@@ -420,6 +420,17 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
   }
 
   save(): void {
+    if (this.instrumento.fecha_emision && this.instrumento.fecha_vencimiento) {
+      if (this.instrumento.fecha_vencimiento < this.instrumento.fecha_emision) {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Validación',
+          detail: 'La fecha de vencimiento debe ser posterior o igual a la fecha de emisión.'
+        });
+        return;
+      }
+    }
+
     if (this.isEdit && this.instrumento.id_instrumento) {
       this.instrumentoService.update(this.instrumento.id_instrumento, this.instrumento).subscribe({
         next: () => {
@@ -428,7 +439,14 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
           this.loadInstrumentos();
         },
         error: (error) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al actualizar instrumento' });
+          let errorDetail = 'Error al actualizar instrumento';
+          if (error.error?.errors) {
+            const messages = Object.values(error.error.errors).flat();
+            errorDetail = messages.join('. ');
+          } else if (error.error?.message) {
+            errorDetail = error.error.message;
+          }
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: errorDetail });
         }
       });
     } else {
@@ -439,7 +457,14 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
           this.loadInstrumentos();
         },
         error: (error) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al crear instrumento' });
+          let errorDetail = 'Error al crear instrumento';
+          if (error.error?.errors) {
+            const messages = Object.values(error.error.errors).flat();
+            errorDetail = messages.join('. ');
+          } else if (error.error?.message) {
+            errorDetail = error.error.message;
+          }
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: errorDetail });
         }
       });
     }

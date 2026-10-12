@@ -59,7 +59,12 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   }
 
   get tipoAmortizacionDisplay(): string {
-    return this.generacionForm.value?.tipo_amortizacion === 'A' ? 'Alemana' : 'Francesa';
+    const tipo = this.generacionForm.value?.tipo_amortizacion;
+    const freq = Number(this.generacionForm.value?.frecuencia_pago);
+    if (tipo === 'V' || freq === 0) {
+      return 'Al Vencimiento';
+    }
+    return tipo === 'A' ? 'Alemana' : 'Francesa';
   }
 
   // Getter para asegurar acceso desde el template
@@ -100,7 +105,7 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   private initForm(): void {
     this.generacionForm = this.fb.group({
       id_inversion: [null, Validators.required],
-      frecuencia_pago: [1, [Validators.required, Validators.min(1), Validators.max(12)]],
+      frecuencia_pago: [1, [Validators.required, Validators.min(0), Validators.max(12)]],
       cuotas_diferir: [0, [Validators.required, Validators.min(0), Validators.max(12)]],
       tipo_amortizacion: ['A', Validators.required]
     });
@@ -119,6 +124,30 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
     if (inversionSub) {
       this.subscriptions.add(inversionSub);
+    }
+
+    // Sincronizar frecuencia_pago y tipo_amortizacion cuando se seleccione "Al Vencimiento"
+    const freqSub = this.generacionForm.get('frecuencia_pago')?.valueChanges.subscribe(freq => {
+      const freqNum = Number(freq);
+      if (freqNum === 0 && this.generacionForm.get('tipo_amortizacion')?.value !== 'V') {
+        this.generacionForm.patchValue({ tipo_amortizacion: 'V', cuotas_diferir: 0 }, { emitEvent: false });
+      } else if (freqNum > 0 && this.generacionForm.get('tipo_amortizacion')?.value === 'V') {
+        this.generacionForm.patchValue({ tipo_amortizacion: 'A' }, { emitEvent: false });
+      }
+    });
+    if (freqSub) {
+      this.subscriptions.add(freqSub);
+    }
+
+    const tipoSub = this.generacionForm.get('tipo_amortizacion')?.valueChanges.subscribe(tipo => {
+      if (tipo === 'V' && Number(this.generacionForm.get('frecuencia_pago')?.value) !== 0) {
+        this.generacionForm.patchValue({ frecuencia_pago: 0, cuotas_diferir: 0 }, { emitEvent: false });
+      } else if (tipo !== 'V' && Number(this.generacionForm.get('frecuencia_pago')?.value) === 0) {
+        this.generacionForm.patchValue({ frecuencia_pago: 1 }, { emitEvent: false });
+      }
+    });
+    if (tipoSub) {
+      this.subscriptions.add(tipoSub);
     }
   }
 
@@ -193,6 +222,11 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
     const tipoInstrumento = this.parametrosInversion.tipo_instrumento?.toLowerCase() || '';
 
+    // Papel Comercial, Factura Comercial o Cero Cupón se amortizan al vencimiento
+    if (tipoInstrumento.includes('papel') || tipoInstrumento.includes('factura') || tipoInstrumento.includes('cero cupon')) {
+      return '0'; // Al Vencimiento
+    }
+
     // Reglas específicas según tipo de instrumento
     if (tipoInstrumento.includes('bono') && tipoInstrumento.includes('estado')) {
       return '1'; // Mensual para Bonos del Estado
@@ -227,9 +261,13 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
   }
 
   getFrecuenciaTexto(): string {
-    const freq = this.generacionForm.value?.frecuencia_pago || 1;
+    const freq = Number(this.generacionForm.value?.frecuencia_pago);
+    const tipo = this.generacionForm.value?.tipo_amortizacion;
+    if (freq === 0 || tipo === 'V') {
+      return 'Al Vencimiento (Pago Único)';
+    }
     switch (freq) {
-      case 1: return 'mes(es)';
+      case 1: return 'mes(es) - Mensual';
       case 2: return 'mes(es) - Bimensual';
       case 3: return 'mes(es) - Trimestral';
       case 4: return 'mes(es) - Cuatrimestral';
@@ -263,10 +301,13 @@ export class AmortizacionGeneracionComponent implements OnInit, OnDestroy {
 
       // Usar la misma lógica que getFrecuenciaSugerida()
       const frecuenciaSugerida = this.getFrecuenciaSugerida();
+      const freqNum = parseInt(frecuenciaSugerida);
 
-      // Aplicar la frecuencia sugerida al combo
+      // Aplicar la frecuencia sugerida al combo y ajustar tipo de amortización
       this.generacionForm.patchValue({
-        frecuencia_pago: parseInt(frecuenciaSugerida)
+        frecuencia_pago: freqNum,
+        tipo_amortizacion: freqNum === 0 ? 'V' : 'A',
+        cuotas_diferir: 0
       });
 
     } catch (error) {

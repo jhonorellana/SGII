@@ -20,9 +20,9 @@ class AmortizacionGeneracionController extends Controller
         try {
             $request->validate([
                 'id_inversion' => 'required|exists:inversion,id_inversion',
-                'frecuencia_pago' => 'required|integer|min:1|max:12',
+                'frecuencia_pago' => 'required|integer|min:0|max:12',
                 'cuotas_diferir' => 'required|integer|min:0|max:12',
-                'tipo_amortizacion' => 'required|in:A,F'
+                'tipo_amortizacion' => 'required|in:A,F,V'
             ]);
 
             $inversion = Inversion::with(['instrumento'])->findOrFail($request->id_inversion);
@@ -98,9 +98,9 @@ class AmortizacionGeneracionController extends Controller
         try {
             $request->validate([
                 'id_inversion' => 'required|exists:inversion,id_inversion',
-                'frecuencia_pago' => 'required|integer|min:1|max:12',
+                'frecuencia_pago' => 'required|integer|min:0|max:12',
                 'cuotas_diferir' => 'required|integer|min:0|max:12',
-                'tipo_amortizacion' => 'required|in:A,F'
+                'tipo_amortizacion' => 'required|in:A,F,V'
             ]);
 
             $inversion = Inversion::with(['instrumento', 'instrumento.tipoInversion'])->findOrFail($request->id_inversion);
@@ -328,6 +328,52 @@ class AmortizacionGeneracionController extends Controller
                     $fechasPagosCapital[] = Carbon::parse(trim($fecha));
                 }
             }
+        }
+
+        // Caso especial: Amortización Al Vencimiento (Pago Único / Papel Comercial / Bullet)
+        if ($frecuenciaPago == 0 || $tipoAmortizacion === 'V') {
+            $fechaPagoUnica = !empty($fechasPagosCapital) ? $fechasPagosCapital[0] : $fechaVencimiento;
+
+            $capitalRetorno = $capitalInvertido;
+            $capitalDevueltoCuota = $capitalInvertido;
+
+            if ($principal > $capitalInvertido) {
+                // Comprado a descuento (caso estándar de papel comercial)
+                $interesCuota = round($principal - $capitalInvertido, 2);
+            } else {
+                // Comprado a la par o rendimiento sobre nominal: calcular según tasa anual y plazo
+                $dias = $fechaEmision->diffInDays($fechaPagoUnica);
+                $interesCuota = round($principal * ($tasaAnual / 100) * ($dias / 360), 2);
+            }
+
+            $premio = 0.00;
+            $flujo = round($capitalRetorno + $interesCuota, 2);
+
+            $cuotas = [
+                [
+                    'numero_cuota' => 1,
+                    'fecha_pago' => $fechaPagoUnica->format('Y-m-d'),
+                    'capital_restante' => round($principal, 2),
+                    'capital_retorno' => round($capitalRetorno, 2),
+                    'capital_devuelto' => round($capitalDevueltoCuota, 2),
+                    'interes_parcial' => round($interesCuota, 2),
+                    'premio' => 0.00,
+                    'interes_total' => round($interesCuota, 2),
+                    'flujo' => round($flujo, 2),
+                    'tiene_interes_acumulado_previo' => false,
+                    'interes_acumulado_previo_aplicado' => 0
+                ]
+            ];
+
+            return [
+                'cuotas' => $cuotas,
+                'fechas_capital' => [$fechaPagoUnica->format('Y-m-d')],
+                'fecha_inicio' => $fechaPagoUnica->format('Y-m-d'),
+                'fecha_fin' => $fechaPagoUnica->format('Y-m-d'),
+                'total_intereses' => round($interesCuota, 2),
+                'total_capital' => round($capitalRetorno, 2),
+                'total_descuento' => 0.00
+            ];
         }
 
         // Calcular fechas de pago
