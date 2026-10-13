@@ -196,22 +196,22 @@ class AmortizacionGeneracionController extends Controller
                 $interesParaGuardar = $cuota['interes_parcial'] + $cuota['premio'];
             }
 
-            Amortizacion::create([
-                'id_amortizacion' => $nextId,
-                'id_inversion' => $inversion->id_inversion,
-                'numero_cuota' => $cuota['numero_cuota'],
-                'fecha_pago' => $cuota['fecha_pago'],
-                'interes' => $interesParaGuardar,
-                'capital' => $cuota['capital_retorno'], // Usar capital_retorno que incluye interés acumulado previo
-                'descuento' => $cuota['premio'],
-                'total' => $interesParaGuardar + $cuota['capital_retorno'] + $cuota['premio'], // Calcular total como suma de interes + capital + descuento
-                'int_parcial' => $cuota['interes_parcial'],
-                'retencion' => 0,
-                'id_estado_amortizacion' => 134, // Pendiente de pago
-                'eliminado' => false,
-                'fecha_creacion' => now(),
-                'fecha_actualizacion' => now()
-            ]);
+                Amortizacion::create([
+                    'id_amortizacion' => $nextId,
+                    'id_inversion' => $inversion->id_inversion,
+                    'numero_cuota' => $cuota['numero_cuota'],
+                    'fecha_pago' => $cuota['fecha_pago'],
+                    'interes' => $interesParaGuardar,
+                    'capital' => $cuota['capital_retorno'], // Usar capital_retorno que incluye interés acumulado previo
+                    'descuento' => $cuota['premio'],
+                    'total' => round($interesParaGuardar + $cuota['capital_retorno'], 2), // Total = interes + capital
+                    'int_parcial' => $cuota['interes_parcial'],
+                    'retencion' => 0,
+                    'id_estado_amortizacion' => 134, // Pendiente de pago
+                    'eliminado' => false,
+                    'fecha_creacion' => now(),
+                    'fecha_actualizacion' => now()
+                ]);
             }
 
             DB::commit();
@@ -409,7 +409,16 @@ class AmortizacionGeneracionController extends Controller
             }
         }
 
-        $numCuotasCapital = count($fechasPagosCapital);
+        // Filtrar fechas de capital vigentes para la inversión (>= fecha_compra)
+        $fechaCompra = $inversion->fecha_compra ? Carbon::parse($inversion->fecha_compra) : null;
+        $fechasCapitalVigentes = [];
+        foreach ($fechasPagosCapital as $fc) {
+            if (!$fechaCompra || $fc >= $fechaCompra) {
+                $fechasCapitalVigentes[] = $fc;
+            }
+        }
+
+        $numCuotasCapital = count($fechasCapitalVigentes) > 0 ? count($fechasCapitalVigentes) : count($fechasPagosCapital);
 
         // Validar que tengamos cuotas de capital para evitar división por cero
         if ($numCuotasCapital <= 0) {
@@ -418,7 +427,7 @@ class AmortizacionGeneracionController extends Controller
 
         \Log::info('Configuración de capital:', [
             'num_cuotas_capital' => $numCuotasCapital,
-            'fechas_capital' => array_map(fn($f) => $f->format('Y-m-d'), $fechasPagosCapital),
+            'fechas_capital_vigentes' => array_map(fn($f) => $f->format('Y-m-d'), $fechasCapitalVigentes),
             'principal' => $principal,
             'montoPagado' => $montoPagado
         ]);
@@ -429,6 +438,15 @@ class AmortizacionGeneracionController extends Controller
         $montoAmortizacion = round($principal / $numCuotasCapital, 2);
         $capitalDevuelto = round($montoPagado / $numCuotasCapital, 2);
 
+        // Premio / Descuento: solo aplica si se adquirió con descuento (bajo la par: principal > montoPagado)
+        $premio = 0.00;
+        if ($principal > $montoPagado) {
+            $premio = round($montoAmortizacion - $capitalDevuelto, 2);
+        } else {
+            $capitalDevuelto = $montoAmortizacion;
+            $premio = 0.00;
+        }
+
         // Para amortización francesa
         $cuotaFija = 0;
         if ($tipoAmortizacion === 'F') {
@@ -438,134 +456,119 @@ class AmortizacionGeneracionController extends Controller
 
         $cuotas = [];
         $capitalRestante = $principal;
-        $numeroCuota = 1;
+        $capitalAcumulado = 0;
+        $capitalDevueltoAcumulado = 0;
+        $primeraCuotaVigenteEncontrada = false;
 
-        foreach ($fechasPago as $fecha) {
-            $interesParcial = $capitalRestante * $tasaMensual;
-            $interesParcial = round($interesParcial, 2);
+        $fechasCapVigentesStr = array_map(fn($f) => $f->format('Y-m-d'), $fechasCapitalVigentes);
 
-            $capitalRetorno = 0;
+        foreach ($fechasPago as $idx => $fecha) {
+            $nroCupon = $idx + 1;
+            $fechaStr = $fecha->format('Y-m-d');
+
+            // Filtrar: solo cuotas vigentes para la inversión (>= fecha_compra)
+            if ($fechaCompra && $fecha < $fechaCompra) {
+                continue;
+            }
+
+            $esPagoCapital = in_array($fechaStr, $fechasCapVigentesStr);
+
+            $interesNormal = round($capitalRestante * $tasaMensual, 2);
+            $interesParcial = $interesNormal;
+
+            $capitalRetornoCuota = 0;
             $capitalDevueltoCuota = 0;
-            $premio = 0;
+            $premioCuota = 0;
 
-            if (in_array($fecha, $fechasPagosCapital)) {
+            if ($esPagoCapital) {
                 if ($tipoAmortizacion === 'A') {
                     // Amortización alemana
-                    $capitalRetorno = $capitalDevuelto;
-                    $capitalDevueltoCuota = $capitalDevuelto;
-                    $premio = round($montoAmortizacion - $capitalDevuelto, 2);
+                    $isLastCapital = ($fechaStr === end($fechasCapVigentesStr) || ($capitalAcumulado + $montoAmortizacion >= $principal));
 
-                    // Calcular interés basado en el capital restante antes de la amortización
-                    $interesNormal = $capitalRestante * $tasaMensual;
-                    $interesNormal = round($interesNormal, 2);
+                    if ($isLastCapital) {
+                        $capitalRetornoCuota = round($principal - $capitalAcumulado, 2);
+                        $capitalDevueltoCuota = round($montoPagado - $capitalDevueltoAcumulado, 2);
+                        if ($premio > 0) {
+                            $premioCuota = round($capitalRetornoCuota - $capitalDevueltoCuota, 2);
+                        } else {
+                            $capitalDevueltoCuota = $capitalRetornoCuota;
+                            $premioCuota = 0.00;
+                        }
+                    } else {
+                        $capitalRetornoCuota = $montoAmortizacion;
+                        $capitalDevueltoCuota = $capitalDevuelto;
+                        $premioCuota = $premio;
+                    }
 
-                    // En cuotas de capital:
-                    // - interes: interés normal + descuento
-                    // - int_parcial: solo interés normal
-                    $interesParcial = $interesNormal + $premio;
-                    $interesParcialParaIntParcial = $interesNormal;  // Solo interés normal para int_parcial
-
-                    // Actualizar capital restante
-                    $capitalRestante -= $montoAmortizacion;
+                    $capitalAcumulado += $capitalRetornoCuota;
+                    $capitalDevueltoAcumulado += $capitalDevueltoCuota;
+                    $capitalRestante -= $capitalRetornoCuota;
                 } else {
                     // Amortización francesa
                     $capitalRetornoCuota = $cuotaFija - $interesParcial;
                     $capitalRestante -= $capitalRetornoCuota;
-                    $capitalRetorno = round($capitalRetornoCuota, 2);
+                    $capitalRetornoCuota = round($capitalRetornoCuota, 2);
                     $capitalEquivalente = round($capitalDevuelto * $capitalRetornoCuota / $montoAmortizacion, 2);
                     $capitalDevueltoCuota = $capitalEquivalente;
-                    $premio = round($capitalRetorno - $capitalEquivalente, 2);
+                    $premioCuota = round($capitalRetornoCuota - $capitalEquivalente, 2);
                 }
             }
 
-            // Ajustar cuotas posteriores a la fecha de compra con interés acumulado previo
-            $fechaCompra = $inversion->fecha_compra ? new Carbon($inversion->fecha_compra) : null;
-            $esPrimeraCuotaDespuesCompra = false;
+            // Lógica de interés acumulado previo en la primera cuota vigente
+            $esPrimeraCuota = false;
+            $interesPrevioAplicado = 0;
 
-            if ($fechaCompra && $fecha > $fechaCompra) {
-                // Esta es la primera cuota después de la fecha de compra
-                if (!isset($primeraCuotaDespuesCompraEncontrada)) {
-                    $primeraCuotaDespuesCompraEncontrada = true;
-                    $esPrimeraCuotaDespuesCompra = true;
+            if (!$primeraCuotaVigenteEncontrada) {
+                $primeraCuotaVigenteEncontrada = true;
+                $esPrimeraCuota = true;
 
-                    // Aplicar lógica de interés acumulado previo
-                    if ($interesAcumuladoPrevio > 0) {
-                        // Guardar valores originales para logging
-                        $interesParcialOriginal = $interesParcial;
-                        $capitalRetornoOriginal = $capitalRetorno;
+                if ($interesAcumuladoPrevio > 0) {
+                    $interesParcialAjustado = max(0, round($interesParcial - $interesAcumuladoPrevio, 2));
+                    $capitalRetornoCuota = round($capitalRetornoCuota + $interesAcumuladoPrevio, 2);
+                    $capitalDevueltoCuota = round($capitalDevueltoCuota + $interesAcumuladoPrevio, 2);
+                    $interesParcial = $interesParcialAjustado;
+                    $interesPrevioAplicado = $interesAcumuladoPrevio;
 
-                        // Restar el interés acumulado previo del interés parcial
-                        $interesParcialAjustado = max(0, $interesParcial - $interesAcumuladoPrevio);
-
-                        // Agregar el interés acumulado previo al capital retorno
-                        $capitalRetornoAjustado = $capitalRetorno + $interesAcumuladoPrevio;
-
-                        // Actualizar valores
-                        $interesParcial = $interesParcialAjustado;
-                        $capitalRetorno = $capitalRetornoAjustado;
-
-                        // Recalcular el total (suma de interés ajustado + capital ajustado)
-                        $interesTotal = $interesParcial + $capitalRetorno;
-
-                        \Log::info('Ajuste por interés acumulado previo en primera cuota después de compra:', [
-                            'numero_cuota' => $numeroCuota,
-                            'fecha_pago' => $fecha->format('Y-m-d'),
-                            'fecha_compra' => $fechaCompra->format('Y-m-d'),
-                            'interes_parcial_original' => $interesParcialOriginal,
-                            'interes_acumulado_previo' => $interesAcumuladoPrevio,
-                            'interes_parcial_ajustado' => $interesParcial,
-                            'capital_retorno_original' => $capitalRetornoOriginal,
-                            'capital_retorno_ajustado' => $capitalRetorno,
-                            'interes_total' => $interesTotal
-                        ]);
-                    }
+                    \Log::info('Ajuste por interés acumulado previo en primera cuota vigente:', [
+                        'numero_cuota' => $nroCupon,
+                        'fecha_pago' => $fechaStr,
+                        'interes_normal' => $interesNormal,
+                        'interes_acumulado_previo' => $interesAcumuladoPrevio,
+                        'interes_parcial_ajustado' => $interesParcial,
+                        'capital_retorno_ajustado' => $capitalRetornoCuota
+                    ]);
                 }
             }
 
-            // Mantener lógica existente para primera cuota si aplica
-            if ($numeroCuota === 1 && $fechaPrimerPago && $fecha >= $fechaPrimerPago && !$esPrimeraCuotaDespuesCompra) {
-                $capitalDevueltoCuota = $interesAcumuladoPrevio;
-                $interesParcial = $primerMesInteres;
-                $premio = 0;
-            }
-
-            // Determinar el valor correcto para int_parcial
-            $interesParcialParaArray = $interesParcial;
-            if (in_array($fecha, $fechasPagosCapital) && $tipoAmortizacion === 'A') {
-                // En cuotas de capital, int_parcial debe ser solo el interés normal
-                $interesParcialParaArray = $interesNormal;
-            }
-
-            // Calcular el total de la cuota sumando sus componentes reales
-            $interesTotal = $interesParcialParaArray + $capitalRetorno + $premio;
+            // En cuotas de capital con amortización alemana, interes incluye premio
+            $interesParaGuardar = $interesParcial + $premioCuota;
+            $flujo = round($interesParcial + $capitalDevueltoCuota + $premioCuota, 2);
 
             $cuotas[] = [
-                'numero_cuota' => $numeroCuota,
-                'fecha_pago' => $fecha->format('Y-m-d'),
-                'capital_restante' => round($capitalRestante, 2),
-                'capital_retorno' => $capitalRetorno,
-                'capital_devuelto' => $capitalDevueltoCuota,
-                'interes_parcial' => $interesParcialParaArray,
-                'premio' => $premio,
-                'interes_total' => round($interesTotal, 2),
-                'flujo' => round($interesParcial + $capitalDevueltoCuota + $premio, 2),
-                'tiene_interes_acumulado_previo' => $esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0,
-                'interes_acumulado_previo_aplicado' => $esPrimeraCuotaDespuesCompra && $interesAcumuladoPrevio > 0 ? $interesAcumuladoPrevio : 0
+                'numero_cuota' => $nroCupon,
+                'fecha_pago' => $fechaStr,
+                'capital_restante' => round($capitalRestante + ($esPagoCapital ? $capitalRetornoCuota : 0), 2),
+                'capital_retorno' => round($capitalRetornoCuota, 2),
+                'capital_devuelto' => round($capitalDevueltoCuota, 2),
+                'interes_parcial' => round($interesParcial, 2),
+                'premio' => round($premioCuota, 2),
+                'interes_total' => round($interesParaGuardar + $capitalRetornoCuota, 2),
+                'flujo' => round($flujo, 2),
+                'tiene_interes_acumulado_previo' => $interesPrevioAplicado > 0,
+                'interes_acumulado_previo_aplicado' => $interesPrevioAplicado
             ];
-
-            $numeroCuota++;
         }
 
         // Calcular totales
         $totalIntereses = array_sum(array_column($cuotas, 'interes_parcial'));
-        $totalCapital = array_sum(array_column($cuotas, 'capital_devuelto'));
+        $totalCapital = array_sum(array_column($cuotas, 'capital_retorno'));
         $totalDescuento = array_sum(array_column($cuotas, 'premio'));
 
         return [
             'cuotas' => $cuotas,
-            'fechas_capital' => array_map(fn($f) => $f->format('Y-m-d'), $fechasPagosCapital),
-            'fecha_inicio' => $fechasPago[0]->format('Y-m-d'),
-            'fecha_fin' => end($fechasPago)->format('Y-m-d'),
+            'fechas_capital' => $fechasCapVigentesStr,
+            'fecha_inicio' => !empty($cuotas) ? $cuotas[0]['fecha_pago'] : null,
+            'fecha_fin' => !empty($cuotas) ? end($cuotas)['fecha_pago'] : null,
             'total_intereses' => round($totalIntereses, 2),
             'total_capital' => round($totalCapital, 2),
             'total_descuento' => round($totalDescuento, 2)
