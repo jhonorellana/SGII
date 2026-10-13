@@ -293,7 +293,10 @@ export class MensajeriaIaComponent implements OnInit {
           }
 
           sorted.forEach(mov => {
-            const monto = Number(mov.monto || 0);
+            let monto = Number(mov.monto || 0);
+            if (monto === 0 && mov.inversion) {
+              monto = Number(mov.inversion.valor_con_interes || mov.inversion.capital_invertido || 0);
+            }
             const signo = mov.signo_catalogo || mov.signoCatalogo;
             if (signo && signo.codigo === 'POSITIVO') {
               saldoPersona += monto;

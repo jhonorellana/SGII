@@ -32,8 +32,8 @@ class CrearMovimientoCompraInversion
             // Obtener la persona dueña de la inversión (id_propietario)
             $idPersona = $inversion->id_propietario;
 
-            // Usar valor_con_interes como monto
-            $monto = $inversion->valor_con_interes;
+            // Usar valor_con_interes como monto, o capital_invertido como fallback (para papeles comerciales u otros)
+            $monto = $inversion->valor_con_interes ?? $inversion->capital_invertido ?? 0;
 
             MovimientoCapital::create([
                 'fecha_movimiento' => $inversion->fecha_compra,
