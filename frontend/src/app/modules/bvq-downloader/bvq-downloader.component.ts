@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { ProgressBarModule } from 'primeng/progressbar';
@@ -47,10 +48,173 @@ export class BvqDownloaderComponent implements OnInit {
   autoImportVector: boolean = true;
   masterAutoImport: boolean = true;
 
-  // Estado del Modal de Log
+  // Flujo Secuencial de Procesos (Checkboxes de selección)
+  pasoDescargar: boolean = true;
+  pasoImportar: boolean = true;
+  pasoEjecutarSps: boolean = true;
+  pasoBackup: boolean = true;
+  tipoBackup: 'both' | 'inversion' | 'sipro_desa' = 'both';
+
+  // Estado de Ejecución del Flujo en Tiempo Real
+  ejecutandoFlujo: boolean = false;
+  pasoActualNumero: number = 0;
+  pasoActualTexto: string = '';
+  subPasoTexto: string = '';
+  progresoPorcentaje: number = 0;
+  pasosCompletados: { [key: number]: boolean } = { 1: false, 2: false, 3: false, 4: false };
+  pasosError: { [key: number]: boolean } = { 1: false, 2: false, 3: false, 4: false };
+  flujoCompletadoExitosamente: boolean = false;
+  flujoError: string = '';
+
+  // Getters para el Flujo de Procesos
+  get algunPasoSeleccionado(): boolean {
+    return this.pasoDescargar || this.pasoImportar || this.pasoEjecutarSps || this.pasoBackup;
+  }
+
+  get todosPasosSeleccionados(): boolean {
+    return this.pasoDescargar && this.pasoImportar && this.pasoEjecutarSps && this.pasoBackup;
+  }
+
+  get totalPasosSeleccionados(): number {
+    let count = 0;
+    if (this.pasoDescargar) count++;
+    if (this.pasoImportar) count++;
+    if (this.pasoEjecutarSps) count++;
+    if (this.pasoBackup) count++;
+    return count;
+  }
+
+  toggleSeleccionarTodosPasos(): void {
+    const nuevoValor = !this.todosPasosSeleccionados;
+    this.pasoDescargar = nuevoValor;
+    this.pasoImportar = nuevoValor;
+    this.pasoEjecutarSps = nuevoValor;
+    this.pasoBackup = nuevoValor;
+    this.guardarAjustes();
+  }
+
+  isPasoSeleccionado(paso: number): boolean {
+    if (paso === 1) return this.pasoDescargar;
+    if (paso === 2) return this.pasoImportar;
+    if (paso === 3) return this.pasoEjecutarSps;
+    if (paso === 4) return this.pasoBackup;
+    return false;
+  }
+
+  // Helpers Visuales para el Stepper del Flujo
+  getStepCardClass(paso: number): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      return 'border-primary bg-primary-soft shadow-sm step-active-pulse';
+    }
+    if (this.pasosError[paso]) {
+      return 'border-danger-subtle bg-light-danger';
+    }
+    if (this.pasosCompletados[paso]) {
+      return 'border-success-subtle bg-light-success';
+    }
+    if (!this.isPasoSeleccionado(paso)) {
+      return 'bg-light text-muted opacity-75';
+    }
+    return 'bg-white';
+  }
+
+  getStepIconClass(paso: number): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      return 'text-primary bg-white shadow-2xs';
+    }
+    if (this.pasosError[paso]) {
+      return 'text-danger bg-white shadow-2xs';
+    }
+    if (this.pasosCompletados[paso]) {
+      return 'text-success bg-white shadow-2xs';
+    }
+    return 'text-muted bg-light';
+  }
+
+  getStepIcon(paso: number, defaultIcon: string): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      return 'bi-hourglass-split spin text-primary';
+    }
+    if (this.pasosError[paso]) {
+      return 'bi-x-circle-fill text-danger';
+    }
+    if (this.pasosCompletados[paso]) {
+      return 'bi-check-circle-fill text-success';
+    }
+    return defaultIcon;
+  }
+
+  getStepStatusText(paso: number): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      if (paso === 1) return 'Descargando 42 boletines...';
+      if (paso === 2) return this.subPasoTexto || 'Importando a BD...';
+      if (paso === 3) return 'Ejecutando 6 SPs en BD...';
+      if (paso === 4) return 'Generando .zip...';
+    }
+    if (this.pasosError[paso]) {
+      return 'Error en proceso';
+    }
+    if (this.pasosCompletados[paso]) {
+      if (paso === 1) return `${this.lastDownloadResult?.exitosos ?? 0} boletines descargados`;
+      if (paso === 2) return 'Tablas actualizadas';
+      if (paso === 3) return 'SPs ejecutados exitosamente';
+      if (paso === 4) {
+        if (this.tipoBackup === 'both') return 'inversion.zip y sipro_desa.zip';
+        return `${this.tipoBackup}.zip generado`;
+      }
+    }
+    if (!this.isPasoSeleccionado(paso)) {
+      return 'No seleccionado';
+    }
+    return 'En espera';
+  }
+
+  getStepBadgeLabel(paso: number): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      return 'En proceso';
+    }
+    if (this.pasosError[paso]) {
+      return 'Error';
+    }
+    if (this.pasosCompletados[paso]) {
+      return 'Listo';
+    }
+    if (!this.isPasoSeleccionado(paso)) {
+      return 'Omitido';
+    }
+    return 'En espera';
+  }
+
+  getStepBadgeClass(paso: number): string {
+    if (this.ejecutandoFlujo && this.pasoActualNumero === paso) {
+      return 'bg-primary text-white';
+    }
+    if (this.pasosError[paso]) {
+      return 'bg-danger text-white';
+    }
+    if (this.pasosCompletados[paso]) {
+      return 'bg-success text-white';
+    }
+    if (!this.isPasoSeleccionado(paso)) {
+      return 'bg-light text-muted border';
+    }
+    return 'bg-secondary-subtle text-secondary';
+  }
+
+  // Estado de los Modales
   displayLogModal: boolean = false;
+  displayDownloadModal: boolean = false;
+  displayImportModal: boolean = false;
   selectedLogFilter: 'ALL' | 'SUCCESS' | 'FAILED' = 'ALL';
   copiadoExitoso: boolean = false;
+
+  abrirModalDescarga(): void {
+    this.displayDownloadModal = true;
+  }
+
+  abrirModalImportacion(): void {
+    this.displayImportModal = true;
+  }
 
   // Estado de Copias de Seguridad (Backup BD)
   loadingBackup: boolean = false;
@@ -117,6 +281,11 @@ export class BvqDownloaderComponent implements OnInit {
     try {
       const data = {
         fechaSeleccionada: this.fechaSeleccionada,
+        pasoDescargar: this.pasoDescargar,
+        pasoImportar: this.pasoImportar,
+        pasoEjecutarSps: this.pasoEjecutarSps,
+        pasoBackup: this.pasoBackup,
+        tipoBackup: this.tipoBackup,
         masterAutoImport: this.masterAutoImport,
         autoImportAcciones: this.autoImportAcciones,
         autoImportBonos: this.autoImportBonos,
@@ -153,6 +322,11 @@ export class BvqDownloaderComponent implements OnInit {
         const data = JSON.parse(raw);
         // La fecha de descarga siempre inicia con la fecha actual del día por defecto
         this.fechaSeleccionada = new Date().toISOString().split('T')[0];
+        if (data.pasoDescargar !== undefined) this.pasoDescargar = data.pasoDescargar;
+        if (data.pasoImportar !== undefined) this.pasoImportar = data.pasoImportar;
+        if (data.pasoEjecutarSps !== undefined) this.pasoEjecutarSps = data.pasoEjecutarSps;
+        if (data.pasoBackup !== undefined) this.pasoBackup = data.pasoBackup;
+        if (data.tipoBackup !== undefined) this.tipoBackup = data.tipoBackup;
         if (data.masterAutoImport !== undefined) this.masterAutoImport = data.masterAutoImport;
         if (data.autoImportAcciones !== undefined) this.autoImportAcciones = data.autoImportAcciones;
         if (data.autoImportBonos !== undefined) this.autoImportBonos = data.autoImportBonos;
@@ -307,6 +481,191 @@ export class BvqDownloaderComponent implements OnInit {
     this.lastImportTitularizacionesResult = null;
     this.lastImportVectorResult = null;
     this.guardarAjustes();
+  }
+
+  async ejecutarFlujoSecuencial(): Promise<void> {
+    if (!this.algunPasoSeleccionado || this.ejecutandoFlujo) return;
+
+    this.ejecutandoFlujo = true;
+    this.flujoCompletadoExitosamente = false;
+    this.flujoError = '';
+    this.error = '';
+    this.pasoActualNumero = 0;
+    this.pasoActualTexto = '';
+    this.subPasoTexto = '';
+    this.progresoPorcentaje = 0;
+    this.pasosCompletados = { 1: false, 2: false, 3: false, 4: false };
+    this.pasosError = { 1: false, 2: false, 3: false, 4: false };
+
+    const totalPasos = this.totalPasosSeleccionados;
+    let pasosCompletadosCount = 0;
+
+    const actualizarProgreso = (fraccionPaso: number = 0) => {
+      const base = (pasosCompletadosCount / totalPasos) * 100;
+      const fraccion = (fraccionPaso / totalPasos) * 100;
+      this.progresoPorcentaje = Math.min(Math.round(base + fraccion), 100);
+    };
+
+    try {
+      // ==========================================
+      // PASO 1: DESCARGAR ARCHIVOS BVQ
+      // ==========================================
+      if (this.pasoDescargar) {
+        this.pasoActualNumero = 1;
+        this.pasoActualTexto = 'Descargando 42 boletines oficiales desde la BVQ...';
+        this.loadingOnlyDownload = true;
+        actualizarProgreso(0.2);
+
+        try {
+          const res = await firstValueFrom(
+            this.bvqService.descargar(
+              this.fechaSeleccionada,
+              false, false, false, false, false, false, false, false, false
+            )
+          );
+          this.loadingOnlyDownload = false;
+          if (res?.data) {
+            this.lastDownloadResult = res.data;
+            if (res.data.fallidos > 0 && res.data.exitosos === 0) {
+              throw new Error(`Fallo en descarga: 0 exitosos, ${res.data.fallidos} fallidos.`);
+            }
+          }
+          this.pasosCompletados[1] = true;
+          pasosCompletadosCount++;
+          actualizarProgreso();
+          this.guardarAjustes();
+          this.cargarHistorial();
+        } catch (err: any) {
+          this.loadingOnlyDownload = false;
+          this.pasosError[1] = true;
+          throw new Error(err?.error?.message || err?.message || 'Error al descargar archivos de la BVQ.');
+        }
+      }
+
+      // ==========================================
+      // PASO 2: IMPORTAR A BASE DE DATOS
+      // ==========================================
+      if (this.pasoImportar) {
+        this.pasoActualNumero = 2;
+        this.pasoActualTexto = 'Importando archivos a las tablas de la base de datos...';
+        this.resetImportResults();
+
+        // Mapeo de módulos a importar
+        const modulos = [
+          { nombre: 'Acciones (shares)', activo: this.autoImportAcciones, fn: () => this.bvqService.importarAcciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportResult = d; if (d?.last_date_in_db) this.lastDateSharesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImport = v },
+          { nombre: 'Bonos (bond_his)', activo: this.autoImportBonos, fn: () => this.bvqService.importarBonos(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportBondsResult = d; if (d?.last_date_in_db) this.lastDateBondsInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportBonds = v },
+          { nombre: 'Dividendos (dividendos_his)', activo: this.autoImportDividendos, fn: () => this.bvqService.importarDividendos(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportDividendsResult = d; if (d?.total_records_in_db) this.totalDividendsInDb = d.total_records_in_db; }, setLoading: (v: boolean) => this.loadingImportDividends = v },
+          { nombre: 'Facturas (facturas_his)', activo: this.autoImportFacturas, fn: () => this.bvqService.importarFacturas(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportFacturasResult = d; if (d?.last_date_in_db) this.lastDateFacturasInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportFacturas = v },
+          { nombre: 'Valores Genéricos (genericos_his)', activo: this.autoImportGenericos, fn: () => this.bvqService.importarGenericos(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportGenericosResult = d; if (d?.last_date_in_db) this.lastDateGenericosInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportGenericos = v },
+          { nombre: 'Obligaciones (obligaciones_his)', activo: this.autoImportObligaciones, fn: () => this.bvqService.importarObligaciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportObligacionesResult = d; if (d?.last_date_in_db) this.lastDateObligacionesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportObligaciones = v },
+          { nombre: 'Papel Comercial (papeles_his)', activo: this.autoImportPapeles, fn: () => this.bvqService.importarPapeles(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportPapelesResult = d; if (d?.last_date_in_db) this.lastDatePapelesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportPapeles = v },
+          { nombre: 'Titularizaciones (titularizaciones_his)', activo: this.autoImportTitularizaciones, fn: () => this.bvqService.importarTitularizaciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportTitularizacionesResult = d; if (d?.last_date_in_db) this.lastDateTitularizacionesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportTitularizaciones = v },
+          { nombre: 'Vector de Precios (vector_precio_diario)', activo: this.autoImportVector, fn: () => this.bvqService.importarVector(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportVectorResult = d; if (d?.last_date_in_db) this.lastDateVectorInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportVector = v }
+        ];
+
+        const modulosActivos = modulos.filter(m => m.activo);
+        let moduloIdx = 0;
+
+        for (const m of modulosActivos) {
+          moduloIdx++;
+          this.subPasoTexto = `${m.nombre} (${moduloIdx}/${modulosActivos.length})`;
+          this.pasoActualTexto = `Importando ${m.nombre} (${moduloIdx}/${modulosActivos.length})...`;
+          m.setLoading(true);
+          actualizarProgreso((moduloIdx / modulosActivos.length) * 0.9);
+
+          try {
+            const res = await firstValueFrom(m.fn());
+            m.setLoading(false);
+            if (res?.data) {
+              m.setRes(res.data);
+            }
+          } catch (err: any) {
+            m.setLoading(false);
+            console.warn(`Error al importar ${m.nombre}:`, err);
+            m.setRes({ success: false, error: err?.error?.message || err?.message || 'Error en importación' });
+          }
+        }
+
+        this.subPasoTexto = '';
+        this.pasosCompletados[2] = true;
+        pasosCompletadosCount++;
+        actualizarProgreso();
+        this.guardarAjustes();
+        this.cargarHistorial();
+      }
+
+      // ==========================================
+      // PASO 3: EJECUTAR PROCEDIMIENTOS ALMACENADOS (SPs)
+      // ==========================================
+      if (this.pasoEjecutarSps) {
+        this.pasoActualNumero = 3;
+        this.pasoActualTexto = 'Ejecutando secuencia de Procedimientos Almacenados (SPs)...';
+        this.subPasoTexto = 'Consolidando inversiones y calculando métricas...';
+        this.loadingSps = true;
+        actualizarProgreso(0.2);
+
+        try {
+          const res = await firstValueFrom(this.bvqService.ejecutarProcedimientos());
+          this.loadingSps = false;
+          if (res?.data) {
+            this.lastSpsResult = res.data;
+          }
+          this.pasosCompletados[3] = true;
+          pasosCompletadosCount++;
+          actualizarProgreso();
+          this.guardarAjustes();
+        } catch (err: any) {
+          this.loadingSps = false;
+          this.pasosError[3] = true;
+          throw new Error(err?.error?.message || err?.message || 'Error al ejecutar Procedimientos Almacenados (SPs).');
+        }
+      }
+
+      // ==========================================
+      // PASO 4: BACKUP DE BASE DE DATOS (.ZIP)
+      // ==========================================
+      if (this.pasoBackup) {
+        this.pasoActualNumero = 4;
+        const targetLabel = this.tipoBackup === 'both' ? 'Ambas BDs (inversion y sipro_desa)' : `Solo BD ${this.tipoBackup}`;
+        this.pasoActualTexto = `Generando copia de seguridad BD (.zip) [${targetLabel}]...`;
+        this.subPasoTexto = 'Comprimiendo volcado SQL en .zip...';
+        this.loadingBackup = true;
+        actualizarProgreso(0.2);
+
+        try {
+          const res = await firstValueFrom(this.bvqService.generarBackup(this.tipoBackup));
+          this.loadingBackup = false;
+          if (res?.data) {
+            this.lastBackupResult = res.data;
+          }
+          this.pasosCompletados[4] = true;
+          pasosCompletadosCount++;
+          actualizarProgreso();
+          this.guardarAjustes();
+        } catch (err: any) {
+          this.loadingBackup = false;
+          this.pasosError[4] = true;
+          throw new Error(err?.error?.message || err?.message || 'Error al generar la copia de seguridad de la base de datos.');
+        }
+      }
+
+      // FINALIZACIÓN EXITOSA
+      this.ejecutandoFlujo = false;
+      this.pasoActualNumero = 0;
+      this.pasoActualTexto = '';
+      this.subPasoTexto = '';
+      this.progresoPorcentaje = 100;
+      this.flujoCompletadoExitosamente = true;
+      this.cargarHistorial();
+      this.guardarAjustes();
+
+    } catch (err: any) {
+      this.ejecutandoFlujo = false;
+      this.flujoError = err?.message || 'Ocurrió un error durante la ejecución del flujo.';
+      this.error = this.flujoError;
+      this.subPasoTexto = '';
+      this.guardarAjustes();
+    }
   }
 
   ejecutarSoloDescarga(): void {
