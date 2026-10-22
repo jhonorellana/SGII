@@ -10,6 +10,7 @@ export interface VentaInversion {
   id_tipo_venta?: number;
   porcentaje_vendido?: number;
   fecha_venta: string;
+  fecha_compra?: string;
   liquidacion_venta?: string;
   precio_venta?: number;
   precio_neto_venta?: number;

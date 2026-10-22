@@ -585,6 +585,28 @@ export class VentaNotasCreditoListComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  getFechaCompraVenta(venta: VentaInversion | null | undefined): string {
+    if (!venta) return '-';
+    if (venta.fecha_compra) {
+      return this.formatDate(venta.fecha_compra);
+    }
+    if (venta.inversion?.fecha_compra) {
+      return this.formatDate(venta.inversion.fecha_compra);
+    }
+    if (venta.detalles && venta.detalles.length > 0) {
+      const fechas = venta.detalles
+        .map(d => d.inversion?.fecha_compra)
+        .filter((f): f is string => !!f);
+      const uniqueFechas = Array.from(new Set(fechas));
+      if (uniqueFechas.length === 1) {
+        return this.formatDate(uniqueFechas[0]);
+      } else if (uniqueFechas.length > 1) {
+        return 'Varios';
+      }
+    }
+    return '-';
+  }
+
   formatCurrency(value: number | null | undefined): string {
     if (value === null || value === undefined) return '$0.00';
     return new Intl.NumberFormat('en-US', {

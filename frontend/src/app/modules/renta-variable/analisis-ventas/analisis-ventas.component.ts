@@ -9,9 +9,13 @@ import { AccionOperacionService } from '../../../core/accion-operacion.service';
 import { PersonaService } from '../../../core/persona.service';
 import { EmisorService } from '../../../core/emisor.service';
 import { InstrumentoService } from '../../../core/instrumento.service';
+import { Chart } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+
+Chart.register(ChartDataLabels);
 
 @Component({
   selector: 'app-analisis-ventas',
@@ -170,15 +174,16 @@ export class AnalisisVentaAccionComponent implements OnInit {
 
   configurarGraficos(): void {
     const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color') || '#334155';
+    const textColor = documentStyle.getPropertyValue('--text-color') || '#1e293b';
     const textColorSecondary = documentStyle.getPropertyValue('--text-color-secondary') || '#64748b';
     const surfaceBorder = documentStyle.getPropertyValue('--surface-border') || '#e2e8f0';
 
     // 1. Gráfico por Emisor
     const emisoresList = this.chartsDataRaw.por_emisor || [];
     const emisorLabels = emisoresList.map((e: any) => e.emisor);
-    const emisorUtilidades = emisoresList.map((e: any) => e.utilidad_perdida);
-    const emisorValoresNetos = emisoresList.map((e: any) => e.valor_neto);
+    // Redondeo explícito a 2 decimales para evitar problemas de precisión flotante IEEE-754
+    const emisorUtilidades = emisoresList.map((e: any) => Math.round((Number(e.utilidad_perdida) || 0) * 100) / 100);
+    const emisorValoresNetos = emisoresList.map((e: any) => Math.round((Number(e.valor_neto) || 0) * 100) / 100);
 
     this.chartEmisorData = {
       labels: emisorLabels,
@@ -201,7 +206,7 @@ export class AnalisisVentaAccionComponent implements OnInit {
     // 2. Gráfico por Año
     const anioList = this.chartsDataRaw.por_anio || [];
     const anioLabels = anioList.map((a: any) => a.anio);
-    const anioUtilidades = anioList.map((a: any) => a.utilidad_perdida);
+    const anioUtilidades = anioList.map((a: any) => Math.round((Number(a.utilidad_perdida) || 0) * 100) / 100);
 
     this.chartAnioData = {
       labels: anioLabels,
@@ -219,7 +224,7 @@ export class AnalisisVentaAccionComponent implements OnInit {
     // 3. Gráfico por Socio
     const socioList = this.chartsDataRaw.por_socio || [];
     const socioLabels = socioList.map((s: any) => s.socio);
-    const socioUtilidades = socioList.map((s: any) => s.utilidad_perdida);
+    const socioUtilidades = socioList.map((s: any) => Math.round((Number(s.utilidad_perdida) || 0) * 100) / 100);
 
     this.chartSocioData = {
       labels: socioLabels,
@@ -232,41 +237,86 @@ export class AnalisisVentaAccionComponent implements OnInit {
       ]
     };
 
+    // Configuración compartida de etiquetas de datos para gráficos de barras
+    const barDatalabels = {
+      anchor: 'end',
+      align: 'top',
+      offset: 4,
+      clip: false,
+      font: { weight: 'bold', size: 11 },
+      color: textColor,
+      formatter: (value: number) => {
+        if (value === null || value === undefined || isNaN(value) || value === 0) return '';
+        const sign = value < 0 ? '-' : '';
+        return sign + '$' + Math.abs(Number(value)).toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+    };
+
     this.chartEmisorOptions = {
       maintainAspectRatio: false,
       aspectRatio: 0.8,
+      categoryPercentage: 0.75,
+      barPercentage: 0.85,
       plugins: {
         legend: {
-          labels: { color: textColor }
+          labels: { color: textColor, font: { weight: '600' } }
         },
+        datalabels: barDatalabels,
         tooltip: {
           callbacks: {
             label: (context: any) => {
               const label = context.dataset.label || '';
-              const val = context.raw || 0;
-              return `${label}: $${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+              const val = Number(context.raw) || 0;
+              const sign = val < 0 ? '-' : '';
+              return `${label}: ${sign}$${Math.abs(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
             }
           }
         }
       },
       scales: {
         x: {
-          ticks: { color: textColorSecondary },
-          grid: { color: surfaceBorder }
+          ticks: { color: textColorSecondary, font: { weight: '600' } },
+          grid: { display: false }
         },
         y: {
-          ticks: { color: textColorSecondary },
+          grace: '15%',
+          ticks: {
+            color: textColorSecondary,
+            callback: (val: any) => '$' + Number(val).toLocaleString('en-US')
+          },
           grid: { color: surfaceBorder }
         }
       }
     };
 
     this.chartAnioOptions = { ...this.chartEmisorOptions };
+
     this.chartSocioOptions = {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          labels: { color: textColor }
+          position: 'bottom',
+          labels: { color: textColor, font: { weight: '500' } }
+        },
+        datalabels: {
+          color: '#ffffff',
+          font: { weight: 'bold', size: 11 },
+          formatter: (value: number) => {
+            if (!value || value <= 0) return '';
+            return '$' + Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: (context: any) => {
+              const label = context.label || '';
+              const val = Number(context.raw) || 0;
+              return ` ${label}: $${val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+          }
         }
       }
     };

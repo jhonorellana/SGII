@@ -386,13 +386,16 @@
             <strong>ID Venta:</strong> {{ selectedVenta.id_venta_inversion }}
           </div>
           <div class="col-md-6">
+            <strong>Instrumento:</strong> {{ selectedVenta.instrumento?.nombre || '-' }}
+          </div>
+          <div class="col-md-6">
+            <strong>Fecha Compra:</strong> {{ getFechaCompraVenta(selectedVenta) }}
+          </div>
+          <div class="col-md-6">
             <strong>Fecha Venta:</strong> {{ formatDate(selectedVenta.fecha_venta) }}
           </div>
           <div class="col-md-6">
             <strong>Liquidación:</strong> {{ selectedVenta.liquidacion_venta || '-' }}
-          </div>
-          <div class="col-md-6">
-            <strong>Instrumento:</strong> {{ selectedVenta.instrumento?.nombre || '-' }}
           </div>
           <div class="col-md-6">
             <strong>Tipo:</strong> {{ selectedVenta.tipoVenta?.nombre || (selectedVenta.id_tipo_venta === 1 ? 'Total' : 'Parcial') }}
@@ -412,6 +415,9 @@
           <div class="col-md-6">
             <strong>Rendimiento Total ($):</strong> {{ formatCurrency(selectedVenta.rendimiento_total) }}
           </div>
+          <div class="col-md-6">
+            <strong>Días Transcurridos:</strong> {{ selectedVenta.dias_transcurridos || '-' }}
+          </div>
         </div>
       </div>
 
@@ -423,6 +429,7 @@
           <ng-template pTemplate="header">
             <tr>
               <th>ID - Liquidación</th>
+              <th>Fecha Compra</th>
               <th>Valor Nominal</th>
               <th>Valor Compra</th>
               <th>Monto Vendido</th>
@@ -433,6 +440,7 @@
           <ng-template pTemplate="body" let-detalle>
             <tr>
               <td>{{ detalle.id_inversion }} - {{ selectedVenta.liquidacion_venta || '-' }}</td>
+              <td>{{ formatDate(detalle.inversion?.fecha_compra || (selectedVenta.detalles?.length === 1 ? selectedVenta.fecha_compra || selectedVenta.inversion?.fecha_compra : null)) || '-' }}</td>
               <td class="text-left">{{ formatCurrency(detalle.valor_nominal) }}</td>
               <td class="text-left">{{ formatCurrency(detalle.valor_compra) }}</td>
               <td class="text-left">{{ formatCurrency(detalle.valor_venta_asignado) }}</td>
@@ -442,7 +450,7 @@
           </ng-template>
           <ng-template pTemplate="footer">
             <tr *ngIf="selectedVenta.detalles && selectedVenta.detalles.length > 0">
-              <td colspan="1"><strong>Totales:</strong></td>
+              <td colspan="2"><strong>Totales:</strong></td>
               <td class="text-left"><strong>{{ formatCurrency(getTotalValorNominal()) }}</strong></td>
               <td class="text-left"><strong>{{ formatCurrency(getTotalValorCompra()) }}</strong></td>
               <td class="text-left"><strong>{{ formatCurrency(getTotalMontoVendido()) }}</strong></td>
@@ -452,7 +460,7 @@
           </ng-template>
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="6" class="text-center py-4">
+              <td colspan="7" class="text-center py-4">
                 No hay inversiones asociadas a esta venta
               </td>
             </tr>

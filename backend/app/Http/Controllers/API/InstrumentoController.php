@@ -17,6 +17,11 @@ class InstrumentoController extends Controller
     public function index()
     {
         $instrumentos = Instrumento::with(['emisor', 'tipoInversion'])
+            ->withSum(['inversiones as total_invertido' => function ($q) {
+                $q->where(function ($sub) {
+                    $sub->where('eliminado', 0)->orWhereNull('eliminado');
+                });
+            }], 'capital_invertido')
             ->orderBy('id_instrumento', 'desc')
             ->get();
 

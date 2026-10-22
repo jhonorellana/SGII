@@ -23,6 +23,7 @@ class InstrumentoResource extends JsonResource
             'fecha_emision' => $this->fecha_emision,
             'fecha_vencimiento' => $this->fecha_vencimiento,
             'tasa_referencial' => $this->tasa_referencial,
+            'total_invertido' => (float) ($this->total_invertido ?? 0),
             'fechas_recuperacion' => $this->fechas_recuperacion,
             'codigo_titulo_vector' => $this->codigo_titulo_vector,
             'codigo_seb' => $this->codigo_seb,

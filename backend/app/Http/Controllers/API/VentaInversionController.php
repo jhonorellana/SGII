@@ -84,6 +84,14 @@ class VentaInversionController extends Controller
             } elseif ((!$v->valor_nominal || $v->valor_nominal == 0) && $v->inversion) {
                 $v->setAttribute('valor_nominal', $v->inversion->valor_nominal);
             }
+
+            // Sincronizar fecha_compra si está disponible en la inversión o en detalles
+            if ($v->inversion && $v->inversion->fecha_compra) {
+                $v->setAttribute('fecha_compra', $v->inversion->fecha_compra);
+            } elseif ($v->detalles && $v->detalles->first() && $v->detalles->first()->inversion && $v->detalles->first()->inversion->fecha_compra) {
+                $v->setAttribute('fecha_compra', $v->detalles->first()->inversion->fecha_compra);
+            }
+
             return $v;
         });
 
@@ -1169,6 +1177,13 @@ class VentaInversionController extends Controller
         } else {
             $venta->ganancia_anual_venta = 0;
             $venta->ganancia_anual_total = 0;
+        }
+
+        // Sincronizar fecha_compra si está disponible en la inversión o en detalles
+        if ($venta->inversion && $venta->inversion->fecha_compra) {
+            $venta->setAttribute('fecha_compra', $venta->inversion->fecha_compra);
+        } elseif ($venta->detalles && $venta->detalles->first() && $venta->detalles->first()->inversion && $venta->detalles->first()->inversion->fecha_compra) {
+            $venta->setAttribute('fecha_compra', $venta->detalles->first()->inversion->fecha_compra);
         }
 
         return response()->json([

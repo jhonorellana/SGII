@@ -11,6 +11,7 @@ export interface Instrumento {
   fecha_emision: string;
   fecha_vencimiento: string;
   tasa_referencial?: number;
+  total_invertido?: number;
   fechas_recuperacion?: string;
   codigo_titulo_vector?: string;
   codigo_seb?: string;
