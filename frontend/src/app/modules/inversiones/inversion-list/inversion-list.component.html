@@ -552,7 +552,7 @@
             <strong>Propietario:</strong> {{ selectedInversion.propietario?.nombre || (selectedInversion.propietario?.nombres + ' ' + selectedInversion.propietario?.apellidos) || '-' }}
           </div>
           <div class="col-md-3">
-            <strong>Instrumento:</strong> {{ selectedInversion.instrumento?.nombre || '-' }}
+            <strong>Liquidación:</strong> {{ selectedInversion.liquidacion || '-' }}
           </div>
           <div class="col-md-3">
             <strong>Emisor:</strong> {{ selectedInversion.instrumento?.emisor?.nombre || '-' }}
@@ -576,6 +576,9 @@
           </div>
           <div class="col-md-3">
             <strong>Rendimiento:</strong> {{ selectedInversion.rendimiento_nominal ? (selectedInversion.rendimiento_nominal + '%') : (selectedInversion.tasa_mensual_real ? selectedInversion.tasa_mensual_real + '%' : '-') }}
+          </div>
+          <div class="col-md-6">
+            <strong>Instrumento:</strong> {{ selectedInversion.instrumento?.nombre || '-' }}
           </div>
         </div>
       </div>
