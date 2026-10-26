@@ -10,6 +10,8 @@ export interface Inversion {
   id_propietario: number;
   id_aportante?: number;
   liquidacion?: string;
+  liquidacion_compra?: string;
+  liquidacion_venta?: string;
   id_estado_inversion: number;
   fecha_compra: string;
   fecha_venta?: string;

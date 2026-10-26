@@ -238,7 +238,7 @@
 
   <!-- Modal para ver inversiones asociadas -->
   <p-dialog [(visible)]="displayInversionesDialog" header="Inversiones de {{ instrumentoSeleccionado?.nombre }}"
-            [style]="{width: '60vw'}" [modal]="true" [closable]="true"
+            [style]="{width: '75vw', maxWidth: '1300px'}" [modal]="true" [closable]="true"
             [closeOnEscape]="true" [dismissableMask]="true" styleClass="app-custom-modal">
     <div *ngIf="loadingInversiones" class="text-center py-4">
       <div class="spinner-border text-primary" role="status"></div>
@@ -251,8 +251,10 @@
         <tr>
           <th>ID</th>
           <th>Propietario</th>
-          <th>Liquidación</th>
+          <th>Liq. Compra</th>
+          <th>Liq. Venta</th>
           <th class="text-center">Fecha Compra</th>
+          <th class="text-center">Fecha Venta</th>
           <th class="text-end">Valor Nominal</th>
           <th class="text-end">Capital Invertido</th>
           <th class="text-center" style="width: 110px;">Estado</th>
@@ -265,6 +267,8 @@
               <option *ngFor="let p of uniquePropietarios" [value]="p">{{ p }}</option>
             </select>
           </th>
+          <th></th>
+          <th></th>
           <th></th>
           <th></th>
           <th></th>
@@ -285,8 +289,10 @@
         <tr class="clickable-row" (click)="verDetalleInversion(inv)" title="Haga clic para ver los detalles de la inversión">
           <td class="text-center">{{ inv.id_inversion }}</td>
           <td>{{ inv.propietario?.nombres }}</td>
-          <td class="text-center">{{ inv.liquidacion || '-' }}</td>
+          <td class="text-center">{{ inv.liquidacion || inv.liquidacion_compra || '-' }}</td>
+          <td class="text-center">{{ inv.liquidacion_venta || '-' }}</td>
           <td class="text-center">{{ formatDate(inv.fecha_compra) }}</td>
+          <td class="text-center">{{ formatDate(inv.fecha_venta) || '-' }}</td>
           <td class="text-end">{{ inv.valor_nominal | currency:'USD' }}</td>
           <td class="text-end">{{ inv.capital_invertido | currency:'USD' }}</td>
           <td class="text-center">
@@ -296,7 +302,7 @@
       </ng-template>
       <ng-template pTemplate="footer">
         <tr class="totals-row">
-          <td colspan="4" class="text-end">Totales:</td>
+          <td colspan="6" class="text-end">Totales:</td>
           <td class="text-end">{{ getTotalValorNominal(dtInv) | currency:'USD' }}</td>
           <td class="text-end">{{ getTotalCapitalInvertido(dtInv) | currency:'USD' }}</td>
           <td></td>
@@ -304,7 +310,7 @@
       </ng-template>
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center py-3">No hay inversiones registradas para este instrumento.</td>
+          <td colspan="9" class="text-center py-3">No hay inversiones registradas para este instrumento.</td>
         </tr>
       </ng-template>
     </p-table>
@@ -317,9 +323,10 @@
       <!-- Información Básica -->
       <h6 class="text-primary border-bottom pb-2 mt-2">Información Básica</h6>
       <div class="row">
-        <div class="col-md-4 mb-2"><strong>ID Inversión:</strong> {{ inversionSeleccionada.id_inversion }}</div>
-        <div class="col-md-4 mb-2"><strong>Estado:</strong> <p-tag [value]="inversionSeleccionada.estadoInversion?.nombre" [severity]="'info'"></p-tag></div>
-        <div class="col-md-4 mb-2"><strong>Liquidación:</strong> {{ inversionSeleccionada.liquidacion || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>ID Inversión:</strong> {{ inversionSeleccionada.id_inversion }}</div>
+        <div class="col-md-3 mb-2"><strong>Estado:</strong> <p-tag [value]="inversionSeleccionada.estadoInversion?.nombre" [severity]="'info'"></p-tag></div>
+        <div class="col-md-3 mb-2"><strong>Liq. Compra:</strong> {{ inversionSeleccionada.liquidacion || '-' }}</div>
+        <div class="col-md-3 mb-2"><strong>Liq. Venta:</strong> {{ inversionSeleccionada.liquidacion_venta || '-' }}</div>
         <div class="col-md-6 mb-2"><strong>Propietario:</strong> {{ inversionSeleccionada.propietario?.nombres || inversionSeleccionada.propietario?.nombre || '-' }}</div>
         <div class="col-md-6 mb-2"><strong>Aportante:</strong> {{ inversionSeleccionada.aportante?.nombres || inversionSeleccionada.aportante?.nombre || '-' }}</div>
         <div class="col-md-12 mb-2"><strong>Observaciones:</strong> {{ inversionSeleccionada.observacion || '-' }}</div>

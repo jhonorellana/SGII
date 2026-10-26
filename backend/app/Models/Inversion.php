@@ -10,6 +10,8 @@ class Inversion extends Model
     protected $primaryKey = 'id_inversion';
     public $timestamps = false;
 
+    protected $appends = ['liquidacion_venta'];
+
     protected $fillable = [
         'id_grupo_familiar',
         'id_instrumento',
@@ -178,5 +180,13 @@ class Inversion extends Model
     public function scopeActivas($query)
     {
         return $query->where('id_estado_inversion', 128);
+    }
+
+    public function getLiquidacionVentaAttribute()
+    {
+        if ($this->relationLoaded('ventas')) {
+            return $this->ventas->pluck('liquidacion_venta')->filter()->unique()->implode(', ') ?: null;
+        }
+        return $this->ventas()->pluck('liquidacion_venta')->filter()->unique()->implode(', ') ?: null;
     }
 }

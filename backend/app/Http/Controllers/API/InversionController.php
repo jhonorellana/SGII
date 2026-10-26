@@ -18,7 +18,7 @@ class InversionController extends Controller
      */
     public function index(\Illuminate\Http\Request $request)
     {
-        $query = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']);
+        $query = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion', 'ventas']);
 
         if ($request->has('id_instrumento')) {
             $query->where('id_instrumento', $request->query('id_instrumento'));
@@ -146,7 +146,7 @@ class InversionController extends Controller
      */
     public function show($id)
     {
-        $inversion = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion'])->find($id);
+        $inversion = Inversion::with(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion', 'ventas'])->find($id);
 
         if (!$inversion) {
             return response()->json(['message' => 'Inversión no encontrada'], Response::HTTP_NOT_FOUND);
