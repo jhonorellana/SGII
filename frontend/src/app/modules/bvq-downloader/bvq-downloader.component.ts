@@ -36,7 +36,7 @@ export class BvqDownloaderComponent implements OnInit {
   loadingImportTitularizaciones: boolean = false;
   loadingImportVector: boolean = false;
   loadingDownloadMap: { [key: string]: boolean } = {};
-  fechaSeleccionada: string = new Date().toISOString().split('T')[0];
+  fechaSeleccionada: string = this.getFechaHoyLocal();
   autoImportAcciones: boolean = true;
   autoImportBonos: boolean = true;
   autoImportDividendos: boolean = true;
@@ -275,12 +275,19 @@ export class BvqDownloaderComponent implements OnInit {
     this.guardarAjustes();
   }
 
+  private getFechaHoyLocal(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   private readonly STORAGE_KEY = 'bvq_downloader_settings';
 
   guardarAjustes(): void {
     try {
       const data = {
-        fechaSeleccionada: this.fechaSeleccionada,
         pasoDescargar: this.pasoDescargar,
         pasoImportar: this.pasoImportar,
         pasoEjecutarSps: this.pasoEjecutarSps,
@@ -316,12 +323,15 @@ export class BvqDownloaderComponent implements OnInit {
   }
 
   cargarAjustesGuardados(): void {
+    // La fecha de descarga siempre inicia con la fecha actual del día por defecto
+    this.fechaSeleccionada = this.getFechaHoyLocal();
+
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
         // La fecha de descarga siempre inicia con la fecha actual del día por defecto
-        this.fechaSeleccionada = new Date().toISOString().split('T')[0];
+        this.fechaSeleccionada = this.getFechaHoyLocal();
         if (data.pasoDescargar !== undefined) this.pasoDescargar = data.pasoDescargar;
         if (data.pasoImportar !== undefined) this.pasoImportar = data.pasoImportar;
         if (data.pasoEjecutarSps !== undefined) this.pasoEjecutarSps = data.pasoEjecutarSps;

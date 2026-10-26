@@ -128,6 +128,7 @@ class FlujoCapitalController extends Controller
                 SELECT
                     a.id_amortizacion,
                     i.fecha_compra,
+                    inst.fecha_vencimiento,
                     a.id_inversion,
                     i.liquidacion,
                     CONCAT_WS(' ', p.nombres, p.apellidos) AS propietario,
@@ -177,6 +178,7 @@ class FlujoCapitalController extends Controller
                 $detalleItems[] = [
                     'id_amortizacion' => $row->id_amortizacion,
                     'fecha_compra' => $row->fecha_compra,
+                    'fecha_vencimiento' => $row->fecha_vencimiento,
                     'id_inversion' => $row->id_inversion,
                     'propietario' => $row->propietario ?? '-',
                     'liquidacion' => $row->liquidacion,

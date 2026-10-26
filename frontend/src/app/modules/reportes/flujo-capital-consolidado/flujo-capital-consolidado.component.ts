@@ -984,6 +984,56 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     });
   }
 
+  // --- Helper methods para cálculo de fechas y días ---
+  formatDateOnlyString(val: any): string {
+    if (!val) return '';
+    if (typeof val === 'string') {
+      const match = val.trim().match(/^(\d{4}-\d{2}-\d{2})/);
+      if (match) return match[1];
+    }
+    if (val instanceof Date) {
+      const year = val.getFullYear();
+      const month = String(val.getMonth() + 1).padStart(2, '0');
+      const day = String(val.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    return String(val);
+  }
+
+  parseDateToUTC(val: any): number | null {
+    if (!val) return null;
+    let year: number, month: number, day: number;
+    if (val instanceof Date) {
+      year = val.getFullYear();
+      month = val.getMonth();
+      day = val.getDate();
+    } else if (typeof val === 'string') {
+      const match = val.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (match) {
+        year = parseInt(match[1], 10);
+        month = parseInt(match[2], 10) - 1;
+        day = parseInt(match[3], 10);
+      } else {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return null;
+        year = d.getFullYear();
+        month = d.getMonth();
+        day = d.getDate();
+      }
+    } else {
+      return null;
+    }
+    return Date.UTC(year, month, day);
+  }
+
+  calculateDaysDifference(startVal: any, endVal: any): number | null {
+    const startUtc = this.parseDateToUTC(startVal);
+    const endUtc = this.parseDateToUTC(endVal);
+    if (startUtc === null || endUtc === null) return null;
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((endUtc - startUtc) / msPerDay);
+  }
+
   // --- Lógica de Edición de Amortización ---
   editarAmortizacion(item: any): void {
     if (!item.id_amortizacion) {
@@ -994,6 +1044,21 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     this.loadingAmortizacion = true;
     this.displayEditAmortizacionDialog = true;
     this.editingAmortizacionId = item.id_amortizacion;
+
+    // Pre-calcular fechas iniciales desde item para disponibilidad inmediata
+    const initialFechaCompra = this.formatDateOnlyString(item.fecha_compra);
+    let initialFechaVencimiento = this.formatDateOnlyString(item.fecha_vencimiento);
+    if (!initialFechaVencimiento && item.nombre_instrumento) {
+      const matches = item.nombre_instrumento.match(/\b(\d{4}-\d{2}-\d{2})\b/g);
+      if (matches && matches.length > 0) {
+        initialFechaVencimiento = matches[matches.length - 1];
+      }
+    }
+    item.fecha_compra_formateada = initialFechaCompra;
+    item.fecha_vencimiento_formateada = initialFechaVencimiento;
+    item.dias_compra_vencimiento = this.calculateDaysDifference(initialFechaCompra, initialFechaVencimiento);
+    item.dias_transcurridos_hoy = this.calculateDaysDifference(initialFechaCompra, new Date());
+
     this.selectedAmortizacionDetalle = item;
     this.inversionResumen = null;
 
@@ -1023,6 +1088,21 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
           }
         });
 
+        // Fechas de compra y vencimiento consolidadas
+        const rawFechaCompra = inv?.fecha_compra || item.fecha_compra;
+        let rawFechaVencimiento = inv?.instrumento?.fecha_vencimiento || item.fecha_vencimiento;
+        if (!rawFechaVencimiento && (inv?.instrumento?.nombre || item.nombre_instrumento)) {
+          const matches = (inv?.instrumento?.nombre || item.nombre_instrumento).match(/\b(\d{4}-\d{2}-\d{2})\b/g);
+          if (matches && matches.length > 0) {
+            rawFechaVencimiento = matches[matches.length - 1];
+          }
+        }
+
+        const fechaCompra = this.formatDateOnlyString(rawFechaCompra) || initialFechaCompra;
+        const fechaVencimiento = this.formatDateOnlyString(rawFechaVencimiento) || initialFechaVencimiento;
+        const diasCompraVencimiento = this.calculateDaysDifference(fechaCompra, fechaVencimiento);
+        const diasTranscurridosHoy = this.calculateDaysDifference(fechaCompra, new Date());
+
         this.inversionResumen = {
           valorNominalOriginal: valorNominalOriginal,
           valorNominalRecibido: capitalRecibido,
@@ -1032,7 +1112,11 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
           capitalInvertidoPendiente: valorNominalOriginal > 0 ? Math.max(0, capitalInvertidoOriginal - ((capitalRecibido / valorNominalOriginal) * capitalInvertidoOriginal)) : capitalInvertidoOriginal,
           interesTotalEsperado: interesEsperado,
           interesTotalRecibido: interesRecibido,
-          interesTotalPendiente: Math.max(0, interesEsperado - interesRecibido)
+          interesTotalPendiente: Math.max(0, interesEsperado - interesRecibido),
+          fechaCompra: fechaCompra,
+          fechaVencimiento: fechaVencimiento,
+          diasCompraVencimiento: diasCompraVencimiento,
+          diasTranscurridosHoy: diasTranscurridosHoy
         };
       },
       error: (err) => console.error('Error cargando inversión y amortizaciones:', err)

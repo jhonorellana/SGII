@@ -35,7 +35,7 @@ export interface BvgModuleConfig {
 export class BvgDownloaderComponent implements OnInit {
   loading: boolean = false;
   loadingDownloadMap: { [key: string]: boolean } = {};
-  fechaSeleccionada: string = new Date().toISOString().split('T')[0];
+  fechaSeleccionada: string = this.getFechaHoyLocal();
 
   // Estado del Modal de Log
   displayLogModal: boolean = false;
@@ -152,10 +152,17 @@ export class BvgDownloaderComponent implements OnInit {
     this.guardarAjustes();
   }
 
+  private getFechaHoyLocal(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   guardarAjustes(): void {
     try {
       const data = {
-        fechaSeleccionada: this.fechaSeleccionada,
         activeTab: this.activeTab,
         selectedLogFilter: this.selectedLogFilter,
         lastDownloadResult: this.lastDownloadResult
@@ -167,11 +174,13 @@ export class BvgDownloaderComponent implements OnInit {
   }
 
   cargarAjustesGuardados(): void {
+    // La fecha de descarga siempre inicia con la fecha actual del día por defecto
+    this.fechaSeleccionada = this.getFechaHoyLocal();
+
     try {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (raw) {
         const data = JSON.parse(raw);
-        if (data.fechaSeleccionada) this.fechaSeleccionada = data.fechaSeleccionada;
         if (data.activeTab) this.activeTab = data.activeTab;
         if (data.selectedLogFilter) this.selectedLogFilter = data.selectedLogFilter;
         if (data.lastDownloadResult) this.lastDownloadResult = data.lastDownloadResult;

@@ -350,7 +350,17 @@
         <div class="col-md-6 mb-2"><strong>Liquidación:</strong> {{ selectedAmortizacionDetalle.liquidacion }}</div>
         <div class="col-md-12 mb-2"><strong>Instrumento:</strong> {{ selectedAmortizacionDetalle.nombre_instrumento }}</div>
         <div class="col-md-6 mb-2"><strong>Propietario:</strong> {{ selectedAmortizacionDetalle.propietario }}</div>
-        <div class="col-md-6 mb-2"><strong>Cuota No.:</strong> {{ selectedAmortizacionDetalle.cuota }}</div>
+        <div class="col-md-6 mb-2"><strong>Cuota No.:</strong> {{ selectedAmortizacionDetalle.cuota || '-' }}</div>
+        <div class="col-md-6 mb-2"><strong>Fecha de Compra:</strong> {{ inversionResumen?.fechaCompra || selectedAmortizacionDetalle.fecha_compra_formateada || selectedAmortizacionDetalle.fecha_compra || '-' }}</div>
+        <div class="col-md-6 mb-2"><strong>Fecha de Vencimiento:</strong> {{ inversionResumen?.fechaVencimiento || selectedAmortizacionDetalle.fecha_vencimiento_formateada || selectedAmortizacionDetalle.fecha_vencimiento || '-' }}</div>
+        <div class="col-md-6 mb-2">
+          <strong>Días Compra a Vencimiento:</strong> 
+          {{ (inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) != null ? ((inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) | number) + ' días' : '-' }}
+        </div>
+        <div class="col-md-6 mb-2">
+          <strong>Días Transcurridos a Hoy:</strong> 
+          {{ (inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) != null ? ((inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) | number) + ' días' : '-' }}
+        </div>
       </div>
       
       <hr style="border-color: #bae6fd; margin-top: 5px; margin-bottom: 10px;">
