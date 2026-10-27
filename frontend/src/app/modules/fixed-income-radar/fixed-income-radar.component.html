@@ -42,6 +42,16 @@
         <span class="badge bg-primary rounded-pill px-2 py-0.5 extra-small ms-1">{{ portfolioSummary.total_posiciones }}</span>
       </button>
     </li>
+    <li class="nav-item">
+      <button 
+        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
+        [class.active]="activeTab === 'CURVA'" 
+        (click)="setTab('CURVA')">
+        <i class="bi bi-graph-up text-info fs-5"></i>
+        <span>Curva de Rendimiento Cero Cupón</span>
+        <span class="badge bg-info text-dark rounded-pill px-2 py-0.5 extra-small ms-1">BVQ</span>
+      </button>
+    </li>
   </ul>
 
   <!-- ========================================== -->
@@ -595,6 +605,319 @@
           </tr>
         </ng-template>
       </p-table>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 3: CURVA DE RENDIMIENTO CERO CUPÓN     -->
+  <!-- ========================================== -->
+  <div *ngIf="activeTab === 'CURVA'" class="fade-in">
+    <!-- BARRA DE CONTROLES Y FILTROS DE HORIZONTE -->
+    <div class="card border-0 shadow-2xs rounded-3 p-3 bg-white mb-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <!-- Selector de Vector y Fecha -->
+        <div class="d-flex align-items-center gap-2">
+          <label class="form-label mb-0 fw-bold extra-small text-uppercase text-muted">
+            <i class="bi bi-calendar3 me-1 text-primary"></i> Vector BVQ:
+          </label>
+          <p-dropdown 
+            [options]="availableCurveDates" 
+            [(ngModel)]="selectedCurveDate" 
+            (onChange)="onCurveDateChange()" 
+            placeholder="Seleccione Fecha"
+            styleClass="p-inputtext-sm">
+          </p-dropdown>
+          <button class="btn btn-outline-secondary btn-sm rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;" (click)="loadYieldCurve()" title="Recargar Curva">
+            <i class="bi bi-arrow-clockwise" [ngClass]="{'spin': curveLoading}"></i>
+          </button>
+        </div>
+
+        <!-- Filtro de Horizonte Temporal (Pills) -->
+        <div class="d-flex align-items-center gap-2">
+          <span class="extra-small text-muted fw-bold text-uppercase d-none d-md-inline">Horizonte:</span>
+          <div class="btn-group btn-group-sm" role="group">
+            <button 
+              *ngFor="let opt of horizonOptions" 
+              type="button" 
+              class="btn py-1 px-2.5 fw-semibold" 
+              [ngClass]="selectedHorizonDays === opt.value ? 'btn-primary' : 'btn-outline-secondary'"
+              (click)="setCurveHorizon(opt.value)"
+              [title]="opt.desc">
+              {{ opt.label }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARJETAS KPI DE LA CURVA VS PORTAFOLIO -->
+    <div class="kpi-grid mb-3">
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-success-subtle p-2 text-success fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Spread Promedio Cartera</div>
+            <div class="fs-5 fw-bold lh-1 my-1" [ngClass]="(curveData?.estadisticas?.spread_promedio_bps || 0) >= 0 ? 'text-success' : 'text-danger'">
+              {{ (curveData?.estadisticas?.spread_promedio_bps || 0) >= 0 ? '+' : '' }}{{ curveData?.estadisticas?.spread_promedio_bps || 0 }} bps
+            </div>
+            <div class="extra-small text-muted">Sobre Curva Cero Cupón BVQ</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-primary-subtle p-2 text-primary fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-percent"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Tasa Promedio Ponderada</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ curveData?.estadisticas?.tasa_promedio_portafolio | number:'1.2-2' }}%</div>
+            <div class="extra-small text-muted">Rendimiento anual pactado</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-purple-subtle p-2 text-purple fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Plazo Promedio Remanente</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">{{ curveData?.estadisticas?.plazo_promedio_dias || 0 }} días</div>
+            <div class="extra-small text-muted">~{{ ((curveData?.estadisticas?.plazo_promedio_dias || 0) / 360) | number:'1.1-1' }} Años al vencimiento</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-2xs bg-white rounded-3">
+        <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+          <div class="rounded-circle bg-amber-subtle p-2 text-amber fs-5 d-flex align-items-center justify-content-center kpi-icon">
+            <i class="bi bi-check2-circle"></i>
+          </div>
+          <div>
+            <div class="kpi-label text-muted fw-semibold text-uppercase">Distribución de Títulos</div>
+            <div class="fs-5 fw-bold text-dark lh-1 my-1">
+              <span class="text-success">{{ curveData?.estadisticas?.posiciones_sobre_curva || 0 }}</span>
+              <span class="text-muted fw-normal fs-6"> sobre / </span>
+              <span class="text-warning">{{ curveData?.estadisticas?.posiciones_bajo_curva || 0 }}</span>
+              <span class="text-muted fw-normal fs-6"> bajo</span>
+            </div>
+            <div class="extra-small text-muted">{{ curveData?.estadisticas?.total_posiciones || 0 }} títulos posicionados</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRÁFICO INTERACTIVO DE LA CURVA -->
+    <div class="card border-0 shadow-2xs rounded-3 bg-white p-3 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom flex-wrap gap-2">
+        <div>
+          <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+            <i class="bi bi-graph-up text-primary"></i>
+            Curva de Rendimiento Cero Cupón (BVQ) vs Mis Inversiones
+          </h5>
+          <small class="text-muted">
+            Línea continua: Curva oficial de descuento del mercado ecuatoriano (TIR % vs Días). Puntos: Tus inversiones individuales de Renta Fija.
+          </small>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <!-- Filtro de Horizonte Temporal integrado directamente en el gráfico -->
+          <div class="d-flex align-items-center gap-1.5 me-2">
+            <span class="extra-small text-muted fw-bold text-uppercase d-none d-lg-inline">Horizonte:</span>
+            <div class="btn-group btn-group-sm" role="group">
+              <button 
+                *ngFor="let opt of horizonOptions" 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="selectedHorizonDays === opt.value ? 'btn-primary' : 'btn-outline-secondary'"
+                (click)="setCurveHorizon(opt.value)"
+                [title]="opt.desc">
+                {{ opt.label }}
+              </button>
+            </div>
+          </div>
+
+          <span class="badge bg-light text-dark border">
+            <span class="badge rounded-circle p-1 bg-success me-1"> </span> Sobre Curva (+Spread)
+          </span>
+          <span class="badge bg-light text-dark border">
+            <span class="badge rounded-circle p-1 bg-warning me-1"> </span> Bajo Curva (-Spread)
+          </span>
+        </div>
+      </div>
+
+      <!-- Spinner mientras carga la curva -->
+      <div *ngIf="curveLoading" class="d-flex flex-column align-items-center justify-content-center py-5 text-center" style="height: 440px;">
+        <div class="spinner-border text-primary mb-3" style="width: 2.5rem; height: 2.5rem;" role="status">
+          <span class="visually-hidden">Cargando Curva...</span>
+        </div>
+        <div class="text-dark fw-bold">Generando Curva de Rendimiento y Benchmark...</div>
+      </div>
+
+      <!-- Chart container -->
+      <div *ngIf="!curveLoading" class="w-100" style="min-height: 440px; position: relative;">
+        <p-chart type="scatter" [data]="curveChartData" [options]="curveChartOptions" height="440px" [style]="{width: '100%'}"></p-chart>
+      </div>
+
+      <div class="mt-2 pt-2 border-top extra-small text-muted d-flex justify-content-between flex-wrap gap-2">
+        <span>
+          <i class="bi bi-info-circle text-primary me-1"></i>
+          <strong>Metodología BVQ:</strong> Curva cupón cero interpolada a partir de negociaciones de Deuda Pública y Corporativa. Pasa el cursor sobre cualquier punto para ver el emisor, tasa y spread exacto.
+        </span>
+        <span class="fw-semibold">
+          Capital Total en Curva: ${{ curveData?.estadisticas?.total_capital | number:'1.2-2' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- SECCIÓN INFERIOR: HITOS OFICIALES (IZQUIERDA) & TABLA COMPARATIVA (DERECHA) -->
+    <div class="row g-3">
+      <!-- Columna Izquierda: Tabla de Hitos Benchmark Oficial -->
+      <div class="col-lg-4">
+        <div class="card border-0 shadow-2xs rounded-3 bg-white overflow-hidden h-100">
+          <div class="card-header bg-light py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5">
+              <i class="bi bi-compass text-primary"></i>
+              Hitos Oficiales del Mercado
+            </h6>
+            <span class="badge bg-white text-dark border extra-small">Plazos Estándar</span>
+          </div>
+
+          <div class="table-responsive" style="max-height: 420px;">
+            <table class="table table-sm table-hover align-middle mb-0 extra-small">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th style="width: 40%">Plazo Estándar</th>
+                  <th class="text-center" style="width: 30%">Días</th>
+                  <th class="text-end" style="width: 30%">TIR Mercado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let hito of curveData?.hitos_mercado">
+                  <td class="fw-bold text-dark">
+                    <i class="bi bi-dot text-primary fs-5 align-middle"></i>
+                    {{ hito.label }}
+                  </td>
+                  <td class="text-center font-monospace text-muted">{{ hito.plazo_dias }} d</td>
+                  <td class="text-end font-monospace fw-bold text-primary fs-7">
+                    {{ hito.tasa_tir | number:'1.2-4' }}%
+                  </td>
+                </tr>
+                <tr *ngIf="!curveData?.hitos_mercado || curveData?.hitos_mercado?.length === 0">
+                  <td colspan="3" class="text-center p-3 text-muted">No hay hitos disponibles para el vector seleccionado.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Tabla Comparativa de Mis Posiciones vs Curva -->
+      <div class="col-lg-8">
+        <div class="card border-0 shadow-2xs rounded-3 bg-white overflow-hidden h-100">
+          <div class="card-header bg-light py-2 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-1.5">
+              <i class="bi bi-list-check text-success"></i>
+              Mis Títulos vs Curva BVQ ({{ filteredCurvePositions.length }})
+            </h6>
+
+            <!-- Filtros de la tabla -->
+            <div class="d-flex align-items-center gap-2">
+              <!-- Filtro de Spread -->
+              <div class="btn-group btn-group-sm" role="group">
+                <button 
+                  type="button" 
+                  class="btn py-0.5 px-2 extra-small fw-semibold" 
+                  [ngClass]="curveSpreadFilter === 'TODOS' ? 'btn-secondary' : 'btn-outline-secondary'"
+                  (click)="setCurveSpreadFilter('TODOS')">
+                  Todos
+                </button>
+                <button 
+                  type="button" 
+                  class="btn py-0.5 px-2 extra-small fw-semibold" 
+                  [ngClass]="curveSpreadFilter === 'SOBRE' ? 'btn-success' : 'btn-outline-success'"
+                  (click)="setCurveSpreadFilter('SOBRE')">
+                  Sobre Curva
+                </button>
+                <button 
+                  type="button" 
+                  class="btn py-0.5 px-2 extra-small fw-semibold" 
+                  [ngClass]="curveSpreadFilter === 'BAJO' ? 'btn-warning' : 'btn-outline-warning'"
+                  (click)="setCurveSpreadFilter('BAJO')">
+                  Bajo Curva
+                </button>
+              </div>
+
+              <!-- Buscador -->
+              <div class="input-group input-group-sm" style="width: 180px;">
+                <span class="input-group-text bg-white border-end-0 py-0.5"><i class="bi bi-search text-muted extra-small"></i></span>
+                <input 
+                  type="text" 
+                  class="form-control border-start-0 py-0.5 extra-small" 
+                  [(ngModel)]="curveSearchTerm" 
+                  placeholder="Buscar título..." />
+              </div>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="max-height: 420px;">
+            <table class="table table-sm table-hover align-middle mb-0 extra-small">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th style="width: 32%">Instrumento / Emisor</th>
+                  <th class="text-center" style="width: 10%">Rating</th>
+                  <th class="text-center" style="width: 12%">Plazo</th>
+                  <th class="text-end" style="width: 12%">Tasa Título</th>
+                  <th class="text-end" style="width: 12%">Curva BVQ</th>
+                  <th class="text-end" style="width: 12%">Spread</th>
+                  <th class="text-end" style="width: 10%">Saldo Capital</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let pos of filteredCurvePositions">
+                  <td>
+                    <div class="fw-bold text-dark text-truncate" style="max-width: 220px;" [title]="pos.nombre_emisor">{{ pos.nombre_emisor }}</div>
+                    <div class="text-muted extra-small text-truncate" style="max-width: 220px;" [title]="pos.nombre_instrumento">{{ pos.nombre_instrumento }}</div>
+                  </td>
+                  <td class="text-center">
+                    <p-tag [value]="pos.calificacion_riesgo" [severity]="getRatingSeverity(pos.calificacion_riesgo)"></p-tag>
+                  </td>
+                  <td class="text-center font-monospace">
+                    <span class="fw-bold text-dark">{{ pos.plazo_dias }} d</span>
+                    <span class="d-block extra-small text-muted">~{{ (pos.plazo_dias / 360) | number:'1.1-1' }}A</span>
+                  </td>
+                  <td class="text-end font-monospace fw-bold text-dark fs-7">
+                    {{ pos.rendimiento_compra | number:'1.2-2' }}%
+                  </td>
+                  <td class="text-end font-monospace text-muted fs-7">
+                    {{ pos.benchmark_tir | number:'1.2-2' }}%
+                  </td>
+                  <td class="text-end font-monospace">
+                    <span class="badge" [ngClass]="pos.spread_bps >= 0 ? 'bg-success' : 'bg-warning text-dark'">
+                      {{ pos.spread_bps >= 0 ? '+' : '' }}{{ pos.spread_bps }} bps
+                    </span>
+                    <span class="d-block extra-small" [ngClass]="pos.spread_bps >= 0 ? 'text-success' : 'text-danger'">
+                      {{ pos.spread_pct >= 0 ? '+' : '' }}{{ pos.spread_pct | number:'1.2-2' }}%
+                    </span>
+                  </td>
+                  <td class="text-end font-monospace fw-semibold text-dark">
+                    ${{ pos.capital_invertido | number:'1.2-2' }}
+                  </td>
+                </tr>
+                <tr *ngIf="filteredCurvePositions.length === 0">
+                  <td colspan="7" class="text-center p-3 text-muted">
+                    No hay posiciones registradas con los filtros seleccionados.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 

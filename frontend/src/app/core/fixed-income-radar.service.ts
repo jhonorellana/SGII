@@ -130,6 +130,54 @@ export interface InvestmentDetailResponse {
   };
 }
 
+export interface FixedIncomeCurvePoint {
+  x: number; // plazo_dias
+  y: number; // tasa_tir
+}
+
+export interface FixedIncomeCurveMilestone {
+  plazo_dias: number;
+  label: string;
+  tasa_tir: number;
+}
+
+export interface FixedIncomePortfolioCurvePoint {
+  id_inversion: number;
+  nombre_instrumento: string;
+  nombre_emisor: string;
+  calificacion_riesgo: string;
+  capital_invertido: number;
+  plazo_dias: number;
+  rendimiento_compra: number;
+  benchmark_tir: number;
+  spread_pct: number;
+  spread_bps: number;
+  estado: 'SOBRE_CURVA' | 'BAJO_CURVA';
+  x: number;
+  y: number;
+}
+
+export interface FixedIncomeCurveResponse {
+  status: string;
+  data: {
+    fecha_vector: string;
+    fechas_disponibles: string[];
+    max_plazo_dias: number;
+    puntos_curva: FixedIncomeCurvePoint[];
+    hitos_mercado: FixedIncomeCurveMilestone[];
+    posiciones_portafolio: FixedIncomePortfolioCurvePoint[];
+    estadisticas: {
+      total_posiciones: number;
+      total_capital: number;
+      tasa_promedio_portafolio: number;
+      plazo_promedio_dias: number;
+      spread_promedio_bps: number;
+      posiciones_sobre_curva: number;
+      posiciones_bajo_curva: number;
+    };
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -157,6 +205,15 @@ export class FixedIncomeRadarService {
       if (filters.include_expired !== undefined) params = params.set('include_expired', filters.include_expired ? 'true' : 'false');
     }
     return this.http.get<FixedIncomePortfolioResponse>(`${this.apiUrl}/mi-portafolio`, { params });
+  }
+
+  getYieldCurve(filters?: { fecha_vector?: string; max_plazo_dias?: number }): Observable<FixedIncomeCurveResponse> {
+    let params = new HttpParams();
+    if (filters) {
+      if (filters.fecha_vector) params = params.set('fecha_vector', filters.fecha_vector);
+      if (filters.max_plazo_dias) params = params.set('max_plazo_dias', filters.max_plazo_dias.toString());
+    }
+    return this.http.get<FixedIncomeCurveResponse>(`${this.apiUrl}/curva-rendimiento`, { params });
   }
 
   getInvestmentDetail(idInversion: number): Observable<InvestmentDetailResponse> {

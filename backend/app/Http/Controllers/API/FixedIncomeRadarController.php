@@ -116,4 +116,22 @@ class FixedIncomeRadarController extends Controller
             'message' => $success ? 'Código de vector actualizado correctamente' : 'No se pudo actualizar el código de vector'
         ], $success ? 200 : 400);
     }
+
+    /**
+     * GET /api/renta-fija/curva-rendimiento
+     */
+    public function getYieldCurve(Request $request): JsonResponse
+    {
+        $filters = [
+            'fecha_vector' => $request->query('fecha_vector'),
+            'max_plazo_dias' => $request->query('max_plazo_dias')
+        ];
+
+        $data = $this->analyticsService->getYieldCurve($filters);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
+    }
 }

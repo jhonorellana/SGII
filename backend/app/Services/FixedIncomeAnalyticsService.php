@@ -505,4 +505,195 @@ class FixedIncomeAnalyticsService
 
         return $updated > 0;
     }
+
+    /**
+     * Obtiene los datos de la Curva de Rendimiento Cero Cupón (BVQ) y mapea las posiciones del usuario
+     */
+    public function getYieldCurve(array $filters = []): array
+    {
+        $fechasDisponibles = DB::connection('mysql_inversion')->table('vector_curva_rendimiento')
+            ->distinct()
+            ->orderBy('fecha_vector', 'desc')
+            ->pluck('fecha_vector')
+            ->toArray();
+
+        if (empty($fechasDisponibles)) {
+            return [
+                'fecha_vector' => null,
+                'fechas_disponibles' => [],
+                'max_plazo_dias' => 10800,
+                'puntos_curva' => [],
+                'hitos_mercado' => [],
+                'posiciones_portafolio' => [],
+                'estadisticas' => [
+                    'total_posiciones' => 0,
+                    'total_capital' => 0,
+                    'tasa_promedio_portafolio' => 0,
+                    'plazo_promedio_dias' => 0,
+                    'spread_promedio_bps' => 0,
+                    'posiciones_sobre_curva' => 0,
+                    'posiciones_bajo_curva' => 0
+                ]
+            ];
+        }
+
+        $latestDate = $fechasDisponibles[0];
+        $fechaVector = $filters['fecha_vector'] ?? $latestDate;
+        $maxPlazo = isset($filters['max_plazo_dias']) && (int)$filters['max_plazo_dias'] > 0 
+            ? (int)$filters['max_plazo_dias'] 
+            : 10800;
+
+        // 1. Obtener puntos de la curva cupón cero con muestreo inteligente para Chart.js
+        $curvaRaw = DB::connection('mysql_inversion')->table('vector_curva_rendimiento')
+            ->where('fecha_vector', $fechaVector)
+            ->where('plazo_dias', '<=', $maxPlazo)
+            ->orderBy('plazo_dias', 'asc')
+            ->get(['plazo_dias', 'tasa_tir']);
+
+        $curvaLookup = [];
+        foreach ($curvaRaw as $r) {
+            $curvaLookup[$r->plazo_dias] = (float) $r->tasa_tir;
+        }
+
+        $milestonesMap = [
+            30 => '1 Mes',
+            60 => '2 Meses',
+            90 => '3 Meses',
+            180 => '6 Meses',
+            270 => '9 Meses',
+            360 => '1 Año',
+            540 => '1.5 Años',
+            720 => '2 Años',
+            1080 => '3 Años',
+            1440 => '4 Años',
+            1800 => '5 Años',
+            2520 => '7 Años',
+            3600 => '10 Años',
+            5400 => '15 Años',
+            7200 => '20 Años',
+            10800 => '30 Años'
+        ];
+
+        $puntosCurva = [];
+        foreach ($curvaRaw as $p) {
+            $d = (int) $p->plazo_dias;
+            $tir = (float) $p->tasa_tir;
+
+            $isMilestone = isset($milestonesMap[$d]);
+            $isSampled = false;
+
+            if ($d <= 30 && $d % 2 === 0) {
+                $isSampled = true;
+            } elseif ($d > 30 && $d <= 360 && $d % 7 === 0) {
+                $isSampled = true;
+            } elseif ($d > 360 && $d <= 1800 && $d % 30 === 0) {
+                $isSampled = true;
+            } elseif ($d > 1800 && $d <= 3600 && $d % 60 === 0) {
+                $isSampled = true;
+            } elseif ($d > 3600 && $d % 120 === 0) {
+                $isSampled = true;
+            }
+
+            if ($isMilestone || $isSampled || $d === 1 || $d === $maxPlazo) {
+                $puntosCurva[] = [
+                    'x' => $d,
+                    'y' => round($tir, 4)
+                ];
+            }
+        }
+
+        // 2. Tabla de hitos oficiales (Benchmark)
+        $hitosMercado = [];
+        foreach ($milestonesMap as $dias => $label) {
+            if ($dias <= $maxPlazo && isset($curvaLookup[$dias])) {
+                $hitosMercado[] = [
+                    'plazo_dias' => $dias,
+                    'label' => $label,
+                    'tasa_tir' => round($curvaLookup[$dias], 4)
+                ];
+            }
+        }
+
+        // 3. Obtener posiciones del portafolio del usuario y ubicarlas sobre la curva
+        $portfolioData = $this->getUserPortfolioMarkToMarket();
+        $holdings = $portfolioData['holdings'] ?? collect([]);
+
+        $posicionesPortafolio = [];
+        $sumRendimiento = 0;
+        $sumPlazo = 0;
+        $sumSpreadBps = 0;
+        $countSobre = 0;
+        $countBajo = 0;
+
+        foreach ($holdings as $h) {
+            $plazoDias = (int) ($h['plazo_dias_remanentes'] ?? 0);
+            $rendimiento = (float) ($h['rendimiento_compra'] ?? $h['tasa_cupon_compra'] ?? 0);
+            $capital = (float) ($h['capital_invertido'] ?? 0);
+
+            if ($plazoDias > 0 && $rendimiento > 0 && $capital > 0) {
+                if ($plazoDias > $maxPlazo) {
+                    continue;
+                }
+
+                $closestDay = min(max($plazoDias, 1), 10800);
+                $benchmarkTir = $curvaLookup[$plazoDias] ?? $curvaLookup[$closestDay] ?? 0;
+
+                $spreadPct = round($rendimiento - $benchmarkTir, 2);
+                $spreadBps = (int) round(($rendimiento - $benchmarkTir) * 100);
+
+                if ($spreadBps >= 0) {
+                    $countSobre++;
+                } else {
+                    $countBajo++;
+                }
+
+                $sumRendimiento += ($rendimiento * $capital);
+                $sumPlazo += ($plazoDias * $capital);
+                $sumSpreadBps += ($spreadBps * $capital);
+
+                $posicionesPortafolio[] = [
+                    'id_inversion' => $h['id_inversion'],
+                    'nombre_instrumento' => $h['nombre_instrumento'],
+                    'nombre_emisor' => $h['nombre_emisor'],
+                    'calificacion_riesgo' => $h['calificacion_riesgo'] ?? 'AAA',
+                    'capital_invertido' => $capital,
+                    'plazo_dias' => $plazoDias,
+                    'rendimiento_compra' => $rendimiento,
+                    'benchmark_tir' => round($benchmarkTir, 2),
+                    'spread_pct' => $spreadPct,
+                    'spread_bps' => $spreadBps,
+                    'estado' => $spreadBps >= 0 ? 'SOBRE_CURVA' : 'BAJO_CURVA',
+                    'x' => $plazoDias,
+                    'y' => round($rendimiento, 2)
+                ];
+            }
+        }
+
+        usort($posicionesPortafolio, fn($a, $b) => $a['plazo_dias'] <=> $b['plazo_dias']);
+
+        $totalCapital = array_sum(array_column($posicionesPortafolio, 'capital_invertido'));
+        $totalPosiciones = count($posicionesPortafolio);
+
+        $tasaPromedio = $totalCapital > 0 ? round($sumRendimiento / $totalCapital, 2) : 0;
+        $plazoPromedio = $totalCapital > 0 ? (int) round($sumPlazo / $totalCapital) : 0;
+        $spreadPromedio = $totalCapital > 0 ? (int) round($sumSpreadBps / $totalCapital) : 0;
+
+        return [
+            'fecha_vector' => $fechaVector,
+            'fechas_disponibles' => $fechasDisponibles,
+            'max_plazo_dias' => $maxPlazo,
+            'puntos_curva' => $puntosCurva,
+            'hitos_mercado' => $hitosMercado,
+            'posiciones_portafolio' => $posicionesPortafolio,
+            'estadisticas' => [
+                'total_posiciones' => $totalPosiciones,
+                'total_capital' => round($totalCapital, 2),
+                'tasa_promedio_portafolio' => $tasaPromedio,
+                'plazo_promedio_dias' => $plazoPromedio,
+                'spread_promedio_bps' => $spreadPromedio,
+                'posiciones_sobre_curva' => $countSobre,
+                'posiciones_bajo_curva' => $countBajo
+            ]
+        ];
+    }
 }
