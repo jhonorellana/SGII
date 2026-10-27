@@ -188,6 +188,7 @@
 ::ng-deep .p-paginator {
   padding: 0.25rem 0.5rem !important;
   font-size: 0.8rem;
+  align-items: center !important;
 }
 
 ::ng-deep .p-paginator .p-paginator-current {
@@ -195,24 +196,66 @@
   color: #6c757d;
 }
 
-/* Filter inputs and dropdowns - scoped to table only */
-::ng-deep .p-datatable .p-inputtext {
+/* Paginator rows per page dropdown */
+::ng-deep .p-datatable .p-paginator .p-dropdown {
+  height: 2.1rem !important;
+  min-width: 5rem !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  vertical-align: middle !important;
+  margin-left: 0.5rem !important;
+  margin-right: 0.5rem !important;
+  border-radius: 4px !important;
+  border: 1px solid #ced4da !important;
+  background: #ffffff !important;
+}
+
+::ng-deep .p-datatable .p-paginator .p-dropdown .p-dropdown-label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 0 0.25rem 0 0.6rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+}
+
+::ng-deep .p-datatable .p-paginator .p-dropdown .p-dropdown-trigger {
+  width: 1.4rem !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
+/* Filter inputs and dropdowns - scoped to table header only */
+::ng-deep .p-datatable thead .p-inputtext {
   padding: 0.18rem 0.4rem !important;
   font-size: 0.8rem;
 }
 
-::ng-deep .p-datatable .p-dropdown .p-dropdown-label {
+::ng-deep .p-datatable thead .p-dropdown .p-dropdown-label {
   padding: 0.18rem 0.4rem !important;
   font-size: 0.8rem;
 }
 
-::ng-deep .p-datatable .p-dropdown .p-dropdown-trigger {
+::ng-deep .p-datatable thead .p-dropdown .p-dropdown-trigger {
   width: 1.5rem;
 }
 
 ::ng-deep .p-dropdown-item {
   padding: 0.35rem 0.6rem !important;
   font-size: 0.85rem;
+  text-align: center !important;
 }
 
 /* Reduce spacing between sections */

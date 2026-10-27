@@ -136,6 +136,47 @@ body {
   color: var(--primary-dark) !important;
 }
 
+/* Paginator rows per page dropdown */
+.p-datatable .p-paginator .p-dropdown {
+  height: 2.1rem !important;
+  min-width: 5rem !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  vertical-align: middle !important;
+  margin-left: 0.5rem !important;
+  margin-right: 0.5rem !important;
+  border-radius: 4px !important;
+  border: 1px solid #ced4da !important;
+  background: #ffffff !important;
+}
+
+.p-datatable .p-paginator .p-dropdown .p-dropdown-label {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  padding: 0 0.25rem 0 0.6rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+}
+
+.p-datatable .p-paginator .p-dropdown .p-dropdown-trigger {
+  width: 1.4rem !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+}
+
 .p-datatable .p-datatable-caption {
   background-color: var(--primary-medium) !important;
   padding: 1rem;

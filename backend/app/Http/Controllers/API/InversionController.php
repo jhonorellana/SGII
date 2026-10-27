@@ -235,7 +235,27 @@ class InversionController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
-        return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion']), Response::HTTP_OK);
+        // Actualizar movimiento de capital de compra asociado si existe y no está conciliado
+        $movimientoCompra = \App\Models\MovimientoCapital::where('id_inversion', $inversion->id_inversion)
+            ->where('id_tipo_movimiento', 181)
+            ->where('conciliado', 0)
+            ->first();
+
+        if ($movimientoCompra) {
+            $inversion->loadMissing(['instrumento.tipoInversion']);
+            $nuevaDescripcion = \App\Listeners\CrearMovimientoCompraInversion::generarDescripcionCompra($inversion);
+            $nuevoMonto = $inversion->valor_con_interes ?? $inversion->capital_invertido ?? $movimientoCompra->monto;
+
+            $movimientoCompra->update([
+                'fecha_movimiento' => $inversion->fecha_compra,
+                'id_persona' => $inversion->id_propietario,
+                'monto' => $nuevoMonto,
+                'descripcion' => $nuevaDescripcion,
+                'fecha_actualizacion' => now()
+            ]);
+        }
+
+        return response()->json($inversion->load(['grupoFamiliar', 'instrumento.emisor', 'instrumento.tipoInversion', 'propietario', 'aportante', 'estadoInversion', 'ventas']), Response::HTTP_OK);
     }
 
     /**
