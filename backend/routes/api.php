@@ -217,6 +217,7 @@ Route::get('renta-fija/alertas-vencimiento', [App\Http\Controllers\Api\FixedInco
 Route::get('renta-fija/inversion/{id}', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getInvestmentDetail']);
 Route::post('renta-fija/actualizar-codigo-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'updateVectorCode']);
 Route::post('renta-fija/importar-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'importVector']);
+Route::post('renta-fija/analizar-ia', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'analizarIa']);
 
 
 

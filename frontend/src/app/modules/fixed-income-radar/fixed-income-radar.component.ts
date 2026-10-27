@@ -101,6 +101,15 @@ export class FixedIncomeRadarComponent implements OnInit {
   updatingVector: boolean = false;
   customVectorInput: string = '';
 
+  // Modal Recomendación con ChatGPT (IA)
+  displayChatGPTModal: boolean = false;
+  selectedItemForAI: any = null;
+  loadingAI: boolean = false;
+  copiedPromptToast: boolean = false;
+  aiPrompt: string = '';
+  chatGptUrl: string = '';
+  aiResponseResult: string = '';
+
   // Datos Curva de Rendimiento Cero Cupón
   curveLoading: boolean = false;
   selectedCurveDate: string = '';
@@ -637,5 +646,134 @@ export class FixedIncomeRadarComponent implements OnInit {
   saveCustomVectorCode(idInstrumento: number): void {
     if (!this.customVectorInput || !idInstrumento) return;
     this.applyVectorSuggestion(idInstrumento, this.customVectorInput.trim());
+  }
+
+  // ==========================================
+  // RECOMENDACIÓN CON CHATGPT (IA) - RENTA FIJA
+  // ==========================================
+  abrirChatGPTModal(item: any, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.selectedItemForAI = item;
+    this.displayChatGPTModal = true;
+    this.loadingAI = false;
+    this.copiedPromptToast = false;
+    this.aiResponseResult = '';
+
+    // Asignación inmediata del prompt para evitar cuadro en blanco
+    this.aiPrompt = this.generarPromptLocal(item);
+    this.chatGptUrl = 'https://chatgpt.com/?q=' + encodeURIComponent(this.aiPrompt);
+
+    // Enriquecer en backend con cruce de curva cero cupón, spread oficial y llamada a IA si está configurada
+    this.loadingAI = true;
+    this.fixedIncomeService.analizarConIa(item).subscribe({
+      next: (res) => {
+        this.loadingAI = false;
+        if (res.success && res.prompt) {
+          this.aiPrompt = res.prompt;
+          this.chatGptUrl = res.chatgpt_url || ('https://chatgpt.com/?q=' + encodeURIComponent(res.prompt));
+          if (res.ai_response) {
+            this.aiResponseResult = res.ai_response;
+          }
+        }
+      },
+      error: (err) => {
+        this.loadingAI = false;
+        console.error('Error al solicitar análisis backend de ChatGPT, usando prompt local:', err);
+      }
+    });
+  }
+
+  generarPromptLocal(item: any): string {
+    const emisor = item.nombre_emisor || item.nemo_emisor || item.emisor || 'Emisor';
+    const instrumento = item.nombre_instrumento || item.clase_titulo || 'Instrumento de Renta Fija';
+    const codigoVector = item.codigo_titulo_vector || 'N/A';
+    const rating = item.calificacion_riesgo || 'AAA';
+    const plazoDias = item.plazo_dias_remanentes || item.dias_remanentes || item.plazo_dias || 0;
+    const plazoAnios = plazoDias > 0 ? (plazoDias / 360).toFixed(1) : '0';
+    const fechaVenc = item.fecha_vencimiento || 'N/A';
+
+    const esPortafolio = !!(item.id_inversion || item.capital_invertido || item.saldo_capital || item.capital_vigente);
+
+    if (esPortafolio) {
+      const capital = Number(item.capital_invertido || item.saldo_capital || item.capital_vigente || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const precioCompra = Number(item.precio_compra_porcentaje || 100).toFixed(2);
+      const precioVector = Number(item.precio_vector_porcentaje || item.precio_porcentaje || precioCompra).toFixed(2);
+      const valMercado = Number(item.valor_mercado_actual || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const gananciaUsd = Number(item.ganancia_no_realizada_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const gananciaPct = Number(item.ganancia_no_realizada_pct || 0).toFixed(2);
+      const tasaCupon = Number(item.tasa_cupon_compra || item.tasa_cupon || 0).toFixed(2);
+      const tirVector = Number(item.tir_vector || item.tasa_descuento_tir || tasaCupon).toFixed(2);
+      const propietario = item.propietario_nombre || 'Mi Portafolio';
+
+      return `Actúa como un experto analista financiero sénior y gestor de portafolios de Renta Fija del Mercado de Valores de Ecuador (Bolsa de Valores de Quito BVQ y Bolsa de Valores de Guayaquil BVG).\n\n` +
+        `Por favor evalúa la posición de Renta Fija que mantengo en mi portafolio para el título '${emisor}' y proporciona una recomendación profesional sobre si debo MANTENER LA POSICIÓN HASTA EL VENCIMIENTO para continuar cobrando los cupones periódicos y el capital, o VENDER ANTICIPADAMENTE EN EL MERCADO SECUNDARIO a la cotización actual del vector de precios para realizar la ganancia de capital y rebalancear mi liquidez:\n\n` +
+        `💼 DATOS DE MI POSICIÓN EN PORTAFOLIO (${emisor}):\n` +
+        `• Título / Instrumento: ${instrumento}\n` +
+        `• Código ISIN/BVQ Oficial: ${codigoVector}\n` +
+        `• Titular / Cuenta: ${propietario}\n` +
+        `• Calificación de Riesgo Crediticio: ${rating}\n` +
+        `• Saldo Capital Vigente Invertido: $${capital} USD\n` +
+        `• Precio de Adquisición: ${precioCompra}%\n` +
+        `• Precio de Mercado Actual (Vector BVQ): ${precioVector}%\n` +
+        `• Valor de Mercado Actual M2M: $${valMercado} USD\n` +
+        `• Plusvalía / Minusvalía de Capital No Realizada: $${gananciaUsd} USD (${gananciaPct}%)\n` +
+        `• Tasa Cupón Nominal Pactada: ${tasaCupon}% Anual\n` +
+        `• TIR a Precios de Mercado (Vector BVQ): ${tirVector}% Anual\n` +
+        `• Plazo Remanente al Vencimiento: ${plazoDias} días (~${plazoAnios} años)\n` +
+        `• Fecha de Vencimiento Definitivo: ${fechaVenc}\n\n` +
+        `📝 REQUERIMIENTO DE ESTRATEGIA DE PORTAFOLIO:\n` +
+        `1. Veredicto y Recomendación de Acción Directa: MANTENER HASTA EL VENCIMIENTO vs. VENDER EN BOLSA HOY (tomar plusvalía) vs. REBALANCEAR.\n` +
+        `2. Análisis Financiero Comparativo: ¿Es más rentable realizar la plusvalía no realizada de $${gananciaUsd} hoy en bolsa, o seguir cobrando el flujo de cupones del ${tasaCupon}% durante los próximos ${plazoDias} días?\n` +
+        `3. Evaluación del Riesgo Crediticio vs. Plazo: Análisis de la solvencia del emisor (${rating}) frente al tiempo remanente (${plazoDias} días).\n` +
+        `4. Costo de Oportunidad frente a alternativas de inversión actuales en el mercado ecuatoriano.\n` +
+        `Responde en un formato ejecutivo, profesional, claro y con pasos accionables.`;
+    } else {
+      const precioVector = Number(item.precio_porcentaje || 100).toFixed(2);
+      const tirVector = Number(item.tasa_descuento_tir || 0).toFixed(2);
+      const tasaCupon = Number(item.tasa_cupon || 0).toFixed(2);
+      const claseTitulo = item.clase_titulo || 'Instrumento de Renta Fija';
+
+      return `Actúa como un experto analista financiero sénior y asesor de inversiones de Renta Fija del Mercado de Valores de Ecuador (Bolsa de Valores de Quito BVQ y Bolsa de Valores de Guayaquil BVG).\n\n` +
+        `Por favor analiza el siguiente instrumento de deuda cotizado en el Vector de Precios Oficial de la BVQ para el emisor '${emisor}' y genera una recomendación profesional sobre si es una OPORTUNIDAD ATRACTIVA DE COMPRA / INVERSIÓN en el mercado secundario:\n\n` +
+        `📊 FICHA TÉCNICA Y VALORACIÓN DE MERCADO (${emisor}):\n` +
+        `• Clase de Título: ${claseTitulo}\n` +
+        `• Código ISIN/BVQ Oficial: ${codigoVector}\n` +
+        `• Calificación de Riesgo Crediticio: ${rating}\n` +
+        `• Precio Porcentaje de Mercado (Vector BVQ): ${precioVector}%\n` +
+        `• Rendimiento / TIR de Mercado: ${tirVector}% Anual\n` +
+        `• Tasa Cupón Nominal: ${tasaCupon}% Anual\n` +
+        `• Plazo Remanente al Vencimiento: ${plazoDias} días (~${plazoAnios} años)\n` +
+        `• Fecha de Vencimiento: ${fechaVenc}\n\n` +
+        `📝 REQUERIMIENTO DE ANÁLISIS DE INVERSIÓN:\n` +
+        `1. Veredicto y Recomendación de Inversión: COMPRAR / INVERTIR vs. ESPERAR MEJOR TASA/PRECIO vs. DESCARTAR POR RIESGO.\n` +
+        `2. Análisis del Rendimiento TIR (${tirVector}%) vs. Cupón Nominal (${tasaCupon}%) y Precio (${precioVector}%).\n` +
+        `3. Evaluación de Solvencia y Calidad Crediticia: ¿La calificación ${rating} compensa adecuadamente el plazo remanente de ${plazoDias} días?\n` +
+        `4. Recomendación accionable para un inversionista ecuatoriano.\n` +
+        `Responde en un formato ejecutivo, profesional, conciso y fundamentado con criterios cuantitativos.`;
+    }
+  }
+
+  abrirEnChatGPTCom(): void {
+    if (this.chatGptUrl) {
+      window.open(this.chatGptUrl, '_blank');
+    } else if (this.aiPrompt) {
+      const url = 'https://chatgpt.com/?q=' + encodeURIComponent(this.aiPrompt);
+      window.open(url, '_blank');
+    }
+  }
+
+  copiarPromptAlPortapapeles(): void {
+    if (this.aiPrompt) {
+      navigator.clipboard.writeText(this.aiPrompt).then(() => {
+        this.copiedPromptToast = true;
+        setTimeout(() => this.copiedPromptToast = false, 3000);
+      });
+    }
+  }
+
+  cerrarChatGPTModal(): void {
+    this.displayChatGPTModal = false;
   }
 }

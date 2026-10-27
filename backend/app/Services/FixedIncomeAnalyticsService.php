@@ -891,4 +891,167 @@ class FixedIncomeAnalyticsService
             'cuotas_proximas' => $cuotasProximas
         ];
     }
+
+    /**
+     * Genera el prompt estructurado y la recomendación con IA (ChatGPT) para Renta Fija
+     */
+    public function analizarConIA(array $itemData, string $customPrompt = ''): array
+    {
+        try {
+            $emisor = trim($itemData['nombre_emisor'] ?? ($itemData['nemo_emisor'] ?? ($itemData['emisor'] ?? 'Emisor')));
+            $instrumento = trim($itemData['nombre_instrumento'] ?? ($itemData['clase_titulo'] ?? 'Instrumento de Renta Fija'));
+            $codigoVector = trim($itemData['codigo_titulo_vector'] ?? 'N/A');
+            $rating = trim($itemData['calificacion_riesgo'] ?? 'AAA');
+
+            // Determinar si es una posición en portafolio
+            $esPortafolio = isset($itemData['id_inversion']) 
+                || isset($itemData['capital_invertido']) 
+                || isset($itemData['capital_original']) 
+                || isset($itemData['saldo_capital'])
+                || isset($itemData['capital_vigente'])
+                || isset($itemData['ganancia_no_realizada_usd'])
+                || isset($itemData['propietario_nombre']);
+
+            $plazoDias = (int) ($itemData['plazo_dias_remanentes'] ?? ($itemData['dias_remanentes'] ?? ($itemData['plazo_dias'] ?? 0)));
+            $plazoAnios = $plazoDias > 0 ? round($plazoDias / 360, 1) : 0;
+            $fechaVencimiento = $itemData['fecha_vencimiento'] ?? 'N/A';
+            $fechaEmision = $itemData['fecha_emision'] ?? 'N/A';
+
+            // Obtener tasa referencial de la Curva Cero Cupón BVQ para el plazo dado
+            $benchmarkTir = (float) ($itemData['benchmark_tir'] ?? 0);
+            if ($benchmarkTir <= 0 && $plazoDias > 0) {
+                $latestCurvaDate = DB::connection('mysql_inversion')->table('vector_curva_rendimiento')
+                    ->max('fecha_vector');
+                if ($latestCurvaDate) {
+                    $closestDay = min(max($plazoDias, 1), 10800);
+                    $curvaPoint = DB::connection('mysql_inversion')->table('vector_curva_rendimiento')
+                        ->where('fecha_vector', $latestCurvaDate)
+                        ->where('plazo_dias', '<=', $closestDay)
+                        ->orderBy('plazo_dias', 'desc')
+                        ->first();
+                    if ($curvaPoint) {
+                        $benchmarkTir = (float) $curvaPoint->tasa_tir;
+                    }
+                }
+            }
+
+            if (!empty($customPrompt)) {
+                $promptText = $customPrompt;
+            } elseif ($esPortafolio) {
+                $capital = (float) ($itemData['capital_invertido'] ?? ($itemData['saldo_capital'] ?? ($itemData['capital_vigente'] ?? ($itemData['capital_original'] ?? 0))));
+                $capitalOriginal = (float) ($itemData['capital_original'] ?? $capital);
+                $precioCompra = (float) ($itemData['precio_compra_porcentaje'] ?? 100.0);
+                $precioVector = (float) ($itemData['precio_vector_porcentaje'] ?? ($itemData['precio_porcentaje'] ?? $precioCompra));
+                $valMercado = (float) ($itemData['valor_mercado_actual'] ?? ($capital * ($precioVector / ($precioCompra > 0 ? $precioCompra : 100))));
+                $gananciaUsd = (float) ($itemData['ganancia_no_realizada_usd'] ?? ($valMercado - $capital));
+                $gananciaPct = (float) ($itemData['ganancia_no_realizada_pct'] ?? ($capital > 0 ? ($gananciaUsd / $capital) * 100 : 0));
+
+                $tasaCupon = (float) ($itemData['tasa_cupon_compra'] ?? ($itemData['tasa_interes'] ?? ($itemData['tasa_cupon'] ?? 0)));
+                $rendimientoCompra = (float) ($itemData['rendimiento_compra'] ?? ($itemData['rendimiento_efectivo'] ?? ($itemData['rendimiento_nominal'] ?? $tasaCupon)));
+                $tirVector = (float) ($itemData['tir_vector'] ?? ($itemData['tasa_descuento_tir'] ?? $rendimientoCompra));
+
+                $spreadBps = (int) round(($rendimientoCompra - $benchmarkTir) * 100);
+                $spreadStr = ($spreadBps >= 0 ? '+' : '') . $spreadBps . ' bps';
+                $propietario = $itemData['propietario_nombre'] ?? 'Mi Portafolio';
+
+                $promptText = "Actúa como un experto analista financiero sénior y gestor de portafolios de Renta Fija del Mercado de Valores de Ecuador (Bolsa de Valores de Quito BVQ y Bolsa de Valores de Guayaquil BVG).\n\n" .
+                    "Por favor evalúa la posición de Renta Fija que mantengo en mi portafolio para el título '{$emisor}' y proporciona una recomendación profesional sobre si debo MANTENER LA POSICIÓN HASTA EL VENCIMIENTO para continuar cobrando los cupones periódicos y el capital, o VENDER ANTICIPADAMENTE EN EL MERCADO SECUNDARIO a la cotización actual del vector de precios para realizar la ganancia de capital y rebalancear mi liquidez:\n\n" .
+                    "💼 DATOS DE MI POSICIÓN EN PORTAFOLIO ({$emisor}):\n" .
+                    "• Título / Instrumento: {$instrumento}\n" .
+                    "• Código ISIN/BVQ Oficial: {$codigoVector}\n" .
+                    "• Titular / Cuenta: {$propietario}\n" .
+                    "• Calificación de Riesgo Crediticio: {$rating}\n" .
+                    "• Saldo Capital Vigente Invertido: \$" . number_format($capital, 2) . " USD" . ($capitalOriginal > $capital ? " (Original: \$" . number_format($capitalOriginal, 2) . ")" : "") . "\n" .
+                    "• Precio de Adquisición: " . number_format($precioCompra, 2) . "%" . ($precioCompra < 100 ? " (Comprado con descuento / bajo la par)" : ($precioCompra > 100 ? " (Comprado sobre la par)" : " (A la par)")) . "\n" .
+                    "• Precio de Mercado Actual (Vector BVQ): " . number_format($precioVector, 2) . "%\n" .
+                    "• Valor de Mercado Actual M2M: \$" . number_format($valMercado, 2) . " USD\n" .
+                    "• Plusvalía / Minusvalía de Capital No Realizada: " . ($gananciaUsd >= 0 ? '+' : '') . "\$" . number_format($gananciaUsd, 2) . " USD (" . ($gananciaPct >= 0 ? '+' : '') . number_format($gananciaPct, 2) . "%)\n" .
+                    "• Tasa Cupón Nominal Pactada: " . number_format($tasaCupon, 2) . "% Anual\n" .
+                    "• Rendimiento Original / TIR Pactada: " . number_format($rendimientoCompra, 2) . "% Anual\n" .
+                    "• TIR de Descuento de Mercado (Vector BVQ): " . number_format($tirVector, 2) . "% Anual\n" .
+                    "• Plazo Remanente al Vencimiento: {$plazoDias} días (~{$plazoAnios} años)\n" .
+                    "• Fecha de Vencimiento Definitivo: {$fechaVencimiento}\n\n" .
+                    "📊 REFERENCIAS DE LA CURVA DE RENDIMIENTO CERO CUPÓN BVQ:\n" .
+                    "• Tasa Libre de Riesgo Oficial BVQ (Plazo {$plazoDias} días): " . number_format($benchmarkTir, 2) . "% Anual\n" .
+                    "• Spread de mi Posición frente a la Curva BVQ: {$spreadStr} (" . ($rendimientoCompra >= $benchmarkTir ? "Por encima de la curva de mercado" : "Por debajo de la curva") . ")\n\n" .
+                    "📝 REQUERIMIENTO DE ESTRATEGIA DE PORTAFOLIO:\n" .
+                    "1. Veredicto y Recomendación de Acción Directa: MANTENER HASTA EL VENCIMIENTO vs. VENDER EN BOLSA HOY (tomar plusvalía) vs. REBALANCEAR.\n" .
+                    "2. Análisis Financiero Comparativo: ¿Es más rentable realizar la plusvalía no realizada de \$" . number_format($gananciaUsd, 2) . " hoy en bolsa, o seguir cobrando el flujo de cupones del " . number_format($tasaCupon, 2) . "% durante los próximos {$plazoDias} días?\n" .
+                    "3. Evaluación del Riesgo Crediticio vs. Plazo: Análisis de la solvencia del emisor ({$rating}) frente al tiempo remanente ({$plazoDias} días).\n" .
+                    "4. Análisis del Costo de Oportunidad frente al Mercado Ecuatoriano: Spread de {$spreadStr} sobre la tasa de referencia BVQ y alternativas actuales de reinversión.\n" .
+                    "Responde en un formato ejecutivo, profesional, claro y con pasos accionables.";
+            } else {
+                $precioVector = (float) ($itemData['precio_porcentaje'] ?? 100.0);
+                $tirVector = (float) ($itemData['tasa_descuento_tir'] ?? 0);
+                $tasaCupon = (float) ($itemData['tasa_cupon'] ?? 0);
+                $claseTitulo = $itemData['clase_titulo'] ?? 'Instrumento de Renta Fija';
+                $formaReajuste = $itemData['forma_reajuste'] ?? 'FIJA';
+                $spreadBps = (int) round(($tirVector - $benchmarkTir) * 100);
+                $spreadStr = ($spreadBps >= 0 ? '+' : '') . $spreadBps . ' bps';
+
+                $promptText = "Actúa como un experto analista financiero sénior y asesor de inversiones de Renta Fija del Mercado de Valores de Ecuador (Bolsa de Valores de Quito BVQ y Bolsa de Valores de Guayaquil BVG).\n\n" .
+                    "Por favor analiza el siguiente instrumento de deuda cotizado en el Vector de Precios Oficial de la BVQ para el emisor '{$emisor}' y genera una recomendación profesional sobre si es una OPORTUNIDAD ATRACTIVA DE COMPRA / INVERSIÓN en el mercado secundario:\n\n" .
+                    "📊 FICHA TÉCNICA Y VALORACIÓN DE MERCADO ({$emisor}):\n" .
+                    "• Clase de Título: {$claseTitulo}\n" .
+                    "• Código ISIN/BVQ Oficial: {$codigoVector}\n" .
+                    "• Calificación de Riesgo Crediticio: {$rating}\n" .
+                    "• Precio Porcentaje de Mercado (Vector BVQ): " . number_format($precioVector, 2) . "%" . ($precioVector < 100 ? " (Cotiza con descuento / bajo la par)" : ($precioVector > 100 ? " (Cotiza sobre la par)" : " (A la par)")) . "\n" .
+                    "• Rendimiento / TIR de Mercado: " . number_format($tirVector, 2) . "% Anual\n" .
+                    "• Tasa Cupón Nominal: " . number_format($tasaCupon, 2) . "% Anual ({$formaReajuste})\n" .
+                    "• Plazo Remanente al Vencimiento: {$plazoDias} días (~{$plazoAnios} años)\n" .
+                    "• Fecha de Emisión: {$fechaEmision}\n" .
+                    "• Fecha de Vencimiento: {$fechaVencimiento}\n\n" .
+                    "📈 COMPARATIVA CON LA CURVA DE RENDIMIENTO CERO CUPÓN BVQ:\n" .
+                    "• Tasa Referencial Oficial BVQ (Curva Cero a {$plazoDias} días): " . number_format($benchmarkTir, 2) . "% Anual\n" .
+                    "• Spread Ofrecido frente a la Curva: {$spreadStr} (" . ($tirVector >= $benchmarkTir ? "Premio positivo sobre la tasa de mercado" : "Bajo la curva referencial") . ")\n\n" .
+                    "📝 REQUERIMIENTO DE ANÁLISIS DE INVERSIÓN:\n" .
+                    "1. Veredicto y Recomendación de Inversión: COMPRAR / INVERTIR vs. ESPERAR MEJOR TASA/PRECIO vs. DESCARTAR POR RIESGO.\n" .
+                    "2. Análisis del Rendimiento TIR (" . number_format($tirVector, 2) . "%) vs. Cupón Nominal (" . number_format($tasaCupon, 2) . "%) y Precio de Entrada (" . number_format($precioVector, 2) . "%).\n" .
+                    "3. Evaluación de Solvencia y Calidad Crediticia: ¿La calificación {$rating} compensa adecuadamente el plazo remanente de {$plazoDias} días?\n" .
+                    "4. Evaluación del Spread ({$spreadStr}) frente a la Curva Soberana y Factores Macroeconómicos de Ecuador.\n" .
+                    "Responde en un formato ejecutivo, profesional, conciso y fundamentado con criterios cuantitativos.";
+            }
+
+            $chatGptUrl = "https://chatgpt.com/?q=" . urlencode($promptText);
+
+            $aiAnalysisResult = null;
+            $apiKey = env('OPENAI_API_KEY');
+            if ($apiKey) {
+                try {
+                    $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+                        ->timeout(15)
+                        ->post('https://api.openai.com/v1/chat/completions', [
+                            'model' => 'gpt-3.5-turbo',
+                            'messages' => [
+                                ['role' => 'system', 'content' => 'Eres un analista financiero experto en Renta Fija y mercado de deuda bursátil en Ecuador (BVQ/BVG).'],
+                                ['role' => 'user', 'content' => $promptText]
+                            ],
+                            'temperature' => 0.6
+                        ]);
+
+                    if ($response->successful()) {
+                        $aiAnalysisResult = trim($response->json('choices.0.message.content'));
+                    }
+                } catch (\Exception $ex) {
+                    Log::warning('Call to OpenAI failed in FixedIncomeAnalyticsService::analizarConIA: ' . $ex->getMessage());
+                }
+            }
+
+            return [
+                'success' => true,
+                'emisor' => $emisor,
+                'es_portafolio' => $esPortafolio,
+                'prompt' => $promptText,
+                'chatgpt_url' => $chatGptUrl,
+                'ai_response' => $aiAnalysisResult
+            ];
+        } catch (\Exception $e) {
+            Log::error('Error en FixedIncomeAnalyticsService::analizarConIA: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Error al preparar el análisis de ChatGPT para Renta Fija',
+                'error' => $e->getMessage()
+            ];
+        }
+    }
 }

@@ -147,4 +147,23 @@ class FixedIncomeRadarController extends Controller
             'data' => $data
         ]);
     }
+
+    /**
+     * POST /api/renta-fija/analizar-ia
+     */
+    public function analizarIa(Request $request): JsonResponse
+    {
+        try {
+            $itemData = $request->all();
+            $customPrompt = $request->input('prompt', '');
+            $result = $this->analyticsService->analizarConIA($itemData, $customPrompt);
+            return response()->json($result, 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el análisis de ChatGPT para Renta Fija',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

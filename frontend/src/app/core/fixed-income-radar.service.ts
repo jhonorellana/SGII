@@ -283,4 +283,22 @@ export class FixedIncomeRadarService {
       codigo_titulo_vector: codigoVector
     });
   }
+
+  analizarConIa(itemData: any, customPrompt?: string): Observable<FixedIncomeAIAnalysisResponse> {
+    return this.http.post<FixedIncomeAIAnalysisResponse>(`${this.apiUrl}/analizar-ia`, {
+      ...itemData,
+      prompt: customPrompt || ''
+    });
+  }
+}
+
+export interface FixedIncomeAIAnalysisResponse {
+  success: boolean;
+  emisor?: string;
+  es_portafolio?: boolean;
+  prompt?: string;
+  chatgpt_url?: string;
+  ai_response?: string | null;
+  message?: string;
+  error?: string;
 }
