@@ -37,6 +37,7 @@
   <div *ngIf="!loading && !error" class="card shadow-sm border border-slate-100 rounded-lg overflow-hidden">
     <p-table #dt [value]="records" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
+             [paginatorDropdownAppendTo]="'body'"
              [globalFilterFields]="['fecha']"
              [tableStyle]="{'min-width': '85rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines p-datatable-striped"

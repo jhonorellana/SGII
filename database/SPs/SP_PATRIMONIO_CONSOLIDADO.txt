@@ -151,14 +151,14 @@ BEGIN
 
     UNION ALL
 
-    -- 3. Bonos vencimiento próximo (Capital a 12 meses desde fecha_inicio)
+    -- 3. Bonos vencimiento próximo (Capital hasta el último día del mes 11 desde fecha_inicio)
     SELECT 'Bonos vencimiento próximo' as detalle,
            COALESCE(SUM(A.capital), 0) as valor
     FROM amortizacion A
     JOIN inversion I ON A.id_inversion = I.id_inversion
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE A.fecha_pago > p_fecha_inicio
-      AND A.fecha_pago <= DATE_ADD(STR_TO_DATE(p_fecha_inicio, '%Y-%m-%d'), INTERVAL 1 YEAR)
+      AND A.fecha_pago <= LAST_DAY(DATE_ADD(STR_TO_DATE(p_fecha_inicio, '%Y-%m-%d'), INTERVAL 11 MONTH))
       AND I.fecha_venta IS NULL
       AND A.id_estado_amortizacion IN (134, 135, 136)
       AND A.eliminado = 0

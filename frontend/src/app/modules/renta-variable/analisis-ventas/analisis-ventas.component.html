@@ -187,21 +187,21 @@
         </div>
       </div>
       <div class="card-body p-0">
-        <p-table #dt [value]="ventas" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50]" [globalFilterFields]="['socio_nombre', 'emisor_nombre', 'instrumento_nombre', 'liquidacion', 'fecha_operacion']" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
+        <p-table #dt [value]="ventas" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[10, 25, 50, 100]" [paginatorDropdownAppendTo]="'body'" sortField="fecha_operacion" [sortOrder]="-1" [globalFilterFields]="['socio_nombre', 'emisor_nombre', 'instrumento_nombre', 'liquidacion', 'fecha_operacion']" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
           <ng-template pTemplate="header">
             <tr>
-              <th>ID</th>
-              <th>Fecha</th>
-              <th>Socio / Propietario</th>
-              <th>Acción / Emisor</th>
-              <th class="text-end">Cantidad</th>
-              <th class="text-end">P. Unitario</th>
-              <th class="text-end">Costo CPU</th>
-              <th class="text-end">V. Neto Recibido</th>
-              <th class="text-end">Costo Base Total</th>
-              <th class="text-end">Ganancia / Pérdida ($)</th>
-              <th class="text-end">ROI (%)</th>
-              <th>Liquidación</th>
+              <th pSortableColumn="id_accion_operacion">ID <p-sortIcon field="id_accion_operacion"></p-sortIcon></th>
+              <th pSortableColumn="fecha_operacion">Fecha <p-sortIcon field="fecha_operacion"></p-sortIcon></th>
+              <th pSortableColumn="socio_nombre">Socio / Propietario <p-sortIcon field="socio_nombre"></p-sortIcon></th>
+              <th pSortableColumn="emisor_nombre">Acción / Emisor <p-sortIcon field="emisor_nombre"></p-sortIcon></th>
+              <th pSortableColumn="cantidad" class="text-end">Cantidad <p-sortIcon field="cantidad"></p-sortIcon></th>
+              <th pSortableColumn="precio_unitario" class="text-end">P. Unitario <p-sortIcon field="precio_unitario"></p-sortIcon></th>
+              <th pSortableColumn="costo_promedio_unitario" class="text-end">Costo CPU <p-sortIcon field="costo_promedio_unitario"></p-sortIcon></th>
+              <th pSortableColumn="valor_neto" class="text-end">V. Neto Recibido <p-sortIcon field="valor_neto"></p-sortIcon></th>
+              <th pSortableColumn="costo_base_total" class="text-end">Costo Base Total <p-sortIcon field="costo_base_total"></p-sortIcon></th>
+              <th pSortableColumn="utilidad_perdida" class="text-end">Ganancia / Pérdida ($) <p-sortIcon field="utilidad_perdida"></p-sortIcon></th>
+              <th pSortableColumn="roi_porcentaje" class="text-end">ROI (%) <p-sortIcon field="roi_porcentaje"></p-sortIcon></th>
+              <th pSortableColumn="liquidacion">Liquidación <p-sortIcon field="liquidacion"></p-sortIcon></th>
             </tr>
           </ng-template>
 
