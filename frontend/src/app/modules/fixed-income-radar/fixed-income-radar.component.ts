@@ -19,7 +19,10 @@ import {
   FixedIncomeCurvePoint,
   FixedIncomeCurveMilestone,
   FixedIncomePortfolioCurvePoint,
-  FixedIncomeCurveResponse
+  FixedIncomeCurveResponse,
+  FixedIncomeCountdownHolding,
+  FixedIncomeUpcomingPayment,
+  FixedIncomeMaturityAlertsResponse
 } from '../../core/fixed-income-radar.service';
 
 @Component({
@@ -42,7 +45,7 @@ import {
   styleUrl: './fixed-income-radar.component.css'
 })
 export class FixedIncomeRadarComponent implements OnInit {
-  activeTab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA' = 'MERCADO';
+  activeTab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA' | 'ALERTAS' = 'MERCADO';
   viewMode: 'CARDS' | 'TABLE' = 'TABLE';
 
   loading: boolean = false;
@@ -118,11 +121,20 @@ export class FixedIncomeRadarComponent implements OnInit {
     { label: '30 Años', value: 10800, desc: 'Curva Completa BVQ (10800 días)' }
   ];
 
+  // Datos Centro de Alertas y Conteo Regresivo (Opción B)
+  alertsLoading: boolean = false;
+  alertsData: FixedIncomeMaturityAlertsResponse['data'] | null = null;
+  countdownSearchTerm: string = '';
+  countdownUrgencyFilter: 'TODOS' | 'CRITICA' | 'ALTA' | 'MEDIA' = 'TODOS';
+  paymentsSearchTerm: string = '';
+  paymentsFilter: 'TODOS' | 'HOY' | 'SEMANA' | 'MES' | 'TRIMESTRE' = 'TODOS';
+
   constructor(private fixedIncomeService: FixedIncomeRadarService) {}
 
   ngOnInit(): void {
     this.loadMarketRadar();
     this.loadPortfolio();
+    this.loadMaturityAlerts();
   }
 
   loadMarketRadar(): void {
@@ -419,11 +431,121 @@ export class FixedIncomeRadarComponent implements OnInit {
     this.loadMarketRadar();
   }
 
-  setTab(tab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA'): void {
+  setTab(tab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA' | 'ALERTAS'): void {
     this.activeTab = tab;
     if (tab === 'CURVA' && !this.curveData) {
       this.loadYieldCurve();
+    } else if (tab === 'ALERTAS' && !this.alertsData) {
+      this.loadMaturityAlerts();
     }
+  }
+
+  loadMaturityAlerts(): void {
+    this.alertsLoading = true;
+    this.fixedIncomeService.getMaturityAlerts().subscribe({
+      next: (res) => {
+        this.alertsLoading = false;
+        if (res.status === 'success') {
+          this.alertsData = res.data;
+        }
+      },
+      error: (err) => {
+        this.alertsLoading = false;
+        console.error('Error cargando Alertas de Vencimiento:', err);
+      }
+    });
+  }
+
+  get filteredCountdownHoldings(): FixedIncomeCountdownHolding[] {
+    if (!this.alertsData?.titulos_conteo_regresivo) return [];
+    let list = this.alertsData.titulos_conteo_regresivo;
+    if (this.countdownUrgencyFilter !== 'TODOS') {
+      list = list.filter(h => h.urgencia === this.countdownUrgencyFilter);
+    }
+    if (this.countdownSearchTerm && this.countdownSearchTerm.trim()) {
+      const q = this.countdownSearchTerm.toLowerCase().trim();
+      list = list.filter(h => 
+        (h.nombre_instrumento || '').toLowerCase().includes(q) ||
+        (h.nombre_emisor || '').toLowerCase().includes(q) ||
+        (h.calificacion_riesgo || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  get filteredUpcomingPayments(): FixedIncomeUpcomingPayment[] {
+    if (!this.alertsData?.cuotas_proximas) return [];
+    let list = this.alertsData.cuotas_proximas;
+    if (this.paymentsFilter === 'HOY') {
+      list = list.filter(p => p.urgencia_pago === 'HOY');
+    } else if (this.paymentsFilter === 'SEMANA') {
+      list = list.filter(p => p.urgencia_pago === 'HOY' || p.urgencia_pago === 'SEMANA');
+    } else if (this.paymentsFilter === 'MES') {
+      list = list.filter(p => p.urgencia_pago === 'HOY' || p.urgencia_pago === 'SEMANA' || p.urgencia_pago === 'MES');
+    } else if (this.paymentsFilter === 'TRIMESTRE') {
+      list = list.filter(p => p.urgencia_pago !== 'SEMESTRE');
+    }
+    if (this.paymentsSearchTerm && this.paymentsSearchTerm.trim()) {
+      const q = this.paymentsSearchTerm.toLowerCase().trim();
+      list = list.filter(p => 
+        (p.nombre_instrumento || '').toLowerCase().includes(q) ||
+        (p.nombre_emisor || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }
+
+  get filteredPaymentsTotalLiquidity(): number {
+    return this.filteredUpcomingPayments.reduce((acc, curr) => acc + curr.total_cobro, 0);
+  }
+
+  getUrgencyBadgeClass(urgencia: string): string {
+    switch (urgencia) {
+      case 'CRITICA': return 'bg-danger text-white';
+      case 'ALTA': return 'bg-warning text-dark';
+      case 'MEDIA': return 'bg-info text-dark';
+      default: return 'bg-success-subtle text-success border border-success-subtle';
+    }
+  }
+
+  getUrgencyLabel(urgencia: string): string {
+    switch (urgencia) {
+      case 'CRITICA': return 'Inminente (< 30d)';
+      case 'ALTA': return 'Próximo (31 - 90d)';
+      case 'MEDIA': return 'Mediano Plazo (91 - 180d)';
+      default: return 'Vigente (> 180d)';
+    }
+  }
+
+  getPaymentUrgencyBadgeClass(urgencia: string): string {
+    switch (urgencia) {
+      case 'HOY': return 'bg-danger text-white fw-bold';
+      case 'SEMANA': return 'bg-warning text-dark fw-bold';
+      case 'MES': return 'bg-primary-subtle text-primary border border-primary-subtle';
+      default: return 'bg-light text-muted border';
+    }
+  }
+
+  openHoldingDetailById(idInversion: number, event?: Event): void {
+    if (event) event.stopPropagation();
+    this.selectedHolding = { id_inversion: idInversion } as any;
+    this.detailDialogVisible = true;
+    this.loadingDetail = true;
+    this.investmentDetail = null;
+
+    this.fixedIncomeService.getInvestmentDetail(idInversion).subscribe({
+      next: (res) => {
+        this.loadingDetail = false;
+        if (res.status === 'success') {
+          this.investmentDetail = res.data;
+          this.customVectorInput = res.data.inversion.codigo_titulo_vector || '';
+        }
+      },
+      error: (err) => {
+        this.loadingDetail = false;
+        console.error('Error cargando detalle de inversión:', err);
+      }
+    });
   }
 
   setViewMode(mode: 'CARDS' | 'TABLE'): void {

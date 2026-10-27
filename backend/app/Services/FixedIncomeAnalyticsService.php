@@ -696,4 +696,199 @@ class FixedIncomeAnalyticsService
             ]
         ];
     }
+
+    /**
+     * Obtiene las alertas de vencimiento y conteo regresivo tanto para títulos
+     * como para cuotas de amortización y cupones de flujo de caja.
+     */
+    public function getMaturityAlerts(): array
+    {
+        $today = date('Y-m-d');
+        $todayObj = new \DateTime($today);
+
+        // 1. Obtener portafolio vigente para el conteo regresivo de instrumentos
+        $portfolioData = $this->getUserPortfolioMarkToMarket();
+        $holdings = $portfolioData['holdings'] ?? collect([]);
+
+        $titulosConteo = [];
+        $countCritica = 0;
+        $countAlta = 0;
+        $countMedia = 0;
+        $capital180d = 0;
+
+        foreach ($holdings as $h) {
+            $venc = $h['fecha_vencimiento'];
+            if (!$venc) continue;
+
+            $vencObj = new \DateTime($venc);
+            $diff = $todayObj->diff($vencObj);
+            $diasRemanentes = (int) $diff->format("%r%a");
+
+            // Si ya venció hace más de 7 días, omitir
+            if ($diasRemanentes < -7) continue;
+
+            $emision = $h['fecha_emision'] ?? $h['fecha_compra'];
+            $pctTranscurrido = 0;
+            if ($emision) {
+                $emisionObj = new \DateTime($emision);
+                $totalDias = max(1, (int) $emisionObj->diff($vencObj)->format("%r%a"));
+                $transcurridos = max(0, (int) $emisionObj->diff($todayObj)->format("%r%a"));
+                $pctTranscurrido = min(100, max(0, round(($transcurridos / $totalDias) * 100, 1)));
+            }
+
+            $saldoCapital = (float) ($h['capital_invertido'] ?? 0);
+
+            $urgencia = 'NORMAL';
+            if ($diasRemanentes <= 30) {
+                $urgencia = 'CRITICA';
+                $countCritica++;
+                $capital180d += $saldoCapital;
+            } elseif ($diasRemanentes <= 90) {
+                $urgencia = 'ALTA';
+                $countAlta++;
+                $capital180d += $saldoCapital;
+            } elseif ($diasRemanentes <= 180) {
+                $urgencia = 'MEDIA';
+                $countMedia++;
+                $capital180d += $saldoCapital;
+            }
+
+            $titulosConteo[] = [
+                'id_inversion' => $h['id_inversion'],
+                'nombre_instrumento' => $h['nombre_instrumento'],
+                'nombre_emisor' => $h['nombre_emisor'],
+                'calificacion_riesgo' => $h['calificacion_riesgo'] ?? 'AAA',
+                'saldo_capital' => round($saldoCapital, 2),
+                'tasa_cupon' => round((float) $h['tasa_cupon_compra'], 2),
+                'tir_vector' => round((float) ($h['tir_vector'] ?? 0), 2),
+                'fecha_emision' => $h['fecha_emision'],
+                'fecha_vencimiento' => $venc,
+                'dias_remanentes' => $diasRemanentes,
+                'pct_transcurrido' => $pctTranscurrido,
+                'urgencia' => $urgencia
+            ];
+        }
+
+        usort($titulosConteo, fn($a, $b) => $a['dias_remanentes'] <=> $b['dias_remanentes']);
+
+        // Próximo título más cercano a vencer
+        $proximoTitulo = !empty($titulosConteo) ? $titulosConteo[0] : null;
+
+        // 2. Cuotas próximas de amortización e intereses (flujo de caja en los próximos 180 días)
+        $cuotasRaw = DB::table('amortizacion as a')
+            ->join('inversion as i', 'a.id_inversion', '=', 'i.id_inversion')
+            ->join('instrumento as inst', 'i.id_instrumento', '=', 'inst.id_instrumento')
+            ->leftJoin('emisor as e', 'inst.id_emisor', '=', 'e.id_emisor')
+            ->where('a.id_estado_amortizacion', 134) // 134 = Pendiente de pago
+            ->where('a.eliminado', 0)
+            ->where('a.fecha_pago', '>=', $today)
+            ->where('a.fecha_pago', '<=', date('Y-m-d', strtotime('+180 days')))
+            ->orderBy('a.fecha_pago', 'asc')
+            ->select([
+                'a.id_amortizacion',
+                'a.id_inversion',
+                'a.numero_cuota',
+                'a.fecha_pago',
+                'a.capital',
+                'a.interes',
+                'e.nombre as nombre_emisor',
+                'inst.nombre as nombre_instrumento'
+            ])
+            ->get();
+
+        $cuotasProximas = [];
+        $kpiHoy = ['count' => 0, 'capital' => 0, 'interes' => 0, 'total' => 0];
+        $kpiSemana = ['count' => 0, 'capital' => 0, 'interes' => 0, 'total' => 0];
+        $kpi30d = ['count' => 0, 'capital' => 0, 'interes' => 0, 'total' => 0];
+        $kpi90d = ['count' => 0, 'capital' => 0, 'interes' => 0, 'total' => 0];
+        $kpi180d = ['count' => 0, 'capital' => 0, 'interes' => 0, 'total' => 0];
+
+        foreach ($cuotasRaw as $c) {
+            $pagoObj = new \DateTime($c->fecha_pago);
+            $diasParaPago = (int) $todayObj->diff($pagoObj)->format("%r%a");
+            $cap = (float) $c->capital;
+            $int = (float) $c->interes;
+            $tot = round($cap + $int, 2);
+
+            $urgenciaPago = 'SEMESTRE';
+            if ($diasParaPago <= 0) {
+                $urgenciaPago = 'HOY';
+                $kpiHoy['count']++;
+                $kpiHoy['capital'] += $cap;
+                $kpiHoy['interes'] += $int;
+                $kpiHoy['total'] += $tot;
+            } elseif ($diasParaPago <= 7) {
+                $urgenciaPago = 'SEMANA';
+            } elseif ($diasParaPago <= 30) {
+                $urgenciaPago = 'MES';
+            } elseif ($diasParaPago <= 90) {
+                $urgenciaPago = 'TRIMESTRE';
+            }
+
+            if ($diasParaPago <= 7) {
+                $kpiSemana['count']++;
+                $kpiSemana['capital'] += $cap;
+                $kpiSemana['interes'] += $int;
+                $kpiSemana['total'] += $tot;
+            }
+            if ($diasParaPago <= 30) {
+                $kpi30d['count']++;
+                $kpi30d['capital'] += $cap;
+                $kpi30d['interes'] += $int;
+                $kpi30d['total'] += $tot;
+            }
+            if ($diasParaPago <= 90) {
+                $kpi90d['count']++;
+                $kpi90d['capital'] += $cap;
+                $kpi90d['interes'] += $int;
+                $kpi90d['total'] += $tot;
+            }
+            $kpi180d['count']++;
+            $kpi180d['capital'] += $cap;
+            $kpi180d['interes'] += $int;
+            $kpi180d['total'] += $tot;
+
+            $cuotasProximas[] = [
+                'id_amortizacion' => $c->id_amortizacion,
+                'id_inversion' => $c->id_inversion,
+                'numero_cuota' => $c->numero_cuota,
+                'fecha_pago' => $c->fecha_pago,
+                'dias_para_pago' => $diasParaPago,
+                'capital' => round($cap, 2),
+                'interes' => round($int, 2),
+                'total_cobro' => $tot,
+                'nombre_emisor' => $c->nombre_emisor ?? 'Emisor',
+                'nombre_instrumento' => $c->nombre_instrumento,
+                'urgencia_pago' => $urgenciaPago
+            ];
+        }
+
+        // Redondear totales de KPIs
+        foreach (['kpiHoy', 'kpiSemana', 'kpi30d', 'kpi90d', 'kpi180d'] as $kVar) {
+            ${$kVar}['capital'] = round(${$kVar}['capital'], 2);
+            ${$kVar}['interes'] = round(${$kVar}['interes'], 2);
+            ${$kVar}['total'] = round(${$kVar}['total'], 2);
+        }
+
+        return [
+            'fecha_referencia' => $today,
+            'kpis' => [
+                'hoy' => $kpiHoy,
+                'semana_7d' => $kpiSemana,
+                'mes_30d' => $kpi30d,
+                'trimestre_90d' => $kpi90d,
+                'semestre_180d' => $kpi180d,
+                'titulos_urgencia' => [
+                    'critica_30d' => $countCritica,
+                    'alta_90d' => $countAlta,
+                    'media_180d' => $countMedia,
+                    'total_proximos_180d' => ($countCritica + $countAlta + $countMedia),
+                    'capital_en_vencimiento_180d' => round($capital180d, 2)
+                ],
+                'proximo_titulo' => $proximoTitulo
+            ],
+            'titulos_conteo_regresivo' => $titulosConteo,
+            'cuotas_proximas' => $cuotasProximas
+        ];
+    }
 }

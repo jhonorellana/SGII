@@ -21,6 +21,33 @@
     </div>
   </div>
 
+  <!-- BANNER EJECUTIVO DE ALERTAS INMINENTES -->
+  <div class="alert alert-warning border-0 shadow-2xs rounded-3 p-2.5 mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2" *ngIf="alertsData?.kpis?.mes_30d?.count">
+    <div class="d-flex align-items-center gap-2.5">
+      <div class="rounded-circle bg-warning text-dark p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; min-width: 36px;">
+        <i class="bi bi-bell-fill fs-5"></i>
+      </div>
+      <div>
+        <div class="fw-bold text-dark d-flex align-items-center gap-2">
+          <span>Alertas de Flujo de Caja & Vencimiento</span>
+          <span class="badge bg-danger text-white extra-small" *ngIf="alertsData?.kpis?.hoy?.count">
+            ¡{{ alertsData?.kpis?.hoy?.count }} cobro(s) programados para hoy!
+          </span>
+        </div>
+        <div class="extra-small text-muted mt-0.5">
+          Tienes <strong>{{ alertsData?.kpis?.mes_30d?.count }} cuotas por cobrar (${{ alertsData?.kpis?.mes_30d?.total | number:'1.2-2' }})</strong> en los próximos 30 días y <strong>{{ alertsData?.kpis?.titulos_urgencia?.total_proximos_180d }} títulos</strong> con maduración de capital en los próximos 180 días.
+        </div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <button class="btn btn-warning btn-sm fw-bold px-3 py-1.5 rounded-pill shadow-xs d-flex align-items-center gap-1.5" (click)="setTab('ALERTAS')">
+        <i class="bi bi-clock-history"></i>
+        <span>Ver Centro de Alertas</span>
+        <i class="bi bi-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+
   <!-- NAVEGACIÓN POR PESTAÑAS (TABS) -->
   <ul class="nav nav-tabs border-bottom mb-3">
     <li class="nav-item">
@@ -50,6 +77,18 @@
         <i class="bi bi-graph-up text-info fs-5"></i>
         <span>Curva de Rendimiento Cero Cupón</span>
         <span class="badge bg-info text-dark rounded-pill px-2 py-0.5 extra-small ms-1">BVQ</span>
+      </button>
+    </li>
+    <li class="nav-item">
+      <button 
+        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
+        [class.active]="activeTab === 'ALERTAS'" 
+        (click)="setTab('ALERTAS')">
+        <i class="bi bi-bell-fill text-warning fs-5"></i>
+        <span>Alertas & Conteo Regresivo</span>
+        <span class="badge bg-danger rounded-pill px-2 py-0.5 extra-small ms-1" *ngIf="alertsData?.kpis?.mes_30d?.count">
+          {{ alertsData?.kpis?.mes_30d?.count }}
+        </span>
       </button>
     </li>
   </ul>
@@ -917,6 +956,413 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- TAB 4: CENTRO DE ALERTAS Y CONTEO REGRESIVO -->
+  <!-- ========================================== -->
+  <div *ngIf="activeTab === 'ALERTAS'" class="fade-in">
+    <!-- Spinner mientras carga -->
+    <div *ngIf="alertsLoading" class="card border-0 shadow-2xs rounded-3 p-5 bg-white text-center mb-3">
+      <div class="spinner-border text-warning mb-3" style="width: 2.5rem; height: 2.5rem;" role="status"></div>
+      <h6 class="fw-bold text-dark">Calculando Alertas y Conteos Regresivos...</h6>
+      <small class="text-muted">Analizando vencimientos de títulos y cronograma de amortizaciones a cobrar</small>
+    </div>
+
+    <div *ngIf="!alertsLoading && alertsData">
+      <!-- 1. TARJETAS KPI DE VENCIMIENTOS Y LIQUIDEZ -->
+      <div class="kpi-grid mb-3">
+        <!-- KPI 1: Inmediato (Hoy y 7 Días) -->
+        <div class="card border-0 shadow-2xs bg-white rounded-3">
+          <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+            <div class="rounded-circle bg-danger-subtle p-2 text-danger fs-5 d-flex align-items-center justify-content-center kpi-icon">
+              <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div>
+              <div class="kpi-label text-muted fw-semibold text-uppercase">Cobros Inmediatos (7 Días)</div>
+              <div class="fs-5 fw-bold text-dark lh-1 my-1">
+                ${{ alertsData.kpis.semana_7d.total | number:'1.2-2' }}
+              </div>
+              <div class="extra-small text-muted">
+                {{ alertsData.kpis.semana_7d.count }} cuotas <span class="text-danger fw-bold" *ngIf="alertsData.kpis.hoy.count">(¡{{ alertsData.kpis.hoy.count }} hoy!)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 2: Flujo 30 Días -->
+        <div class="card border-0 shadow-2xs bg-white rounded-3">
+          <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+            <div class="rounded-circle bg-primary-subtle p-2 text-primary fs-5 d-flex align-items-center justify-content-center kpi-icon">
+              <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <div>
+              <div class="kpi-label text-muted fw-semibold text-uppercase">Liquidez Próximos 30 Días</div>
+              <div class="fs-5 fw-bold text-primary lh-1 my-1">
+                ${{ alertsData.kpis.mes_30d.total | number:'1.2-2' }}
+              </div>
+              <div class="extra-small text-muted">
+                Cap: ${{ alertsData.kpis.mes_30d.capital | number:'1.0-0' }} | Int: ${{ alertsData.kpis.mes_30d.interes | number:'1.0-0' }} ({{ alertsData.kpis.mes_30d.count }} cuotas)
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 3: Flujo 90 Días -->
+        <div class="card border-0 shadow-2xs bg-white rounded-3">
+          <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+            <div class="rounded-circle bg-purple-subtle p-2 text-purple fs-5 d-flex align-items-center justify-content-center kpi-icon">
+              <i class="bi bi-piggy-bank-fill"></i>
+            </div>
+            <div>
+              <div class="kpi-label text-muted fw-semibold text-uppercase">Liquidez Próximos 90 Días</div>
+              <div class="fs-5 fw-bold text-dark lh-1 my-1">
+                ${{ alertsData.kpis.trimestre_90d.total | number:'1.2-2' }}
+              </div>
+              <div class="extra-small text-muted">
+                {{ alertsData.kpis.trimestre_90d.count }} cuotas de amortización
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPI 4: Próximo Vencimiento de Título -->
+        <div class="card border-0 shadow-2xs bg-white rounded-3">
+          <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
+            <div class="rounded-circle bg-amber-subtle p-2 text-amber fs-5 d-flex align-items-center justify-content-center kpi-icon">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div>
+              <div class="kpi-label text-muted fw-semibold text-uppercase">Próximo Título a Madurar</div>
+              <div class="fs-6 fw-bold text-dark text-truncate my-1" style="max-width: 170px;" [title]="alertsData.kpis.proximo_titulo?.nombre_emisor">
+                {{ alertsData.kpis.proximo_titulo?.nombre_emisor || 'Ninguno' }}
+              </div>
+              <div class="extra-small text-muted">
+                En {{ alertsData.kpis.proximo_titulo?.dias_remanentes }} días (${{ alertsData.kpis.proximo_titulo?.saldo_capital | number:'1.0-0' }})
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. RADAR DE COBROS INMEDIATOS & FLUJO DE CAJA (TABLA DE CUOTAS PRÓXIMAS) -->
+      <div class="card border-0 shadow-2xs rounded-3 bg-white mb-3 overflow-hidden">
+        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-cash-stack text-success"></i>
+              Radar de Cobros Inmediatos de Amortizaciones & Cupones ({{ filteredUpcomingPayments.length }})
+            </h6>
+            <small class="text-muted">
+              Flujo de caja programado a recibir por capital e intereses pendientes de cobro
+            </small>
+          </div>
+
+          <!-- Filtros de Período y Búsqueda -->
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Filtro por Período -->
+            <div class="btn-group btn-group-sm" role="group">
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="paymentsFilter === 'HOY' ? 'btn-danger' : 'btn-outline-secondary'"
+                (click)="paymentsFilter = 'HOY'">
+                Hoy ({{ alertsData.kpis.hoy.count }})
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="paymentsFilter === 'SEMANA' ? 'btn-warning' : 'btn-outline-secondary'"
+                (click)="paymentsFilter = 'SEMANA'">
+                7 Días ({{ alertsData.kpis.semana_7d.count }})
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="paymentsFilter === 'MES' ? 'btn-primary' : 'btn-outline-secondary'"
+                (click)="paymentsFilter = 'MES'">
+                30 Días ({{ alertsData.kpis.mes_30d.count }})
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="paymentsFilter === 'TRIMESTRE' ? 'btn-purple' : 'btn-outline-secondary'"
+                (click)="paymentsFilter = 'TRIMESTRE'">
+                90 Días ({{ alertsData.kpis.trimestre_90d.count }})
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="paymentsFilter === 'TODOS' ? 'btn-dark' : 'btn-outline-secondary'"
+                (click)="paymentsFilter = 'TODOS'">
+                Todos (180d)
+              </button>
+            </div>
+
+            <!-- Buscador -->
+            <div class="input-group input-group-sm" style="width: 180px;">
+              <span class="input-group-text bg-white border-end-0 py-0.5"><i class="bi bi-search text-muted extra-small"></i></span>
+              <input 
+                type="text" 
+                class="form-control border-start-0 py-0.5 extra-small" 
+                [(ngModel)]="paymentsSearchTerm" 
+                placeholder="Buscar emisor..." />
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicador de Liquidez del Período -->
+        <div class="bg-light-subtle px-3 py-1.5 border-bottom d-flex justify-content-between align-items-center extra-small">
+          <span class="text-muted">
+            Mostrando <strong>{{ filteredUpcomingPayments.length }}</strong> cuotas programadas
+          </span>
+          <span class="fw-bold text-dark">
+            Liquidez Total a Recibir en este período: <span class="text-success fs-7 font-monospace fw-bold">${{ filteredPaymentsTotalLiquidity | number:'1.2-2' }}</span>
+          </span>
+        </div>
+
+        <p-table 
+          [value]="filteredUpcomingPayments" 
+          [paginator]="true" 
+          [rows]="10" 
+          [rowsPerPageOptions]="[10, 25, 50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} cuotas"
+          [responsiveLayout]="'scroll'"
+          styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="fecha_pago" style="width: 15%">
+                Fecha Pago / Urgencia <p-sortIcon field="fecha_pago"></p-sortIcon>
+              </th>
+              <th pSortableColumn="nombre_emisor" style="width: 25%">
+                Emisor / Instrumento <p-sortIcon field="nombre_emisor"></p-sortIcon>
+              </th>
+              <th pSortableColumn="numero_cuota" class="text-center" style="width: 10%">
+                Cuota # <p-sortIcon field="numero_cuota"></p-sortIcon>
+              </th>
+              <th pSortableColumn="capital" class="text-end" style="width: 13%">
+                Capital a Cobrar <p-sortIcon field="capital"></p-sortIcon>
+              </th>
+              <th pSortableColumn="interes" class="text-end" style="width: 13%">
+                Interés a Cobrar <p-sortIcon field="interes"></p-sortIcon>
+              </th>
+              <th pSortableColumn="total_cobro" class="text-end" style="width: 14%">
+                Total a Recibir <p-sortIcon field="total_cobro"></p-sortIcon>
+              </th>
+              <th class="text-center" style="width: 10%">
+                Acciones
+              </th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-p>
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-1.5">
+                  <span class="badge" [ngClass]="getPaymentUrgencyBadgeClass(p.urgencia_pago)">
+                    {{ p.dias_para_pago === 0 ? '¡HOY!' : (p.dias_para_pago === 1 ? 'Mañana' : 'En ' + p.dias_para_pago + 'd') }}
+                  </span>
+                  <span class="font-monospace text-dark fw-semibold extra-small">{{ p.fecha_pago }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="fw-bold text-dark text-truncate" style="max-width: 280px;" [title]="p.nombre_emisor">{{ p.nombre_emisor }}</div>
+                <div class="text-muted extra-small text-truncate" style="max-width: 280px;" [title]="p.nombre_instrumento">{{ p.nombre_instrumento }}</div>
+              </td>
+              <td class="text-center font-monospace">
+                <span class="badge bg-light text-dark border">
+                  {{ p.numero_cuota ? 'Cuota #' + p.numero_cuota : 'Cupón' }}
+                </span>
+              </td>
+              <td class="text-end font-monospace">
+                <span [class.text-muted]="p.capital === 0" [class.fw-bold]="p.capital > 0" [class.text-dark]="p.capital > 0">
+                  ${{ p.capital | number:'1.2-2' }}
+                </span>
+              </td>
+              <td class="text-end font-monospace text-primary fw-semibold">
+                ${{ p.interes | number:'1.2-2' }}
+              </td>
+              <td class="text-end font-monospace fw-bold text-success fs-7">
+                ${{ p.total_cobro | number:'1.2-2' }}
+              </td>
+              <td class="text-center">
+                <button 
+                  class="btn btn-outline-primary btn-sm py-0.5 px-2 extra-small rounded-pill"
+                  (click)="openHoldingDetailById(p.id_inversion, $event)"
+                  title="Ver cronograma completo de la inversión">
+                  <i class="bi bi-eye-fill me-1"></i> Detalle
+                </button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle text-success fs-3 d-block mb-1"></i>
+                No hay cuotas pendientes de cobro para el período seleccionado.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- 3. CONTEO REGRESIVO DE VENCIMIENTO DE TÍTULOS (MADURACIÓN DE CAPITAL) -->
+      <div class="card border-0 shadow-2xs rounded-3 bg-white overflow-hidden mb-3">
+        <div class="card-header bg-white py-2.5 px-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div>
+            <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-hourglass-bottom text-primary"></i>
+              Conteo Regresivo de Vencimiento de Instrumentos ({{ filteredCountdownHoldings.length }})
+            </h6>
+            <small class="text-muted">
+              Seguimiento del plazo de maduración y devolución del capital principal título a título
+            </small>
+          </div>
+
+          <!-- Filtros de Urgencia y Buscador -->
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="btn-group btn-group-sm" role="group">
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="countdownUrgencyFilter === 'TODOS' ? 'btn-secondary' : 'btn-outline-secondary'"
+                (click)="countdownUrgencyFilter = 'TODOS'">
+                Todos
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="countdownUrgencyFilter === 'CRITICA' ? 'btn-danger' : 'btn-outline-danger'"
+                (click)="countdownUrgencyFilter = 'CRITICA'">
+                Inminente (&lt; 30d)
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="countdownUrgencyFilter === 'ALTA' ? 'btn-warning' : 'btn-outline-warning'"
+                (click)="countdownUrgencyFilter = 'ALTA'">
+                Próximo (31-90d)
+              </button>
+              <button 
+                type="button" 
+                class="btn py-1 px-2.5 fw-semibold" 
+                [ngClass]="countdownUrgencyFilter === 'MEDIA' ? 'btn-info' : 'btn-outline-info'"
+                (click)="countdownUrgencyFilter = 'MEDIA'">
+                Mediano Plazo (91-180d)
+              </button>
+            </div>
+
+            <div class="input-group input-group-sm" style="width: 180px;">
+              <span class="input-group-text bg-white border-end-0 py-0.5"><i class="bi bi-search text-muted extra-small"></i></span>
+              <input 
+                type="text" 
+                class="form-control border-start-0 py-0.5 extra-small" 
+                [(ngModel)]="countdownSearchTerm" 
+                placeholder="Buscar título..." />
+            </div>
+          </div>
+        </div>
+
+        <p-table 
+          [value]="filteredCountdownHoldings" 
+          [paginator]="true" 
+          [rows]="10" 
+          [rowsPerPageOptions]="[10, 20, 50]"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} títulos"
+          [responsiveLayout]="'scroll'"
+          styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="nombre_emisor" style="width: 25%">
+                Emisor / Título <p-sortIcon field="nombre_emisor"></p-sortIcon>
+              </th>
+              <th pSortableColumn="calificacion_riesgo" class="text-center" style="width: 8%">
+                Rating <p-sortIcon field="calificacion_riesgo"></p-sortIcon>
+              </th>
+              <th pSortableColumn="saldo_capital" class="text-end" style="width: 12%">
+                Saldo Capital <p-sortIcon field="saldo_capital"></p-sortIcon>
+              </th>
+              <th pSortableColumn="tasa_cupon" class="text-end" style="width: 10%">
+                Tasa Cupón <p-sortIcon field="tasa_cupon"></p-sortIcon>
+              </th>
+              <th pSortableColumn="dias_remanentes" style="width: 22%">
+                Conteo Regresivo <p-sortIcon field="dias_remanentes"></p-sortIcon>
+              </th>
+              <th pSortableColumn="pct_transcurrido" style="width: 15%">
+                Progreso Plazo <p-sortIcon field="pct_transcurrido"></p-sortIcon>
+              </th>
+              <th class="text-center" style="width: 8%">
+                Acciones
+              </th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-h>
+            <tr>
+              <td>
+                <div class="fw-bold text-dark text-truncate" style="max-width: 260px;" [title]="h.nombre_emisor">{{ h.nombre_emisor }}</div>
+                <div class="text-muted extra-small text-truncate" style="max-width: 260px;" [title]="h.nombre_instrumento">{{ h.nombre_instrumento }}</div>
+                <div class="extra-small text-muted mt-0.5">
+                  <i class="bi bi-calendar-event me-1"></i> Vencimiento: <strong class="text-dark">{{ h.fecha_vencimiento }}</strong>
+                </div>
+              </td>
+              <td class="text-center">
+                <p-tag [value]="h.calificacion_riesgo" [severity]="getRatingSeverity(h.calificacion_riesgo)"></p-tag>
+              </td>
+              <td class="text-end font-monospace fw-bold text-dark fs-7">
+                ${{ h.saldo_capital | number:'1.2-2' }}
+              </td>
+              <td class="text-end font-monospace fw-semibold text-primary">
+                {{ h.tasa_cupon | number:'1.2-2' }}%
+              </td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge" [ngClass]="getUrgencyBadgeClass(h.urgencia)">
+                    <i class="bi bi-clock-history me-1"></i>
+                    {{ h.dias_remanentes > 0 ? h.dias_remanentes + ' días' : '¡VENCE HOY!' }}
+                  </span>
+                  <small class="text-muted font-monospace">
+                    (~{{ (h.dias_remanentes / 360) | number:'1.1-1' }} Años)
+                  </small>
+                </div>
+                <div class="extra-small text-muted mt-1">
+                  {{ getUrgencyLabel(h.urgencia) }}
+                </div>
+              </td>
+              <td>
+                <div class="d-flex justify-content-between extra-small mb-1 font-monospace">
+                  <span class="text-muted">Ciclo:</span>
+                  <span class="fw-bold text-dark">{{ h.pct_transcurrido }}%</span>
+                </div>
+                <p-progressBar [value]="h.pct_transcurrido" [showValue]="false" styleClass="h-6px"></p-progressBar>
+                <div class="extra-small text-muted text-truncate mt-1" style="font-size: 0.68rem;" *ngIf="h.fecha_emision">
+                  Desde: {{ h.fecha_emision }}
+                </div>
+              </td>
+              <td class="text-center">
+                <button 
+                  class="btn btn-outline-primary btn-sm py-0.5 px-2 extra-small rounded-pill"
+                  (click)="openHoldingDetailById(h.id_inversion, $event)"
+                  title="Ver cronograma y amortizaciones">
+                  <i class="bi bi-eye-fill me-1"></i> Detalle
+                </button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                No hay títulos que coincidan con los filtros seleccionados.
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
     </div>
   </div>

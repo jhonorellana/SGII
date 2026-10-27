@@ -124,3 +124,32 @@
 .spin {
   animation: spin 1s linear infinite;
 }
+
+.h-6px {
+  height: 6px !important;
+}
+
+.btn-purple {
+  background-color: #7e22ce !important;
+  color: #ffffff !important;
+  border-color: #7e22ce !important;
+}
+
+.btn-outline-purple {
+  color: #7e22ce !important;
+  border-color: #7e22ce !important;
+}
+
+.btn-outline-purple:hover {
+  background-color: #7e22ce !important;
+  color: #ffffff !important;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.03); }
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite ease-in-out;
+}

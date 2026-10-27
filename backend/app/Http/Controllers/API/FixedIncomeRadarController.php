@@ -134,4 +134,17 @@ class FixedIncomeRadarController extends Controller
             'data' => $data
         ]);
     }
+
+    /**
+     * GET /api/renta-fija/alertas-vencimiento
+     */
+    public function getMaturityAlerts(Request $request): JsonResponse
+    {
+        $data = $this->analyticsService->getMaturityAlerts();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $data
+        ]);
+    }
 }

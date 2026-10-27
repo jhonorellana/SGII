@@ -213,6 +213,7 @@ Route::post('dividendos/analizar-ia', [App\Http\Controllers\API\DividendAnalytic
 Route::get('renta-fija/radar', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getMarketRadar']);
 Route::get('renta-fija/mi-portafolio', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getUserPortfolio']);
 Route::get('renta-fija/curva-rendimiento', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getYieldCurve']);
+Route::get('renta-fija/alertas-vencimiento', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getMaturityAlerts']);
 Route::get('renta-fija/inversion/{id}', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getInvestmentDetail']);
 Route::post('renta-fija/actualizar-codigo-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'updateVectorCode']);
 Route::post('renta-fija/importar-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'importVector']);

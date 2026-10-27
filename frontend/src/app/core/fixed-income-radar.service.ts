@@ -178,6 +178,59 @@ export interface FixedIncomeCurveResponse {
   };
 }
 
+export interface FixedIncomeCountdownHolding {
+  id_inversion: number;
+  nombre_instrumento: string;
+  nombre_emisor: string;
+  calificacion_riesgo: string;
+  saldo_capital: number;
+  tasa_cupon: number;
+  tir_vector?: number;
+  fecha_emision: string;
+  fecha_vencimiento: string;
+  dias_remanentes: number;
+  pct_transcurrido: number;
+  urgencia: 'CRITICA' | 'ALTA' | 'MEDIA' | 'NORMAL';
+}
+
+export interface FixedIncomeUpcomingPayment {
+  id_amortizacion: number;
+  id_inversion: number;
+  numero_cuota: number;
+  fecha_pago: string;
+  dias_para_pago: number;
+  capital: number;
+  interes: number;
+  total_cobro: number;
+  nombre_emisor: string;
+  nombre_instrumento: string;
+  urgencia_pago: 'HOY' | 'SEMANA' | 'MES' | 'TRIMESTRE' | 'SEMESTRE';
+}
+
+export interface FixedIncomeMaturityAlertsResponse {
+  status: string;
+  data: {
+    fecha_referencia: string;
+    kpis: {
+      hoy: { count: number; capital: number; interes: number; total: number };
+      semana_7d: { count: number; capital: number; interes: number; total: number };
+      mes_30d: { count: number; capital: number; interes: number; total: number };
+      trimestre_90d: { count: number; capital: number; interes: number; total: number };
+      semestre_180d: { count: number; capital: number; interes: number; total: number };
+      titulos_urgencia: {
+        critica_30d: number;
+        alta_90d: number;
+        media_180d: number;
+        total_proximos_180d: number;
+        capital_en_vencimiento_180d: number;
+      };
+      proximo_titulo?: FixedIncomeCountdownHolding | null;
+    };
+    titulos_conteo_regresivo: FixedIncomeCountdownHolding[];
+    cuotas_proximas: FixedIncomeUpcomingPayment[];
+  };
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -214,6 +267,10 @@ export class FixedIncomeRadarService {
       if (filters.max_plazo_dias) params = params.set('max_plazo_dias', filters.max_plazo_dias.toString());
     }
     return this.http.get<FixedIncomeCurveResponse>(`${this.apiUrl}/curva-rendimiento`, { params });
+  }
+
+  getMaturityAlerts(): Observable<FixedIncomeMaturityAlertsResponse> {
+    return this.http.get<FixedIncomeMaturityAlertsResponse>(`${this.apiUrl}/alertas-vencimiento`);
   }
 
   getInvestmentDetail(idInversion: number): Observable<InvestmentDetailResponse> {
