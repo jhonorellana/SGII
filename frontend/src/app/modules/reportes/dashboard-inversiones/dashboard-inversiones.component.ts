@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TabViewModule } from 'primeng/tabview';
 import { DropdownModule } from 'primeng/dropdown';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { CalendarModule } from 'primeng/calendar';
 import { ChartModule } from 'primeng/chart';
 import { InversionService, Inversion } from '../../../core/inversion.service';
@@ -18,6 +19,7 @@ import { forkJoin } from 'rxjs';
     FormsModule,
     TabViewModule,
     DropdownModule,
+    MultiSelectModule,
     CalendarModule,
     ChartModule
   ],
@@ -33,7 +35,7 @@ export class DashboardInversionesComponent implements OnInit {
   emisores: any[] = [];
 
   // Filter models
-  selectedPropietario: number | null = null;
+  selectedPropietarios: number[] = [];
   selectedEmisor: number | null = null;
   fechaDesde: Date | null = null;
   fechaHasta: Date | null = null;
@@ -215,9 +217,12 @@ export class DashboardInversionesComponent implements OnInit {
 
   onFilterChange(): void {
     this.filteredInversiones = this.inversiones.filter(inv => {
-      // Propietario
-      if (this.selectedPropietario && inv.id_propietario !== this.selectedPropietario) {
-        return false;
+      // Propietario (soporte para selección múltiple)
+      if (this.selectedPropietarios && this.selectedPropietarios.length > 0) {
+        const invPropId = Number(inv.id_propietario);
+        if (!this.selectedPropietarios.map(Number).includes(invPropId)) {
+          return false;
+        }
       }
       // Emisor
       if (this.selectedEmisor && inv.instrumento?.id_emisor !== this.selectedEmisor) {
@@ -240,7 +245,7 @@ export class DashboardInversionesComponent implements OnInit {
   }
 
   clearFilters(): void {
-    this.selectedPropietario = null;
+    this.selectedPropietarios = [];
     this.selectedEmisor = null;
     this.fechaDesde = null;
     this.fechaHasta = null;
@@ -254,9 +259,27 @@ export class DashboardInversionesComponent implements OnInit {
     if (!this.hasData) {
       this.totalNominal = 0;
       this.totalInvertido = 0;
+      this.totalInvertidoPatrimonio = 0;
       this.rendimientoPromedio = 0;
+      this.tasaReferencialPromedio = 0;
       this.hasBonosData = false;
       this.hasOtrasInversionesData = false;
+      this.instrumentosChartData = null;
+      this.instrumentosLegend = [];
+      this.emisoresChartData = null;
+      this.emisoresLegend = [];
+      this.propietariosChartData = null;
+      this.propietariosLegend = [];
+      this.propietariosTiposChartData = null;
+      this.propietariosTiposLegend = [];
+      this.propietariosBonosChartData = null;
+      this.propietariosBonosLegend = [];
+      this.propietariosOtrasChartData = null;
+      this.propietariosOtrasLegend = [];
+      this.vencimientosChartData = null;
+      this.rendimientoBonosChartData = null;
+      this.rendimientoOtrasChartData = null;
+      this.cdr.detectChanges();
       return;
     }
 
@@ -304,6 +327,16 @@ export class DashboardInversionesComponent implements OnInit {
     this.generateRendimientosOtrasChart();
   }
 
+  private isJhonSelected(): boolean {
+    if (!this.selectedPropietarios || this.selectedPropietarios.length === 0) {
+      return true;
+    }
+    return this.propietarios.some(p =>
+      this.selectedPropietarios.map(Number).includes(Number(p.id_persona)) &&
+      (p.nombre || '').toLowerCase().includes('jhon')
+    );
+  }
+
   private loadPatrimonioData(): void {
     const today = new Date();
     const dateInicioStr = this.fechaDesde 
@@ -314,32 +347,90 @@ export class DashboardInversionesComponent implements OnInit {
       ? this.formatDate(this.fechaHasta) 
       : this.formatDate(new Date(today.getFullYear(), today.getMonth() + 12, 0));
 
-    const params = {
+    const baseParams = {
       fecha_inicio: dateInicioStr,
       fecha_fin: dateFinStr,
-      id_propietario: this.selectedPropietario || undefined,
       incluir_dividendos: false
     };
 
-    this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.buildInstrumentosFromPatrimonio(response.data.patrimonio);
-        } else {
-          this.totalInvertidoPatrimonio = 0;
-          this.instrumentosChartData = null;
-          this.instrumentosLegend = [];
-          this.cdr.detectChanges();
+    if (!this.selectedPropietarios || this.selectedPropietarios.length === 0) {
+      // Sin filtro de propietario -> Consolidado global
+      this.patrimonioService.getPatrimonioConsolidado(baseParams).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.buildInstrumentosFromPatrimonio(response.data.patrimonio);
+          } else {
+            this.handleEmptyPatrimonio();
+          }
+        },
+        error: (err) => {
+          console.error('Error loading patrimonio data:', err);
+          this.handleEmptyPatrimonio();
         }
-      },
-      error: (err) => {
-        console.error('Error loading patrimonio data:', err);
-        this.totalInvertidoPatrimonio = 0;
-        this.instrumentosChartData = null;
-        this.instrumentosLegend = [];
-        this.cdr.detectChanges();
-      }
-    });
+      });
+    } else if (this.selectedPropietarios.length === 1) {
+      // Un solo propietario seleccionado
+      const params = {
+        ...baseParams,
+        id_propietario: this.selectedPropietarios[0]
+      };
+      this.patrimonioService.getPatrimonioConsolidado(params).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.buildInstrumentosFromPatrimonio(response.data.patrimonio);
+          } else {
+            this.handleEmptyPatrimonio();
+          }
+        },
+        error: (err) => {
+          console.error('Error loading patrimonio data:', err);
+          this.handleEmptyPatrimonio();
+        }
+      });
+    } else {
+      // Múltiples propietarios seleccionados -> forkJoin en paralelo y consolidación por detalle
+      const requests = this.selectedPropietarios.map(id =>
+        this.patrimonioService.getPatrimonioConsolidado({
+          ...baseParams,
+          id_propietario: id
+        })
+      );
+
+      forkJoin(requests).subscribe({
+        next: (responses) => {
+          const combinedMap = new Map<string, number>();
+          responses.forEach(response => {
+            if (response.success && response.data && response.data.patrimonio) {
+              response.data.patrimonio.forEach((item: any) => {
+                const currentVal = combinedMap.get(item.detalle) || 0;
+                combinedMap.set(item.detalle, currentVal + Number(item.valor || 0));
+              });
+            }
+          });
+
+          if (combinedMap.size > 0) {
+            const combinedPatrimonio = Array.from(combinedMap.entries()).map(([detalle, valor]) => ({
+              detalle,
+              valor
+            }));
+            this.buildInstrumentosFromPatrimonio(combinedPatrimonio);
+          } else {
+            this.handleEmptyPatrimonio();
+          }
+        },
+        error: (err) => {
+          console.error('Error loading patrimonio data for multiple owners:', err);
+          this.handleEmptyPatrimonio();
+        }
+      });
+    }
+  }
+
+  private handleEmptyPatrimonio(): void {
+    this.totalInvertidoPatrimonio = 0;
+    this.instrumentosChartData = null;
+    this.instrumentosLegend = [];
+    this.cdr.detectChanges();
   }
 
   private formatServerDate(date: Date): string {
@@ -431,7 +522,7 @@ export class DashboardInversionesComponent implements OnInit {
     });
 
     // Sumar bonosProximoValTemp a ESTADO ECUATORIANO para reflejar la totalidad del capital bonos
-    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0 && this.isJhonSelected()) {
       const actualEstado = counts.get('ESTADO ECUATORIANO') || 0;
       if (actualEstado > 0) {
         counts.set('ESTADO ECUATORIANO', actualEstado + this.bonosProximoValTemp);
@@ -501,7 +592,7 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
-    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0 && this.isJhonSelected()) {
       const jhonVal = counts.get('Jhon') || 0;
       if (jhonVal > 0) {
         counts.set('Jhon', jhonVal + this.bonosProximoValTemp);
@@ -549,7 +640,7 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(label, (counts.get(label) || 0) + amt);
     });
 
-    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0 && this.isJhonSelected()) {
       const bonoJhonVal = counts.get('Bono del Estado - Jhon') || 0;
       if (bonoJhonVal > 0) {
         counts.set('Bono del Estado - Jhon', bonoJhonVal + this.bonosProximoValTemp);
@@ -614,7 +705,8 @@ export class DashboardInversionesComponent implements OnInit {
 
   private generatePropietariosBonosChart(): void {
     const bonosInversiones = this.filteredInversiones.filter(inv => (inv.instrumento?.tipoInversion?.nombre || '').toUpperCase().includes('BONO'));
-    this.hasBonosData = bonosInversiones.length > 0 || (this.bonosProximoValTemp > 0);
+    const jhonIncluded = this.isJhonSelected();
+    this.hasBonosData = bonosInversiones.length > 0 || (this.bonosProximoValTemp > 0 && jhonIncluded);
 
     if (!this.hasBonosData) {
       this.propietariosBonosChartData = null;
@@ -630,7 +722,7 @@ export class DashboardInversionesComponent implements OnInit {
       counts.set(owner, (counts.get(owner) || 0) + amt);
     });
 
-    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0) {
+    if (this.bonosProximoValTemp && this.bonosProximoValTemp > 0 && jhonIncluded) {
       const jhonVal = counts.get('Jhon') || 0;
       counts.set('Jhon', jhonVal + this.bonosProximoValTemp);
     }

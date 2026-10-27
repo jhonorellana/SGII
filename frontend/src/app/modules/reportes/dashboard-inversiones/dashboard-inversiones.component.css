@@ -48,6 +48,7 @@
 }
 
 ::ng-deep .filter-field .p-dropdown,
+::ng-deep .filter-field .p-multiselect,
 ::ng-deep .filter-field .p-calendar {
   width: 100% !important;
 }

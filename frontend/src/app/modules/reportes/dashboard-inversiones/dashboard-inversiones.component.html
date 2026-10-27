@@ -8,15 +8,23 @@
     <div class="filters-grid">
       <div class="filter-field">
         <label>Propietario</label>
-        <p-dropdown
-          [(ngModel)]="selectedPropietario"
+        <p-multiSelect
+          [(ngModel)]="selectedPropietarios"
           [options]="propietarios"
           optionLabel="nombre"
           optionValue="id_persona"
-          placeholder="Todos los propietarios"
+          defaultLabel="Todos los propietarios"
+          selectedItemsLabel="{0} propietarios"
+          [maxSelectedLabels]="2"
           [showClear]="true"
-          (onChange)="onFilterChange()">
-        </p-dropdown>
+          (onChange)="onFilterChange()"
+          (onClear)="onFilterChange()"
+          [filter]="true"
+          filterPlaceHolder="Buscar propietario..."
+          emptyFilterMessage="No se encontraron propietarios"
+          appendTo="body"
+          styleClass="w-100">
+        </p-multiSelect>
       </div>
 
       <div class="filter-field">
