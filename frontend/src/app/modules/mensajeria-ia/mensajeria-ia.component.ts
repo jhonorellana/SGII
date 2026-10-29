@@ -187,7 +187,7 @@ export class MensajeriaIaComponent implements OnInit {
 
         if (bromaRes && bromaRes.success && bromaRes.data) {
           const rawText = bromaRes.data.trim();
-          
+
           const saludoMatch = rawText.match(/SALUDO:\s*([^\n]+)/i);
           const arranqueMatch = rawText.match(/ARRANQUE:\s*([^\n]+)/i);
           const cierreMatch = rawText.match(/CIERRE:\s*([\s\S]+)/i);
@@ -354,9 +354,9 @@ export class MensajeriaIaComponent implements OnInit {
   }
 
   actualizarPromptTab2(): void {
-    const basePrompt = 'Genera una frase corta de alivio, satisfacción o saludo cordial en español para notificar a la contadora Maribel Molina al cierre del día laboral. No incluyas ni repitas ninguna cifra o monto de dinero. Pide amablemente su confirmación de que todo quedó conforme. Máximo 25 palabras. Usa siempre el trato formal de "Usted" y un emoji al final.';
+    const basePrompt = 'Genera un chiste, satisfacción o saludo cordial al contador José el cierre. No incluyas ni repitas ninguna cifra o monto de dinero. Pide amablemente su confirmación de que todo está correcto. Máximo 50 palabras. Usa siempre el trato formal de "Usted" y un emoji al final.';
     if (this.contextoTab2 && this.contextoTab2.trim().length > 0) {
-      this.promptTab2 = `${basePrompt}\nIndicación: Pedir confirmación de que todo está conforme amablemente.`;
+      this.promptTab2 = `${basePrompt}\nIndicación: Pedir confirmación de que todo está cuadrado correctamente.`;
     } else {
       this.promptTab2 = basePrompt;
     }
@@ -380,9 +380,9 @@ export class MensajeriaIaComponent implements OnInit {
           desgloseSaldos = `👥 *Saldo por Persona:*\n${this.saldosPersonasTexto}`;
         }
 
-        this.mensajeFinalTab2 = `🌆 *¡Buenas tardes estimada Maribel! Reporte de Cierre del Día para Contabilidad:*\n\n` +
+        this.mensajeFinalTab2 = `🌆 *¡Buenas tardes estimado José! Reporte de Cierre del Día para Contabilidad:*\n\n` +
           `${desgloseSaldos}\n\n` +
-          `• ✅ *Estado del Cuadre:* He registrado las operaciones de la jornada.\n\n` +
+          `• ✅ *Estado del Cuadre:* Registradas las operaciones de la jornada.\n\n` +
           `_${fraseCierre}_`;
 
         this.generandoTab2 = false;

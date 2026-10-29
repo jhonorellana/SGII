@@ -29,7 +29,15 @@ class VentaInversionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = VentaInversion::with(['inversion', 'instrumento', 'tipoVenta', 'persona', 'detalles.inversion'])
+        $query = VentaInversion::with([
+            'inversion.propietario',
+            'inversion.estadoInversion',
+            'instrumento.emisor',
+            'tipoVenta',
+            'persona',
+            'detalles.inversion.propietario',
+            'detalles.inversion.estadoInversion'
+        ])
             ->where('eliminado', false);
 
         // Filtros
@@ -1125,7 +1133,15 @@ class VentaInversionController extends Controller
      */
     public function show($id)
     {
-        $venta = VentaInversion::with(['inversion', 'instrumento', 'tipoVenta', 'detalles.inversion'])->find($id);
+        $venta = VentaInversion::with([
+            'inversion.propietario',
+            'inversion.estadoInversion',
+            'instrumento.emisor',
+            'tipoVenta',
+            'persona',
+            'detalles.inversion.propietario',
+            'detalles.inversion.estadoInversion'
+        ])->find($id);
 
         if (!$venta) {
             return response()->json([
@@ -1156,8 +1172,8 @@ class VentaInversionController extends Controller
         // Calcular métricas duales (Venta vs Total Return)
         $capitalVendido = (float) ($venta->valor_venta_con_comision - $venta->utilidad_con_comision);
         if ($capitalVendido <= 0) {
-            if ($venta->detalles && $venta->detalles->first() && $venta->detalles->first()->valor_compra > 0) {
-                $capitalVendido = (float) $venta->detalles->first()->valor_compra;
+            if ($venta->detalles && $venta->detalles->isNotEmpty()) {
+                $capitalVendido = (float) $venta->detalles->sum('valor_compra');
             } elseif ($venta->inversion && $venta->inversion->capital_invertido > 0) {
                 $capitalVendido = (float) $venta->inversion->capital_invertido;
             }
@@ -1197,7 +1213,7 @@ class VentaInversionController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $venta = VentaInversion::find($id);
+        $venta = VentaInversion::with(['inversion.amortizaciones', 'detalles.inversion.amortizaciones'])->find($id);
 
         if (!$venta) {
             return response()->json([
@@ -1207,7 +1223,7 @@ class VentaInversionController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'id_inversion' => 'required|exists:inversion,id_inversion',
+            'id_inversion' => 'nullable|exists:inversion,id_inversion',
             'id_instrumento' => 'nullable|exists:instrumento,id_instrumento',
             'id_tipo_venta' => 'nullable|exists:catalogo_valor,id_catalogo_valor',
             'porcentaje_vendido' => 'nullable|numeric',
@@ -1219,6 +1235,7 @@ class VentaInversionController extends Controller
             'valor_venta_sin_comision' => 'nullable|numeric',
             'comision_operador' => 'nullable|numeric',
             'comision_bolsa' => 'nullable|numeric',
+            'retenciones' => 'nullable|numeric',
             'valor_venta_con_comision' => 'nullable|numeric',
             'utilidad_sin_comision' => 'nullable|numeric',
             'utilidad_con_comision' => 'nullable|numeric',
@@ -1227,7 +1244,6 @@ class VentaInversionController extends Controller
             'dias_transcurridos' => 'nullable|numeric',
             'roi' => 'nullable|numeric',
             'ganancia_anual' => 'nullable|numeric',
-            'comision_operador' => 'nullable|numeric',
             'observacion' => 'nullable|string'
         ]);
 
@@ -1240,38 +1256,180 @@ class VentaInversionController extends Controller
 
         DB::beginTransaction();
         try {
+            $fechaVenta = $request->fecha_venta ?? $venta->fecha_venta;
+            $precioVenta = (float) ($request->precio_venta ?? $venta->precio_venta ?? 0);
+            $comisionOperador = (float) ($request->comision_operador ?? $venta->comision_operador ?? 0);
+            $comisionBolsa = (float) ($request->comision_bolsa ?? $venta->comision_bolsa ?? 0);
+            $interesPrevioVenta = (float) ($request->interes_previo_venta ?? $venta->interes_previo_venta ?? 0);
+            $retenciones = (float) ($request->retenciones ?? $venta->retenciones ?? 0);
+            $porcentajeVendido = (float) ($request->porcentaje_vendido ?? $venta->porcentaje_vendido ?? 100);
+            $factorPct = ($porcentajeVendido > 0) ? min(max($porcentajeVendido / 100, 0), 1) : 1;
+
+            // Determinar base nominal y de compra a partir de los detalles o de la inversión directa
+            $valorNominalTotal = 0;
+            $valorCompraTotal = 0;
+            $valorSinComisionCompraTotal = 0;
+            $interesCobradoTotal = 0;
+            $fechaCompraMin = null;
+
+            if ($venta->detalles && $venta->detalles->isNotEmpty()) {
+                foreach ($venta->detalles as $det) {
+                    $nomDet = (float) ($det->valor_nominal ?? 0);
+                    $compDet = (float) ($det->valor_compra ?? 0);
+                    $pctDet = (float) ($det->porcentaje_venta ?? 100);
+                    // Si es venta agrupada (id_tipo_venta == 195), porcentaje_venta guarda el % sobre nominal, no la fracción vendida
+                    $esAgrupada = ($venta->id_tipo_venta == 195 || is_null($venta->id_inversion));
+                    $fraccionDet = $esAgrupada ? 1 : (($pctDet > 0 && $pctDet <= 100) ? ($pctDet / 100) : $factorPct);
+
+                    $valorNominalTotal += $esAgrupada ? $nomDet : ($nomDet * $fraccionDet);
+                    $valorCompraTotal += $esAgrupada ? $compDet : ($compDet * $fraccionDet);
+
+                    if ($det->inversion) {
+                        $vscInv = (float) ($det->inversion->valor_sin_comision ?? $det->inversion->capital_invertido ?? $compDet);
+                        $valorSinComisionCompraTotal += $esAgrupada ? $vscInv : ($vscInv * $fraccionDet);
+
+                        if ($det->inversion->fecha_compra) {
+                            $fc = \Carbon\Carbon::parse($det->inversion->fecha_compra);
+                            if (is_null($fechaCompraMin) || $fc->lt($fechaCompraMin)) {
+                                $fechaCompraMin = $fc;
+                            }
+                        }
+
+                        if (!$esAgrupada && $det->inversion->amortizaciones) {
+                            $intRec = (float) ($det->inversion->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0);
+                            $interesCobradoTotal += $intRec * $fraccionDet;
+                        }
+                    } else {
+                        $valorSinComisionCompraTotal += $esAgrupada ? $compDet : ($compDet * $fraccionDet);
+                    }
+                }
+            } elseif ($venta->inversion) {
+                $inv = $venta->inversion;
+                $valorNominalTotal = (float) ($inv->valor_nominal ?? 0) * $factorPct;
+                $valorCompraTotal = (float) ($inv->capital_invertido ?? 0) * $factorPct;
+                $valorSinComisionCompraTotal = (float) ($inv->valor_sin_comision ?? $inv->capital_invertido ?? 0) * $factorPct;
+
+                if ($inv->fecha_compra) {
+                    $fechaCompraMin = \Carbon\Carbon::parse($inv->fecha_compra);
+                }
+                if ($inv->amortizaciones) {
+                    $intRec = (float) ($inv->amortizaciones->where('id_estado_amortizacion', 135)->sum('interes') ?? 0);
+                    $interesCobradoTotal = $intRec * $factorPct;
+                }
+            }
+
+            // Recalcular valores financieros de la venta
+            $valorVentaSinComision = ($valorNominalTotal > 0 && $precioVenta > 0)
+                ? round(($valorNominalTotal * $precioVenta) / 100, 2)
+                : (float) ($request->valor_venta_sin_comision ?? $venta->valor_venta_sin_comision ?? 0);
+
+            $valorVentaConComision = round($valorVentaSinComision - $comisionOperador - $comisionBolsa, 2);
+            $valorRecibido = round($valorVentaConComision + $interesPrevioVenta - $retenciones, 2);
+            $precioNetoVenta = ($valorNominalTotal > 0)
+                ? round(($valorRecibido / $valorNominalTotal) * 100, 8)
+                : (float) ($request->precio_neto_venta ?? $venta->precio_neto_venta ?? 0);
+
+            $utilidadSinComision = round($valorVentaSinComision - $valorSinComisionCompraTotal, 2);
+            $utilidadConComision = round($valorVentaConComision - $valorCompraTotal, 2);
+            $gananciaPerdida = $utilidadConComision;
+
+            // Días transcurridos
+            $diasTranscurridos = (int) ($request->dias_transcurridos ?? $venta->dias_transcurridos ?? 0);
+            if ($fechaCompraMin && $fechaVenta) {
+                $fv = \Carbon\Carbon::parse($fechaVenta);
+                $diasTranscurridos = max(0, $fechaCompraMin->diffInDays($fv));
+            }
+
+            // Para ventas agrupadas de Notas de Crédito (id_tipo_venta == 195), rendimiento_total y roi son porcentuales sobre utilidadConComision
+            $esVentaAgrupadaNC = ($venta->id_tipo_venta == 195 || is_null($venta->id_inversion));
+            $roi = ($valorCompraTotal > 0) ? round(($utilidadConComision / $valorCompraTotal) * 100, 2) : 0;
+            $gananciaAnual = ($diasTranscurridos > 0) ? round(($roi * 365) / $diasTranscurridos, 2) : 0;
+
+            if ($esVentaAgrupadaNC) {
+                $rendimientoTotal = $roi;
+            } else {
+                $rendimientoTotal = round($utilidadConComision + $interesCobradoTotal + $interesPrevioVenta, 2);
+            }
+
+            // Actualizar cabecera venta_inversion
             $venta->update([
-                'id_inversion' => $request->id_inversion,
-                'id_instrumento' => $request->id_instrumento,
-                'id_tipo_venta' => $request->id_tipo_venta,
-                'porcentaje_vendido' => $request->porcentaje_vendido,
-                'fecha_venta' => $request->fecha_venta,
-                'liquidacion_venta' => $request->liquidacion_venta,
-                'precio_venta' => $request->precio_venta,
-                'precio_neto_venta' => $request->precio_neto_venta,
-                'interes_previo_venta' => $request->interes_previo_venta,
-                'valor_venta_sin_comision' => $request->valor_venta_sin_comision,
-                'comision_operador' => $request->comision_operador,
-                'comision_bolsa' => $request->comision_bolsa,
-                'valor_venta_con_comision' => $request->valor_venta_con_comision,
-                'utilidad_sin_comision' => $request->utilidad_sin_comision,
-                'utilidad_con_comision' => $request->utilidad_con_comision,
-                'ganancia_perdida' => $request->ganancia_perdida,
-                'rendimiento_total' => $request->rendimiento_total,
-                'dias_transcurridos' => $request->dias_transcurridos,
-                'roi' => $request->roi,
-                'ganancia_anual' => $request->ganancia_anual,
-                'comision_operador' => $request->comision_operador,
-                'observacion' => $request->observacion,
+                'id_inversion' => $request->has('id_inversion') ? $request->id_inversion : $venta->id_inversion,
+                'id_instrumento' => $request->id_instrumento ?? $venta->id_instrumento,
+                'id_tipo_venta' => $request->id_tipo_venta ?? $venta->id_tipo_venta,
+                'porcentaje_vendido' => $porcentajeVendido,
+                'fecha_venta' => $fechaVenta,
+                'liquidacion_venta' => $request->liquidacion_venta ?? $venta->liquidacion_venta,
+                'precio_venta' => $precioVenta,
+                'precio_neto_venta' => $precioNetoVenta,
+                'interes_previo_venta' => $interesPrevioVenta,
+                'valor_venta_sin_comision' => $valorVentaSinComision,
+                'comision_operador' => $comisionOperador,
+                'comision_bolsa' => $comisionBolsa,
+                'retenciones' => $retenciones,
+                'valor_venta_con_comision' => $valorVentaConComision,
+                'valor_recibido' => $valorRecibido,
+                'utilidad_sin_comision' => $utilidadSinComision,
+                'utilidad_con_comision' => $utilidadConComision,
+                'ganancia_perdida' => $gananciaPerdida,
+                'rendimiento_total' => $rendimientoTotal,
+                'dias_transcurridos' => $diasTranscurridos,
+                'roi' => $roi,
+                'ganancia_anual' => $gananciaAnual,
+                'observacion' => $request->has('observacion') ? $request->observacion : $venta->observacion,
                 'fecha_actualizacion' => now()
             ]);
 
-            // Actualizar movimiento contable asociado
-            $movimiento = MovimientoCapital::where('id_venta_inversion', $id)->first();
+            // Actualizar detalles en venta_inversion_detalle
+            if ($venta->detalles && $venta->detalles->isNotEmpty()) {
+                foreach ($venta->detalles as $det) {
+                    $compDet = (float) ($det->valor_compra ?? 0);
+                    $nomDet = (float) ($det->valor_nominal ?? 0);
+                    $proporcion = ($valorCompraTotal > 0) ? ($compDet / $valorCompraTotal) : (1 / max(1, $venta->detalles->count()));
+
+                    $valorVentaAsignado = round($valorVentaConComision * $proporcion, 2);
+                    $utilidadDet = round($valorVentaAsignado - ($esVentaAgrupadaNC ? $compDet : ($compDet * $factorPct)), 2);
+                    $baseCompraDet = $esVentaAgrupadaNC ? $compDet : ($compDet * $factorPct);
+                    $rendimientoDet = ($baseCompraDet > 0) ? round(($utilidadDet / $baseCompraDet) * 100, 8) : 0;
+                    $porcentajeVentaDet = $esVentaAgrupadaNC
+                        ? (($nomDet > 0) ? round(($valorVentaAsignado / $nomDet) * 100, 8) : 0)
+                        : $porcentajeVendido;
+
+                    $det->update([
+                        'valor_venta_asignado' => $valorVentaAsignado,
+                        'porcentaje_venta' => $porcentajeVentaDet,
+                        'utilidad' => $utilidadDet,
+                        'rendimiento' => $rendimientoDet,
+                        'fecha_actualizacion' => now()
+                    ]);
+
+                    // Sincronizar fecha_venta en la inversión si cambió
+                    if ($det->inversion && $det->inversion->fecha_venta != $fechaVenta) {
+                        $det->inversion->update([
+                            'fecha_venta' => $fechaVenta,
+                            'fecha_actualizacion' => now()
+                        ]);
+                    }
+                }
+            } elseif ($venta->inversion && $venta->inversion->fecha_venta != $fechaVenta) {
+                $venta->inversion->update([
+                    'fecha_venta' => $fechaVenta,
+                    'fecha_actualizacion' => now()
+                ]);
+            }
+
+            // Actualizar movimiento contable asociado (id_tipo_movimiento = 182)
+            $movimiento = MovimientoCapital::where('id_venta_inversion', $id)
+                ->where('id_tipo_movimiento', 182)
+                ->first();
+            if (!$movimiento) {
+                $movimiento = MovimientoCapital::where('id_venta_inversion', $id)->first();
+            }
             if ($movimiento) {
+                $montoMov = $esVentaAgrupadaNC ? $valorVentaConComision : $valorRecibido;
                 $movimiento->update([
-                    'fecha_movimiento' => $request->fecha_venta,
-                    'id_inversion' => $request->id_inversion,
+                    'monto' => $montoMov,
+                    'fecha_movimiento' => $fechaVenta,
+                    'id_inversion' => $venta->id_inversion,
                     'fecha_actualizacion' => now()
                 ]);
             }
@@ -1281,7 +1439,7 @@ class VentaInversionController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Venta actualizada exitosamente',
-                'data' => $venta->load(['inversion', 'instrumento', 'tipoVenta'])
+                'data' => $venta->fresh(['inversion', 'instrumento', 'tipoVenta', 'persona', 'detalles.inversion'])
             ], Response::HTTP_OK);
 
         } catch (\Exception $e) {

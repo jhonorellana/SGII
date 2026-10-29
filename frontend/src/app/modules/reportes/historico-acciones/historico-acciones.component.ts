@@ -346,12 +346,21 @@ export class HistoricoAccionesComponent implements OnInit {
         // Mapear al año pivote (2000)
         const x = new Date(2000, m, d);
         const price = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
+        const cantidad = typeof rec.cantidad === 'string' ? parseFloat(rec.cantidad) : (rec.cantidad || 0);
+        const transacciones = typeof rec.transacciones === 'string' ? parseInt(rec.transacciones, 10) : (rec.transacciones || 0);
         const recordYear = y.toString();
         
         if (!groupedByYear[recordYear]) {
           groupedByYear[recordYear] = [];
         }
-        groupedByYear[recordYear].push({ x, y: price, originalYear: recordYear });
+        groupedByYear[recordYear].push({
+          x,
+          y: price,
+          originalYear: recordYear,
+          fecha: rec.fecha,
+          cantidad,
+          transacciones
+        });
       });
 
       const years = Object.keys(groupedByYear).sort((a, b) => Number(a) - Number(b));
@@ -379,19 +388,37 @@ export class HistoricoAccionesComponent implements OnInit {
 
       this.chartData = { datasets };
     } else {
-      // Lógica estándar de línea de tiempo
-      const prices = this.historicoRecords.map(rec => {
+      // Lógica estándar de línea de tiempo: ordenar cronológicamente para el trazado del gráfico
+      const recordsAsc = [...this.historicoRecords].sort((a, b) => a.fecha.localeCompare(b.fecha));
+
+      const prices = recordsAsc.map(rec => {
         const parts = rec.fecha.split('-');
         const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         const y = typeof rec.precio === 'string' ? parseFloat(rec.precio) : (rec.precio || 0);
-        return { x, y };
+        const cantidad = typeof rec.cantidad === 'string' ? parseFloat(rec.cantidad) : (rec.cantidad || 0);
+        const transacciones = typeof rec.transacciones === 'string' ? parseInt(rec.transacciones, 10) : (rec.transacciones || 0);
+        return { 
+          x, 
+          y, 
+          fecha: rec.fecha,
+          cantidad, 
+          transacciones 
+        };
       });
 
-      const volumes = this.historicoRecords.map(rec => {
+      const volumes = recordsAsc.map(rec => {
         const parts = rec.fecha.split('-');
         const x = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
         const y = typeof rec.valor === 'string' ? parseFloat(rec.valor) : (rec.valor || 0);
-        return { x, y };
+        const cantidad = typeof rec.cantidad === 'string' ? parseFloat(rec.cantidad) : (rec.cantidad || 0);
+        const transacciones = typeof rec.transacciones === 'string' ? parseInt(rec.transacciones, 10) : (rec.transacciones || 0);
+        return { 
+          x, 
+          y, 
+          fecha: rec.fecha,
+          cantidad, 
+          transacciones 
+        };
       });
 
       this.chartData = {
@@ -404,7 +431,7 @@ export class HistoricoAccionesComponent implements OnInit {
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.05)',
             borderWidth: 1.5,
-            pointRadius: this.historicoRecords.length > 180 ? 0 : 2,
+            pointRadius: recordsAsc.length > 180 ? 0 : 2,
             pointHoverRadius: 6,
             tension: 0.2,
             fill: true
@@ -467,12 +494,23 @@ export class HistoricoAccionesComponent implements OnInit {
           callbacks: {
             title: (tooltipItems: any[]) => {
               if (tooltipItems.length > 0) {
-                const dateVal = new Date(tooltipItems[0].raw.x);
+                const raw = tooltipItems[0].raw;
                 const nombreEmpresa = this.empresas.find(e => e.value === this.selectedEmpresa)?.label || '';
                 
+                if (raw && raw.fecha) {
+                  const parts = raw.fecha.split('-');
+                  if (parts.length === 3) {
+                    return [
+                      `Emisor: ${nombreEmpresa}`,
+                      `Fecha: ${parts[2]}/${parts[1]}/${parts[0]}`
+                    ];
+                  }
+                }
+
+                const dateVal = new Date(raw.x);
                 let titleYear = '';
                 if (Number(this.selectedAnio) === -1) {
-                  titleYear = tooltipItems[0].raw.originalYear || dateVal.getFullYear().toString();
+                  titleYear = raw.originalYear || dateVal.getFullYear().toString();
                 } else {
                   titleYear = dateVal.getFullYear().toString();
                 }
@@ -498,13 +536,25 @@ export class HistoricoAccionesComponent implements OnInit {
             },
             footer: (tooltipItems: any[]) => {
               if (tooltipItems.length > 0) {
-                const index = tooltipItems[0].dataIndex;
-                const record = this.historicoRecords[index];
-                if (!record) return '';
-                return [
-                  `Acciones: ${this.formatInteger(record.cantidad)}`,
-                  `Transacciones: ${this.formatInteger(record.transacciones)}`
-                ].join('\n');
+                const raw = tooltipItems[0].raw;
+                if (raw && (raw.cantidad !== undefined || raw.transacciones !== undefined)) {
+                  return [
+                    `Acciones: ${this.formatInteger(raw.cantidad || 0)}`,
+                    `Transacciones: ${this.formatInteger(raw.transacciones || 0)}`
+                  ].join('\n');
+                }
+
+                // Fallback por búsqueda exacta de fecha
+                const dateStr = raw && raw.fecha ? raw.fecha : '';
+                if (dateStr) {
+                  const record = this.historicoRecords.find(r => r.fecha === dateStr);
+                  if (record) {
+                    return [
+                      `Acciones: ${this.formatInteger(record.cantidad)}`,
+                      `Transacciones: ${this.formatInteger(record.transacciones)}`
+                    ].join('\n');
+                  }
+                }
               }
               return '';
             }
