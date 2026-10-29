@@ -243,10 +243,14 @@ class VentaInversionController extends Controller
                 $valorRecibido = $valorVentaConComision + $interesPrevioVenta;
  
                 // Paso 3: Crear registro en venta_inversion
+                $idTipoVenta = $request->id_tipo_venta ?? ($esVentaTotal
+                    ? $this->getTipoVentaTotal($request->id_instrumento)
+                    : $this->getTipoVentaParcial($request->id_instrumento));
+
                 $venta = VentaInversion::create([
                     'id_inversion' => $inversion->id_inversion,
                     'id_instrumento' => $request->id_instrumento,
-                    'id_tipo_venta' => $request->id_tipo_venta,
+                    'id_tipo_venta' => $idTipoVenta,
                     'id_propietario' => $inversion->id_propietario,
                     'porcentaje_vendido' => $request->porcentaje_vendido ?? 100,
                     'fecha_venta' => $request->fecha_venta,
@@ -698,7 +702,7 @@ class VentaInversionController extends Controller
         $venta = VentaInversion::create([
             'id_inversion' => $inversion->id_inversion,
             'id_instrumento' => $request->id_instrumento,
-            'id_tipo_venta' => $this->getTipoVentaTotal(),
+            'id_tipo_venta' => $this->getTipoVentaTotal($request->id_instrumento ?? $inversion->id_instrumento),
             'id_propietario' => $inversion->id_propietario,
             'porcentaje_vendido' => 100,
             'fecha_venta' => $request->fecha_venta,
@@ -877,7 +881,7 @@ class VentaInversionController extends Controller
         $venta = VentaInversion::create([
             'id_inversion' => $inversionVendida->id_inversion,
             'id_instrumento' => $request->id_instrumento,
-            'id_tipo_venta' => $this->getTipoVentaParcial(),
+            'id_tipo_venta' => $this->getTipoVentaParcial($request->id_instrumento ?? $inversion->id_instrumento),
             'id_propietario' => $inversion->id_propietario,
             'porcentaje_vendido' => $porcentajeVender,
             'fecha_venta' => $request->fecha_venta,
@@ -1111,21 +1115,47 @@ class VentaInversionController extends Controller
     }
 
     /**
-     * Obtener ID del tipo de venta TOTAL
+     * Obtener ID del tipo de venta TOTAL según el instrumento
      */
-    private function getTipoVentaTotal()
+    private function getTipoVentaTotal($idInstrumento = null)
     {
-        $tipo = \App\Models\CatalogoValor::where('codigo', 'TOTAL')->first();
-        return $tipo ? $tipo->id_catalogo_valor : null;
+        $instrumento = $idInstrumento ? \App\Models\Instrumento::with('tipoInversion')->find($idInstrumento) : null;
+        $codTipoInversion = $instrumento && $instrumento->tipoInversion ? strtoupper($instrumento->tipoInversion->codigo) : null;
+
+        if ($codTipoInversion === 'PAPEL' || ($instrumento && $instrumento->id_tipo_inversion == 3)) {
+            $tipo = \App\Models\CatalogoValor::whereIn('codigo', ['TOTAL PAPEL', 'TOTALPAP', 'PARCIALPAP'])->first();
+            if ($tipo) return $tipo->id_catalogo_valor;
+        }
+
+        if ($codTipoInversion === 'NOTCR' || ($instrumento && $instrumento->id_tipo_inversion == 91)) {
+            $tipo = \App\Models\CatalogoValor::where('codigo', 'TOTAL NOTAC')->first();
+            if ($tipo) return $tipo->id_catalogo_valor;
+        }
+
+        $tipo = \App\Models\CatalogoValor::whereIn('codigo', ['TOTAL BONO', 'TOTAL'])->first();
+        return $tipo ? $tipo->id_catalogo_valor : 148;
     }
 
     /**
-     * Obtener ID del tipo de venta PARCIAL
+     * Obtener ID del tipo de venta PARCIAL según el instrumento
      */
-    private function getTipoVentaParcial()
+    private function getTipoVentaParcial($idInstrumento = null)
     {
-        $tipo = \App\Models\CatalogoValor::where('codigo', 'PARCIAL')->first();
-        return $tipo ? $tipo->id_catalogo_valor : null;
+        $instrumento = $idInstrumento ? \App\Models\Instrumento::with('tipoInversion')->find($idInstrumento) : null;
+        $codTipoInversion = $instrumento && $instrumento->tipoInversion ? strtoupper($instrumento->tipoInversion->codigo) : null;
+
+        if ($codTipoInversion === 'PAPEL' || ($instrumento && $instrumento->id_tipo_inversion == 3)) {
+            $tipo = \App\Models\CatalogoValor::where('codigo', 'PARCIALPAP')->first();
+            if ($tipo) return $tipo->id_catalogo_valor;
+        }
+
+        if ($codTipoInversion === 'NOTCR' || ($instrumento && $instrumento->id_tipo_inversion == 91)) {
+            $tipo = \App\Models\CatalogoValor::where('codigo', 'TOTAL NOTAC')->first();
+            if ($tipo) return $tipo->id_catalogo_valor;
+        }
+
+        $tipo = \App\Models\CatalogoValor::whereIn('codigo', ['PARCIALBONO', 'PARCIAL', 'TOTAL BONO'])->first();
+        return $tipo ? $tipo->id_catalogo_valor : 147;
     }
 
     /**
@@ -1352,10 +1382,15 @@ class VentaInversionController extends Controller
             }
 
             // Actualizar cabecera venta_inversion
+            $idInstrumentoActual = $request->id_instrumento ?? $venta->id_instrumento;
+            $idTipoVentaActual = $request->id_tipo_venta ?? $venta->id_tipo_venta ?? ($porcentajeVendido >= 100
+                ? $this->getTipoVentaTotal($idInstrumentoActual)
+                : $this->getTipoVentaParcial($idInstrumentoActual));
+
             $venta->update([
                 'id_inversion' => $request->has('id_inversion') ? $request->id_inversion : $venta->id_inversion,
-                'id_instrumento' => $request->id_instrumento ?? $venta->id_instrumento,
-                'id_tipo_venta' => $request->id_tipo_venta ?? $venta->id_tipo_venta,
+                'id_instrumento' => $idInstrumentoActual,
+                'id_tipo_venta' => $idTipoVentaActual,
                 'porcentaje_vendido' => $porcentajeVendido,
                 'fecha_venta' => $fechaVenta,
                 'liquidacion_venta' => $request->liquidacion_venta ?? $venta->liquidacion_venta,

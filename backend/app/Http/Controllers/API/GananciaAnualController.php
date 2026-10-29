@@ -12,17 +12,28 @@ class GananciaAnualController extends Controller
     {
         try {
             // 1. Ganancias por ventas de Renta Fija (venta_inversion)
+            $tipoVentaExpr = "COALESCE(
+                catalogo_valor.nombre,
+                CASE
+                    WHEN instrumento.id_tipo_inversion = 3 THEN 'Parcial Papel Comercial'
+                    WHEN instrumento.id_tipo_inversion = 91 THEN 'Total Nota Credito'
+                    WHEN venta_inversion.porcentaje_vendido < 100 THEN 'Parcial Bono'
+                    ELSE 'Total Bono'
+                END
+            )";
+
             $rfResults = DB::table('venta_inversion')
-                ->join('catalogo_valor', 'venta_inversion.id_tipo_venta', '=', 'catalogo_valor.id_catalogo_valor')
+                ->leftJoin('catalogo_valor', 'venta_inversion.id_tipo_venta', '=', 'catalogo_valor.id_catalogo_valor')
+                ->leftJoin('instrumento', 'venta_inversion.id_instrumento', '=', 'instrumento.id_instrumento')
                 ->select(
                     DB::raw('YEAR(venta_inversion.fecha_venta) as anio'), 
-                    'catalogo_valor.nombre as tipo_venta',
+                    DB::raw("$tipoVentaExpr as tipo_venta"),
                     DB::raw('SUM(venta_inversion.ganancia_perdida) as ganancia')
                 )
                 ->where('venta_inversion.activo', 1)
                 ->where('venta_inversion.eliminado', 0)
                 ->whereNotNull('venta_inversion.fecha_venta')
-                ->groupBy(DB::raw('YEAR(venta_inversion.fecha_venta)'), 'catalogo_valor.nombre')
+                ->groupBy(DB::raw('YEAR(venta_inversion.fecha_venta)'), DB::raw($tipoVentaExpr))
                 ->orderBy('anio', 'asc')
                 ->get();
 

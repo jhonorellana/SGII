@@ -89,7 +89,7 @@
           </div>
         </td>
         <td class="text-center">
-          <p-tag [value]="venta.tipoVenta?.nombre || (venta.id_tipo_venta === 1 ? 'Total' : 'Parcial')" [severity]="venta.id_tipo_venta === 1 ? 'success' : 'info'"></p-tag>
+          <p-tag [value]="venta.tipoVenta?.nombre || (venta.porcentaje_vendido >= 100 ? 'Total' : 'Parcial')" [severity]="(venta.tipoVenta?.codigo?.startsWith('TOTAL') || (!venta.tipoVenta && venta.porcentaje_vendido >= 100)) ? 'success' : 'info'"></p-tag>
         </td>
         <td class="text-center">
           <div class="btn-group" role="group">

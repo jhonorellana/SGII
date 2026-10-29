@@ -185,7 +185,7 @@ export class VentaInversionListComponent implements OnInit {
             
             return {
               ...venta,
-              valor_nominal: vNominal,
+              tipoVenta: venta.tipoVenta || venta.tipo_venta, valor_nominal: vNominal,
               roi_venta: venta.roi_venta != null ? Number(venta.roi_venta) : roiVentaCalculado,
               roi_total: venta.roi_total != null ? Number(venta.roi_total) : roiTotalCalculado,
               ganancia_anual_venta: venta.ganancia_anual_venta != null ? Number(venta.ganancia_anual_venta) : ganAnualVentaCalculada,
