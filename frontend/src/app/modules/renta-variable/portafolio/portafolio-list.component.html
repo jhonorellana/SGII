@@ -8,26 +8,44 @@
     <div class="filters-grid">
       <div class="filter-field">
         <label>Socio</label>
-        <p-dropdown
-          [(ngModel)]="selectedSocio"
+        <p-multiSelect
+          [(ngModel)]="selectedSocios"
           [options]="socios"
+          optionLabel="label"
+          optionValue="value"
+          defaultLabel="Todos los socios"
           placeholder="Todos los socios"
+          [filter]="true"
+          filterPlaceholder="Buscar socio..."
           [showClear]="true"
+          [maxSelectedLabels]="2"
+          selectedItemsLabel="{0} socios seleccionados"
+          appendTo="body"
           (onChange)="onFilterChange()"
+          (onClear)="onFilterChange()"
           [style]="{width: '100%'}">
-        </p-dropdown>
+        </p-multiSelect>
       </div>
 
       <div class="filter-field">
         <label>Acción / Emisor</label>
-        <p-dropdown
-          [(ngModel)]="selectedInstrumento"
+        <p-multiSelect
+          [(ngModel)]="selectedInstrumentos"
           [options]="instrumentos"
+          optionLabel="label"
+          optionValue="value"
+          defaultLabel="Todas las acciones"
           placeholder="Todas las acciones"
+          [filter]="true"
+          filterPlaceholder="Buscar acción..."
           [showClear]="true"
+          [maxSelectedLabels]="2"
+          selectedItemsLabel="{0} acciones seleccionadas"
+          appendTo="body"
           (onChange)="onFilterChange()"
+          (onClear)="onFilterChange()"
           [style]="{width: '100%'}">
-        </p-dropdown>
+        </p-multiSelect>
       </div>
 
       <div class="filter-field">

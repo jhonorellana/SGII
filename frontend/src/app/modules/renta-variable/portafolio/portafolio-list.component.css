@@ -43,7 +43,8 @@
   letter-spacing: 0.5px;
 }
 
-::ng-deep .filter-field .p-dropdown {
+::ng-deep .filter-field .p-dropdown,
+::ng-deep .filter-field .p-multiselect {
   width: 100% !important;
 }
 

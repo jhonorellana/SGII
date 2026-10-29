@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule, Table } from 'primeng/table';
 import { DropdownModule } from 'primeng/dropdown';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ChartModule } from 'primeng/chart';
@@ -37,6 +38,7 @@ import { PortfolioDashboardComponent } from '../../portfolio/portfolio-dashboard
     FormsModule,
     TableModule,
     DropdownModule,
+    MultiSelectModule,
     ButtonModule,
     CardModule,
     ChartModule,
@@ -70,8 +72,8 @@ export class PortafolioListComponent implements OnInit {
   instrumentos: any[] = [];
 
   // Filters
-  selectedSocio: number | null = null;
-  selectedInstrumento: number | null = null;
+  selectedSocios: number[] = [];
+  selectedInstrumentos: number[] = [];
 
   // Loading and table properties
   loading = false;
@@ -156,14 +158,19 @@ export class PortafolioListComponent implements OnInit {
     }
     if (row.id_persona && row.id_persona > 0) {
       filters.id_persona = row.id_persona;
-    } else if (this.selectedSocio) {
-      filters.id_persona = this.selectedSocio;
+    } else if (this.selectedSocios && this.selectedSocios.length === 1) {
+      filters.id_persona = this.selectedSocios[0];
     }
 
     this.operacionService.getAll(filters).subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.detalleOperaciones = response.data;
+          let ops = response.data;
+          // Si es fila consolidada y hay múltiples socios seleccionados, filtrar las operaciones a esos socios
+          if ((!row.id_persona || row.id_persona === 0) && this.selectedSocios && this.selectedSocios.length > 1) {
+            ops = ops.filter(op => op.id_persona && this.selectedSocios.includes(op.id_persona));
+          }
+          this.detalleOperaciones = ops;
         } else {
           this.detalleOperaciones = [];
         }
@@ -204,6 +211,35 @@ export class PortafolioListComponent implements OnInit {
     return str;
   }
 
+  private parseSavedArrayFilter(raw: string | null): number[] {
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed.map(v => Number(v)).filter(v => !isNaN(v) && v > 0);
+      }
+      const num = Number(parsed);
+      return !isNaN(num) && num > 0 ? [num] : [];
+    } catch {
+      const num = Number(raw);
+      return !isNaN(num) && num > 0 ? [num] : [];
+    }
+  }
+
+  private matchesFilters(idPersona?: number | null, idInstrumento?: number | null): boolean {
+    if (this.selectedSocios && this.selectedSocios.length > 0) {
+      if (!idPersona || !this.selectedSocios.includes(idPersona)) {
+        return false;
+      }
+    }
+    if (this.selectedInstrumentos && this.selectedInstrumentos.length > 0) {
+      if (!idInstrumento || !this.selectedInstrumentos.includes(idInstrumento)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   ngOnInit(): void {
     const savedSocio = localStorage.getItem('portafolio_selected_socio');
     const savedInstrumento = localStorage.getItem('portafolio_selected_instrumento');
@@ -212,8 +248,8 @@ export class PortafolioListComponent implements OnInit {
     const savedSortOrder = localStorage.getItem('portafolio_sort_order');
     const savedSearchQuery = localStorage.getItem('portafolio_search_query');
 
-    this.selectedSocio = savedSocio ? Number(savedSocio) : null;
-    this.selectedInstrumento = savedInstrumento ? Number(savedInstrumento) : null;
+    this.selectedSocios = this.parseSavedArrayFilter(savedSocio);
+    this.selectedInstrumentos = this.parseSavedArrayFilter(savedInstrumento);
     this.modoConsolidado = savedConsolidado === 'true';
     this.sortField = savedSortField || 'capital_invertido';
     this.sortOrder = savedSortOrder ? Number(savedSortOrder) : -1;
@@ -282,15 +318,9 @@ export class PortafolioListComponent implements OnInit {
             }
             
             // Aplicar filtros iniciales recuperados de localStorage
-            this.filteredPosiciones = this.posiciones.filter(pos => {
-              if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
-                return false;
-              }
-              if (this.selectedInstrumento && pos.id_instrumento !== this.selectedInstrumento) {
-                return false;
-              }
-              return true;
-            });
+            this.filteredPosiciones = this.posiciones.filter(pos =>
+              this.matchesFilters(pos.id_persona, pos.id_instrumento)
+            );
 
             this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
@@ -309,15 +339,9 @@ export class PortafolioListComponent implements OnInit {
             this.dividendos = [];
             
             // Aplicar filtros iniciales en caso de error de dividendos también
-            this.filteredPosiciones = this.posiciones.filter(pos => {
-              if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
-                return false;
-              }
-              if (this.selectedInstrumento && pos.id_instrumento !== this.selectedInstrumento) {
-                return false;
-              }
-              return true;
-            });
+            this.filteredPosiciones = this.posiciones.filter(pos =>
+              this.matchesFilters(pos.id_persona, pos.id_instrumento)
+            );
 
             this.updateDisplayPosiciones();
             this.calculateMetricsAndCharts();
@@ -361,14 +385,14 @@ export class PortafolioListComponent implements OnInit {
 
   onFilterChange(): void {
     // Persistir filtros en localStorage
-    if (this.selectedSocio !== null) {
-      localStorage.setItem('portafolio_selected_socio', this.selectedSocio.toString());
+    if (this.selectedSocios && this.selectedSocios.length > 0) {
+      localStorage.setItem('portafolio_selected_socio', JSON.stringify(this.selectedSocios));
     } else {
       localStorage.removeItem('portafolio_selected_socio');
     }
 
-    if (this.selectedInstrumento !== null) {
-      localStorage.setItem('portafolio_selected_instrumento', this.selectedInstrumento.toString());
+    if (this.selectedInstrumentos && this.selectedInstrumentos.length > 0) {
+      localStorage.setItem('portafolio_selected_instrumento', JSON.stringify(this.selectedInstrumentos));
     } else {
       localStorage.removeItem('portafolio_selected_instrumento');
     }
@@ -376,23 +400,17 @@ export class PortafolioListComponent implements OnInit {
     localStorage.setItem('portafolio_modo_consolidado', this.modoConsolidado.toString());
 
     // Filtrar posiciones en memoria
-    this.filteredPosiciones = this.posiciones.filter(pos => {
-      if (this.selectedSocio && pos.id_persona !== this.selectedSocio) {
-        return false;
-      }
-      if (this.selectedInstrumento && pos.id_instrumento !== this.selectedInstrumento) {
-        return false;
-      }
-      return true;
-    });
+    this.filteredPosiciones = this.posiciones.filter(pos =>
+      this.matchesFilters(pos.id_persona, pos.id_instrumento)
+    );
 
     this.updateDisplayPosiciones();
     this.calculateMetricsAndCharts();
   }
 
   clearFilters(): void {
-    this.selectedSocio = null;
-    this.selectedInstrumento = null;
+    this.selectedSocios = [];
+    this.selectedInstrumentos = [];
     this.modoConsolidado = false;
     this.globalSearchQuery = '';
     this.sortField = 'capital_invertido';
@@ -482,9 +500,8 @@ export class PortafolioListComponent implements OnInit {
     // Calcular dividendos totales de la selección
     let sumDividendos = 0;
     this.dividendos.forEach(div => {
-      // Filtrar por socio/instrumento seleccionados
-      if (this.selectedSocio && div.id_persona !== this.selectedSocio) return;
-      if (this.selectedInstrumento && div.id_instrumento !== this.selectedInstrumento) return;
+      // Filtrar por socios/instrumentos seleccionados
+      if (!this.matchesFilters(div.id_persona, div.id_instrumento)) return;
       
       // Sumar el neto cobrado en efectivo (ID 209: Efectivo, ID 211: Mixto)
       if (div.id_tipo_dividendo === 209 || div.id_tipo_dividendo === 211) {
