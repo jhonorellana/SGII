@@ -113,6 +113,8 @@ Route::get('amortizaciones/proximas', [AmortizacionController::class, 'getProxim
 Route::apiResource('amortizaciones', AmortizacionController::class);
 Route::get('amortizaciones/inversion/{idInversion}', [AmortizacionController::class, 'getByInversion']);
 Route::post('amortizaciones/desactivar-por-fecha-inversion', [AmortizacionController::class, 'desactivarPorFechaInversion']);
+Route::post('amortizaciones/{id}/pago-parcial', [AmortizacionController::class, 'pagoParcial']);
+Route::get('amortizaciones/{id}/historial-pagos', [AmortizacionController::class, 'obtenerHistorialPagos']);
 
 // Rutas de Generación de Amortizaciones (temporalmente sin autenticación para pruebas)
 Route::post('amortizaciones/generar', [AmortizacionGeneracionController::class, 'generar']);

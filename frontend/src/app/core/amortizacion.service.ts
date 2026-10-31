@@ -73,6 +73,16 @@ export class AmortizacionService {
     return this.http.delete(`${this.apiUrl}/${id}`);
   }
 
+  // Método para registrar pago parcial y dividir la amortización
+  registrarPagoParcial(id: number, data: { pago_actual: any; saldo_restante: any; observacion?: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/${id}/pago-parcial`, data);
+  }
+
+  // Método para consultar el historial de pagos parciales de una amortización
+  getHistorialPagos(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}/historial-pagos`);
+  }
+
   // Método para desactivar amortizaciones por inversión y fecha de venta
   desactivarPorFechaInversion(idInversion: number, fechaVenta: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/desactivar-por-fecha-inversion`, {

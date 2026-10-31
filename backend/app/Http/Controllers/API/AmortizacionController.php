@@ -4,8 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Amortizacion;
+use App\Models\AmortizacionPagoHistorial;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class AmortizacionController extends Controller
@@ -231,5 +234,159 @@ class AmortizacionController extends Controller
                 'error' => $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Registrar un pago parcial y dividir la amortización en dos:
+     * 1. Cuota original actualizada con los valores pagados hoy y estado = 135 (Pagada).
+     * 2. Nueva cuota con los valores restantes pendientes, fecha de compromiso y estado = 134 (Pendiente).
+     */
+    public function pagoParcial(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'pago_actual.fecha_pago' => 'required|date',
+            'pago_actual.capital' => 'required|numeric|min:0',
+            'pago_actual.interes' => 'required|numeric|min:0',
+            'pago_actual.descuento' => 'nullable|numeric',
+            'saldo_restante.fecha_pago' => 'required|date',
+            'saldo_restante.capital' => 'required|numeric|min:0',
+            'saldo_restante.interes' => 'required|numeric|min:0',
+            'saldo_restante.descuento' => 'nullable|numeric',
+            'observacion' => 'nullable|string|max:500',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de validación incorrectos',
+                'errors' => $validator->errors()
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $amortizacionOriginal = Amortizacion::find($id);
+
+        if (!$amortizacionOriginal || $amortizacionOriginal->eliminado) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Amortización no encontrada o eliminada'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $pagoActual = $request->input('pago_actual');
+        $saldoRestante = $request->input('saldo_restante');
+
+        $capitalPagado = (float) $pagoActual['capital'];
+        $interesPagado = (float) $pagoActual['interes'];
+        $descuentoPagado = (float) ($pagoActual['descuento'] ?? 0);
+        $totalPagado = round($capitalPagado + $interesPagado + $descuentoPagado, 2);
+
+        $capitalRestante = (float) $saldoRestante['capital'];
+        $interesRestante = (float) $saldoRestante['interes'];
+        $descuentoRestante = (float) ($saldoRestante['descuento'] ?? 0);
+        $totalRestante = round($capitalRestante + $interesRestante + $descuentoRestante, 2);
+
+        DB::beginTransaction();
+        try {
+            // 1. Actualizar la cuota original con lo pagado hoy y marcarla como PAGADA (ID 135)
+            $amortizacionOriginal->update([
+                'fecha_pago' => $pagoActual['fecha_pago'],
+                'capital' => $capitalPagado,
+                'interes' => $interesPagado,
+                'descuento' => $descuentoPagado,
+                'total' => $totalPagado,
+                'id_estado_amortizacion' => 135, // Pagada
+                'fecha_actualizacion' => now()
+            ]);
+
+            // 2. Crear nueva cuota para el saldo restante con la fecha de compromiso y estado PENDIENTE (ID 134)
+            $nuevaCuota = Amortizacion::create([
+                'id_inversion' => $amortizacionOriginal->id_inversion,
+                'numero_cuota' => $amortizacionOriginal->numero_cuota,
+                'fecha_pago' => $saldoRestante['fecha_pago'],
+                'capital' => $capitalRestante,
+                'interes' => $interesRestante,
+                'descuento' => $descuentoRestante,
+                'total' => $totalRestante,
+                'int_parcial' => 0,
+                'retencion' => 0,
+                'id_estado_amortizacion' => 134, // Pendiente de pago
+                'eliminado' => false,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
+
+            // 3. Registrar en la bitácora histórica de pagos parciales
+            $historial = AmortizacionPagoHistorial::create([
+                'id_inversion' => $amortizacionOriginal->id_inversion,
+                'numero_cuota' => $amortizacionOriginal->numero_cuota,
+                'id_amortizacion_pagada' => $amortizacionOriginal->id_amortizacion,
+                'id_amortizacion_restante' => $nuevaCuota->id_amortizacion,
+                'fecha_pago' => $pagoActual['fecha_pago'],
+                'capital_pagado' => $capitalPagado,
+                'interes_pagado' => $interesPagado,
+                'descuento_pagado' => $descuentoPagado,
+                'total_pagado' => $totalPagado,
+                'saldo_restante' => $totalRestante,
+                'fecha_compromiso' => $saldoRestante['fecha_pago'],
+                'observacion' => $request->input('observacion'),
+                'id_usuario' => auth()->id() ?? $request->input('id_usuario'),
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now(),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pago parcial registrado y cuota dividida exitosamente',
+                'cuota_pagada' => $amortizacionOriginal->fresh(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion']),
+                'cuota_restante' => $nuevaCuota->load(['inversion', 'inversion.instrumento.emisor', 'inversion.propietario', 'estadoAmortizacion']),
+                'historial' => $historial
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error en AmortizacionController::pagoParcial: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar el pago parcial',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Obtener el historial de pagos parciales/abonos de una amortización.
+     */
+    public function obtenerHistorialPagos($id)
+    {
+        $amortizacion = Amortizacion::find($id);
+        if (!$amortizacion) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Amortización no encontrada'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $historial = AmortizacionPagoHistorial::with(['usuario'])
+            ->where(function ($q) use ($amortizacion, $id) {
+                $q->where('id_amortizacion_pagada', $id)
+                  ->orWhere('id_amortizacion_restante', $id);
+                if ($amortizacion->numero_cuota) {
+                    $q->orWhere(function ($sub) use ($amortizacion) {
+                        $sub->where('id_inversion', $amortizacion->id_inversion)
+                            ->where('numero_cuota', $amortizacion->numero_cuota);
+                    });
+                }
+            })
+            ->orderBy('fecha_pago', 'asc')
+            ->orderBy('id_pago_historial', 'asc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $historial
+        ], Response::HTTP_OK);
     }
 }

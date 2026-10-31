@@ -110,6 +110,18 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
   // Edición de Amortización
   displayEditAmortizacionDialog = false;
+  // Modal de Pago Parcial (División de Cuota)
+  displayPagoParcialDialog = false;
+  loadingPagoParcial = false;
+  pagoParcialForm!: FormGroup;
+  saldoRestanteCalculado = { capital: 0, interes: 0, descuento: 0, total: 0 };
+  totalPagadoCalculado = 0;
+
+  // Historial de Pagos Parciales
+  displayHistorialDialog = false;
+  loadingHistorial = false;
+  historialPagos: any[] = [];
+  cuotaHistorialSeleccionada: any = null;
   loadingAmortizacion = false;
   editingAmortizacionId: number | null = null;
   amortizacionOriginal: any = null;
@@ -135,6 +147,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
   ngOnInit(): void {    this.inicializarFormulario();
     this.inicializarAmortizacionForm();
+    this.inicializarPagoParcialForm();
     this.loadCurrentUser();
     this.loadInitialData();
 
@@ -1191,5 +1204,221 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     this.selectedAmortizacionDetalle = null;
     this.inversionResumen = null;
     this.amortizacionForm.reset();
+  }
+
+  inicializarPagoParcialForm(): void {
+    this.pagoParcialForm = this.fb.group({
+      fecha_pago_hoy: [new Date(), Validators.required],
+      capital_pagado: [0, [Validators.required, Validators.min(0)]],
+      interes_pagado: [0, [Validators.required, Validators.min(0)]],
+      descuento_pagado: [0, Validators.required],
+      fecha_compromiso: [null, Validators.required],
+      observacion: ['']
+    });
+
+    this.pagoParcialForm.valueChanges.subscribe(() => {
+      this.recalcularSaldoRestante();
+    });
+  }
+
+  getOriginalCapitalCuota(): number {
+    return Number(this.amortizacionForm?.get('capital')?.value ?? this.amortizacionOriginal?.capital ?? 0);
+  }
+
+  getOriginalInteresCuota(): number {
+    return Number(this.amortizacionForm?.get('interes')?.value ?? this.amortizacionOriginal?.interes ?? 0);
+  }
+
+  getOriginalDescuentoCuota(): number {
+    return Number(this.amortizacionForm?.get('descuento')?.value ?? this.amortizacionOriginal?.descuento ?? 0);
+  }
+
+  getOriginalTotalCuota(): number {
+    return Number((this.getOriginalCapitalCuota() + this.getOriginalInteresCuota() + this.getOriginalDescuentoCuota()).toFixed(2));
+  }
+
+  abrirModalPagoParcial(): void {
+    if (!this.amortizacionOriginal && !this.selectedAmortizacionDetalle) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Atención',
+        detail: 'No se encontraron datos de la cuota para dividir'
+      });
+      return;
+    }
+
+    this.pagoParcialForm.patchValue({
+      fecha_pago_hoy: new Date(),
+      capital_pagado: 0,
+      interes_pagado: 0,
+      descuento_pagado: 0,
+      fecha_compromiso: null,
+      observacion: ''
+    }, { emitEvent: false });
+
+    this.recalcularSaldoRestante();
+    this.displayPagoParcialDialog = true;
+  }
+
+  cancelarPagoParcial(): void {
+    this.displayPagoParcialDialog = false;
+  }
+
+  recalcularSaldoRestante(): void {
+    const origCapital = this.getOriginalCapitalCuota();
+    const origInteres = this.getOriginalInteresCuota();
+    const origDescuento = this.getOriginalDescuentoCuota();
+
+    const pagadoCapital = Number(this.pagoParcialForm?.get('capital_pagado')?.value || 0);
+    const pagadoInteres = Number(this.pagoParcialForm?.get('interes_pagado')?.value || 0);
+    const pagadoDescuento = Number(this.pagoParcialForm?.get('descuento_pagado')?.value || 0);
+
+    const capRestante = Math.max(0, Number((origCapital - pagadoCapital).toFixed(2)));
+    const intRestante = Math.max(0, Number((origInteres - pagadoInteres).toFixed(2)));
+    const descRestante = Number((origDescuento - pagadoDescuento).toFixed(2));
+    const totRestante = Number((capRestante + intRestante + descRestante).toFixed(2));
+
+    this.saldoRestanteCalculado = {
+      capital: capRestante,
+      interes: intRestante,
+      descuento: descRestante,
+      total: totRestante
+    };
+
+    this.totalPagadoCalculado = Number((pagadoCapital + pagadoInteres + pagadoDescuento).toFixed(2));
+  }
+
+  guardarPagoParcial(): void {
+    if (this.pagoParcialForm.invalid || !this.editingAmortizacionId) {
+      this.pagoParcialForm.markAllAsTouched();
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Formulario Incompleto',
+        detail: 'Por favor complete todos los campos obligatorios, incluyendo la fecha de compromiso'
+      });
+      return;
+    }
+
+    const formVal = this.pagoParcialForm.value;
+    const pagadoCapital = Number(formVal.capital_pagado || 0);
+    const pagadoInteres = Number(formVal.interes_pagado || 0);
+    const pagadoDescuento = Number(formVal.descuento_pagado || 0);
+    const totalPagado = Number((pagadoCapital + pagadoInteres + pagadoDescuento).toFixed(2));
+
+    const origCapital = this.getOriginalCapitalCuota();
+    const origInteres = this.getOriginalInteresCuota();
+
+    if (totalPagado <= 0) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validación',
+        detail: 'El total pagado hoy debe ser mayor a cero'
+      });
+      return;
+    }
+
+    if (pagadoCapital > origCapital) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validación',
+        detail: `El capital pagado ($${pagadoCapital}) no puede superar el capital de la cuota ($${origCapital})`
+      });
+      return;
+    }
+
+    if (pagadoInteres > origInteres) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validación',
+        detail: `El interés pagado ($${pagadoInteres}) no puede superar el interés de la cuota ($${origInteres})`
+      });
+      return;
+    }
+
+    if (!formVal.fecha_compromiso) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Validación',
+        detail: 'Debe ingresar la fecha en que el emisor se compromete a pagar el saldo restante'
+      });
+      return;
+    }
+
+    const payload = {
+      pago_actual: {
+        fecha_pago: this.formatDate(formVal.fecha_pago_hoy),
+        capital: pagadoCapital,
+        interes: pagadoInteres,
+        descuento: pagadoDescuento
+      },
+      saldo_restante: {
+        fecha_pago: this.formatDate(formVal.fecha_compromiso),
+        capital: this.saldoRestanteCalculado.capital,
+        interes: this.saldoRestanteCalculado.interes,
+        descuento: this.saldoRestanteCalculado.descuento
+      },
+      observacion: formVal.observacion ? formVal.observacion.trim() : null
+    };
+
+    this.loadingPagoParcial = true;
+    this.amortizacionService.registrarPagoParcial(this.editingAmortizacionId, payload).subscribe({
+      next: (res) => {
+        this.loadingPagoParcial = false;
+        this.displayPagoParcialDialog = false;
+        this.displayEditAmortizacionDialog = false;
+        this.editingAmortizacionId = null;
+        this.amortizacionOriginal = null;
+        this.selectedAmortizacionDetalle = null;
+        this.inversionResumen = null;
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Pago Parcial Registrado',
+          detail: res.message || 'La cuota se dividió exitosamente en pagada y pendiente'
+        });
+
+        if (this.lastParams) {
+          this.cargarDetalleBackend(this.lastParams);
+        }
+        this.generarReporte();
+      },
+      error: (err) => {
+        this.loadingPagoParcial = false;
+        console.error('Error al registrar pago parcial:', err);
+        const errorMsg = err.error?.message || err.message || 'Error al procesar el pago parcial';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: errorMsg
+        });
+      }
+    });
+  }
+
+
+  verHistorialPagos(item?: any): void {
+    const amortizacionItem = item || this.selectedAmortizacionDetalle;
+    if (!amortizacionItem || !amortizacionItem.id_amortizacion) return;
+
+    this.cuotaHistorialSeleccionada = amortizacionItem;
+    this.loadingHistorial = true;
+    this.displayHistorialDialog = true;
+    this.historialPagos = [];
+
+    this.amortizacionService.getHistorialPagos(amortizacionItem.id_amortizacion).subscribe({
+      next: (res) => {
+        this.loadingHistorial = false;
+        this.historialPagos = res.data || [];
+      },
+      error: (err) => {
+        this.loadingHistorial = false;
+        console.error('Error cargando historial de pagos:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar el historial de pagos parciales'
+        });
+      }
+    });
   }
 }
