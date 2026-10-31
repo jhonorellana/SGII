@@ -23,6 +23,7 @@ import { ModalActionsComponent } from '../../../core/modal-actions';
 import { AmortizacionService } from '../../../core/amortizacion.service';
 import { InputTextModule } from 'primeng/inputtext';
 import { InversionService } from '../../../core/inversion.service';
+import { EmisorService } from '../../../core/emisor.service';
 import { forkJoin } from 'rxjs';
 
 export interface FlujoCapitalItem {
@@ -57,7 +58,7 @@ export interface FlujoCapitalItem {
     InputTextModule,
     ModalActionsComponent
   ],
-  providers: [MessageService, ModalActionsComponent, InversionService],
+  providers: [MessageService, ModalActionsComponent, InversionService, EmisorService],
   templateUrl: './flujo-capital-consolidado.component.html',
   styleUrls: ['./flujo-capital-consolidado.component.css']
 })
@@ -133,6 +134,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   currentUser: any = null;
   gruposFamiliares: any[] = [];
   personas: any[] = [];
+  emisores: any[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -141,6 +143,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     private personaService: PersonaService,
     private amortizacionService: AmortizacionService,
     private inversionService: InversionService,
+    private emisorService: EmisorService,
     private messageService: MessageService,
     private authService: AuthService
   ) { }
@@ -156,7 +159,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
         fecha_inicio: new Date(this.paramsModal.fecha_inicio + 'T00:00:00'),
         fecha_fin: new Date(this.paramsModal.fecha_fin + 'T00:00:00'),
         id_grupo_familiar: this.paramsModal.id_grupo_familiar,
-        id_propietario: this.paramsModal.id_propietario
+        id_propietario: this.paramsModal.id_propietario,
+        id_emisor: this.paramsModal.id_emisor || null
       });
       // Delay so form updates properly
       setTimeout(() => {
@@ -193,7 +197,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       fecha_inicio: [fechaInicio, Validators.required],
       fecha_fin: [fechaFin, Validators.required],
       id_grupo_familiar: [null],
-      id_propietario: [null]
+      id_propietario: [null],
+      id_emisor: [null]
     });
   }
 
@@ -222,6 +227,22 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
         console.error('Error cargando personas:', error);
       }
     });
+
+    this.emisorService.getEmisores().subscribe({
+      next: (response) => {
+        const emisoresArray = Array.isArray(response) ? response : (response.data || []);
+        this.emisores = emisoresArray
+          .filter((e: any) => e.activo == 1 || e.activo === true)
+          .map((e: any) => ({
+            id_emisor: e.id_emisor,
+            nombre: e.nombre
+          }))
+          .sort((a: any, b: any) => (a.nombre || '').localeCompare(b.nombre || ''));
+      },
+      error: (error) => {
+        console.error('Error cargando emisores:', error);
+      }
+    });
   }
 
   generarReporte(): void {
@@ -240,7 +261,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      id_emisor: this.reporteForm.get('id_emisor')?.value
     };
 
     this.flujoCapitalService.getFlujoCapital(params).subscribe({
@@ -338,7 +360,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      id_emisor: this.reporteForm.get('id_emisor')?.value
     };
 
     this.flujoCapitalService.exportarExcel(params).subscribe({
@@ -557,7 +580,8 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
       fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
       fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
       id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value
+      id_propietario: this.reporteForm.get('id_propietario')?.value,
+      id_emisor: this.reporteForm.get('id_emisor')?.value
     };
 
     this.flujoCapitalService.exportarPDF(params).subscribe({
@@ -872,6 +896,9 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
     const idProp = this.reporteForm.get('id_propietario')?.value;
     if (idProp) params.id_propietario = idProp;
+
+    const idEmisor = this.reporteForm.get('id_emisor')?.value;
+    if (idEmisor) params.id_emisor = idEmisor;
 
     this.cargarDetalleBackend(params);
   }

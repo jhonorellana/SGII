@@ -18,9 +18,9 @@
 
       <!-- Filtros -->
       <form *ngIf="!isModal" [formGroup]="reporteForm">
-        <div class="row mb-4">
-          <div class="col-md-2">
-            <label for="fecha_inicio" class="form-label">Fecha Inicio *</label>
+        <div class="row g-2 align-items-end mb-4">
+          <div class="col-auto">
+            <label for="fecha_inicio" class="form-label d-block">Fecha Inicio *</label>
             <p-calendar
               id="fecha_inicio"
               formControlName="fecha_inicio"
@@ -29,11 +29,11 @@
               dateFormat="yy-mm-dd"
               placeholder="Seleccione fecha inicio"
               styleClass="w-full"
-              [ngStyle]="{'max-width': '160px'}">
+              [ngStyle]="{'width': '145px'}">
             </p-calendar>
           </div>
-          <div class="col-md-2">
-            <label for="fecha_fin" class="form-label">Fecha Fin *</label>
+          <div class="col-auto">
+            <label for="fecha_fin" class="form-label d-block">Fecha Fin *</label>
             <p-calendar
               id="fecha_fin"
               formControlName="fecha_fin"
@@ -42,11 +42,11 @@
               dateFormat="yy-mm-dd"
               placeholder="Seleccione fecha fin"
               styleClass="w-full"
-              [ngStyle]="{'max-width': '160px'}">
+              [ngStyle]="{'width': '145px'}">
             </p-calendar>
           </div>
-          <div class="col-md-2">
-            <label for="id_grupo_familiar" class="form-label">Grupo Familiar</label>
+          <div class="col-auto">
+            <label for="id_grupo_familiar" class="form-label d-block">Grupo Familiar</label>
             <p-dropdown
               id="id_grupo_familiar"
               [options]="gruposFamiliares"
@@ -56,11 +56,11 @@
               [showClear]="true"
               placeholder="Todos"
               styleClass="w-full"
-              [ngStyle]="{'max-width': '160px'}">
+              [ngStyle]="{'width': '150px'}">
             </p-dropdown>
           </div>
-          <div class="col-md-2">
-            <label for="id_propietario" class="form-label">Propietario</label>
+          <div class="col-auto">
+            <label for="id_propietario" class="form-label d-block">Propietario</label>
             <p-dropdown
               id="id_propietario"
               [options]="personas"
@@ -70,16 +70,32 @@
               [showClear]="true"
               placeholder="Todos"
               styleClass="w-full"
-              [ngStyle]="{'max-width': '160px'}">
+              [ngStyle]="{'width': '150px'}">
             </p-dropdown>
           </div>
-          <div class="col-md-4 d-flex align-items-end gap-2">
+          <div class="col-auto">
+            <label for="id_emisor" class="form-label d-block">Emisor</label>
+            <p-dropdown
+              id="id_emisor"
+              [options]="emisores"
+              optionLabel="nombre"
+              optionValue="id_emisor"
+              formControlName="id_emisor"
+              [showClear]="true"
+              [filter]="true"
+              filterBy="nombre"
+              placeholder="Todos"
+              styleClass="w-full"
+              [ngStyle]="{'width': '180px'}">
+            </p-dropdown>
+          </div>
+          <div class="col-auto d-flex align-items-end gap-2">
             <button
               pButton
               type="button"
               label="Buscar"
               icon="pi pi-search"
-              class="p-button-primary me-2"
+              class="p-button-primary"
               (click)="generarReporte()"
               [disabled]="loading">
             </button>
@@ -88,7 +104,7 @@
               type="button"
               label="Excel"
               icon="pi pi-file-excel"
-              class="p-button-success me-2"
+              class="p-button-success"
               (click)="exportarExcel()"
               [disabled]="flujoCapital.length === 0">
             </button>

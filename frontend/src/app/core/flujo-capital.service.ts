@@ -16,6 +16,7 @@ export class FlujoCapitalService {
     fecha_fin: string;
     id_grupo_familiar?: number | null;
     id_propietario?: number | null;
+    id_emisor?: number | null;
   }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -27,6 +28,10 @@ export class FlujoCapitalService {
 
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.id_emisor) {
+      queryParams.append('id_emisor', params.id_emisor.toString());
     }
 
     return this.http.get(
@@ -39,6 +44,7 @@ export class FlujoCapitalService {
     fecha_fin: string;
     id_grupo_familiar?: number | null;
     id_propietario?: number | null;
+    id_emisor?: number | null;
   }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -50,6 +56,10 @@ export class FlujoCapitalService {
 
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.id_emisor) {
+      queryParams.append('id_emisor', params.id_emisor.toString());
     }
 
     return this.http.get(
@@ -62,6 +72,7 @@ export class FlujoCapitalService {
     fecha_fin: string;
     id_grupo_familiar?: number | null;
     id_propietario?: number | null;
+    id_emisor?: number | null;
   }): Observable<any> {
     const queryParams = new URLSearchParams();
     queryParams.append('fecha_inicio', params.fecha_inicio);
@@ -73,6 +84,10 @@ export class FlujoCapitalService {
 
     if (params.id_propietario) {
       queryParams.append('id_propietario', params.id_propietario.toString());
+    }
+
+    if (params.id_emisor) {
+      queryParams.append('id_emisor', params.id_emisor.toString());
     }
 
     return this.http.get(

@@ -19,6 +19,7 @@ class FlujoCapitalController extends Controller
         $fechaFin = $request->input('fecha_fin');
         $idGrupoFamiliar = $request->input('id_grupo_familiar');
         $idPropietario = $request->input('id_propietario');
+        $idEmisor = $request->input('id_emisor');
 
         // Validar fechas
         if (!$fechaInicio || !$fechaFin) {
@@ -38,11 +39,12 @@ class FlujoCapitalController extends Controller
 
         try {
             // Ejecutar stored procedure
-            $resultados = DB::select('CALL SP_FLUJO_CAPITAL_CONSOLIDADO(?, ?, ?, ?)', [
+            $resultados = DB::select('CALL SP_FLUJO_CAPITAL_CONSOLIDADO(?, ?, ?, ?, ?)', [
                 $fechaInicio,
                 $fechaFin,
                 $idGrupoFamiliar,
-                $idPropietario
+                $idPropietario,
+                $idEmisor
             ]);
 
             // Formatear resultados
