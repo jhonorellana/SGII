@@ -1,4 +1,4 @@
-import { Component, OnInit, Input } from '@angular/core';
+import { Component, OnInit, OnChanges, SimpleChanges, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { FlujoCapitalService } from '../../../core/flujo-capital.service';
@@ -62,9 +62,11 @@ export interface FlujoCapitalItem {
   templateUrl: './flujo-capital-consolidado.component.html',
   styleUrls: ['./flujo-capital-consolidado.component.css']
 })
-export class FlujoCapitalConsolidadoComponent implements OnInit {
+export class FlujoCapitalConsolidadoComponent implements OnInit, OnChanges {
   @Input() isModal: boolean = false;
   @Input() paramsModal: any = null;
+
+  activeTabIndex: number = 0;
 
   reporteForm!: FormGroup;
   amortizacionForm!: FormGroup;
@@ -174,6 +176,53 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
     }
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['paramsModal'] && !changes['paramsModal'].firstChange && this.paramsModal) {
+      if (this.reporteForm) {
+        this.reporteForm.patchValue({
+          fecha_inicio: new Date(this.paramsModal.fecha_inicio + 'T00:00:00'),
+          fecha_fin: new Date(this.paramsModal.fecha_fin + 'T00:00:00'),
+          id_grupo_familiar: this.paramsModal.id_grupo_familiar,
+          id_propietario: this.paramsModal.id_propietario,
+          id_emisor: this.paramsModal.id_emisor || null
+        });
+      }
+      this.generarReporte();
+    }
+  }
+
+  getFilterParams(): {
+    fecha_inicio: string;
+    fecha_fin: string;
+    id_grupo_familiar?: number | null;
+    id_propietario?: number | null;
+    id_emisor?: number | null;
+  } {
+    const fechaInicioVal = (this.isModal && this.paramsModal?.fecha_inicio)
+      ? this.paramsModal.fecha_inicio
+      : this.reporteForm?.get('fecha_inicio')?.value;
+    const fechaFinVal = (this.isModal && this.paramsModal?.fecha_fin)
+      ? this.paramsModal.fecha_fin
+      : this.reporteForm?.get('fecha_fin')?.value;
+    const idGrupo = (this.isModal && this.paramsModal?.id_grupo_familiar !== undefined)
+      ? this.paramsModal.id_grupo_familiar
+      : this.reporteForm?.get('id_grupo_familiar')?.value;
+    const idProp = (this.isModal && this.paramsModal?.id_propietario !== undefined)
+      ? this.paramsModal.id_propietario
+      : this.reporteForm?.get('id_propietario')?.value;
+    const idEmisor = (this.isModal && this.paramsModal?.id_emisor !== undefined)
+      ? this.paramsModal.id_emisor
+      : this.reporteForm?.get('id_emisor')?.value;
+
+    return {
+      fecha_inicio: this.formatDate(fechaInicioVal),
+      fecha_fin: this.formatDate(fechaFinVal),
+      id_grupo_familiar: idGrupo ? Number(idGrupo) : null,
+      id_propietario: idProp ? Number(idProp) : null,
+      id_emisor: idEmisor ? Number(idEmisor) : null
+    };
+  }
+
   inicializarAmortizacionForm(): void {
     this.amortizacionForm = this.fb.group({
       fecha_pago: [null, Validators.required],
@@ -246,7 +295,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   }
 
   generarReporte(): void {
-    if (this.reporteForm.invalid) {
+    if (!this.isModal && this.reporteForm.invalid) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Advertencia',
@@ -257,13 +306,7 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
     this.loading = true;
 
-    const params = {
-      fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
-      fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
-      id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value,
-      id_emisor: this.reporteForm.get('id_emisor')?.value
-    };
+    const params = this.getFilterParams();
 
     this.flujoCapitalService.getFlujoCapital(params).subscribe({
       next: (response) => {
@@ -356,13 +399,12 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   }
 
   exportarExcel(): void {
-    const params = {
-      fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
-      fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
-      id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value,
-      id_emisor: this.reporteForm.get('id_emisor')?.value
-    };
+    if (this.flujoCapital && this.flujoCapital.length > 0) {
+      this.generarExcelFrontend(this.flujoCapital);
+      return;
+    }
+
+    const params = this.getFilterParams();
 
     this.flujoCapitalService.exportarExcel(params).subscribe({
       next: (response) => {
@@ -389,184 +431,201 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
   generarExcelFrontend(datos: any[]): void {
     const wb = XLSX.utils.book_new();
+    const params = this.getFilterParams();
+    const isConsolidado = this.activeTabIndex === 1;
 
-    // Encabezados
-    const headers = [
-      'Fecha',
-      'Propietario',
-      'Empresa/Emisor',
-      'Interés',
-      'Capital',
-      'Premio',
-      'Int. Riesgo',
-      'Cap. Riesgo',
-      'Prem. Riesgo',
-      'Total'
-    ];
+    if (isConsolidado) {
+      // -----------------------------------------------------
+      // EXCEL: CONSOLIDADO POR DÍA
+      // -----------------------------------------------------
+      const headersDiario = [
+        'Fecha',
+        'Interés',
+        'Capital',
+        'Premio',
+        'Int. Riesgo',
+        'Cap. Riesgo',
+        'Prem. Riesgo',
+        'Total'
+      ];
 
-    // Datos del reporte (excluyendo totales)
-    const datosReporte = datos.filter(item => item.empresa !== 'TOTAL').map(item => [
-      item.fecha,
-      item.propietario,
-      item.empresa,
-      item.interes,
-      item.capital,
-      item.descuento,
-      item.interes_moroso,
-      item.capital_moroso,
-      item.descuento_moroso,
-      item.total
-    ]);
+      if (!this.flujoCapitalDiario || this.flujoCapitalDiario.length === 0) {
+        this.calcularTotales();
+      }
 
-    // Fila de totales
-    const totales = datos.find(item => item.empresa === 'TOTAL');
-    if (totales) {
-      datosReporte.push([
-        totales.fecha,
-        totales.propietario,
-        totales.empresa,
-        totales.interes,
-        totales.capital,
-        totales.descuento,
-        totales.interes_moroso,
-        totales.capital_moroso,
-        totales.descuento_moroso,
-        totales.total
+      const datosDiario = this.flujoCapitalDiario.map(item => [
+        item.fecha,
+        item.interes,
+        item.capital,
+        item.descuento,
+        item.interes_moroso,
+        item.capital_moroso,
+        item.descuento_moroso,
+        item.total
       ]);
-    }
 
-    // Crear worksheet
-    const wsData = [headers, ...datosReporte];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-    // Formato de encabezados
-    const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-    for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({r: 0, c: col});
-      if (ws[cellAddress]) {
-        ws[cellAddress].s = {
-          font: {bold: true, color: {rgb: "FFFFFFFF"}},
-          fill: {fgColor: {rgb: "FF4472C4"}}
-        };
+      if (this.totalesDiario) {
+        datosDiario.push([
+          this.totalesDiario.fecha,
+          this.totalesDiario.interes,
+          this.totalesDiario.capital,
+          this.totalesDiario.descuento,
+          this.totalesDiario.interes_moroso,
+          this.totalesDiario.capital_moroso,
+          this.totalesDiario.descuento_moroso,
+          this.totalesDiario.total
+        ]);
       }
-    }
 
-    // Formato de totales
-    if (totales) {
-      const totalRow = datosReporte.length;
-      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({r: totalRow, c: col});
-        if (ws[cellAddress]) {
-          ws[cellAddress].s = {
-            font: {bold: true, color: {rgb: "FFFFFFFF"}},
-            fill: {fgColor: {rgb: "FF198754"}}
-          };
-        }
-      }
-    }
+      const wsDataDiario = [headersDiario, ...datosDiario];
+      const wsDiario = XLSX.utils.aoa_to_sheet(wsDataDiario);
 
-    // Ancho de columnas
-    ws['!cols'] = [
-      {wch: 12}, // Fecha
-      {wch: 20}, // Propietario
-      {wch: 20}, // Empresa/Emisor
-      {wch: 12}, // Interés
-      {wch: 12}, // Capital
-      {wch: 12}, // Premio
-      {wch: 12}, // Int. Riesgo
-      {wch: 12}, // Cap. Riesgo
-      {wch: 12}, // Prem. Riesgo
-      {wch: 12}  // Total
-    ];
-
-    XLSX.utils.book_append_sheet(wb, ws, 'Detallado');
-
-    // -----------------------------------------------------
-    // HOJA 2: CONSOLIDADO DIARIO
-    // -----------------------------------------------------
-    const headersDiario = [
-      'Fecha',
-      'Interés',
-      'Capital',
-      'Premio',
-      'Int. Riesgo',
-      'Cap. Riesgo',
-      'Prem. Riesgo',
-      'Total'
-    ];
-
-    const datosDiario = this.flujoCapitalDiario.map(item => [
-      item.fecha,
-      item.interes,
-      item.capital,
-      item.descuento,
-      item.interes_moroso,
-      item.capital_moroso,
-      item.descuento_moroso,
-      item.total
-    ]);
-
-    if (this.totalesDiario) {
-      datosDiario.push([
-        this.totalesDiario.fecha,
-        this.totalesDiario.interes,
-        this.totalesDiario.capital,
-        this.totalesDiario.descuento,
-        this.totalesDiario.interes_moroso,
-        this.totalesDiario.capital_moroso,
-        this.totalesDiario.descuento_moroso,
-        this.totalesDiario.total
-      ]);
-    }
-
-    const wsDataDiario = [headersDiario, ...datosDiario];
-    const wsDiario = XLSX.utils.aoa_to_sheet(wsDataDiario);
-
-    // Formato de encabezados diario
-    const headerRangeD = XLSX.utils.decode_range(wsDiario['!ref'] || 'A1');
-    for (let col = headerRangeD.s.c; col <= headerRangeD.e.c; col++) {
-      const cellAddress = XLSX.utils.encode_cell({r: 0, c: col});
-      if (wsDiario[cellAddress]) {
-        wsDiario[cellAddress].s = {
-          font: {bold: true, color: {rgb: "FFFFFFFF"}},
-          fill: {fgColor: {rgb: "FF4472C4"}}
-        };
-      }
-    }
-
-    // Formato de totales diario
-    if (this.totalesDiario) {
-      const totalRow = datosDiario.length;
+      // Formato de encabezados diario
+      const headerRangeD = XLSX.utils.decode_range(wsDiario['!ref'] || 'A1');
       for (let col = headerRangeD.s.c; col <= headerRangeD.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({r: totalRow, c: col});
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
         if (wsDiario[cellAddress]) {
           wsDiario[cellAddress].s = {
-            font: {bold: true, color: {rgb: "FFFFFFFF"}},
-            fill: {fgColor: {rgb: "FF198754"}}
+            font: { bold: true, color: { rgb: "FFFFFFFF" } },
+            fill: { fgColor: { rgb: "FF4472C4" } }
           };
         }
       }
+
+      // Formato de totales diario
+      if (this.totalesDiario) {
+        const totalRow = datosDiario.length;
+        for (let col = headerRangeD.s.c; col <= headerRangeD.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: totalRow, c: col });
+          if (wsDiario[cellAddress]) {
+            wsDiario[cellAddress].s = {
+              font: { bold: true, color: { rgb: "FFFFFFFF" } },
+              fill: { fgColor: { rgb: "FF198754" } }
+            };
+          }
+        }
+      }
+
+      wsDiario['!cols'] = [
+        { wch: 15 }, // Fecha
+        { wch: 15 }, // Interés
+        { wch: 15 }, // Capital
+        { wch: 15 }, // Premio
+        { wch: 15 }, // Int. Riesgo
+        { wch: 15 }, // Cap. Riesgo
+        { wch: 15 }, // Prem. Riesgo
+        { wch: 15 }  // Total
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsDiario, 'Consolidado por Día');
+      XLSX.writeFile(wb, `flujo-capital-consolidado-diario-${params.fecha_inicio}-${params.fecha_fin}.xlsx`);
+    } else {
+      // -----------------------------------------------------
+      // EXCEL: DETALLADO
+      // -----------------------------------------------------
+      const headers = [
+        'Fecha',
+        'Propietario',
+        'Empresa/Emisor',
+        'Interés',
+        'Capital',
+        'Premio',
+        'Int. Riesgo',
+        'Cap. Riesgo',
+        'Prem. Riesgo',
+        'Total'
+      ];
+
+      // Datos del reporte (excluyendo totales)
+      const datosReporte = datos.filter(item => item.empresa !== 'TOTAL').map(item => [
+        item.fecha,
+        item.propietario,
+        item.empresa,
+        item.interes,
+        item.capital,
+        item.descuento,
+        item.interes_moroso,
+        item.capital_moroso,
+        item.descuento_moroso,
+        item.total
+      ]);
+
+      // Fila de totales
+      const totales = datos.find(item => item.empresa === 'TOTAL') || (this.totales ? {
+        fecha: this.totales.fecha,
+        propietario: this.totales.propietario,
+        empresa: 'TOTAL',
+        interes: this.totales.interes,
+        capital: this.totales.capital,
+        descuento: this.totales.descuento,
+        interes_moroso: this.totales.interes_moroso,
+        capital_moroso: this.totales.capital_moroso,
+        descuento_moroso: this.totales.descuento_moroso,
+        total: this.totales.total
+      } : null);
+
+      if (totales) {
+        datosReporte.push([
+          totales.fecha,
+          totales.propietario,
+          totales.empresa,
+          totales.interes,
+          totales.capital,
+          totales.descuento,
+          totales.interes_moroso,
+          totales.capital_moroso,
+          totales.descuento_moroso,
+          totales.total
+        ]);
+      }
+
+      // Crear worksheet
+      const wsData = [headers, ...datosReporte];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Formato de encabezados
+      const headerRange = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        if (ws[cellAddress]) {
+          ws[cellAddress].s = {
+            font: { bold: true, color: { rgb: "FFFFFFFF" } },
+            fill: { fgColor: { rgb: "FF4472C4" } }
+          };
+        }
+      }
+
+      // Formato de totales
+      if (totales) {
+        const totalRow = datosReporte.length;
+        for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: totalRow, c: col });
+          if (ws[cellAddress]) {
+            ws[cellAddress].s = {
+              font: { bold: true, color: { rgb: "FFFFFFFF" } },
+              fill: { fgColor: { rgb: "FF198754" } }
+            };
+          }
+        }
+      }
+
+      // Ancho de columnas
+      ws['!cols'] = [
+        { wch: 12 }, // Fecha
+        { wch: 20 }, // Propietario
+        { wch: 20 }, // Empresa/Emisor
+        { wch: 12 }, // Interés
+        { wch: 12 }, // Capital
+        { wch: 12 }, // Premio
+        { wch: 12 }, // Int. Riesgo
+        { wch: 12 }, // Cap. Riesgo
+        { wch: 12 }, // Prem. Riesgo
+        { wch: 12 }  // Total
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Detallado');
+      XLSX.writeFile(wb, `flujo-capital-detallado-${params.fecha_inicio}-${params.fecha_fin}.xlsx`);
     }
-
-    wsDiario['!cols'] = [
-      {wch: 12}, // Fecha
-      {wch: 12}, // Interés
-      {wch: 12}, // Capital
-      {wch: 12}, // Premio
-      {wch: 12}, // Int. Riesgo
-      {wch: 12}, // Cap. Riesgo
-      {wch: 12}, // Prem. Riesgo
-      {wch: 12}  // Total
-    ];
-
-    XLSX.utils.book_append_sheet(wb, wsDiario, 'Consolidado Diario');
-
-    const params = {
-      fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
-      fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value)
-    };
-
-    XLSX.writeFile(wb, `flujo-capital-consolidado-${params.fecha_inicio}-${params.fecha_fin}.xlsx`);
 
     this.messageService.add({
       severity: 'success',
@@ -576,13 +635,12 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
   }
 
   exportarPDF(): void {
-    const params = {
-      fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
-      fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value),
-      id_grupo_familiar: this.reporteForm.get('id_grupo_familiar')?.value,
-      id_propietario: this.reporteForm.get('id_propietario')?.value,
-      id_emisor: this.reporteForm.get('id_emisor')?.value
-    };
+    if (this.flujoCapital && this.flujoCapital.length > 0) {
+      this.generarPDFFrontend(this.flujoCapital);
+      return;
+    }
+
+    const params = this.getFilterParams();
 
     this.flujoCapitalService.exportarPDF(params).subscribe({
       next: (response) => {
@@ -609,6 +667,9 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
   generarPDFFrontend(datos: any[]): void {
     try {
+      const isConsolidado = this.activeTabIndex === 1;
+      const params = this.getFilterParams();
+
       // Crear documento PDF en orientación landscape
       const doc = new jsPDF({
         orientation: 'landscape',
@@ -618,65 +679,18 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
       // Agregar título
       doc.setFontSize(16);
-      doc.text('Reporte de Flujo de Capital Consolidado', 148, 15, { align: 'center' });
+      doc.text(
+        isConsolidado ? 'Reporte de Flujo de Capital - Consolidado por Día' : 'Reporte de Flujo de Capital - Detallado',
+        148,
+        15,
+        { align: 'center' }
+      );
 
       // Agregar período
       doc.setFontSize(12);
-      const params = {
-        fecha_inicio: this.formatDate(this.reporteForm.get('fecha_inicio')?.value),
-        fecha_fin: this.formatDate(this.reporteForm.get('fecha_fin')?.value)
-      };
       doc.text(`Período: ${params.fecha_inicio} - ${params.fecha_fin}`, 148, 25, { align: 'center' });
 
-      // Preparar datos para la tabla
-      const headers = [
-        { title: 'Fecha', dataKey: 'fecha' },
-        { title: 'Propietario', dataKey: 'propietario' },
-        { title: 'Empresa', dataKey: 'empresa' },
-        { title: 'Interés', dataKey: 'interes' },
-        { title: 'Capital', dataKey: 'capital' },
-        { title: 'Premio', dataKey: 'descuento' },
-        { title: 'Int. Riesgo', dataKey: 'interes_moroso' },
-        { title: 'Cap. Riesgo', dataKey: 'capital_moroso' },
-        { title: 'Prem. Riesgo', dataKey: 'descuento_moroso' },
-        { title: 'Total', dataKey: 'total' }
-      ];
-
-      // Datos de la tabla (excluir el TOTAL del array)
-      const datosSinTotal = datos.filter((item: any) => item.empresa !== 'TOTAL');
-
-      // Formatear datos para autoTable
-      const tableData = datosSinTotal.map((item: any) => ({
-        fecha: item.fecha,
-        propietario: item.propietario,
-        empresa: item.empresa,
-        interes: this.formatCurrency(item.interes),
-        capital: this.formatCurrency(item.capital),
-        descuento: this.formatCurrency(item.descuento),
-        interes_moroso: this.formatCurrency(item.interes_moroso),
-        capital_moroso: this.formatCurrency(item.capital_moroso),
-        descuento_moroso: this.formatCurrency(item.descuento_moroso),
-        total: this.formatCurrency(item.total)
-      }));
-
-      // Encontrar fila de totales
-      const totales = datos.find((item: any) => item.empresa === 'TOTAL');
-      if (totales) {
-        tableData.push({
-          fecha: totales.fecha,
-          propietario: totales.propietario,
-          empresa: totales.empresa,
-          interes: this.formatCurrency(totales.interes),
-          capital: this.formatCurrency(totales.capital),
-          descuento: this.formatCurrency(totales.descuento),
-          interes_moroso: this.formatCurrency(totales.interes_moroso),
-          capital_moroso: this.formatCurrency(totales.capital_moroso),
-          descuento_moroso: this.formatCurrency(totales.descuento_moroso),
-          total: this.formatCurrency(totales.total)
-        });
-      }
-
-      // Configurar estilos de la tabla
+      // Configurar estilos base de la tabla
       const tableStyles = {
         headStyles: {
           fillColor: [59, 130, 246] as any,
@@ -691,7 +705,143 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
         alternateRowStyles: {
           fillColor: [245, 245, 245] as any
         },
-        columnStyles: {
+        margin: { top: 35, left: 15, right: 15, bottom: 20 },
+        styles: {
+          overflow: 'linebreak' as any,
+          cellPadding: 3
+        }
+      };
+
+      if (isConsolidado) {
+        if (!this.flujoCapitalDiario || this.flujoCapitalDiario.length === 0) {
+          this.calcularTotales();
+        }
+
+        const headersDiario = [
+          { title: 'Fecha', dataKey: 'fecha' },
+          { title: 'Interés', dataKey: 'interes' },
+          { title: 'Capital', dataKey: 'capital' },
+          { title: 'Premio', dataKey: 'descuento' },
+          { title: 'Int. Riesgo', dataKey: 'interes_moroso' },
+          { title: 'Cap. Riesgo', dataKey: 'capital_moroso' },
+          { title: 'Prem. Riesgo', dataKey: 'descuento_moroso' },
+          { title: 'Total', dataKey: 'total' }
+        ];
+
+        const tableDataDiario = this.flujoCapitalDiario.map(item => ({
+          fecha: item.fecha,
+          interes: this.formatCurrency(item.interes),
+          capital: this.formatCurrency(item.capital),
+          descuento: this.formatCurrency(item.descuento),
+          interes_moroso: this.formatCurrency(item.interes_moroso),
+          capital_moroso: this.formatCurrency(item.capital_moroso),
+          descuento_moroso: this.formatCurrency(item.descuento_moroso),
+          total: this.formatCurrency(item.total)
+        }));
+
+        if (this.totalesDiario) {
+          tableDataDiario.push({
+            fecha: this.totalesDiario.fecha,
+            interes: this.formatCurrency(this.totalesDiario.interes),
+            capital: this.formatCurrency(this.totalesDiario.capital),
+            descuento: this.formatCurrency(this.totalesDiario.descuento),
+            interes_moroso: this.formatCurrency(this.totalesDiario.interes_moroso),
+            capital_moroso: this.formatCurrency(this.totalesDiario.capital_moroso),
+            descuento_moroso: this.formatCurrency(this.totalesDiario.descuento_moroso),
+            total: this.formatCurrency(this.totalesDiario.total)
+          });
+        }
+
+        const columnStylesDiario = {
+          fecha: { cellWidth: 35, halign: 'center' as any },
+          interes: { cellWidth: 30, halign: 'right' as any },
+          capital: { cellWidth: 30, halign: 'right' as any },
+          descuento: { cellWidth: 30, halign: 'right' as any },
+          interes_moroso: { cellWidth: 30, halign: 'right' as any },
+          capital_moroso: { cellWidth: 30, halign: 'right' as any },
+          descuento_moroso: { cellWidth: 30, halign: 'right' as any },
+          total: { cellWidth: 35, halign: 'right' as any, fontStyle: 'bold' as any }
+        };
+
+        autoTable(doc, {
+          columns: headersDiario,
+          body: tableDataDiario,
+          ...tableStyles,
+          columnStyles: columnStylesDiario,
+          startY: 35,
+          didParseCell: (data: any) => {
+            if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
+              data.cell.styles.fillColor = [34, 197, 94] as any;
+              data.cell.styles.textColor = 255;
+              data.cell.styles.fontStyle = 'bold' as any;
+            }
+          },
+          didDrawCell: (data: any) => {
+            if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
+              doc.setDrawColor(34, 197, 94);
+              doc.setLineWidth(0.1);
+              doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height);
+            }
+          }
+        });
+      } else {
+        const headers = [
+          { title: 'Fecha', dataKey: 'fecha' },
+          { title: 'Propietario', dataKey: 'propietario' },
+          { title: 'Empresa', dataKey: 'empresa' },
+          { title: 'Interés', dataKey: 'interes' },
+          { title: 'Capital', dataKey: 'capital' },
+          { title: 'Premio', dataKey: 'descuento' },
+          { title: 'Int. Riesgo', dataKey: 'interes_moroso' },
+          { title: 'Cap. Riesgo', dataKey: 'capital_moroso' },
+          { title: 'Prem. Riesgo', dataKey: 'descuento_moroso' },
+          { title: 'Total', dataKey: 'total' }
+        ];
+
+        const datosSinTotal = datos.filter((item: any) => item.empresa !== 'TOTAL');
+
+        const tableData = datosSinTotal.map((item: any) => ({
+          fecha: item.fecha,
+          propietario: item.propietario,
+          empresa: item.empresa,
+          interes: this.formatCurrency(item.interes),
+          capital: this.formatCurrency(item.capital),
+          descuento: this.formatCurrency(item.descuento),
+          interes_moroso: this.formatCurrency(item.interes_moroso),
+          capital_moroso: this.formatCurrency(item.capital_moroso),
+          descuento_moroso: this.formatCurrency(item.descuento_moroso),
+          total: this.formatCurrency(item.total)
+        }));
+
+        const totales = datos.find((item: any) => item.empresa === 'TOTAL') || (this.totales ? {
+          fecha: this.totales.fecha,
+          propietario: this.totales.propietario,
+          empresa: 'TOTAL',
+          interes: this.totales.interes,
+          capital: this.totales.capital,
+          descuento: this.totales.descuento,
+          interes_moroso: this.totales.interes_moroso,
+          capital_moroso: this.totales.capital_moroso,
+          descuento_moroso: this.totales.descuento_moroso,
+          total: this.totales.total
+        } : null);
+
+        if (totales) {
+          tableData.push({
+            fecha: totales.fecha,
+            propietario: totales.propietario,
+            empresa: totales.empresa,
+            interes: this.formatCurrency(totales.interes),
+            capital: this.formatCurrency(totales.capital),
+            descuento: this.formatCurrency(totales.descuento),
+            interes_moroso: this.formatCurrency(totales.interes_moroso),
+            capital_moroso: this.formatCurrency(totales.capital_moroso),
+            descuento_moroso: this.formatCurrency(totales.descuento_moroso),
+            total: this.formatCurrency(totales.total)
+          });
+        }
+
+        const columnStyles = {
           fecha: { cellWidth: 25, halign: 'center' as any },
           propietario: { cellWidth: 30, halign: 'left' as any },
           empresa: { cellWidth: 40, halign: 'left' as any },
@@ -702,126 +852,41 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
           capital_moroso: { cellWidth: 25, halign: 'right' as any },
           descuento_moroso: { cellWidth: 25, halign: 'right' as any },
           total: { cellWidth: 25, halign: 'right' as any, fontStyle: 'bold' as any }
-        },
-        margin: { top: 35, left: 15, right: 15, bottom: 20 },
-        styles: {
-          overflow: 'linebreak' as any,
-          cellPadding: 3
-        },
-        didParseCell: function(data: any) {
-          // Resaltar la fila de totales
-          if (data.row.index === tableData.length - 1 && totales) {
-            data.cell.styles.fillColor = [34, 197, 94] as any;
-            data.cell.styles.textColor = 255;
-            data.cell.styles.fontStyle = 'bold' as any;
+        };
+
+        autoTable(doc, {
+          columns: headers,
+          body: tableData,
+          ...tableStyles,
+          columnStyles: columnStyles,
+          startY: 35,
+          didParseCell: (data: any) => {
+            if (data.row.index === tableData.length - 1 && totales) {
+              data.cell.styles.fillColor = [34, 197, 94] as any;
+              data.cell.styles.textColor = 255;
+              data.cell.styles.fontStyle = 'bold' as any;
+            }
+          },
+          didDrawCell: (data: any) => {
+            if (data.row.index === tableData.length - 1 && totales) {
+              doc.setDrawColor(34, 197, 94);
+              doc.setLineWidth(0.1);
+              doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height);
+            }
           }
-        },
-        didDrawCell: function(data: any) {
-          // Dibujar bordes para la fila de totales
-          if (data.row.index === tableData.length - 1 && totales) {
-            doc.setDrawColor(34, 197, 94);
-            doc.setLineWidth(0.1);
-            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height);
-          }
-        }
-      };
-
-      // Generar la primera tabla (Detallado)
-      doc.setFontSize(14);
-      doc.text('Detalle por Propietario', 14, 35);
-      
-      autoTable(doc, {
-        columns: headers,
-        body: tableData,
-        ...tableStyles,
-        startY: 40
-      });
-
-      // -----------------------------------------------------
-      // TABLA 2: CONSOLIDADO DIARIO
-      // -----------------------------------------------------
-      const headersDiario = [
-        { title: 'Fecha', dataKey: 'fecha' },
-        { title: 'Interés', dataKey: 'interes' },
-        { title: 'Capital', dataKey: 'capital' },
-        { title: 'Premio', dataKey: 'descuento' },
-        { title: 'Int. Riesgo', dataKey: 'interes_moroso' },
-        { title: 'Cap. Riesgo', dataKey: 'capital_moroso' },
-        { title: 'Prem. Riesgo', dataKey: 'descuento_moroso' },
-        { title: 'Total', dataKey: 'total' }
-      ];
-
-      const tableDataDiario = this.flujoCapitalDiario.map(item => ({
-        fecha: item.fecha,
-        interes: this.formatCurrency(item.interes),
-        capital: this.formatCurrency(item.capital),
-        descuento: this.formatCurrency(item.descuento),
-        interes_moroso: this.formatCurrency(item.interes_moroso),
-        capital_moroso: this.formatCurrency(item.capital_moroso),
-        descuento_moroso: this.formatCurrency(item.descuento_moroso),
-        total: this.formatCurrency(item.total)
-      }));
-
-      if (this.totalesDiario) {
-        tableDataDiario.push({
-          fecha: this.totalesDiario.fecha,
-          interes: this.formatCurrency(this.totalesDiario.interes),
-          capital: this.formatCurrency(this.totalesDiario.capital),
-          descuento: this.formatCurrency(this.totalesDiario.descuento),
-          interes_moroso: this.formatCurrency(this.totalesDiario.interes_moroso),
-          capital_moroso: this.formatCurrency(this.totalesDiario.capital_moroso),
-          descuento_moroso: this.formatCurrency(this.totalesDiario.descuento_moroso),
-          total: this.formatCurrency(this.totalesDiario.total)
         });
       }
 
-      // Column styles for Diario (fewer columns so wider widths)
-      const columnStylesDiario = {
-        fecha: { cellWidth: 35, halign: 'center' as any },
-        interes: { cellWidth: 30, halign: 'right' as any },
-        capital: { cellWidth: 30, halign: 'right' as any },
-        descuento: { cellWidth: 30, halign: 'right' as any },
-        interes_moroso: { cellWidth: 30, halign: 'right' as any },
-        capital_moroso: { cellWidth: 30, halign: 'right' as any },
-        descuento_moroso: { cellWidth: 30, halign: 'right' as any },
-        total: { cellWidth: 35, halign: 'right' as any, fontStyle: 'bold' as any }
-      };
-
-      const finalY1 = (doc as any).lastAutoTable.finalY || 40;
-      doc.setFontSize(14);
-      doc.text('Consolidado Diario', 14, finalY1 + 15);
-
-      autoTable(doc, {
-        columns: headersDiario,
-        body: tableDataDiario,
-        ...tableStyles,
-        columnStyles: columnStylesDiario,
-        startY: finalY1 + 20,
-        didParseCell: (data: any) => {
-          // Resaltar totales diario
-          if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
-            data.cell.styles.fillColor = [34, 197, 94] as any;
-            data.cell.styles.textColor = 255;
-            data.cell.styles.fontStyle = 'bold' as any;
-          }
-        },
-        didDrawCell: (data: any) => {
-          if (data.row.index === tableDataDiario.length - 1 && this.totalesDiario) {
-            doc.setDrawColor(34, 197, 94);
-            doc.setLineWidth(0.1);
-            doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height);
-          }
-        }
-      });
-
       // Agregar pie de página
-      const finalY2 = (doc as any).lastAutoTable.finalY || 200;
+      const finalY = (doc as any).lastAutoTable.finalY || 180;
       doc.setFontSize(8);
       doc.setTextColor(128);
-      doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 148, finalY2 + 10, { align: 'center' });
+      doc.text(`Generado el ${new Date().toLocaleDateString('es-CO')}`, 148, finalY + 10, { align: 'center' });
 
       // Guardar PDF
-      const fileName = `flujo-capital-consolidado-${params.fecha_inicio}-${params.fecha_fin}.pdf`;
+      const fileName = isConsolidado
+        ? `flujo-capital-consolidado-diario-${params.fecha_inicio}-${params.fecha_fin}.pdf`
+        : `flujo-capital-detallado-${params.fecha_inicio}-${params.fecha_fin}.pdf`;
       doc.save(fileName);
 
       this.messageService.add({
@@ -842,7 +907,11 @@ export class FlujoCapitalConsolidadoComponent implements OnInit {
 
   formatDate(date: Date | string): string {
     if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date + 'T00:00:00') : date;
+    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    const d = typeof date === 'string' ? new Date(date.includes('T') ? date : date + 'T00:00:00') : date;
+    if (isNaN(d.getTime())) return '';
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
