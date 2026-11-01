@@ -1,0 +1,135 @@
+.extra-small {
+  font-size: 0.75rem;
+}
+
+.btn-xs {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.module-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.subtitle {
+  font-size: 0.82rem;
+}
+
+.col-xl-2-4 {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 1200px) {
+  .col-xl-2-4 {
+    width: 20%;
+  }
+}
+
+.kpi-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.table-success-light {
+  background-color: rgba(25, 135, 84, 0.05) !important;
+}
+
+.table-primary-light {
+  background-color: rgba(13, 110, 253, 0.03) !important;
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th {
+  font-size: 0.75rem;
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+:host ::ng-deep .p-paginator {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* --- ESTÁNDAR PESTAÑAS SIPRO (TabView) --- */
+:host ::ng-deep .p-tabview .p-tabview-panels {
+  background: transparent !important;
+  padding: 0.25rem 0 0 0 !important;
+  border: none !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link,
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link span,
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link i {
+  color: #ffffff !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link span,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link i {
+  color: #166534 !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover span,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover i {
+  color: #065f46 !important;
+}
+
+/* Badges de Categoría Semáforo de Alto Contraste */
+.badge-oro {
+  background-color: #166534 !important;
+  color: #ffffff !important;
+  border: 1px solid #15803d !important;
+  font-weight: 700;
+}
+
+.badge-plata {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  border: 1px solid #0369a1 !important;
+  font-weight: 700;
+}
+
+.badge-bronce {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+  border: 1px solid #b45309 !important;
+  font-weight: 700;
+}
+
+.badge-regular {
+  background-color: #64748b !important;
+  color: #ffffff !important;
+  border: 1px solid #475569 !important;
+  font-weight: 600;
+}
+

@@ -50,6 +50,11 @@ export class SidebarComponent implements OnInit {
           icon: 'bi-shield-lock-fill',
           path: '/renta-fija/radar-deuda'
         },
+        {
+          title: 'Radar Notas de Crédito',
+          icon: 'bi-receipt-cutoff',
+          path: '/notas-credito/radar-oportunidades'
+        },
 
         {
           title: 'Historial de acciones',
@@ -147,6 +152,11 @@ export class SidebarComponent implements OnInit {
       icon: 'bi-receipt',
       path: '/venta-agrupada',
       children: [
+        {
+          title: 'Radar de Oportunidades',
+          icon: 'bi-radar',
+          path: '/notas-credito/radar-oportunidades'
+        },
         {
           title: 'Listado de Ventas',
           icon: 'bi-list-ul',

@@ -222,6 +222,11 @@ Route::post('renta-fija/actualizar-codigo-vector', [App\Http\Controllers\Api\Fix
 Route::post('renta-fija/importar-vector', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'importVector']);
 Route::post('renta-fija/analizar-ia', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'analizarIa']);
 
+// Rutas de Radar de Oportunidades y Arbitraje de Notas de Crédito (SRI)
+Route::get('notas-credito/radar-filtros', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'getFiltros']);
+Route::post('notas-credito/radar-oportunidades', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'getRadarOportunidades']);
+Route::post('notas-credito/simular-arbitraje', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'simularArbitraje']);
+
 
 
 

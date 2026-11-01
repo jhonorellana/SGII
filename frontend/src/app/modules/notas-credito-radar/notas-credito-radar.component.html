@@ -1,0 +1,566 @@
+<div class="container-fluid fade-in px-4 py-3">
+  
+  <!-- Header Principal -->
+  <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+    <div>
+      <h2 class="module-title d-flex align-items-center gap-2 mb-1">
+        <i class="bi bi-radar text-primary"></i> Radar de Oportunidades y Arbitraje Diario
+      </h2>
+      <p class="text-muted subtitle mb-0">
+        Detección inteligente de Notas de Crédito SRI con descuento minorista y cálculo de margen de colocación institucional
+      </p>
+    </div>
+
+    <!-- Botones de Acción Superior -->
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <button class="btn btn-outline-success btn-sm px-3 fw-semibold d-flex align-items-center gap-1.5 shadow-2xs" 
+              (click)="exportarExcel()" [disabled]="loading || !items.length" pTooltip="Exportar oportunidades a Excel">
+        <i class="bi bi-file-earmark-excel-fill text-success"></i>
+        <span>Excel</span>
+      </button>
+
+      <button class="btn btn-outline-danger btn-sm px-3 fw-semibold d-flex align-items-center gap-1.5 shadow-2xs" 
+              (click)="exportarPdf()" [disabled]="loading || !items.length" pTooltip="Exportar informe a PDF">
+        <i class="bi bi-file-earmark-pdf-fill text-danger"></i>
+        <span>PDF</span>
+      </button>
+
+      <button class="btn btn-primary btn-sm px-3 fw-semibold d-flex align-items-center gap-1.5 shadow-2xs"
+              (click)="abrirSimulador()">
+        <i class="bi bi-calculator"></i>
+        <span>Simulador de Arbitraje</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Presets Rápidos de Fechas -->
+  <div class="d-flex align-items-center gap-1.5 mb-3 flex-wrap">
+    <span class="text-muted extra-small fw-bold me-1 text-uppercase">Período Rápido:</span>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === 'hoy' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('hoy')">Hoy</button>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === '7dias' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('7dias')">Últimos 7 días</button>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === '30dias' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('30dias')">Últimos 30 días</button>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === 'esteMes' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('esteMes')">Mes en Curso</button>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === 'esteAnio' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('esteAnio')">Año Actual</button>
+    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
+            [ngClass]="presetSeleccionado === 'historico' ? 'btn-primary text-white' : 'btn-light text-dark border'"
+            (click)="aplicarPreset('historico')">Todo el Historial</button>
+  </div>
+
+  <!-- Panel de Filtros Colapsable / Card -->
+  <div class="card border-0 shadow-2xs mb-4 rounded-3">
+    <div class="card-body p-3">
+      <div class="row g-2.5 align-items-end">
+
+        <!-- Fecha Desde -->
+        <div class="col-12 col-sm-6 col-md-2">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Fecha Desde</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaInicio" 
+                 [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+        </div>
+
+        <!-- Fecha Hasta -->
+        <div class="col-12 col-sm-6 col-md-2">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Fecha Hasta</label>
+          <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaFin" 
+                 [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+        </div>
+
+        <!-- Tramo de Valor Nominal -->
+        <div class="col-12 col-sm-6 col-md-2">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Tramo de Monto</label>
+          <select class="form-select form-select-sm" [(ngModel)]="tramoNominal">
+            <option value="todos">Todos los montos</option>
+            <option value="micro">Micro (&lt; $2,000)</option>
+            <option value="pequeno">Pequeño ($2,000 - $10,000)</option>
+            <option value="mediano">Mediano ($10,000 - $50,000)</option>
+            <option value="grande">Institucional (&gt;= $50,000)</option>
+          </select>
+        </div>
+
+        <!-- Umbral de Oportunidad (%) -->
+        <div class="col-12 col-sm-6 col-md-2">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Precio Oportunidad (&lt;= %)</label>
+          <div class="input-group input-group-sm">
+            <input type="number" step="0.1" class="form-control form-control-sm" [(ngModel)]="precioMaxOportunidad">
+            <span class="input-group-text">%</span>
+          </div>
+        </div>
+
+        <!-- Casa Vendedora -->
+        <div class="col-12 col-sm-6 col-md-2">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Casa Vendedora (Oferente)</label>
+          <input type="text" class="form-control form-control-sm" [(ngModel)]="casaVendedora" 
+                 placeholder="Ej. Mercapital, Casareal..." list="casasVendedorasListId">
+          <datalist id="casasVendedorasListId">
+            <option *ngFor="let cv of casasVendedorasList" [value]="cv"></option>
+          </datalist>
+        </div>
+
+        <!-- Bolsa -->
+        <div class="col-12 col-sm-6 col-md-1">
+          <label class="form-label extra-small fw-bold text-muted mb-1">Bolsa</label>
+          <select class="form-select form-select-sm" [(ngModel)]="bolsaSeleccionada">
+            <option *ngFor="let b of bolsasList" [value]="b">{{ b }}</option>
+          </select>
+        </div>
+
+        <!-- Botones de Acción Filtro -->
+        <div class="col-12 col-sm-6 col-md-1 d-flex gap-1">
+          <button class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
+                  (click)="ejecutarConsulta()" [disabled]="loading">
+            <i class="bi" [ngClass]="loading ? 'bi-hourglass-split spin' : 'bi-search'"></i>
+            <span>{{ loading ? '...' : 'Filtrar' }}</span>
+          </button>
+          <button class="btn btn-outline-secondary btn-sm px-2" (click)="limpiarFiltros()" pTooltip="Restablecer filtros">
+            <i class="bi bi-arrow-counterclockwise"></i>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Fila Inferior de Filtros Rápidos -->
+      <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top flex-wrap gap-2">
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="chkSoloOportunidades"
+                 [(ngModel)]="soloOportunidades" (ngModelChange)="ejecutarConsulta()">
+          <label class="form-check-label extra-small fw-bold text-dark cursor-pointer" for="chkSoloOportunidades">
+            Mostrar únicamente oportunidades de arbitraje (&lt;= {{ precioMaxOportunidad }}%)
+          </label>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 extra-small text-muted">
+          <span><i class="bi bi-database me-1"></i>Base de datos: <strong>{{ totalHistoricoRegistros | number }}</strong> transacciones</span>
+          <span *ngIf="kpis"><i class="bi bi-clock-history me-1"></i>Ref. Mayorista Ponderada: <strong class="text-primary">{{ kpis.precio_referencia_mayorista }}%</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ribbon de KPIs Estadísticos -->
+  <div class="row g-3 mb-4" *ngIf="kpis">
+    
+    <!-- KPI 1: Mayor Descuento / Precio Mínimo -->
+    <div class="col-12 col-sm-6 col-xl-2-4">
+      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-success bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="extra-small text-uppercase fw-bold text-muted">Mayor Descuento</span>
+          <span class="badge bg-success-subtle text-success extra-small">P. Mínimo</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-success fs-4">{{ kpis.precio_minimo | number:'1.2-2' }}%</h3>
+        <small class="text-muted extra-small d-block mt-1">
+          Descuento: <strong>-{{ (100 - kpis.precio_minimo) | number:'1.2-2' }}%</strong>
+        </small>
+        <small *ngIf="kpis.mejor_oportunidad" class="text-truncate d-block text-muted extra-small mt-0.5" 
+               [title]="kpis.mejor_oportunidad.casa_vendedora">
+          Ofrecido por: <strong>{{ kpis.mejor_oportunidad.casa_vendedora }}</strong>
+        </small>
+      </div>
+    </div>
+
+    <!-- KPI 2: Precio Promedio Ponderado -->
+    <div class="col-12 col-sm-6 col-xl-2-4">
+      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-primary bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="extra-small text-uppercase fw-bold text-muted">Promedio Ponderado</span>
+          <span class="badge bg-primary-subtle text-primary extra-small">Mercado</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-primary fs-4">{{ kpis.precio_promedio_ponderado | number:'1.2-2' }}%</h3>
+        <small class="text-muted extra-small d-block mt-1">
+          Ref. Mayorista (&gt;=$50k): <strong>{{ kpis.precio_referencia_mayorista | number:'1.2-2' }}%</strong>
+        </small>
+        <small class="text-muted extra-small d-block mt-0.5">
+          Margen de arbitraje: <strong>+{{ (kpis.precio_referencia_mayorista - kpis.precio_promedio_ponderado) | number:'1.2-2' }} pts</strong>
+        </small>
+      </div>
+    </div>
+
+    <!-- KPI 3: Volumen Total Negociado -->
+    <div class="col-12 col-sm-6 col-xl-2-4">
+      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-info bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="extra-small text-uppercase fw-bold text-muted">Volumen Analizado</span>
+          <span class="badge bg-info-subtle text-dark extra-small">{{ kpis.total_operaciones | number }} ops</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-dark fs-4">${{ kpis.volumen_nominal | number:'1.0-0' }}</h3>
+        <small class="text-muted extra-small d-block mt-1">
+          Efectivo: <strong>${{ kpis.volumen_efectivo | number:'1.0-0' }}</strong>
+        </small>
+        <small class="text-success extra-small d-block mt-0.5">
+          Ahorro total mercado: <strong>${{ kpis.ahorro_descuento_total | number:'1.0-0' }}</strong>
+        </small>
+      </div>
+    </div>
+
+    <!-- KPI 4: Spread Intradiario / Período -->
+    <div class="col-12 col-sm-6 col-xl-2-4">
+      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-warning bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="extra-small text-uppercase fw-bold text-muted">Spread del Período</span>
+          <span class="badge bg-warning-subtle text-dark extra-small">Dispersión</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-warning-emphasis fs-4">{{ kpis.spread_periodo | number:'1.2-2' }} pts</h3>
+        <small class="text-muted extra-small d-block mt-1">
+          P. Máximo: <strong>{{ kpis.precio_maximo | number:'1.2-2' }}%</strong>
+        </small>
+        <small class="text-muted extra-small d-block mt-0.5">
+          Brecha Min-Max en el período
+        </small>
+      </div>
+    </div>
+
+    <!-- KPI 5: Oportunidades Detectadas -->
+    <div class="col-12 col-sm-6 col-xl-2-4">
+      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-danger bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <span class="extra-small text-uppercase fw-bold text-muted">Oportunidades &lt;= {{ precioMaxOportunidad }}%</span>
+          <span class="badge bg-danger-subtle text-danger extra-small">Arbitraje</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-danger fs-4">{{ kpis.total_oportunidades | number }}</h3>
+        <small class="text-muted extra-small d-block mt-1">
+          Vol. Nominal: <strong>${{ kpis.volumen_oportunidades_nominal | number:'1.0-0' }}</strong>
+        </small>
+        <small class="text-muted extra-small d-block mt-0.5">
+          {{ ((kpis.total_oportunidades / (kpis.total_operaciones || 1)) * 100) | number:'1.1-1' }}% del total analizado
+        </small>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Pestañas de Navegación de Vistas Estándar de la Aplicación (SIPRO PrimeNG TabView) -->
+  <p-tabView [(activeIndex)]="activeTabIndex" (onChange)="onTabChange($event.index)">
+    
+    <!-- PESTAÑA 1: LISTADO DE TRANSACCIONES & OPORTUNIDADES -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-list-stars fs-6"></i>
+          <span>Listado de Transacciones & Oportunidades ({{ filteredItems.length | number }})</span>
+        </div>
+      </ng-template>
+
+      <!-- Barra de Control de la Tabla -->
+      <div class="d-flex justify-content-between align-items-center mb-2.5 flex-wrap gap-2 pt-1">
+        <!-- Búsqueda Rápida -->
+        <div class="search-box position-relative" style="max-width: 320px; width: 100%;">
+          <i class="bi bi-search position-absolute top-50 translate-middle-y ms-2.5 text-muted extra-small"></i>
+          <input type="text" class="form-control form-control-sm ps-4 extra-small" 
+                 placeholder="Buscar por casa, bolsa, fecha..." 
+                 [(ngModel)]="searchTerm" (input)="aplicarFiltroTexto()">
+        </div>
+
+        <!-- Leyenda de Categorías de Oportunidad -->
+        <div class="d-flex align-items-center gap-2 extra-small flex-wrap">
+          <span class="text-muted fw-bold">Semáforo:</span>
+          <span class="badge badge-oro py-1 px-2.5 rounded-pill"><i class="bi bi-star-fill me-1"></i>Oro (&lt;= 96.5%)</span>
+          <span class="badge badge-plata py-1 px-2.5 rounded-pill">Plata (96.5% - 97.5%)</span>
+          <span class="badge badge-bronce py-1 px-2.5 rounded-pill">Bronce (97.5% - 98.2%)</span>
+          <span class="badge badge-regular py-1 px-2.5 rounded-pill">Regular (&gt; 98.2%)</span>
+        </div>
+      </div>
+
+      <!-- Tabla Principal con PrimeNG -->
+      <div class="card border-0 shadow-2xs rounded-3 overflow-hidden">
+        <div class="table-responsive">
+          <p-table [value]="filteredItems" [paginator]="true" [rows]="25" [rowsPerPageOptions]="[15, 25, 50, 100]"
+                   [showCurrentPageReport]="true" currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} operaciones"
+                   styleClass="p-datatable-sm p-datatable-striped" [loading]="loading">
+            <ng-template pTemplate="header">
+              <tr>
+                <th pSortableColumn="fecha" style="width: 105px;">Fecha <p-sortIcon field="fecha"></p-sortIcon></th>
+                <th pSortableColumn="bolsa" style="width: 75px;">Bolsa <p-sortIcon field="bolsa"></p-sortIcon></th>
+                <th pSortableColumn="precio_porc" style="width: 100px;" class="text-end">Precio % <p-sortIcon field="precio_porc"></p-sortIcon></th>
+                <th pSortableColumn="valor_nominal" style="width: 130px;" class="text-end">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
+                <th pSortableColumn="valor_efectivo" style="width: 130px;" class="text-end">Valor Efectivo <p-sortIcon field="valor_efectivo"></p-sortIcon></th>
+                <th pSortableColumn="descuento_usd" style="width: 110px;" class="text-end">Descuento $ <p-sortIcon field="descuento_usd"></p-sortIcon></th>
+                <th pSortableColumn="casa_vendedora">Casa Vendedora (Oferente) <p-sortIcon field="casa_vendedora"></p-sortIcon></th>
+                <th pSortableColumn="casa_compradora">Casa Compradora <p-sortIcon field="casa_compradora"></p-sortIcon></th>
+                <th style="width: 120px;" class="text-center">Categoría</th>
+                <th pSortableColumn="ganancia_potencial_usd" style="width: 130px;" class="text-end">Ganancia Est. <p-sortIcon field="ganancia_potencial_usd"></p-sortIcon></th>
+                <th style="width: 90px;" class="text-center">Acción</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-it>
+              <tr [ngClass]="{'table-success-light': it.categoria === 'ORO', 'table-primary-light': it.categoria === 'PLATA'}">
+                <td><span class="fw-semibold text-dark">{{ it.fecha }}</span></td>
+                <td>
+                  <span class="badge" [ngClass]="it.bolsa === 'BVG' ? 'bg-info-subtle text-info-emphasis border border-info-subtle' : 'bg-warning-subtle text-warning-emphasis border border-warning-subtle'">
+                    {{ it.bolsa }}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <span class="fw-bold" [ngClass]="it.es_oportunidad ? 'text-success fs-6' : 'text-dark'">
+                    {{ it.precio_porc | number:'1.2-2' }}%
+                  </span>
+                </td>
+                <td class="text-end fw-semibold">${{ it.valor_nominal | number:'1.2-2' }}</td>
+                <td class="text-end text-muted">${{ it.valor_efectivo | number:'1.2-2' }}</td>
+                <td class="text-end">
+                  <span class="fw-bold text-success">+${{ it.descuento_usd | number:'1.2-2' }}</span>
+                  <small class="text-muted d-block extra-small">(-{{ it.descuento_pct | number:'1.2-2' }}%)</small>
+                </td>
+                <td><span class="fw-semibold text-dark">{{ it.casa_vendedora }}</span></td>
+                <td><span class="text-muted extra-small">{{ it.casa_compradora }}</span></td>
+
+                <!-- Categoría -->
+                <td class="text-center">
+                  <span class="badge py-1 px-2.5 extra-small rounded-pill"
+                        [ngClass]="{
+                          'badge-oro': it.categoria === 'ORO',
+                          'badge-plata': it.categoria === 'PLATA',
+                          'badge-bronce': it.categoria === 'BRONCE',
+                          'badge-regular': it.categoria === 'REGULAR'
+                        }">
+                    <i *ngIf="it.categoria === 'ORO'" class="bi bi-star-fill me-1"></i>
+                    {{ it.categoria }}
+                  </span>
+                </td>
+
+                <!-- Ganancia Estimada si se coloca al precio mayorista -->
+                <td class="text-end">
+                  <span class="fw-bold text-success extra-small">
+                    +${{ it.ganancia_potencial_usd | number:'1.2-2' }}
+                  </span>
+                  <small class="text-muted d-block extra-small" title="Spread vs precio mayorista institucional">
+                    (+{{ it.spread_vs_mayorista | number:'1.2-2' }} pts)
+                  </small>
+                </td>
+
+                <!-- Botón Simular -->
+                <td class="text-center">
+                  <button class="btn btn-outline-primary btn-xs py-0.5 px-2 extra-small d-inline-flex align-items-center gap-1"
+                          (click)="abrirSimulador(it)" pTooltip="Simular compra y consolidación a precio institucional">
+                    <i class="bi bi-calculator"></i>
+                    <span>Simular</span>
+                  </button>
+                </td>
+
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="11" class="text-center py-4 text-muted">
+                  <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                  No se encontraron transacciones u oportunidades con los filtros seleccionados.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </div>
+    </p-tabPanel>
+
+    <!-- PESTAÑA 2: ANÁLISIS POR TRAMOS Y CASAS OFERENTES -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-bar-chart-steps fs-6"></i>
+          <span>Análisis por Tramos de Monto & Casas Oferentes</span>
+        </div>
+      </ng-template>
+
+      <div class="pt-1">
+        <div class="row g-4">
+          <!-- Tabla 1: Segmentación por Tramos de Valor Nominal -->
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-2xs rounded-3 h-100">
+              <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2 fs-6">
+                  <i class="bi bi-layers text-primary"></i> Precios por Tramo de Monto
+                </h6>
+                <span class="badge bg-light text-dark border extra-small">{{ distribucionTramos.length }} Tramos</span>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light extra-small">
+                      <tr>
+                        <th>Tramo Nominal</th>
+                        <th class="text-center">Ops</th>
+                        <th class="text-end">Volumen Total</th>
+                        <th class="text-end">Precio Medio</th>
+                        <th class="text-end">Precio Mínimo</th>
+                        <th class="text-end">Precio Máximo</th>
+                      </tr>
+                    </thead>
+                    <tbody class="extra-small">
+                      <tr *ngFor="let t of distribucionTramos">
+                        <td><strong class="text-dark">{{ t.tramo }}</strong></td>
+                        <td class="text-center"><span class="badge bg-light text-dark border">{{ t.total_ops | number }}</span></td>
+                        <td class="text-end fw-semibold">${{ t.nominal | number:'1.0-0' }}</td>
+                        <td class="text-end fw-bold text-primary">{{ t.precio_promedio | number:'1.2-2' }}%</td>
+                        <td class="text-end text-success fw-bold">{{ t.precio_minimo | number:'1.2-2' }}%</td>
+                        <td class="text-end text-muted">{{ t.precio_maximo | number:'1.2-2' }}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabla 2: Top Casas Vendedoras de Oportunidades -->
+          <div class="col-12 col-lg-6">
+            <div class="card border-0 shadow-2xs rounded-3 h-100">
+              <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2 fs-6">
+                  <i class="bi bi-shop text-success"></i> Principales Casas Oferentes de Oportunidades
+                </h6>
+                <small class="text-muted extra-small">Fuentes de compra barata en el período</small>
+              </div>
+              <div class="card-body p-0">
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light extra-small">
+                      <tr>
+                        <th>Casa Vendedora</th>
+                        <th class="text-center">Oportunidades</th>
+                        <th class="text-end">Volumen Total</th>
+                        <th class="text-end">Precio Medio</th>
+                        <th class="text-end">Precio Mínimo</th>
+                      </tr>
+                    </thead>
+                    <tbody class="extra-small">
+                      <tr *ngFor="let cv of topVendedoras">
+                        <td><strong class="text-dark">{{ cv.CASA_VENDEDORA }}</strong></td>
+                        <td class="text-center"><span class="badge bg-danger text-white fw-bold">{{ cv.ops_oportunidad | number }} ops</span></td>
+                        <td class="text-end fw-semibold">${{ cv.nominal_total | number:'1.0-0' }}</td>
+                        <td class="text-end fw-bold text-primary">{{ cv.precio_promedio | number:'1.2-2' }}%</td>
+                        <td class="text-end text-success fw-bold">{{ cv.precio_minimo | number:'1.2-2' }}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </p-tabPanel>
+
+  </p-tabView>
+
+</div>
+
+<!-- Modal: Simulador de Arbitraje de Notas de Crédito -->
+<p-dialog [(visible)]="displaySimulacionModal" [modal]="true" [style]="{ width: '92vw', maxWidth: '750px' }"
+          header="Simulador de Arbitraje de Notas de Crédito (SRI)">
+  
+  <div class="p-2">
+    <div class="alert alert-info py-2 px-3 extra-small mb-3 d-flex align-items-center gap-2">
+      <i class="bi bi-info-circle-fill fs-5"></i>
+      <span>Simule la compra de notas individuales o paquetes y proyecte el retorno al colocarlas a precio institucional mayorista.</span>
+    </div>
+
+    <!-- Formulario de Simulación -->
+    <div class="row g-3 mb-3">
+      
+      <!-- Valor Nominal -->
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Valor Nominal a Comprar ($ USD)</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text">$</span>
+          <input type="number" class="form-control" [(ngModel)]="simValorNominal" (input)="calcularSimulacion()">
+        </div>
+      </div>
+
+      <!-- Precio de Compra (%) -->
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Precio de Compra Pactado (%)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" step="0.05" class="form-control" [(ngModel)]="simPrecioCompra" (input)="calcularSimulacion()">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+
+      <!-- Precio de Venta Mayorista (%) -->
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Precio de Venta Consolidada (%)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" step="0.05" class="form-control" [(ngModel)]="simPrecioVenta" (input)="calcularSimulacion()">
+          <span class="input-group-text">%</span>
+        </div>
+        <small class="text-muted extra-small">Ref. Mayorista: {{ kpis?.precio_referencia_mayorista || 98.90 }}%</small>
+      </div>
+
+      <!-- Días Estimados de Rotación -->
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Días Estimados de Rotación</label>
+        <input type="number" class="form-control form-control-sm" [(ngModel)]="simDiasRotacion" (input)="calcularSimulacion()">
+        <small class="text-muted extra-small">Tiempo entre compra y venta (para cálculo de TIR)</small>
+      </div>
+
+      <!-- Comisiones Estimadas -->
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Comisión Casa/Bolsa Compra (%)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" step="0.05" class="form-control" [(ngModel)]="simComisionCompra" (input)="calcularSimulacion()">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+
+      <div class="col-12 col-sm-6">
+        <label class="form-label extra-small fw-bold text-muted mb-1">Comisión Casa/Bolsa Venta (%)</label>
+        <div class="input-group input-group-sm">
+          <input type="number" step="0.05" class="form-control" [(ngModel)]="simComisionVenta" (input)="calcularSimulacion()">
+          <span class="input-group-text">%</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Resultados de la Simulación -->
+    <div class="card border border-success-subtle bg-success-subtle p-3 rounded-3 mb-2" *ngIf="simResultado">
+      <h6 class="fw-bold text-success mb-2 d-flex align-items-center gap-1.5">
+        <i class="bi bi-cash-stack"></i> Rentabilidad Proyectada de la Operación
+      </h6>
+
+      <div class="row g-2 text-dark">
+        <div class="col-6 col-sm-4">
+          <span class="extra-small text-muted d-block">Inversión Total Requerida:</span>
+          <strong class="fs-6">${{ simResultado.inversion_total | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="col-6 col-sm-4">
+          <span class="extra-small text-muted d-block">Ingreso Neto de Venta:</span>
+          <strong class="fs-6">${{ simResultado.ingreso_neto_venta | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="col-12 col-sm-4">
+          <span class="extra-small text-muted d-block">Utilidad Neta en Efectivo:</span>
+          <strong class="fs-5 text-success">+${{ simResultado.utilidad_neta_usd | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="col-6 col-sm-6 pt-2 border-top mt-2">
+          <span class="extra-small text-muted d-block">Retorno Directo de la Operación:</span>
+          <strong class="fs-5 text-primary">+{{ simResultado.roi_directo_pct | number:'1.2-2' }}%</strong>
+          <small class="text-muted extra-small d-block">(Spread de precio: +{{ simResultado.desglose.spread_puntos_porc }} pts)</small>
+        </div>
+
+        <div class="col-6 col-sm-6 pt-2 border-top mt-2">
+          <span class="extra-small text-muted d-block">TIR Anualizada Proyectada:</span>
+          <strong class="fs-4 text-success">+{{ simResultado.tir_anualizada_pct | number:'1.2-2' }}% anual</strong>
+          <small class="text-muted extra-small d-block">(Asumiendo rotación cada {{ simResultado.dias_rotacion }} días)</small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button class="btn btn-secondary btn-sm px-3" (click)="displaySimulacionModal = false">Cerrar</button>
+  </ng-template>
+</p-dialog>
+

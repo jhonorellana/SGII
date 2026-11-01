@@ -47,6 +47,7 @@ import { MensajeriaIaComponent } from './modules/mensajeria-ia/mensajeria-ia.com
 
 import { DividendRadarComponent } from './modules/dividend-radar/dividend-radar.component';
 import { FixedIncomeRadarComponent } from './modules/fixed-income-radar/fixed-income-radar.component';
+import { NotasCreditoRadarComponent } from './modules/notas-credito-radar/notas-credito-radar.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -93,6 +94,7 @@ export const routes: Routes = [
       // { path: 'ventas-inversion/nueva', component: VentaInversionNewComponent },
       { path: 'venta-agrupada', component: VentaAgrupadaComponent },
       { path: 'ventas-notas-credito', component: VentaNotasCreditoListComponent },
+      { path: 'notas-credito/radar-oportunidades', component: NotasCreditoRadarComponent },
       { path: 'notas-credito/analisis-rendimiento', component: AnalisisNotasCreditoComponent },
       { path: 'renta-variable/portafolio', component: PortafolioListComponent },
       { path: 'renta-variable/operaciones', component: OperacionListComponent },
