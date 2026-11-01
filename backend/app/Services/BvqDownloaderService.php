@@ -25,7 +25,8 @@ class BvqDownloaderService
         'vector-precios-diario' => '011_VectorDePreciosDiario',
         'vector-precios-mensual' => '012_VectorDePreciosMensual',
         'pnrv-diario' => '013_PrecioNacionalRentaVariableDiario',
-        'pnrv-mensual' => '014_PrecioNacionalRentaVariableMensual'
+        'pnrv-mensual' => '014_PrecioNacionalRentaVariableMensual',
+        'historicos' => '007_CotizacionesHistoricas'
     ];
 
     /**
@@ -77,6 +78,7 @@ class BvqDownloaderService
         'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/valores-genericos.xls',
         'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/obligaciones.xls',
         'https://www.bolsadequito.com/uploads/estadisticas/boletines/cotizaciones-historicas/titularizaciones.xls',
+        'https://www.bolsadevaloresguayaquil.com/boletines/historicos/BVG_NotasDeCredito.xlsx',
 
         // 008_RentaVariable
         'https://www.bolsadequito.com/uploads/estadisticas/boletines/renta-variable/dividendos.xls',
@@ -292,6 +294,11 @@ class BvqDownloaderService
                 'url' => 'https://www.bolsadequito.com/uploads/estadisticas/valoracion/vector-precios-diario/vector-precios-diario.xls',
                 'folder' => '011_VectorDePreciosDiario',
                 'filename' => "vector-precios-diario_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'notas_credito' => [
+                'url' => 'https://www.bolsadevaloresguayaquil.com/boletines/historicos/BVG_NotasDeCredito.xlsx',
+                'folder' => '007_CotizacionesHistoricas',
+                'filename' => "BVG_NotasDeCredito_{$aaaa}_{$mm}_{$dd}.xlsx"
             ]
         ];
 

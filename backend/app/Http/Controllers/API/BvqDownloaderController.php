@@ -13,6 +13,7 @@ use App\Services\ObligacionesImportService;
 use App\Services\PapelesImportService;
 use App\Services\TitularizacionesImportService;
 use App\Services\VectorPreciosEtlService;
+use App\Services\NotasCreditoImportService;
 use App\Services\DatabaseBackupService;
 use App\Services\StoredProcedureService;
 use Illuminate\Http\Request;
@@ -30,6 +31,7 @@ class BvqDownloaderController extends Controller
     protected PapelesImportService $papelesImportService;
     protected TitularizacionesImportService $titularizacionesImportService;
     protected VectorPreciosEtlService $vectorPreciosEtlService;
+    protected NotasCreditoImportService $notasCreditoImportService;
     protected DatabaseBackupService $databaseBackupService;
     protected StoredProcedureService $storedProcedureService;
 
@@ -44,6 +46,7 @@ class BvqDownloaderController extends Controller
         PapelesImportService $papelesImportService,
         TitularizacionesImportService $titularizacionesImportService,
         VectorPreciosEtlService $vectorPreciosEtlService,
+        NotasCreditoImportService $notasCreditoImportService,
         DatabaseBackupService $databaseBackupService,
         StoredProcedureService $storedProcedureService
     ) {
@@ -57,6 +60,7 @@ class BvqDownloaderController extends Controller
         $this->papelesImportService = $papelesImportService;
         $this->titularizacionesImportService = $titularizacionesImportService;
         $this->vectorPreciosEtlService = $vectorPreciosEtlService;
+        $this->notasCreditoImportService = $notasCreditoImportService;
         $this->databaseBackupService = $databaseBackupService;
         $this->storedProcedureService = $storedProcedureService;
     }
@@ -77,6 +81,7 @@ class BvqDownloaderController extends Controller
             $importarPapeles = $request->boolean('importar_papeles', false);
             $importarTitularizaciones = $request->boolean('importar_titularizaciones', false);
             $importarVector = $request->boolean('importar_vector', false);
+            $importarNotasCredito = $request->boolean('importar_notas_credito', false);
 
             $resultado = $this->downloaderService->downloadAll($fecha);
 
@@ -114,6 +119,10 @@ class BvqDownloaderController extends Controller
 
             if ($importarVector) {
                 $resultado['importacion_vector'] = $this->vectorPreciosEtlService->importVectorPrecios(null, $fecha);
+            }
+
+            if ($importarNotasCredito) {
+                $resultado['importacion_notas_credito'] = $this->notasCreditoImportService->importFromExcel($fecha);
             }
 
             return response()->json([
@@ -373,6 +382,30 @@ class BvqDownloaderController extends Controller
     }
 
     /**
+     * Importa las cotizaciones de Notas de Crédito de la BVG a la tabla 'notas_credito_his'
+     */
+    public function importarNotasCredito(Request $request)
+    {
+        try {
+            $fecha = $request->input('fecha', date('Y-m-d'));
+            $force = $request->boolean('force', false);
+            $resultado = $this->notasCreditoImportService->importFromExcel($fecha, $force);
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar datos a la tabla notas_credito_his',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Obtiene el historial de carpetas descargadas previamente y el estado de tablas en BD
      */
     public function historial()
@@ -388,6 +421,9 @@ class BvqDownloaderController extends Controller
             $lastDatePapeles = $this->papelesImportService->getLastDateInPapeles();
             $lastDateTitularizaciones = $this->titularizacionesImportService->getLastDateInTitularizaciones();
             $lastDateVector = \Illuminate\Support\Facades\DB::connection('mysql_inversion')->table('vector_precio_diario')->max('fecha_vector');
+            $lastDateNotasCredito = $this->notasCreditoImportService->getLastDateInNotasCredito();
+            $totalNotasCredito = $this->notasCreditoImportService->getTotalRecordsInNotasCredito();
+            $resumenNotasCredito = $this->notasCreditoImportService->getResumenEstadisticas();
 
             return response()->json([
                 'success' => true,
@@ -400,6 +436,9 @@ class BvqDownloaderController extends Controller
                 'last_date_papeles' => $lastDatePapeles,
                 'last_date_titularizaciones' => $lastDateTitularizaciones,
                 'last_date_vector' => $lastDateVector,
+                'last_date_notas_credito' => $lastDateNotasCredito,
+                'total_notas_credito' => $totalNotasCredito,
+                'resumen_notas_credito' => $resumenNotasCredito,
                 'data' => $history
             ], Response::HTTP_OK);
         } catch (\Exception $e) {

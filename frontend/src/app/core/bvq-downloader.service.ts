@@ -78,6 +78,13 @@ export interface BvqDownloadResponse {
       imported_count: number;
       last_date_in_db?: string;
     };
+    importacion_notas_credito?: {
+      success: boolean;
+      message: string;
+      imported_count: number;
+      last_date_in_db?: string;
+      total_in_db?: number;
+    };
   };
 }
 
@@ -107,7 +114,8 @@ export class BvqDownloaderService {
     importarObligaciones: boolean = false,
     importarPapeles: boolean = false,
     importarTitularizaciones: boolean = false,
-    importarVector: boolean = false
+    importarVector: boolean = false,
+    importarNotasCredito: boolean = false
   ): Observable<BvqDownloadResponse> {
     return this.http.post<BvqDownloadResponse>(`${this.apiUrl}/descargar`, {
       fecha,
@@ -119,7 +127,8 @@ export class BvqDownloaderService {
       importar_obligaciones: importarObligaciones,
       importar_papeles: importarPapeles,
       importar_titularizaciones: importarTitularizaciones,
-      importar_vector: importarVector
+      importar_vector: importarVector,
+      importar_notas_credito: importarNotasCredito
     });
   }
 
@@ -163,6 +172,10 @@ export class BvqDownloaderService {
     return this.http.post<any>(`${this.apiUrl}/importar-vector`, { fecha, file_path });
   }
 
+  importarNotasCredito(fecha?: string, force: boolean = false): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/importar-notas-credito`, { fecha, force });
+  }
+
   getHistorial(): Observable<{
     success: boolean;
     last_date_shares?: string;
@@ -174,6 +187,17 @@ export class BvqDownloaderService {
     last_date_papeles?: string;
     last_date_titularizaciones?: string;
     last_date_vector?: string;
+    last_date_notas_credito?: string;
+    total_notas_credito?: number;
+    resumen_notas_credito?: {
+      total_registros: number;
+      fecha_minima: string | null;
+      fecha_maxima: string | null;
+      total_nominal: number;
+      total_efectivo: number;
+      count_bvg: number;
+      count_bvq: number;
+    };
     data: BvqHistoryItem[];
   }> {
     return this.http.get<{
@@ -187,6 +211,17 @@ export class BvqDownloaderService {
       last_date_papeles?: string;
       last_date_titularizaciones?: string;
       last_date_vector?: string;
+      last_date_notas_credito?: string;
+      total_notas_credito?: number;
+      resumen_notas_credito?: {
+        total_registros: number;
+        fecha_minima: string | null;
+        fecha_maxima: string | null;
+        total_nominal: number;
+        total_efectivo: number;
+        count_bvg: number;
+        count_bvq: number;
+      };
       data: BvqHistoryItem[];
     }>(`${this.apiUrl}/historial`);
   }

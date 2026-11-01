@@ -35,6 +35,7 @@ export class BvqDownloaderComponent implements OnInit {
   loadingImportPapeles: boolean = false;
   loadingImportTitularizaciones: boolean = false;
   loadingImportVector: boolean = false;
+  loadingImportNotasCredito: boolean = false;
   loadingDownloadMap: { [key: string]: boolean } = {};
   fechaSeleccionada: string = this.getFechaHoyLocal();
   autoImportAcciones: boolean = true;
@@ -46,6 +47,7 @@ export class BvqDownloaderComponent implements OnInit {
   autoImportPapeles: boolean = true;
   autoImportTitularizaciones: boolean = true;
   autoImportVector: boolean = true;
+  autoImportNotasCredito: boolean = true;
   masterAutoImport: boolean = true;
 
   // Flujo Secuencial de Procesos (Checkboxes de selección)
@@ -237,6 +239,7 @@ export class BvqDownloaderComponent implements OnInit {
   lastImportPapelesResult: any = null;
   lastImportTitularizacionesResult: any = null;
   lastImportVectorResult: any = null;
+  lastImportNotasCreditoResult: any = null;
   lastDateSharesInDb: string | null = null;
   lastDateBondsInDb: string | null = null;
   totalDividendsInDb: number = 0;
@@ -246,6 +249,9 @@ export class BvqDownloaderComponent implements OnInit {
   lastDatePapelesInDb: string | null = null;
   lastDateTitularizacionesInDb: string | null = null;
   lastDateVectorInDb: string | null = null;
+  lastDateNotasCreditoInDb: string | null = null;
+  totalNotasCreditoInDb: number = 0;
+  resumenNotasCreditoInDb: any = null;
   historial: BvqHistoryItem[] = [];
   error: string = '';
 
@@ -262,6 +268,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.autoImportPapeles = value;
     this.autoImportTitularizaciones = value;
     this.autoImportVector = value;
+    this.autoImportNotasCredito = value;
     this.guardarAjustes();
   }
 
@@ -303,6 +310,7 @@ export class BvqDownloaderComponent implements OnInit {
         autoImportPapeles: this.autoImportPapeles,
         autoImportTitularizaciones: this.autoImportTitularizaciones,
         autoImportVector: this.autoImportVector,
+        autoImportNotasCredito: this.autoImportNotasCredito,
         activeTab: this.activeTab,
         selectedLogFilter: this.selectedLogFilter,
         lastDownloadResult: this.lastDownloadResult,
@@ -314,7 +322,8 @@ export class BvqDownloaderComponent implements OnInit {
         lastImportObligacionesResult: this.lastImportObligacionesResult,
         lastImportPapelesResult: this.lastImportPapelesResult,
         lastImportTitularizacionesResult: this.lastImportTitularizacionesResult,
-        lastImportVectorResult: this.lastImportVectorResult
+        lastImportVectorResult: this.lastImportVectorResult,
+        lastImportNotasCreditoResult: this.lastImportNotasCreditoResult
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
@@ -347,6 +356,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.autoImportPapeles !== undefined) this.autoImportPapeles = data.autoImportPapeles;
         if (data.autoImportTitularizaciones !== undefined) this.autoImportTitularizaciones = data.autoImportTitularizaciones;
         if (data.autoImportVector !== undefined) this.autoImportVector = data.autoImportVector;
+        if (data.autoImportNotasCredito !== undefined) this.autoImportNotasCredito = data.autoImportNotasCredito;
         if (data.activeTab) this.activeTab = data.activeTab;
         if (data.selectedLogFilter) this.selectedLogFilter = data.selectedLogFilter;
         if (data.lastDownloadResult) this.lastDownloadResult = data.lastDownloadResult;
@@ -359,6 +369,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.lastImportPapelesResult) this.lastImportPapelesResult = data.lastImportPapelesResult;
         if (data.lastImportTitularizacionesResult) this.lastImportTitularizacionesResult = data.lastImportTitularizacionesResult;
         if (data.lastImportVectorResult) this.lastImportVectorResult = data.lastImportVectorResult;
+        if (data.lastImportNotasCreditoResult) this.lastImportNotasCreditoResult = data.lastImportNotasCreditoResult;
       }
     } catch (e) {
       console.warn('Error al cargar la configuración de localStorage:', e);
@@ -427,7 +438,8 @@ export class BvqDownloaderComponent implements OnInit {
       { modulo: 'Obligaciones', tabla: 'obligaciones_his', result: this.lastImportObligacionesResult },
       { modulo: 'Papel Comercial', tabla: 'papeles_his', result: this.lastImportPapelesResult },
       { modulo: 'Titularizaciones', tabla: 'titularizaciones_his', result: this.lastImportTitularizacionesResult },
-      { modulo: 'Vector de Precios', tabla: 'vector_precio_diario, vector_curva_rendimiento', result: this.lastImportVectorResult }
+      { modulo: 'Vector de Precios', tabla: 'vector_precio_diario, vector_curva_rendimiento', result: this.lastImportVectorResult },
+      { modulo: 'Notas de Crédito (BVG)', tabla: 'notas_credito_his', result: this.lastImportNotasCreditoResult }
     ];
   }
 
@@ -490,6 +502,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.lastImportPapelesResult = null;
     this.lastImportTitularizacionesResult = null;
     this.lastImportVectorResult = null;
+    this.lastImportNotasCreditoResult = null;
     this.guardarAjustes();
   }
 
@@ -570,7 +583,8 @@ export class BvqDownloaderComponent implements OnInit {
           { nombre: 'Obligaciones (obligaciones_his)', activo: this.autoImportObligaciones, fn: () => this.bvqService.importarObligaciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportObligacionesResult = d; if (d?.last_date_in_db) this.lastDateObligacionesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportObligaciones = v },
           { nombre: 'Papel Comercial (papeles_his)', activo: this.autoImportPapeles, fn: () => this.bvqService.importarPapeles(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportPapelesResult = d; if (d?.last_date_in_db) this.lastDatePapelesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportPapeles = v },
           { nombre: 'Titularizaciones (titularizaciones_his)', activo: this.autoImportTitularizaciones, fn: () => this.bvqService.importarTitularizaciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportTitularizacionesResult = d; if (d?.last_date_in_db) this.lastDateTitularizacionesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportTitularizaciones = v },
-          { nombre: 'Vector de Precios (vector_precio_diario)', activo: this.autoImportVector, fn: () => this.bvqService.importarVector(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportVectorResult = d; if (d?.last_date_in_db) this.lastDateVectorInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportVector = v }
+          { nombre: 'Vector de Precios (vector_precio_diario)', activo: this.autoImportVector, fn: () => this.bvqService.importarVector(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportVectorResult = d; if (d?.last_date_in_db) this.lastDateVectorInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportVector = v },
+          { nombre: 'Notas de Crédito (notas_credito_his)', activo: this.autoImportNotasCredito, fn: () => this.bvqService.importarNotasCredito(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportNotasCreditoResult = d; if (d?.last_date_in_db) this.lastDateNotasCreditoInDb = d.last_date_in_db; if (d?.total_in_db) this.totalNotasCreditoInDb = d.total_in_db; }, setLoading: (v: boolean) => this.loadingImportNotasCredito = v }
         ];
 
         const modulosActivos = modulos.filter(m => m.activo);
@@ -980,6 +994,27 @@ export class BvqDownloaderComponent implements OnInit {
     });
   }
 
+  ejecutarSoloImportacionNotasCredito(): void {
+    this.loadingImportNotasCredito = true;
+    this.error = '';
+
+    this.bvqService.importarNotasCredito(this.fechaSeleccionada).subscribe({
+      next: (res) => {
+        this.loadingImportNotasCredito = false;
+        if (res.data) {
+          this.lastImportNotasCreditoResult = res.data;
+          this.lastDateNotasCreditoInDb = res.data.last_date_in_db || this.lastDateNotasCreditoInDb;
+          this.totalNotasCreditoInDb = res.data.total_in_db || this.totalNotasCreditoInDb;
+        }
+      },
+      error: (err) => {
+        this.loadingImportNotasCredito = false;
+        console.error('Error al importar Notas de Crédito:', err);
+        this.error = 'Ocurrió un error al procesar e importar las notas de crédito a la base de datos.';
+      }
+    });
+  }
+
   isDownloadingModulo(modulo: string): boolean {
     return !!this.loadingDownloadMap[modulo];
   }
@@ -1038,6 +1073,9 @@ export class BvqDownloaderComponent implements OnInit {
           this.lastDatePapelesInDb = res.last_date_papeles || null;
           this.lastDateTitularizacionesInDb = res.last_date_titularizaciones || null;
           this.lastDateVectorInDb = res.last_date_vector || null;
+          this.lastDateNotasCreditoInDb = res.last_date_notas_credito || null;
+          this.totalNotasCreditoInDb = res.total_notas_credito || 0;
+          this.resumenNotasCreditoInDb = res.resumen_notas_credito || null;
         }
       },
       error: (err) => {
