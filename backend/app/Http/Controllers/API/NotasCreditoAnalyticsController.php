@@ -93,5 +93,24 @@ class NotasCreditoAnalyticsController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Reporte 2: Matriz de Precios por Tramo de Monto y Curva de Descuento
+     */
+    public function getCurvaDescuento(Request $request)
+    {
+        try {
+            $filters = $request->all();
+            $resultado = $this->analyticsService->getCurvaDescuento($filters);
+
+            return response()->json($resultado, Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al calcular la curva de descuento por tramos',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }
 

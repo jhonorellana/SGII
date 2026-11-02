@@ -225,6 +225,7 @@ Route::post('renta-fija/analizar-ia', [App\Http\Controllers\Api\FixedIncomeRadar
 // Rutas de Radar de Oportunidades y Arbitraje de Notas de Crédito (SRI)
 Route::get('notas-credito/radar-filtros', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'getFiltros']);
 Route::post('notas-credito/radar-oportunidades', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'getRadarOportunidades']);
+Route::post('notas-credito/curva-descuento', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'getCurvaDescuento']);
 Route::post('notas-credito/simular-arbitraje', [App\Http\Controllers\API\NotasCreditoAnalyticsController::class, 'simularArbitraje']);
 
 

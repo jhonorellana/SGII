@@ -110,6 +110,60 @@ export interface SimulacionArbitrajeResponse {
   };
 }
 
+export interface TramoCurvaItem {
+  id: number;
+  key: string;
+  tramo: string;
+  nombre: string;
+  descripcion: string;
+  ops: number;
+  pct_ops: number;
+  nominal: number;
+  pct_nominal: number;
+  efectivo: number;
+  descuento_total: number;
+  precio_min: number;
+  p10: number;
+  p25: number;
+  mediana_p50: number;
+  precio_promedio: number;
+  precio_ponderado: number;
+  p75: number;
+  p90: number;
+  precio_max: number;
+  spread_interno: number;
+  descuento_promedio_pct: number;
+  spread_vs_mayorista: number;
+  ganancia_por_10k: number;
+}
+
+export interface CurvaDescuentoKpis {
+  total_operaciones: number;
+  total_volumen_nominal: number;
+  total_volumen_efectivo: number;
+  total_ahorro_mercado: number;
+  precio_promedio_ponderado: number;
+  spread_max_arbitraje: number;
+  ganancia_max_por_10k: number;
+  precio_ref_compra_micro: number;
+  precio_ref_venta_grande: number;
+}
+
+export interface CurvaDescuentoResponse {
+  success: boolean;
+  filtros_aplicados: any;
+  kpis: CurvaDescuentoKpis;
+  tramos: TramoCurvaItem[];
+  chart_curva: any;
+  scatter_sample: Array<{
+    x: number;
+    y: number;
+    fecha: string;
+    vendedora: string;
+    bolsa: string;
+  }>;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -124,6 +178,10 @@ export class NotasCreditoRadarService {
 
   getRadarOportunidades(filters: any): Observable<RadarOportunidadesResponse> {
     return this.http.post<RadarOportunidadesResponse>(`${this.apiUrl}/radar-oportunidades`, filters);
+  }
+
+  getCurvaDescuento(filters: any): Observable<CurvaDescuentoResponse> {
+    return this.http.post<CurvaDescuentoResponse>(`${this.apiUrl}/curva-descuento`, filters);
   }
 
   simularArbitraje(params: {

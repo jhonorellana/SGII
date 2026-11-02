@@ -158,6 +158,11 @@ export class SidebarComponent implements OnInit {
           path: '/notas-credito/radar-oportunidades'
         },
         {
+          title: 'Curva de Descuento (Tramos)',
+          icon: 'bi-graph-up-arrow',
+          path: '/notas-credito/curva-descuento'
+        },
+        {
           title: 'Listado de Ventas',
           icon: 'bi-list-ul',
           path: '/ventas-notas-credito'

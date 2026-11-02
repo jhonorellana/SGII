@@ -1,0 +1,110 @@
+.module-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.subtitle {
+  font-size: 0.82rem;
+}
+
+.extra-small {
+  font-size: 0.75rem;
+}
+
+.btn-xs {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.spin {
+  display: inline-block;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (min-width: 992px) {
+  .border-end-lg {
+    border-right: 1px solid #e2e8f0;
+  }
+}
+
+/* Badges de Tramos */
+.badge-micro {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.badge-pequeno {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.badge-mediano {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.badge-grande {
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.bg-purple-subtle {
+  background-color: #f3e8ff !important;
+}
+
+.text-purple {
+  color: #7e22ce !important;
+}
+
+.border-purple-subtle {
+  border-color: #e9d5ff !important;
+}
+
+/* --- ESTÁNDAR PESTAÑAS SIPRO (TabView) --- */
+:host ::ng-deep .p-tabview .p-tabview-panels {
+  background: transparent !important;
+  padding: 0.25rem 0 0 0 !important;
+  border: none !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link,
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link span,
+:host ::ng-deep .p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link i {
+  color: #ffffff !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link span,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link i {
+  color: #166534 !important;
+}
+
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover span,
+:host ::ng-deep .p-tabview .p-tabview-nav li:not(.p-highlight) .p-tabview-nav-link:hover i {
+  color: #065f46 !important;
+}
+
