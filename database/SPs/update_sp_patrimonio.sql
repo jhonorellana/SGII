@@ -136,9 +136,29 @@ BEGIN
 
     UNION ALL
 
-    -- 2. Capital bonos (Capital Invertido Original a Costo)
+    -- 2. Capital bonos (Capital Largo Plazo: Total Capital Invertido menos Bonos vencimiento próximo posteriores a la primera cuota)
     SELECT 'Capital bonos' as detalle,
-           COALESCE(SUM(I.capital_invertido), 0) as valor
+           GREATEST(0, COALESCE(SUM(I.capital_invertido), 0) - (
+               SELECT COALESCE(SUM(A2.capital), 0)
+               FROM amortizacion A2
+               JOIN inversion I2 ON A2.id_inversion = I2.id_inversion
+               JOIN instrumento INS2 ON I2.id_instrumento = INS2.id_instrumento
+               WHERE A2.fecha_pago > p_fecha_inicio
+                 AND A2.fecha_pago <= LAST_DAY(DATE_ADD(STR_TO_DATE(p_fecha_inicio, '%Y-%m-%d'), INTERVAL 11 MONTH))
+                 AND I2.fecha_venta IS NULL
+                 AND A2.id_estado_amortizacion IN (134, 135, 136)
+                 AND A2.eliminado = 0
+                 AND I2.eliminado = 0
+                 AND (p_id_grupo_familiar IS NULL OR I2.id_grupo_familiar = p_id_grupo_familiar)
+                 AND (p_id_propietario IS NULL OR I2.id_propietario = p_id_propietario)
+                 AND INS2.id_tipo_inversion = 4
+                 AND A2.fecha_pago > (
+                     SELECT MIN(A3.fecha_pago)
+                     FROM amortizacion A3
+                     WHERE A3.id_inversion = A2.id_inversion
+                       AND A3.eliminado = 0
+                 )
+           )) as valor
     FROM inversion I
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
     WHERE I.id_estado_inversion = 128

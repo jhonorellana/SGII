@@ -10,3 +10,58 @@
   height: 450px;
   width: 100%;
 }
+
+/* Filas interactivas para edición */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.clickable-row:hover {
+  background-color: rgba(34, 197, 94, 0.1) !important;
+}
+
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
+/* Badges interactivos en la columna Id */
+.hover-badge {
+  transition: all 0.2s ease-in-out;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+}
+
+.hover-badge:hover {
+  background-color: #0d6efd !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+}
+
+.hover-badge:hover i {
+  color: #ffffff !important;
+}
+
+/* Modal personalizado */
+::ng-deep .app-custom-modal .p-dialog-header {
+  background: linear-gradient(135deg, #166534 0%, #22c55e 100%) !important;
+  color: #ffffff !important;
+  padding: 1.25rem 1.5rem !important;
+  border-bottom: 3px solid #15803d !important;
+}
+
+::ng-deep .app-custom-modal .p-dialog-header .p-dialog-title {
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}
+
+::ng-deep .app-custom-modal .p-dialog-header-close {
+  color: #ffffff !important;
+}
+
+::ng-deep .app-custom-modal .p-dialog-header-close:hover {
+  color: #f0fdf4 !important;
+  background-color: rgba(255, 255, 255, 0.15) !important;
+}
