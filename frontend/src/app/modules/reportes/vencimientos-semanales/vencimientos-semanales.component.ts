@@ -900,7 +900,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           fecha_compra_formateada: initialFechaCompra,
           fecha_vencimiento_formateada: initialFechaVencimiento,
           dias_compra_vencimiento: diasCompraVencimiento,
-          dias_transcurridos_hoy: diasTranscurridosHoy
+          dias_transcurridos_hoy: diasTranscurridosHoy,
+          tasa_interes: inv.tasa_interes,
+          rendimiento: inv.rendimiento_nominal ?? inv.rendimiento_efectivo
         };
 
         let valorNominalOriginal = Number(inv.valor_nominal || 0);
@@ -933,7 +935,9 @@ export class VencimientosSemanalesComponent implements OnInit, OnDestroy {
           fechaCompra: initialFechaCompra,
           fechaVencimiento: initialFechaVencimiento,
           diasCompraVencimiento: diasCompraVencimiento,
-          diasTranscurridosHoy: diasTranscurridosHoy
+          diasTranscurridosHoy: diasTranscurridosHoy,
+          tasaInteres: inv.tasa_interes,
+          rendimiento: inv.rendimiento_nominal ?? inv.rendimiento_efectivo
         };
 
         let parsedDate = null;

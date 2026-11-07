@@ -387,7 +387,7 @@
 
   <!-- Modal para Editar Amortización -->
   <p-dialog [(visible)]="displayEditAmortizacionDialog" header="Editar Amortización"
-            [modal]="true" [closable]="false" [style]="{width: '50vw'}" styleClass="app-custom-modal">
+            [modal]="true" [closable]="false" [style]="{width: '58vw', 'min-width': '720px', 'max-width': '95vw'}" styleClass="app-custom-modal">
     <div *ngIf="loadingAmortizacion" class="text-center py-4">
       <p-progressSpinner></p-progressSpinner>
       <p class="mt-2">Cargando datos...</p>
@@ -395,21 +395,40 @@
     
     <div *ngIf="!loadingAmortizacion && selectedAmortizacionDetalle" class="alert alert-info mb-4" role="alert" style="background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 12px; border-radius: 6px;">
       <div class="row">
-        <div class="col-md-6 mb-2"><strong>ID Inversión:</strong> {{ selectedAmortizacionDetalle.id_inversion }}</div>
-        <div class="col-md-6 mb-2"><strong>Liquidación:</strong> {{ selectedAmortizacionDetalle.liquidacion }}</div>
-        <div class="col-md-12 mb-2"><strong>Instrumento:</strong> {{ selectedAmortizacionDetalle.nombre_instrumento }}</div>
-        <div class="col-md-6 mb-2"><strong>Propietario:</strong> {{ selectedAmortizacionDetalle.propietario }}</div>
-        <div class="col-md-6 mb-2"><strong>Cuota No.:</strong> {{ selectedAmortizacionDetalle.cuota || '-' }}</div>
-        <div class="col-md-6 mb-2"><strong>Fecha de Compra:</strong> {{ inversionResumen?.fechaCompra || selectedAmortizacionDetalle.fecha_compra_formateada || selectedAmortizacionDetalle.fecha_compra || '-' }}</div>
-        <div class="col-md-6 mb-2"><strong>Fecha de Vencimiento:</strong> {{ inversionResumen?.fechaVencimiento || selectedAmortizacionDetalle.fecha_vencimiento_formateada || selectedAmortizacionDetalle.fecha_vencimiento || '-' }}</div>
-        <div class="col-md-6 mb-2">
-          <strong>Días Compra a Vencimiento:</strong> 
-          {{ (inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) != null ? ((inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) | number) + ' días' : '-' }}
+        <!-- Fila 0: Instrumento (ancho completo) -->
+        <div class="col-12 mb-2"><strong>Instrumento:</strong> {{ selectedAmortizacionDetalle.nombre_instrumento }}</div>
+
+        <!-- Fila 1: ID Inversión | ID Amortización | Liquidación -->
+        <div class="col-md-4 mb-2"><strong>ID Inversión:</strong> {{ selectedAmortizacionDetalle.id_inversion }}</div>
+        <div class="col-md-4 mb-2"><strong>ID Amortizacion:</strong> {{ selectedAmortizacionDetalle.id_amortizacion || editingAmortizacionId || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Liquidación:</strong> {{ selectedAmortizacionDetalle.liquidacion || '-' }}</div>
+
+        <!-- Fila 2: Propietario | Compra | Vencimiento -->
+        <div class="col-md-4 mb-2"><strong>Propietario:</strong> {{ selectedAmortizacionDetalle.propietario }}</div>
+        <div class="col-md-4 mb-2"><strong>Compra:</strong> {{ inversionResumen?.fechaCompra || selectedAmortizacionDetalle.fecha_compra_formateada || selectedAmortizacionDetalle.fecha_compra || '-' }}</div>
+        <div class="col-md-4 mb-2"><strong>Vencimiento:</strong> {{ inversionResumen?.fechaVencimiento || selectedAmortizacionDetalle.fecha_vencimiento_formateada || selectedAmortizacionDetalle.fecha_vencimiento || '-' }}</div>
+
+        <!-- Fila 3: Tasa Interés | Rendimiento | Cuota No. -->
+        <div class="col-md-4 mb-2">
+          <strong>Tasa Interés:</strong> 
+          {{ (inversionResumen?.tasaInteres ?? selectedAmortizacionDetalle.tasa_interes) != null ? (((inversionResumen?.tasaInteres ?? selectedAmortizacionDetalle.tasa_interes) | number:'1.2-2') + '%') : '-' }}
         </div>
-        <div class="col-md-6 mb-2">
-          <strong>Días Transcurridos a Hoy:</strong> 
-          {{ (inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) != null ? ((inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) | number) + ' días' : '-' }}
+        <div class="col-md-4 mb-2">
+          <strong>Rendimiento:</strong> 
+          {{ (inversionResumen?.rendimiento ?? selectedAmortizacionDetalle.rendimiento) != null ? (((inversionResumen?.rendimiento ?? selectedAmortizacionDetalle.rendimiento) | number:'1.2-2') + '%') : '-' }}
         </div>
+        <div class="col-md-4 mb-2"><strong>Cuota No.:</strong> {{ selectedAmortizacionDetalle.cuota || '-' }}</div>
+
+        <!-- Fila 4: Días al Vencimiento | Días Transcurridos | (vacío) -->
+        <div class="col-md-4 mb-2">
+          <strong>Días al Vencimiento:</strong> 
+          {{ (inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) != null ? ((inversionResumen?.diasCompraVencimiento ?? selectedAmortizacionDetalle.dias_compra_vencimiento) | number) : '-' }}
+        </div>
+        <div class="col-md-4 mb-2">
+          <strong>Días Transcurridos:</strong> 
+          {{ (inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) != null ? ((inversionResumen?.diasTranscurridosHoy ?? selectedAmortizacionDetalle.dias_transcurridos_hoy) | number) : '-' }}
+        </div>
+        <div class="col-md-4 mb-2"></div>
       </div>
       
       <hr style="border-color: #bae6fd; margin-top: 5px; margin-bottom: 10px;">

@@ -1212,6 +1212,11 @@ export class FlujoCapitalConsolidadoComponent implements OnInit, OnChanges {
         const diasCompraVencimiento = this.calculateDaysDifference(fechaCompra, fechaVencimiento);
         const diasTranscurridosHoy = this.calculateDaysDifference(fechaCompra, new Date());
 
+        if (this.selectedAmortizacionDetalle) {
+          this.selectedAmortizacionDetalle.tasa_interes = inv?.tasa_interes;
+          this.selectedAmortizacionDetalle.rendimiento = inv?.rendimiento_nominal ?? inv?.rendimiento_efectivo;
+        }
+
         this.inversionResumen = {
           valorNominalOriginal: valorNominalOriginal,
           valorNominalRecibido: capitalRecibido,
@@ -1225,7 +1230,9 @@ export class FlujoCapitalConsolidadoComponent implements OnInit, OnChanges {
           fechaCompra: fechaCompra,
           fechaVencimiento: fechaVencimiento,
           diasCompraVencimiento: diasCompraVencimiento,
-          diasTranscurridosHoy: diasTranscurridosHoy
+          diasTranscurridosHoy: diasTranscurridosHoy,
+          tasaInteres: inv?.tasa_interes,
+          rendimiento: inv?.rendimiento_nominal ?? inv?.rendimiento_efectivo
         };
       },
       error: (err) => console.error('Error cargando inversión y amortizaciones:', err)
@@ -1234,6 +1241,9 @@ export class FlujoCapitalConsolidadoComponent implements OnInit, OnChanges {
     this.amortizacionService.getById(item.id_amortizacion).subscribe({
       next: (data) => {
         this.amortizacionOriginal = data;
+        if (this.selectedAmortizacionDetalle && data.numero_cuota != null) {
+          this.selectedAmortizacionDetalle.cuota = data.numero_cuota;
+        }
         
         let parsedDate = null;
         if (data.fecha_pago) {
