@@ -650,14 +650,12 @@ export class VentaAgrupadaComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
-  formatCurrency(value: number): string {
-    if (value === null || value === undefined || isNaN(value)) {
-      return '$0.00';
-    }
+  formatCurrency(value: any): string {
+    const num = this.parseNumber(value);
     return new Intl.NumberFormat('es-EC', {
       style: 'currency',
       currency: 'USD'
-    }).format(value);
+    }).format(num);
   }
 
   formatPercent(value: number): string {

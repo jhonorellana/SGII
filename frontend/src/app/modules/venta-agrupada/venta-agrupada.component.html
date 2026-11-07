@@ -80,8 +80,8 @@
     <h5 class="mb-3 font-semibold" style="color: #333;">Inversiones Disponibles</h5>
     <p-table #dt [value]="inversiones" [paginator]="true" [rows]="rowsPerPage" (onPage)="onPageChange($event)"
              [rowsPerPageOptions]="[10, 20, 50, 100]"
-             [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','porcentaje_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
-             [tableStyle]="{'min-width': '80rem'}"
+             [globalFilterFields]="['id_inversion','instrumento.nombre','fecha_compra','valor_nominal','capital_invertido','comision_bolsa','comision_casa_valores','porcentaje_compra','precio_compra','precio_neto_compra','propietario.nombre','propietario.nombres','propietario.apellidos']"
+             [tableStyle]="{'min-width': '95rem'}"
              styleClass="p-datatable-sm p-datatable-gridlines"
              stateStorage="session" stateKey="ventas-agrupada-table-state"
              [loading]="loading"
@@ -117,6 +117,8 @@
           <th pSortableColumn="fecha_compra" class="text-center">Fecha Compra <p-sortIcon field="fecha_compra"></p-sortIcon></th>
           <th pSortableColumn="valor_nominal" class="text-end">Valor Nominal <p-sortIcon field="valor_nominal"></p-sortIcon></th>
           <th pSortableColumn="capital_invertido" class="text-end">Valor Compra <p-sortIcon field="capital_invertido"></p-sortIcon></th>
+          <th pSortableColumn="comision_bolsa" class="text-end" style="white-space: nowrap;">Comis. Bolsa <p-sortIcon field="comision_bolsa"></p-sortIcon></th>
+          <th pSortableColumn="comision_casa_valores" class="text-end" style="white-space: nowrap;">Comis. Ope. <p-sortIcon field="comision_casa_valores"></p-sortIcon></th>
           <th pSortableColumn="porcentaje_compra" class="text-end" *ngIf="false">% Compra <p-sortIcon field="porcentaje_compra"></p-sortIcon></th>
           <th pSortableColumn="precio_compra" class="text-end">Precio Compra <p-sortIcon field="precio_compra"></p-sortIcon></th>
           <th pSortableColumn="precio_neto_compra" class="text-end">Precio Compra Neto <p-sortIcon field="precio_neto_compra"></p-sortIcon></th>
@@ -129,6 +131,8 @@
           <th><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'fecha_compra', 'contains')" [value]="$any(dt.filters['fecha_compra'])?.value || ''" class="w-100" placeholder="Filtrar fecha"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'valor_nominal', 'contains')" [value]="$any(dt.filters['valor_nominal'])?.value || ''" class="w-100 text-end" placeholder="Filtrar nominal"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'capital_invertido', 'contains')" [value]="$any(dt.filters['capital_invertido'])?.value || ''" class="w-100 text-end" placeholder="Filtrar compra"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'comision_bolsa', 'contains')" [value]="$any(dt.filters['comision_bolsa'])?.value || ''" class="w-100 text-end" placeholder="Filtrar com. bolsa"/></th>
+          <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'comision_casa_valores', 'contains')" [value]="$any(dt.filters['comision_casa_valores'])?.value || ''" class="w-100 text-end" placeholder="Filtrar com. ope."/></th>
           <th class="text-end" *ngIf="false"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'porcentaje_compra', 'contains')" [value]="$any(dt.filters['porcentaje_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar %"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_compra', 'contains')" [value]="$any(dt.filters['precio_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar precio"/></th>
           <th class="text-end"><input pInputText type="text" (input)="dt.filter($any($event.target).value, 'precio_neto_compra', 'contains')" [value]="$any(dt.filters['precio_neto_compra'])?.value || ''" class="w-100 text-end" placeholder="Filtrar precio neto"/></th>
@@ -149,6 +153,8 @@
           <td class="text-center">{{ formatDateDisplay(inversion.fecha_compra) }}</td>
           <td class="text-end">{{ formatCurrency(inversion.valor_nominal || 0) }}</td>
           <td class="text-end">{{ formatCurrency(inversion.capital_invertido || 0) }}</td>
+          <td class="text-end">{{ formatCurrency(inversion.comision_bolsa || 0) }}</td>
+          <td class="text-end">{{ formatCurrency(inversion.comision_casa_valores || 0) }}</td>
           <td class="text-end" *ngIf="false">{{ formatPercent(inversion.porcentaje_compra || 0) }}</td>
           <td class="text-end">{{ formatPrecio6Decimales(inversion.precio_compra) }}</td>
           <td class="text-end">{{ formatPrecio6Decimales(inversion.precio_neto_compra) }}</td>
@@ -158,7 +164,7 @@
       <!-- Mensaje cuando no hay datos -->
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="text-center py-4">
+          <td colspan="11" class="text-center py-4">
             <i class="bi bi-inbox" style="font-size: 2rem; color: #6c757d;"></i>
             <p class="mt-2">No se encontraron inversiones de tipo Notas de Crédito</p>
           </td>
