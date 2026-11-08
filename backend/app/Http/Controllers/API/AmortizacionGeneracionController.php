@@ -27,6 +27,14 @@ class AmortizacionGeneracionController extends Controller
 
             $inversion = Inversion::with(['instrumento'])->findOrFail($request->id_inversion);
 
+            // Validar que no sea Nota de Crédito
+            if ($inversion->instrumento && $inversion->instrumento->id_tipo_inversion == 91) {
+                return response()->json([
+                    'message' => 'Las Notas de Crédito no requieren tabla de amortización ya que operan por compraventa a descuento.',
+                    'error' => 'NOTAS_CREDITO_NO_AMORTIZAN'
+                ], 422);
+            }
+
             // Verificar si ya existe una tabla de amortización
             $existente = Amortizacion::where('id_inversion', $request->id_inversion)->exists();
             if ($existente) {

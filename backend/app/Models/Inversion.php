@@ -161,6 +161,10 @@ class Inversion extends Model
         }
 
         $idTipoInversion = $this->instrumento?->id_tipo_inversion;
+        if ($idTipoInversion == 91) {
+            return (float) $this->capital_invertido;
+        }
+
         if ($idTipoInversion == 4) {
             $vencimiento = $this->instrumento?->fecha_vencimiento;
             $today = date('Y-m-d');
