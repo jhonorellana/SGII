@@ -29,6 +29,12 @@ class InversionPdfImportService
             ->orderBy('nombres')
             ->get();
 
+        $emisores = DB::table('emisor')
+            ->where('activo', 1)
+            ->select('id_emisor', 'nombre', 'sigla')
+            ->orderBy('nombre')
+            ->get();
+
         $previewItems = [];
         $resumen = [
             'total_archivos' => count($files),
@@ -37,6 +43,8 @@ class InversionPdfImportService
             'con_error' => 0,
             'total_nominal' => 0.0,
             'total_invertido' => 0.0,
+            'notas_credito' => 0,
+            'papeles_comerciales' => 0,
         ];
 
         foreach ($files as $file) {
@@ -59,6 +67,14 @@ class InversionPdfImportService
                     'id_propietario' => null,
                     'propietario_detectado' => null,
                     'id_grupo_familiar' => 1,
+                    'id_emisor' => null,
+                    'emisor_detectado' => null,
+                    'id_instrumento' => null,
+                    'instrumento_detectado' => null,
+                    'fecha_emision' => $dto->fechaEmision,
+                    'fecha_vencimiento' => $dto->fechaVencimiento,
+                    'tasa_interes' => $dto->tasaInteres,
+                    'plazo_dias' => $dto->plazoDias,
                     'valor_nominal' => $dto->valorNominal,
                     'precio_compra' => $dto->precioCompra,
                     'valor_efectivo' => $dto->valorEfectivo,
@@ -68,6 +84,8 @@ class InversionPdfImportService
                     'precio_neto_compra' => $dto->precioNetoCompra,
                     'factura_bolsa' => $dto->facturaBolsa,
                     'operador_valores' => $dto->operadorValores,
+                    'genera_amortizacion' => false,
+                    'cuota_amortizacion_estimada' => null,
                     'estado' => 'ERROR',
                     'mensaje_estado' => $dto->errorMessage ?? 'No se pudo extraer la liquidación del documento.',
                     'seleccionado' => false,
@@ -90,6 +108,58 @@ class InversionPdfImportService
                 if ($gf) {
                     $idGrupoFamiliar = (int) $gf;
                 }
+            }
+
+            // Resolver Emisor e Instrumento según Tipo de Título
+            $idEmisor = null;
+            $nombreEmisor = null;
+            $idInstrumento = null;
+            $nombreInstrumento = null;
+            $generaAmortizacion = false;
+            $cuotaEstimada = null;
+
+            if ($dto->tipoTitulo === 'PAPEL_COMERCIAL') {
+                $resumen['papeles_comerciales']++;
+                $generaAmortizacion = true;
+
+                // Resolver Emisor
+                $emisorMatched = $this->resolverEmisor($dto->emisorNombre, $emisores);
+                $idEmisor = $emisorMatched ? $emisorMatched->id_emisor : null;
+                $nombreEmisor = $emisorMatched ? $emisorMatched->nombre : $dto->emisorNombre;
+
+                // Resolver Instrumento
+                if ($idEmisor && $dto->fechaVencimiento) {
+                    $inst = DB::table('instrumento')
+                        ->where('id_tipo_inversion', 3) // Papel Comercial
+                        ->where('id_emisor', $idEmisor)
+                        ->where('fecha_vencimiento', $dto->fechaVencimiento)
+                        ->where('activo', 1)
+                        ->first();
+                    if ($inst) {
+                        $idInstrumento = $inst->id_instrumento;
+                        $nombreInstrumento = $inst->nombre;
+                    } else {
+                        $nombreInstrumento = ($dto->fechaEmision ? $dto->fechaEmision . ' ' : '') . ($nombreEmisor ?? 'EMPAGRAN') . ' ' . $dto->fechaVencimiento;
+                    }
+                }
+
+                // Cálculo de amortización estimada al vencimiento
+                $interesDescuento = round($dto->valorNominal - $dto->totalInvertido, 2);
+                $cuotaEstimada = [
+                    'numero_cuota' => 1,
+                    'fecha_pago' => $dto->fechaVencimiento,
+                    'capital' => $dto->totalInvertido,
+                    'interes' => $interesDescuento,
+                    'total' => $dto->valorNominal,
+                ];
+            } else {
+                // NOTA DE CRÉDITO
+                $resumen['notas_credito']++;
+                $idEmisor = 153; // SRI
+                $nombreEmisor = 'SERVICIO DE RENTAS INTERNAS (SRI)';
+                $idInstrumento = 222; // SRI 2034-12-31
+                $nombreInstrumento = 'SRI 2034-12-31';
+                $generaAmortizacion = false;
             }
 
             // Verificar duplicados en DB (soporta liquidación exacta o sin sufijo de bolsa ej. 22820-VRF45 vs 22820)
@@ -126,7 +196,14 @@ class InversionPdfImportService
                 'id_propietario' => $idPropietario,
                 'propietario_detectado' => $nombrePropietario,
                 'id_grupo_familiar' => $idGrupoFamiliar,
-                'id_instrumento' => 222, // SRI 2034-12-31 (Notas de Crédito)
+                'id_emisor' => $idEmisor,
+                'emisor_detectado' => $nombreEmisor,
+                'id_instrumento' => $idInstrumento,
+                'instrumento_detectado' => $nombreInstrumento,
+                'fecha_emision' => $dto->fechaEmision,
+                'fecha_vencimiento' => $dto->fechaVencimiento,
+                'tasa_interes' => $dto->tasaInteres,
+                'plazo_dias' => $dto->plazoDias,
                 'valor_nominal' => $dto->valorNominal,
                 'precio_compra' => $dto->precioCompra,
                 'valor_efectivo' => $dto->valorEfectivo,
@@ -136,6 +213,8 @@ class InversionPdfImportService
                 'precio_neto_compra' => $dto->precioNetoCompra,
                 'factura_bolsa' => $dto->facturaBolsa,
                 'operador_valores' => $dto->operadorValores,
+                'genera_amortizacion' => $generaAmortizacion,
+                'cuota_amortizacion_estimada' => $cuotaEstimada,
                 'estado' => $estado,
                 'inversion_existente_id' => $existente ? $existente->id_inversion : null,
                 'mensaje_estado' => $mensaje,
@@ -147,6 +226,7 @@ class InversionPdfImportService
             'resumen' => $resumen,
             'items' => $previewItems,
             'personas_disponibles' => $personas,
+            'emisores_disponibles' => $emisores,
         ];
     }
 
@@ -189,6 +269,9 @@ class InversionPdfImportService
                     continue;
                 }
 
+                $tipoTitulo = $item['tipo_titulo'] ?? 'NOTA_CREDITO';
+                $idTipoInversion = ($tipoTitulo === 'PAPEL_COMERCIAL') ? 3 : 91;
+
                 $idGrupoFamiliar = $item['id_grupo_familiar'] ?? 1;
                 $valorNominal = (float) ($item['valor_nominal'] ?? 0);
                 $capitalInvertido = (float) ($item['capital_invertido'] ?? 0);
@@ -198,11 +281,51 @@ class InversionPdfImportService
                 $comisionOperador = (float) ($item['comision_casa_valores'] ?? 0);
                 $totalComisiones = round($comisionBolsa + $comisionOperador, 2);
                 $fechaCompra = $item['fecha_compra'] ?? date('Y-m-d');
+                $tasaInteres = (float) ($item['tasa_interes'] ?? 1.0);
+                $fechaVcto = $item['fecha_vencimiento'] ?? null;
+                $fechaEmi = $item['fecha_emision'] ?? $fechaCompra;
                 $filename = $item['filename'] ?? 'documento.pdf';
+
+                // Resolver o registrar Instrumento
+                $idInstrumento = $item['id_instrumento'] ?? null;
+                if ($idTipoInversion === 91) {
+                    $idInstrumento = 222; // SRI 2034-12-31
+                } elseif ($idTipoInversion === 3) {
+                    if (!$idInstrumento) {
+                        $idEmisor = $item['id_emisor'] ?? 146; // EMPAGRAN por defecto si no viene
+                        $instExistente = DB::table('instrumento')
+                            ->where('id_tipo_inversion', 3)
+                            ->where('id_emisor', $idEmisor)
+                            ->where('fecha_vencimiento', $fechaVcto)
+                            ->first();
+
+                        if ($instExistente) {
+                            $idInstrumento = $instExistente->id_instrumento;
+                        } else {
+                            $nomEmisor = DB::table('emisor')->where('id_emisor', $idEmisor)->value('nombre') ?? 'EMPAGRAN';
+                            $codTitulo = 'INV_03_' . str_replace('-', '', $fechaVcto ?? date('Ymd'));
+                            $nombreInst = "{$fechaEmi} {$nomEmisor} {$fechaVcto}";
+                            $idInstrumento = DB::table('instrumento')->insertGetId([
+                                'id_emisor' => $idEmisor,
+                                'id_tipo_inversion' => 3,
+                                'codigo_titulo' => $codTitulo,
+                                'nombre' => $nombreInst,
+                                'fecha_emision' => $fechaEmi,
+                                'fecha_vencimiento' => $fechaVcto,
+                                'tasa_referencial' => $tasaInteres,
+                                'fechas_recuperacion' => $fechaVcto,
+                                'codigo_titulo_vector' => 'PAPEL COMERCIAL',
+                                'activo' => 1,
+                                'fecha_creacion' => now(),
+                                'fecha_actualizacion' => now(),
+                            ]);
+                        }
+                    }
+                }
 
                 $inversion = new Inversion();
                 $inversion->id_grupo_familiar = $idGrupoFamiliar;
-                $inversion->id_instrumento = 222; // SRI 2034-12-31
+                $inversion->id_instrumento = $idInstrumento;
                 $inversion->id_propietario = $idPropietario;
                 $inversion->id_aportante = $idPropietario;
                 $inversion->liquidacion = $liquidacion;
@@ -213,8 +336,8 @@ class InversionPdfImportService
                 $inversion->monto_a_negociar = $valorNominal;
                 $inversion->capital_invertido = $capitalInvertido;
                 $inversion->saldo_capital_actual = $capitalInvertido;
-                $inversion->tasa_interes = 1.0;
-                $inversion->rendimiento_nominal = 1.0;
+                $inversion->tasa_interes = $tasaInteres;
+                $inversion->rendimiento_nominal = $tasaInteres;
                 $inversion->rendimiento_efectivo = null;
                 $inversion->valor_efectivo = $capitalInvertido;
                 $inversion->valor_sin_comision = $capitalInvertido;
@@ -224,24 +347,48 @@ class InversionPdfImportService
                 $inversion->interes_primer_mes = 0.00;
                 $inversion->total_comisiones = $totalComisiones;
                 $inversion->tasa_mensual_real = 0.00;
-                $inversion->fecha_primer_pago = null;
+                $inversion->fecha_primer_pago = $fechaVcto;
                 $inversion->precio_compra = $precioCompra;
                 $inversion->precio_neto_compra = $precioNetoCompra;
                 $inversion->comision_bolsa = $comisionBolsa;
                 $inversion->comision_casa_valores = $comisionOperador;
                 $inversion->retencion_fuente = 0.00;
-                $inversion->observacion = "Importado automáticamente desde PDF: {$filename}";
+                $inversion->observacion = "Importado automáticamente desde PDF ({$tipoTitulo}): {$filename}";
                 $inversion->expirado_old = 0;
                 $inversion->activo_old = 1;
                 $inversion->eliminado = 0;
 
                 $inversion->save();
 
+                // Si es Papel Comercial (cero cupón), generar la cuota única de amortización al vencimiento
+                if ($idTipoInversion === 3 && !empty($fechaVcto)) {
+                    $interesDescuento = round($valorNominal - $capitalInvertido, 2);
+                    DB::table('amortizacion')->insert([
+                        'id_inversion' => $inversion->id_inversion,
+                        'numero_cuota' => 1,
+                        'fecha_pago' => $fechaVcto,
+                        'capital' => $capitalInvertido,
+                        'interes' => $interesDescuento,
+                        'descuento' => 0.00,
+                        'total' => $valorNominal,
+                        'int_parcial' => $interesDescuento,
+                        'retencion' => 0.00,
+                        'id_estado_amortizacion' => 134, // Pendiente
+                        'pagada_old' => 0,
+                        'activo_old' => 1,
+                        'eliminado' => 0,
+                        'fecha_creacion' => now(),
+                        'fecha_actualizacion' => now(),
+                    ]);
+                }
+
                 $guardados[] = [
                     'id_inversion' => $inversion->id_inversion,
+                    'tipo_titulo' => $tipoTitulo,
                     'liquidacion' => $inversion->liquidacion,
                     'valor_nominal' => $inversion->valor_nominal,
                     'capital_invertido' => $inversion->capital_invertido,
+                    'amortizacion_creada' => ($idTipoInversion === 3),
                 ];
             }
 
@@ -279,11 +426,33 @@ class InversionPdfImportService
         if ($nombre) {
             $nombreUpper = mb_strtoupper($nombre);
             foreach ($personas as $p) {
-                $nombreP = mb_strtoupper(trim($p->nombres . ' ' . $p->apellidos));
                 $primerNombre = mb_strtoupper(trim($p->nombres));
                 if (!empty($primerNombre) && str_contains($nombreUpper, $primerNombre)) {
                     return $p;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resuelve el emisor a partir del nombre o texto extraído
+     */
+    protected function resolverEmisor(?string $nombreEmisor, $emisores): ?object
+    {
+        if (empty($nombreEmisor)) {
+            return null;
+        }
+
+        $upper = mb_strtoupper($nombreEmisor);
+
+        foreach ($emisores as $e) {
+            $eNombre = mb_strtoupper(trim($e->nombre));
+            $eSigla = !empty($e->sigla) ? mb_strtoupper(trim($e->sigla)) : null;
+
+            if (str_contains($upper, $eNombre) || ($eSigla && str_contains($upper, $eSigla))) {
+                return $e;
             }
         }
 

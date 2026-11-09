@@ -10,11 +10,25 @@ export interface PersonaOption {
   identificacion: string | null;
 }
 
+export interface EmisorOption {
+  id_emisor: number;
+  nombre: string;
+  sigla: string | null;
+}
+
+export interface CuotaAmortizacionEstimada {
+  numero_cuota: number;
+  fecha_pago: string;
+  capital: number;
+  interes: number;
+  total: number;
+}
+
 export interface PreviewItem {
   id_temporal: string;
   filename: string;
   bolsa: 'BVQ' | 'BVG' | 'DESCONOCIDA' | string;
-  tipo_titulo: string;
+  tipo_titulo: 'NOTA_CREDITO' | 'PAPEL_COMERCIAL' | string;
   liquidacion: string;
   fecha_compra: string;
   comitente_nombre: string;
@@ -22,7 +36,14 @@ export interface PreviewItem {
   id_propietario: number | null;
   propietario_detectado: string | null;
   id_grupo_familiar: number;
-  id_instrumento: number;
+  id_emisor?: number | null;
+  emisor_detectado?: string | null;
+  id_instrumento?: number | null;
+  instrumento_detectado?: string | null;
+  fecha_emision?: string | null;
+  fecha_vencimiento?: string | null;
+  tasa_interes?: number | null;
+  plazo_dias?: number | null;
   valor_nominal: number;
   precio_compra: number;
   valor_efectivo: number;
@@ -32,6 +53,8 @@ export interface PreviewItem {
   precio_neto_compra: number;
   factura_bolsa: string | null;
   operador_valores: string | null;
+  genera_amortizacion?: boolean;
+  cuota_amortizacion_estimada?: CuotaAmortizacionEstimada | null;
   estado: 'VALIDO' | 'DUPLICADO' | 'ERROR';
   inversion_existente_id?: number | null;
   mensaje_estado: string;
@@ -48,9 +71,12 @@ export interface PreviewResponse {
       con_error: number;
       total_nominal: number;
       total_invertido: number;
+      notas_credito?: number;
+      papeles_comerciales?: number;
     };
     items: PreviewItem[];
     personas_disponibles: PersonaOption[];
+    emisores_disponibles?: EmisorOption[];
   };
   message?: string;
 }

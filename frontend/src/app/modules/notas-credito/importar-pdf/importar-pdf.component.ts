@@ -12,7 +12,7 @@ import { ProgressBarModule } from 'primeng/progressbar';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
-import { PdfImportService, PreviewItem, PersonaOption } from '../../../core/pdf-import.service';
+import { PdfImportService, PreviewItem, PersonaOption, EmisorOption } from '../../../core/pdf-import.service';
 
 @Component({
   selector: 'app-importar-pdf',
@@ -42,6 +42,7 @@ export class ImportarPdfComponent implements OnInit {
   filesUploaded: File[] = [];
   items: PreviewItem[] = [];
   personasDisponibles: PersonaOption[] = [];
+  emisoresDisponibles: EmisorOption[] = [];
 
   selectAll = true;
 
@@ -107,15 +108,26 @@ export class ImportarPdfComponent implements OnInit {
         this.isLoading = false;
         if (res.success && res.data) {
           this.items = res.data.items;
-          this.personasDisponibles = res.data.personas_disponibles;
+          this.personasDisponibles = res.data.personas_disponibles || [];
+          this.emisoresDisponibles = res.data.emisores_disponibles || [];
 
           // Auto-marcar checkbox "seleccionar todo" si hay válidos
           this.actualizarEstadoSelectAll();
 
+          const r = res.data.resumen;
+          let detalleTipos = '';
+          if (r.notas_credito && r.papeles_comerciales) {
+            detalleTipos = ` (${r.notas_credito} Notas de Crédito, ${r.papeles_comerciales} Papeles Comerciales)`;
+          } else if (r.papeles_comerciales) {
+            detalleTipos = ` (${r.papeles_comerciales} Papeles Comerciales)`;
+          } else if (r.notas_credito) {
+            detalleTipos = ` (${r.notas_credito} Notas de Crédito)`;
+          }
+
           this.messageService.add({
             severity: 'success',
             summary: 'Archivos procesados',
-            detail: `Se analizaron ${res.data.resumen.total_archivos} documentos: ${res.data.resumen.validos} válidos, ${res.data.resumen.duplicados} ya registrados.`
+            detail: `Se analizaron ${r.total_archivos} documentos${detalleTipos}: ${r.validos} válidos, ${r.duplicados} ya registrados.`
           });
         }
       },
@@ -182,6 +194,14 @@ export class ImportarPdfComponent implements OnInit {
     return this.items.filter((i) => i.estado === 'ERROR').length;
   }
 
+  get totalNotasCredito(): number {
+    return this.items.filter((i) => i.tipo_titulo === 'NOTA_CREDITO').length;
+  }
+
+  get totalPapelesComerciales(): number {
+    return this.items.filter((i) => i.tipo_titulo === 'PAPEL_COMERCIAL').length;
+  }
+
   confirmarImportacion(): void {
     const seleccionados = this.itemsSeleccionados;
     if (seleccionados.length === 0) {
@@ -219,10 +239,10 @@ export class ImportarPdfComponent implements OnInit {
           const idsGuardados = (res.data?.guardados || []).map((g: any) => g.liquidacion);
           this.items = this.items.filter((i) => !idsGuardados.includes(i.liquidacion));
 
-          // Si ya no quedan ítems, redirigir a venta-agrupada después de un breve delay
+          // Si ya no quedan ítems y solo había notas de crédito, redirigir a venta-agrupada; si había papel comercial, a inversiones
           if (this.items.length === 0) {
             setTimeout(() => {
-              this.router.navigate(['/venta-agrupada']);
+              this.router.navigate(['/inversiones']);
             }, 1800);
           }
         }
@@ -236,6 +256,10 @@ export class ImportarPdfComponent implements OnInit {
         });
       }
     });
+  }
+
+  irAInversiones(): void {
+    this.router.navigate(['/inversiones']);
   }
 
   irAVentaAgrupada(): void {

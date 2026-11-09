@@ -102,6 +102,11 @@ export class SidebarComponent implements OnInit {
           title: 'Amortizaciones',
           icon: 'bi-calculator',
           path: '/amortizaciones'
+        },
+        {
+          title: 'Carga Liquidaciones PDF',
+          icon: 'bi-file-earmark-arrow-up',
+          path: '/notas-credito/importar-pdf'
         }
       ]
     },

@@ -10,19 +10,28 @@
           <i class="bi bi-file-earmark-pdf fs-2"></i>
         </div>
         <div>
-          <h4 class="mb-1 text-dark fw-bold">Carga de Liquidaciones PDF (Notas de Crédito)</h4>
+          <h4 class="mb-1 text-dark fw-bold">Carga Automática de Liquidaciones PDF</h4>
           <p class="text-muted mb-0">
-            Importa expedientes bursátiles firmados de <strong>Santa Fe Casa de Valores</strong> (Bolsa de Quito o Guayaquil) para extraer y registrar automáticamente las compras.
+            Importa expedientes bursátiles firmados de <strong>Santa Fe Casa de Valores</strong> (Bolsa de Quito o Guayaquil).
+            Reconocimiento automático de <strong>Notas de Crédito</strong> y <strong>Papeles Comerciales (Cero Cupón)</strong>.
           </p>
         </div>
       </div>
-      <div>
+      <div class="d-flex gap-2">
         <button 
           pButton 
           type="button" 
-          label="Ir a Venta Notas Crédito" 
+          label="Gestión Inversiones" 
+          icon="bi bi-list-check" 
+          class="p-button-outlined p-button-secondary p-button-sm"
+          (click)="irAInversiones()">
+        </button>
+        <button 
+          pButton 
+          type="button" 
+          label="Venta Notas Crédito" 
           icon="bi bi-layers" 
-          class="p-button-outlined p-button-secondary"
+          class="p-button-outlined p-button-primary p-button-sm"
           (click)="irAVentaAgrupada()">
         </button>
       </div>
@@ -40,9 +49,9 @@
       
       <div class="dropzone-content py-3">
         <i class="bi bi-cloud-arrow-up text-primary upload-icon mb-3"></i>
-        <h5 class="fw-semibold text-dark mb-1">Arrastra tus archivos PDF aquí</h5>
+        <h5 class="fw-semibold text-dark mb-1">Arrastra tus liquidaciones PDF aquí</h5>
         <p class="text-muted mb-3">
-          Puedes seleccionar uno o múltiples documentos firmados (.pdf) a la vez.
+          Puedes arrastrar múltiples documentos PDF a la vez. El sistema detectará automáticamente si son Notas de Crédito o Papeles Comerciales.
         </p>
 
         <label class="btn btn-primary px-4 py-2 cursor-pointer shadow-sm">
@@ -69,8 +78,12 @@
       <div class="card stat-card border-0 shadow-sm p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-muted small text-uppercase fw-bold">Total Archivos</span>
+            <span class="text-muted small text-uppercase fw-bold">Archivos Procesados</span>
             <h4 class="mb-0 fw-bold text-dark mt-1">{{ items.length }}</h4>
+            <div class="small text-muted mt-1">
+              <span *ngIf="totalNotasCredito > 0" class="badge bg-success-subtle text-success me-1">{{ totalNotasCredito }} NC</span>
+              <span *ngIf="totalPapelesComerciales > 0" class="badge bg-primary-subtle text-primary">{{ totalPapelesComerciales }} Papel Com.</span>
+            </div>
           </div>
           <div class="stat-icon bg-light text-primary">
             <i class="bi bi-files fs-4"></i>
@@ -85,6 +98,7 @@
           <div>
             <span class="text-muted small text-uppercase fw-bold">Válidos para Cargar</span>
             <h4 class="mb-0 fw-bold text-success mt-1">{{ totalValidos }}</h4>
+            <span class="small text-muted">Listos para registrar</span>
           </div>
           <div class="stat-icon bg-success-subtle text-success">
             <i class="bi bi-check-circle fs-4"></i>
@@ -99,6 +113,7 @@
           <div>
             <span class="text-muted small text-uppercase fw-bold">Ya Registrados</span>
             <h4 class="mb-0 fw-bold text-warning mt-1">{{ totalDuplicados }}</h4>
+            <span class="small text-muted">Protegidos contra duplicación</span>
           </div>
           <div class="stat-icon bg-warning-subtle text-warning">
             <i class="bi bi-exclamation-triangle fs-4"></i>
@@ -111,8 +126,9 @@
       <div class="card stat-card border-0 shadow-sm p-3">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <span class="text-muted small text-uppercase fw-bold">Capital a Importar</span>
+            <span class="text-muted small text-uppercase fw-bold">Capital Seleccionado</span>
             <h4 class="mb-0 fw-bold text-primary mt-1">{{ totalInvertidoSeleccionado | currency:'USD':'symbol':'1.2-2' }}</h4>
+            <span class="small text-muted">Nominal: {{ totalNominalSeleccionado | currency:'USD':'symbol':'1.2-2' }}</span>
           </div>
           <div class="stat-icon bg-primary-subtle text-primary">
             <i class="bi bi-cash-stack fs-4"></i>
@@ -126,7 +142,7 @@
   <div *ngIf="items.length > 0" class="card border-0 shadow-sm mb-4">
     <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="d-flex align-items-center gap-2">
-        <h5 class="mb-0 fw-bold text-dark">Previsualización de Liquidaciones Extraídas</h5>
+        <h5 class="mb-0 fw-bold text-dark">Previsualización de Inversiones Extraídas</h5>
         <span class="badge bg-secondary-subtle text-secondary rounded-pill">{{ items.length }} registros</span>
       </div>
 
@@ -164,18 +180,18 @@
                   [(ngModel)]="selectAll" 
                   (change)="toggleSelectAll()">
               </th>
-              <th>Bolsa</th>
-              <th>Liquidación</th>
-              <th>Fecha Compra</th>
-              <th style="min-width: 180px;">Propietario</th>
+              <th>Instrumento</th>
+              <th>Bolsa / Liq.</th>
+              <th>Fechas / Vcto</th>
+              <th style="min-width: 170px;">Propietario</th>
               <th class="text-end">Valor Nominal</th>
               <th class="text-end">Precio Compra</th>
-              <th class="text-end">Comis. Bolsa</th>
-              <th class="text-end">Comis. Operador</th>
+              <th class="text-end">Comisiones</th>
               <th class="text-end">Capital Invertido</th>
               <th class="text-end">Precio Neto</th>
+              <th class="text-center">Amortización</th>
               <th class="text-center">Estado</th>
-              <th style="width: 50px;"></th>
+              <th style="width: 40px;"></th>
             </tr>
           </thead>
           <tbody>
@@ -190,26 +206,47 @@
                   [disabled]="item.estado === 'ERROR'">
               </td>
 
-              <!-- Bolsa -->
+              <!-- Instrumento & Emisor -->
+              <td>
+                <div>
+                  <span 
+                    class="badge mb-1" 
+                    [ngClass]="item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bg-primary text-white' : 'bg-success text-white'">
+                    <i class="bi" [ngClass]="item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bi-building me-1' : 'bi-receipt me-1'"></i>
+                    {{ item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Papel Comercial' : 'Nota de Crédito' }}
+                  </span>
+                </div>
+                <div class="fw-semibold text-dark text-truncate" style="max-width: 180px;" [title]="item.emisor_detectado || 'N/A'">
+                  {{ item.emisor_detectado || (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Empresa Privada' : 'SRI') }}
+                </div>
+                <div *ngIf="item.tasa_interes" class="text-muted small">
+                  Tasa: <span class="fw-bold text-dark">{{ item.tasa_interes | number:'1.2-2' }}%</span>
+                </div>
+              </td>
+
+              <!-- Bolsa / Liq -->
               <td>
                 <span 
-                  class="badge" 
+                  class="badge mb-1" 
                   [ngClass]="item.bolsa === 'BVQ' ? 'bg-primary-subtle text-primary border border-primary' : 'bg-info-subtle text-info border border-info'">
                   {{ item.bolsa }}
                 </span>
-              </td>
-
-              <!-- Liquidación -->
-              <td>
-                <span class="fw-semibold font-monospace">{{ item.liquidacion || 'S/N' }}</span>
+                <div class="fw-semibold font-monospace">{{ item.liquidacion || 'S/N' }}</div>
                 <div *ngIf="item.factura_bolsa" class="text-muted small" title="Factura Bolsa">
                   <i class="bi bi-receipt me-1"></i>{{ item.factura_bolsa }}
                 </div>
               </td>
 
-              <!-- Fecha Compra -->
+              <!-- Fechas / Vcto -->
               <td class="text-nowrap">
-                {{ item.fecha_compra || 'N/A' }}
+                <div><span class="text-muted small">Compra:</span> {{ item.fecha_compra || 'N/A' }}</div>
+                <div *ngIf="item.fecha_vencimiento">
+                  <span class="text-muted small">Vcto:</span> 
+                  <span class="fw-semibold text-primary">{{ item.fecha_vencimiento }}</span>
+                </div>
+                <div *ngIf="item.plazo_dias" class="text-muted small">
+                  {{ item.plazo_dias }} días plazo
+                </div>
               </td>
 
               <!-- Propietario -->
@@ -217,13 +254,13 @@
                 <select 
                   class="form-select form-select-sm" 
                   [(ngModel)]="item.id_propietario">
-                  <option [ngValue]="null">-- Seleccione Propietario --</option>
+                  <option [ngValue]="null">-- Seleccione --</option>
                   <option *ngFor="let p of personasDisponibles" [ngValue]="p.id_persona">
                     {{ p.nombres }} {{ p.apellidos }} ({{ p.identificacion || 'Sin CI' }})
                   </option>
                 </select>
-                <div *ngIf="item.comitente_nombre" class="text-muted small mt-1 text-truncate" style="max-width: 220px;" [title]="item.comitente_nombre">
-                  PDF: {{ item.comitente_nombre }}
+                <div *ngIf="item.comitente_nombre" class="text-muted small mt-1 text-truncate" style="max-width: 200px;" [title]="item.comitente_nombre">
+                  Doc: {{ item.comitente_nombre }}
                 </div>
               </td>
 
@@ -237,14 +274,10 @@
                 {{ item.precio_compra | number:'1.4-4' }}%
               </td>
 
-              <!-- Comisión Bolsa -->
-              <td class="text-end font-monospace text-muted">
-                {{ item.comision_bolsa | currency:'USD':'symbol':'1.2-2' }}
-              </td>
-
-              <!-- Comisión Operador -->
-              <td class="text-end font-monospace text-muted">
-                {{ item.comision_casa_valores | currency:'USD':'symbol':'1.2-2' }}
+              <!-- Comisiones (Bolsa + Operador) -->
+              <td class="text-end font-monospace text-muted small">
+                <div>Bolsa: {{ item.comision_bolsa | currency:'USD':'symbol':'1.2-2' }}</div>
+                <div>Ope: {{ item.comision_casa_valores | currency:'USD':'symbol':'1.2-2' }}</div>
               </td>
 
               <!-- Capital Invertido -->
@@ -257,13 +290,33 @@
                 {{ item.precio_neto_compra | number:'1.4-4' }}%
               </td>
 
+              <!-- Amortización -->
+              <td class="text-center text-nowrap">
+                <div *ngIf="item.genera_amortizacion && item.cuota_amortizacion_estimada">
+                  <span 
+                    class="badge bg-info-subtle text-info border border-info cursor-pointer"
+                    [pTooltip]="'Al vencimiento (' + item.cuota_amortizacion_estimada.fecha_pago + '): Capital $' + item.cuota_amortizacion_estimada.capital + ' + Interés $' + item.cuota_amortizacion_estimada.interes + ' = Total $' + item.cuota_amortizacion_estimada.total"
+                    tooltipPosition="top">
+                    <i class="bi bi-calculator me-1"></i>1 Cuota Cero Cupón
+                  </span>
+                  <div class="small text-muted mt-1">
+                    Ganancia: +{{ item.cuota_amortizacion_estimada.interes | currency:'USD':'symbol':'1.2-2' }}
+                  </div>
+                </div>
+                <div *ngIf="!item.genera_amortizacion">
+                  <span class="badge bg-light text-muted border">
+                    Sin amortización
+                  </span>
+                </div>
+              </td>
+
               <!-- Estado -->
               <td class="text-center text-nowrap">
                 <span *ngIf="item.estado === 'VALIDO'" class="badge bg-success-subtle text-success border border-success">
                   <i class="bi bi-check-circle me-1"></i>Válido
                 </span>
                 <span *ngIf="item.estado === 'DUPLICADO'" class="badge bg-warning-subtle text-warning border border-warning" [title]="item.mensaje_estado">
-                  <i class="bi bi-exclamation-triangle me-1"></i>Ya Registrado (#{{ item.inversion_existente_id }})
+                  <i class="bi bi-exclamation-triangle me-1"></i>Registrado (#{{ item.inversion_existente_id }})
                 </span>
                 <span *ngIf="item.estado === 'ERROR'" class="badge bg-danger-subtle text-danger border border-danger" [title]="item.mensaje_estado">
                   <i class="bi bi-x-circle me-1"></i>Error
@@ -290,11 +343,11 @@
               <td class="text-end font-monospace text-primary">
                 {{ totalNominalSeleccionado | currency:'USD':'symbol':'1.2-2' }}
               </td>
-              <td colspan="3"></td>
+              <td colspan="2"></td>
               <td class="text-end font-monospace text-success">
                 {{ totalInvertidoSeleccionado | currency:'USD':'symbol':'1.2-2' }}
               </td>
-              <td colspan="3"></td>
+              <td colspan="4"></td>
             </tr>
           </tfoot>
         </table>
@@ -305,7 +358,7 @@
     <div class="card-footer bg-white py-3 border-top d-flex justify-content-between align-items-center flex-wrap gap-2">
       <div class="text-muted small">
         <i class="bi bi-info-circle me-1"></i>
-        <span>{{ itemsSeleccionados.length }} de {{ items.length }} inversiones seleccionadas para importar en la tabla de inversiones.</span>
+        <span>{{ itemsSeleccionados.length }} de {{ items.length }} inversiones seleccionadas para importar en la base de datos.</span>
       </div>
 
       <button 
@@ -321,4 +374,3 @@
     </div>
   </div>
 </div>
-

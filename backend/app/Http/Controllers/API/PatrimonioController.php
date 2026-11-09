@@ -61,7 +61,7 @@ class PatrimonioController extends Controller
 
                 foreach ($resultados as $row) {
                     $val = (float) $row->valor;
-                    $detLindo = $this->fixUtf8($row->detalle);
+                    $detLindo = $this->canonicalizarDetalle($row->detalle);
                     $detLower = strtolower($detLindo);
 
                     if (str_contains($detLower, 'dividendos en acciones')) {
@@ -81,7 +81,7 @@ class PatrimonioController extends Controller
 
                 foreach ($resultados as $row) {
                     $val = (float) $row->valor;
-                    $detLindo = $this->fixUtf8($row->detalle);
+                    $detLindo = $this->canonicalizarDetalle($row->detalle);
                     $detLower = strtolower($detLindo);
 
                     if ($row->detalle === 'TOTAL' || $detLindo === 'TOTAL') {
@@ -157,6 +157,49 @@ class PatrimonioController extends Controller
     }
 
     /**
+     * Normalizar el detalle a su valor canónico oficial con acentos correctos.
+     * Protege contra cualquier artefacto de codificación (mojibake, CP850, CP1252, etc.)
+     */
+    private function canonicalizarDetalle(string $str): string
+    {
+        $raw = trim($str);
+        $clean = $this->fixUtf8($raw);
+
+        // Mapeo de términos canónicos oficiales
+        $map = [
+            'intereses esperados'      => 'Intereses esperados',
+            'capital bonos'            => 'Capital bonos',
+            'bonos vencimiento'        => 'Bonos vencimiento próximo',
+            'obligaciones'             => 'Obligaciones',
+            'papeles comerciales'      => 'Papeles Comerciales',
+            'notas cr'                 => 'Notas Crédito',
+            'acciones pago interes'    => 'Acciones Pago Interes',
+            'acciones sin inter'       => 'Acciones Sin Interés',
+            'dividendos en acciones'   => 'Dividendos en Acciones',
+            'plusval'                  => 'Plusvalía Acciones',
+            'titularizaciones'         => 'Titularizaciones',
+            'total corriente'          => 'Total Corriente',
+            'total'                    => 'TOTAL',
+        ];
+
+        $lowerRaw = mb_strtolower($raw, 'UTF-8');
+        $lowerClean = mb_strtolower($clean, 'UTF-8');
+        $ascii = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $lowerClean) ?: $lowerClean;
+
+        foreach ($map as $pattern => $canonico) {
+            if (
+                str_contains($lowerRaw, $pattern) || 
+                str_contains($lowerClean, $pattern) || 
+                str_contains($ascii, $pattern)
+            ) {
+                return $canonico;
+            }
+        }
+
+        return $clean;
+    }
+
+    /**
      * Sanear cualquier artefacto de codificación UTF-8 / Mojibake
      */
     private function fixUtf8(string $str): string
@@ -174,6 +217,7 @@ class PatrimonioController extends Controller
             'Ã\u00ad' => 'í',
             'Ãº' => 'ú',
             'Ã±' => 'ñ',
+            'í¬þ¬®' => 'é',
         ];
         return strtr($str, $replacements);
     }
