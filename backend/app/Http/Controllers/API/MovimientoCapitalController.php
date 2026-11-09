@@ -107,6 +107,8 @@ class MovimientoCapitalController extends Controller
             'fecha_actualizacion' => now()
         ]);
 
+        \App\Listeners\CrearMovimientoCompraInversion::sincronizarSaldoSantaFePersona((int) $movimiento->id_persona);
+
         return response()->json([
             'success' => true,
             'message' => 'Movimiento creado exitosamente',
@@ -170,6 +172,8 @@ class MovimientoCapitalController extends Controller
             ], Response::HTTP_BAD_REQUEST);
         }
 
+        $personaAnterior = (int) $movimiento->id_persona;
+
         $movimiento->update([
             'fecha_movimiento' => $request->fecha_movimiento,
             'id_tipo_movimiento' => $request->id_tipo_movimiento,
@@ -185,6 +189,11 @@ class MovimientoCapitalController extends Controller
             'fecha_conciliacion' => $request->fecha_conciliacion,
             'fecha_actualizacion' => now()
         ]);
+
+        \App\Listeners\CrearMovimientoCompraInversion::sincronizarSaldoSantaFePersona((int) $movimiento->id_persona);
+        if ($personaAnterior && $personaAnterior !== (int) $movimiento->id_persona) {
+            \App\Listeners\CrearMovimientoCompraInversion::sincronizarSaldoSantaFePersona($personaAnterior);
+        }
 
         return response()->json([
             'success' => true,
@@ -207,11 +216,15 @@ class MovimientoCapitalController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
+        $idPersona = (int) $movimiento->id_persona;
+
         $movimiento->update([
             'activo' => false,
             'eliminado' => true,
             'fecha_actualizacion' => now()
         ]);
+
+        \App\Listeners\CrearMovimientoCompraInversion::sincronizarSaldoSantaFePersona($idPersona);
 
         return response()->json([
             'success' => true,

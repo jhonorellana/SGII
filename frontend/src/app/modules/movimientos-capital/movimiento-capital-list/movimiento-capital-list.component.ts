@@ -285,7 +285,7 @@ export class MovimientoCapitalListComponent implements OnInit {
   }
 
   loadInversiones(): void {
-    this.inversionService.getAll().subscribe({
+    this.inversionService.getAll({ incluir_notas_credito: true }).subscribe({
       next: (data) => {
         // Agregar opción "Todas" al inicio
         this.inversiones = [

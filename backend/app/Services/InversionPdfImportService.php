@@ -360,6 +360,14 @@ class InversionPdfImportService
 
                 $inversion->save();
 
+                // Disparar evento para crear movimiento de capital (egreso COM_INV) y actualizar saldo en Santa Fe (otro_valor)
+                event(new \App\Events\InversionCreada($inversion));
+
+                $movimientoCreado = \App\Models\MovimientoCapital::where('id_inversion', $inversion->id_inversion)
+                    ->where('id_tipo_movimiento', 181)
+                    ->where('eliminado', false)
+                    ->first();
+
                 // Si es Papel Comercial (cero cupón), generar la cuota única de amortización al vencimiento
                 if ($idTipoInversion === 3 && !empty($fechaVcto)) {
                     $interesDescuento = round($valorNominal - $capitalInvertido, 2);
@@ -384,6 +392,7 @@ class InversionPdfImportService
 
                 $guardados[] = [
                     'id_inversion' => $inversion->id_inversion,
+                    'id_movimiento_capital' => $movimientoCreado?->id_movimiento_capital,
                     'tipo_titulo' => $tipoTitulo,
                     'liquidacion' => $inversion->liquidacion,
                     'valor_nominal' => $inversion->valor_nominal,
@@ -393,6 +402,9 @@ class InversionPdfImportService
             }
 
             DB::commit();
+
+            // Invalidar caché de reportes para reflejar las nuevas compras y saldos de inmediato
+            \Illuminate\Support\Facades\Cache::flush();
 
             return [
                 'success' => true,
