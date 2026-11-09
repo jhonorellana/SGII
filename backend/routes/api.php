@@ -10,6 +10,7 @@ use App\Http\Controllers\API\GrupoFamiliarController;
 use App\Http\Controllers\API\EmisorController;
 use App\Http\Controllers\API\InstrumentoController;
 use App\Http\Controllers\API\InversionController;
+use App\Http\Controllers\API\InversionPdfImportController;
 use App\Http\Controllers\API\AmortizacionController;
 use App\Http\Controllers\API\AmortizacionGeneracionController;
 use App\Http\Controllers\API\VencimientosMensualesController;
@@ -104,6 +105,10 @@ Route::apiResource('instrumentos', InstrumentoController::class);
 
 // Rutas de Histórico de Patrimonio (temporalmente sin autenticación para pruebas)
 Route::apiResource('historico-patrimonio', HistoricoPatrimonioController::class);
+
+// Rutas de Importación de Inversiones desde PDF
+Route::post('inversiones/importar-pdf/preview', [InversionPdfImportController::class, 'preview']);
+Route::post('inversiones/importar-pdf/confirm', [InversionPdfImportController::class, 'confirm']);
 
 // Rutas de Inversiones (temporalmente sin autenticación para pruebas)
 Route::apiResource('inversiones', InversionController::class);

@@ -26,6 +26,7 @@ import { MovimientoCapitalListComponent } from './modules/movimientos-capital/mo
 import { VentaInversionListComponent } from './modules/ventas-inversion/venta-inversion-list/venta-inversion-list.component';
 import { VentaNotasCreditoListComponent } from './modules/venta-notas-credito/venta-notas-credito-list/venta-notas-credito-list.component';
 import { AnalisisNotasCreditoComponent } from './modules/venta-notas-credito/analisis-notas-credito/analisis-notas-credito.component';
+import { ImportarPdfComponent } from './modules/notas-credito/importar-pdf/importar-pdf.component';
 import { VentaAgrupadaComponent } from './modules/venta-agrupada/venta-agrupada.component';
 import { DashboardInversionesComponent } from './modules/reportes/dashboard-inversiones/dashboard-inversiones.component';
 import { HistoricoAccionesComponent } from './modules/reportes/historico-acciones/historico-acciones.component';
@@ -98,6 +99,7 @@ export const routes: Routes = [
       { path: 'notas-credito/radar-oportunidades', component: NotasCreditoRadarComponent },
       { path: 'notas-credito/curva-descuento', component: NotasCreditoCurvaComponent },
       { path: 'notas-credito/analisis-rendimiento', component: AnalisisNotasCreditoComponent },
+      { path: 'notas-credito/importar-pdf', component: ImportarPdfComponent },
       { path: 'renta-variable/portafolio', component: PortafolioListComponent },
       { path: 'renta-variable/operaciones', component: OperacionListComponent },
       { path: 'renta-variable/dividendos', component: DividendoListComponent },

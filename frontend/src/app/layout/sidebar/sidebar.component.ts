@@ -168,6 +168,11 @@ export class SidebarComponent implements OnInit {
           path: '/ventas-notas-credito'
         },
         {
+          title: 'Carga Liquidaciones PDF',
+          icon: 'bi-file-earmark-arrow-up',
+          path: '/notas-credito/importar-pdf'
+        },
+        {
           title: 'Venta Notas Crédito',
           icon: 'bi-layers',
           path: '/venta-agrupada'

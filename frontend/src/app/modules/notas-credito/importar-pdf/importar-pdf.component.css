@@ -1,0 +1,83 @@
+.importar-pdf-container {
+  padding: 1rem 0;
+}
+
+.header-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.header-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone-card {
+  background: #ffffff;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  transition: all 0.25s ease-in-out;
+  cursor: pointer;
+}
+
+.dropzone-card:hover,
+.dropzone-card.drag-over {
+  border-color: #22c55e;
+  background-color: #f0fdf4;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  display: inline-block;
+}
+
+.stat-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-table th {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.75rem 0.6rem;
+  white-space: nowrap;
+}
+
+.custom-table td {
+  font-size: 0.88rem;
+  padding: 0.65rem 0.6rem;
+}
+
+.table-warning-row {
+  background-color: #fffbeb !important;
+}
+
+.table-danger-row {
+  background-color: #fef2f2 !important;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
