@@ -223,16 +223,13 @@ BEGIN
 
     UNION ALL
 
-    -- 6. Notas Crédito
+    -- 6. Notas Crédito (Consulta directa a Inversión sin requerir Amortización)
     SELECT 'Notas Crédito' as detalle,
-           COALESCE(SUM(A.capital), 0) as valor
-    FROM amortizacion A
-    JOIN inversion I ON A.id_inversion = I.id_inversion
+           COALESCE(SUM(I.capital_invertido), 0) as valor
+    FROM inversion I
     JOIN instrumento INS ON I.id_instrumento = INS.id_instrumento
-    WHERE A.fecha_pago > p_fecha_inicio
-      AND I.fecha_venta IS NULL
-      AND A.id_estado_amortizacion IN (134, 135, 136)
-      AND A.eliminado = 0
+    WHERE I.fecha_venta IS NULL
+      AND I.id_estado_inversion = 128
       AND I.eliminado = 0
       AND (p_id_grupo_familiar IS NULL OR I.id_grupo_familiar = p_id_grupo_familiar)
       AND (p_id_propietario IS NULL OR I.id_propietario = p_id_propietario)

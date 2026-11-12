@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -105,6 +106,8 @@ class StoredProcedureService
         }
 
         $executionTimeGlobal = round(microtime(true) - $startTimeGlobal, 2);
+
+        Cache::flush();
 
         return [
             'success' => ($totalFallidos === 0),

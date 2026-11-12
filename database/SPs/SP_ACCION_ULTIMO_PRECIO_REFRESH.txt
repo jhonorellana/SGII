@@ -12,7 +12,7 @@ WHERE
     AND Ins.fecha_vencimiento < CURDATE();
     
 
-    INSERT INTO sipro_desa.catalogo_valor
+    INSERT IGNORE INTO sipro_desa.catalogo_valor
     (
         id_catalogo_valor,
         id_catalogo,
@@ -41,6 +41,7 @@ WHERE
             MAX(SHA_ISSUER) AS SHA_ISSUER
         FROM inversion.shares
         WHERE SHA_ISSUER_ID IS NOT NULL
+          AND SHA_ISSUER_ID > 1
           AND SHA_ISSUER IS NOT NULL
           AND SHA_TYPE = 'ACCIONES'
           AND SHA_PRICE > 0
@@ -50,7 +51,6 @@ WHERE
     ) S
     LEFT JOIN sipro_desa.catalogo_valor C
         ON C.id_catalogo_valor = S.SHA_ISSUER_ID
-       AND C.id_catalogo = 3
     WHERE C.id_catalogo_valor IS NULL;
 
 

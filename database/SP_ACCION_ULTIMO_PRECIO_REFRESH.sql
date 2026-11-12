@@ -3,6 +3,16 @@ DROP PROCEDURE IF EXISTS SP_ACCION_ULTIMO_PRECIO_REFRESH $$
 CREATE DEFINER=`root`@`localhost` PROCEDURE `SP_ACCION_ULTIMO_PRECIO_REFRESH`()
 BEGIN
 
+    UPDATE Inversion I
+    INNER JOIN instrumento Ins
+        ON I.id_instrumento = Ins.id_instrumento
+    SET 
+        I.id_estado_inversion = 131,
+        I.fecha_actualizacion = NOW()
+    WHERE 
+        I.id_estado_inversion = 128
+        AND Ins.fecha_vencimiento < CURDATE();
+
     /*
       1. Crear emisores faltantes en catalogo_valor.
       Regla:
@@ -10,7 +20,7 @@ BEGIN
       catalogo_valor.id_catalogo = 3
     */
 
-    INSERT INTO sipro_desa.catalogo_valor
+    INSERT IGNORE INTO sipro_desa.catalogo_valor
     (
         id_catalogo_valor,
         id_catalogo,
@@ -39,6 +49,7 @@ BEGIN
             MAX(SHA_ISSUER) AS SHA_ISSUER
         FROM inversion.shares
         WHERE SHA_ISSUER_ID IS NOT NULL
+          AND SHA_ISSUER_ID > 1
           AND SHA_ISSUER IS NOT NULL
           AND SHA_TYPE = 'ACCIONES'
           AND SHA_PRICE > 0
@@ -48,7 +59,6 @@ BEGIN
     ) S
     LEFT JOIN sipro_desa.catalogo_valor C
         ON C.id_catalogo_valor = S.SHA_ISSUER_ID
-       AND C.id_catalogo = 3
     WHERE C.id_catalogo_valor IS NULL;
 
 

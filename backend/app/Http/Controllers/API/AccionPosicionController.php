@@ -39,7 +39,16 @@ class AccionPosicionController extends Controller
             $request->id_instrumento ?: null
         );
 
-        // Obtener cierres y variaciones diarias directamente desde shares_lastdate
+        // Obtener cierres y variaciones diarias desde accion_ultimo_precio (6 decimales de precisión)
+        $aupMap = [];
+        try {
+            $aupMap = DB::table('accion_ultimo_precio')
+                ->get()
+                ->keyBy('id_emisor')
+                ->toArray();
+        } catch (\Exception $ex) {}
+
+        // Obtener cierres y variaciones diarias directamente desde shares_lastdate como respaldo
         $lastDates = [];
         try {
             $lastDates = DB::connection('mysql_inversion')
@@ -58,7 +67,7 @@ class AccionPosicionController extends Controller
         } catch (\Exception $e) {}
 
         // Mapear los costos y variaciones en las posiciones
-        $posicionesMap = $posiciones->map(function ($pos) use ($costos, $lastDates, $emisorMap) {
+        $posicionesMap = $posiciones->map(function ($pos) use ($costos, $aupMap, $lastDates, $emisorMap) {
             $key = $pos->id_persona . '_' . $pos->id_instrumento;
             
             $cpu = 0.0;
@@ -79,23 +88,47 @@ class AccionPosicionController extends Controller
 
             // Buscar coincidencia en shares_lastdate (Tabla map_emisor_legacy -> respaldo inteligente)
             $v = $this->findBestMatch($pos->instrumento, $pos->emisor_nombre, $pos->id_emisor, $emisorMap, $lastDates);
+            $aup = $aupMap[$pos->id_emisor] ?? null;
 
             if ($v) {
-                $precioUlt = (float)($v->AVG_PRICE ?? $v->MAX_PRICE ?? $pos->precio_ultimo);
-                if ($precioUlt > 0) {
-                    $pos->precio_ultimo = $precioUlt;
-                    $pos->valor_mercado = (float)$pos->cantidad_actual * $precioUlt;
-                    $pos->utilidad_perdida_no_realizada = $pos->valor_mercado - $capitalInvertido;
-                }
+                $maxDateSl = $v->MAX_DATE ?? null;
+                $maxDateAup = $aup->fecha_ultimo_precio ?? null;
 
-                $pos->precio_anterior = ($v->PREV_AVG_PRICE !== null && $v->PREV_AVG_PRICE > 0) ? (float)$v->PREV_AVG_PRICE : null;
-                $pos->fecha_anterior = $v->PREV_DATE ?? null;
-                $pos->cambio_diario = (float)($v->DAILY_CHANGE ?? 0);
-                $pos->variacion_diaria_pct = (float)($v->DAILY_VARIATION_PCT ?? 0);
-                $pos->tendencia_diaria = $pos->cambio_diario > 0 ? 'SUBIO' : ($pos->cambio_diario < 0 ? 'BAJO' : 'IGUAL');
-                if (!empty($v->MAX_DATE)) {
-                    $pos->fecha_ultimo_precio = $v->MAX_DATE;
+                // Si accion_ultimo_precio está al día con shares_lastdate, preservar sus 6 decimales exactos
+                if ($aup && $maxDateAup && (!$maxDateSl || $maxDateAup >= $maxDateSl) && (float)$aup->precio_ultimo > 0) {
+                    $precioUlt = (float)$aup->precio_ultimo;
+                    $pos->precio_ultimo = $precioUlt;
+                    $pos->valor_mercado = round((float)$pos->cantidad_actual * $precioUlt, 2);
+                    $pos->utilidad_perdida_no_realizada = $pos->valor_mercado - $capitalInvertido;
+                    $pos->precio_anterior = ($aup->precio_anterior !== null && (float)$aup->precio_anterior > 0) ? (float)$aup->precio_anterior : (($v->PREV_AVG_PRICE !== null && $v->PREV_AVG_PRICE > 0) ? (float)$v->PREV_AVG_PRICE : null);
+                    $pos->fecha_anterior = $v->PREV_DATE ?? null;
+                    $pos->cambio_diario = (float)($aup->variacion_precio ?? $v->DAILY_CHANGE ?? 0);
+                    $pos->variacion_diaria_pct = (float)($aup->variacion_porcentaje ?? $v->DAILY_VARIATION_PCT ?? 0);
+                    $pos->tendencia_diaria = $pos->cambio_diario > 0 ? 'SUBIO' : ($pos->cambio_diario < 0 ? 'BAJO' : 'IGUAL');
+                    $pos->fecha_ultimo_precio = $maxDateAup;
+                } else {
+                    $precioUlt = (float)($v->AVG_PRICE ?? $v->MAX_PRICE ?? $pos->precio_ultimo);
+                    if ($precioUlt > 0) {
+                        $pos->precio_ultimo = $precioUlt;
+                        $pos->valor_mercado = (float)$pos->cantidad_actual * $precioUlt;
+                        $pos->utilidad_perdida_no_realizada = $pos->valor_mercado - $capitalInvertido;
+                    }
+
+                    $pos->precio_anterior = ($v->PREV_AVG_PRICE !== null && $v->PREV_AVG_PRICE > 0) ? (float)$v->PREV_AVG_PRICE : null;
+                    $pos->fecha_anterior = $v->PREV_DATE ?? null;
+                    $pos->cambio_diario = (float)($v->DAILY_CHANGE ?? 0);
+                    $pos->variacion_diaria_pct = (float)($v->DAILY_VARIATION_PCT ?? 0);
+                    $pos->tendencia_diaria = $pos->cambio_diario > 0 ? 'SUBIO' : ($pos->cambio_diario < 0 ? 'BAJO' : 'IGUAL');
+                    if (!empty($v->MAX_DATE)) {
+                        $pos->fecha_ultimo_precio = $v->MAX_DATE;
+                    }
                 }
+            } elseif ($aup) {
+                $pos->precio_anterior = ($aup->precio_anterior !== null && (float)$aup->precio_anterior > 0) ? (float)$aup->precio_anterior : null;
+                $pos->fecha_anterior = null;
+                $pos->cambio_diario = (float)($aup->variacion_precio ?? 0);
+                $pos->variacion_diaria_pct = (float)($aup->variacion_porcentaje ?? 0);
+                $pos->tendencia_diaria = $pos->cambio_diario > 0 ? 'SUBIO' : ($pos->cambio_diario < 0 ? 'BAJO' : 'IGUAL');
             } else {
                 $pos->precio_anterior = null;
                 $pos->fecha_anterior = null;

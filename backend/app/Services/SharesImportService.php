@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
@@ -254,50 +255,63 @@ PYTHON;
 
     /**
      * Reconstruye y actualiza la tabla de cierres recientes 'shares_lastdate' en mysql_inversion
+     * y refresca 'accion_ultimo_precio' y el snapshot de cartera en sipro_desa
      */
     public function rebuildSharesLastdate(): void
     {
         try {
-            DB::connection('mysql_inversion')->statement("
-                REPLACE INTO shares_lastdate (
-                    SHA_ISSUER_ID, SHA_ISSUER, MAX_DATE, AVG_PRICE, MAX_PRICE, MIN_PRICE,
-                    PREV_DATE, PREV_AVG_PRICE, DAILY_CHANGE, DAILY_VARIATION_PCT
-                )
-                SELECT 
-                    s1.SHA_ISSUER_ID,
-                    s1.SHA_ISSUER,
-                    s1.MAX_DATE,
-                    s1.AVG_PRICE,
-                    s1.MAX_PRICE,
-                    s1.MIN_PRICE,
-                    s2.PREV_DATE,
-                    s2.PREV_AVG_PRICE,
-                    (s1.AVG_PRICE - IFNULL(s2.PREV_AVG_PRICE, s1.AVG_PRICE)) AS DAILY_CHANGE,
-                    IF(IFNULL(s2.PREV_AVG_PRICE, 0) > 0, ((s1.AVG_PRICE - s2.PREV_AVG_PRICE) / s2.PREV_AVG_PRICE) * 100, 0) AS DAILY_VARIATION_PCT
-                FROM (
-                    SELECT 
-                        SHA_ISSUER_ID,
-                        SHA_ISSUER,
-                        MAX(SHA_DATE) as MAX_DATE,
-                        ROUND(AVG(SHA_PRICE), 4) as AVG_PRICE,
-                        MAX(SHA_PRICE) as MAX_PRICE,
-                        MIN(SHA_PRICE) as MIN_PRICE
-                    FROM shares
-                    WHERE SHA_DATE = (SELECT MAX(SHA_DATE) FROM shares)
-                    GROUP BY SHA_ISSUER_ID, SHA_ISSUER
-                ) s1
-                LEFT JOIN (
-                    SELECT 
-                        SHA_ISSUER_ID,
-                        MAX(SHA_DATE) as PREV_DATE,
-                        ROUND(AVG(SHA_PRICE), 4) as PREV_AVG_PRICE
-                    FROM shares
-                    WHERE SHA_DATE < (SELECT MAX(SHA_DATE) FROM shares)
-                    GROUP BY SHA_ISSUER_ID
-                ) s2 ON s1.SHA_ISSUER_ID = s2.SHA_ISSUER_ID
-            ");
+            DB::connection('mysql_inversion')->statement('CALL SP_ACTUALIZAR_SHARES_LAST_DATE()');
         } catch (\Exception $e) {
-            Log::warning('No se pudo reconstruir shares_lastdate: ' . $e->getMessage());
+            Log::warning('Error al ejecutar SP_ACTUALIZAR_SHARES_LAST_DATE, aplicando fallback: ' . $e->getMessage());
+            try {
+                DB::connection('mysql_inversion')->statement("
+                    REPLACE INTO shares_lastdate (
+                        SHA_ISSUER_ID, SHA_ISSUER, MAX_DATE, AVG_PRICE, MAX_PRICE, MIN_PRICE,
+                        PREV_DATE, PREV_AVG_PRICE, DAILY_CHANGE, DAILY_VARIATION_PCT
+                    )
+                    SELECT 
+                        s1.SHA_ISSUER_ID,
+                        s1.SHA_ISSUER,
+                        s1.MAX_DATE,
+                        s1.AVG_PRICE,
+                        s1.MAX_PRICE,
+                        s1.MIN_PRICE,
+                        s2.PREV_DATE,
+                        s2.PREV_AVG_PRICE,
+                        (s1.AVG_PRICE - IFNULL(s2.PREV_AVG_PRICE, s1.AVG_PRICE)) AS DAILY_CHANGE,
+                        IF(IFNULL(s2.PREV_AVG_PRICE, 0) > 0, ((s1.AVG_PRICE - s2.PREV_AVG_PRICE) / s2.PREV_AVG_PRICE) * 100, 0) AS DAILY_VARIATION_PCT
+                    FROM (
+                        SELECT 
+                            SHA_ISSUER_ID,
+                            SHA_ISSUER,
+                            MAX(SHA_DATE) as MAX_DATE,
+                            ROUND(AVG(SHA_PRICE), 4) as AVG_PRICE,
+                            MAX(SHA_PRICE) as MAX_PRICE,
+                            MIN(SHA_PRICE) as MIN_PRICE
+                        FROM shares
+                        WHERE SHA_DATE = (SELECT MAX(SHA_DATE) FROM shares)
+                        GROUP BY SHA_ISSUER_ID, SHA_ISSUER
+                    ) s1
+                    LEFT JOIN (
+                        SELECT 
+                            SHA_ISSUER_ID,
+                            MAX(SHA_DATE) as PREV_DATE,
+                            ROUND(AVG(SHA_PRICE), 4) as PREV_AVG_PRICE
+                        FROM shares
+                        WHERE SHA_DATE < (SELECT MAX(SHA_DATE) FROM shares)
+                        GROUP BY SHA_ISSUER_ID
+                    ) s2 ON s1.SHA_ISSUER_ID = s2.SHA_ISSUER_ID
+                ");
+            } catch (\Exception $e2) {
+                Log::warning('No se pudo reconstruir shares_lastdate: ' . $e2->getMessage());
+            }
+        }
+
+        try {
+            DB::connection('mysql')->statement('CALL SP_ACCION_ULTIMO_PRECIO_REFRESH()');
+            Cache::flush();
+        } catch (\Exception $e) {
+            Log::warning('No se pudo refrescar accion_ultimo_precio: ' . $e->getMessage());
         }
     }
 }
