@@ -115,14 +115,17 @@ export class ImportarPdfComponent implements OnInit {
           this.actualizarEstadoSelectAll();
 
           const r = res.data.resumen;
-          let detalleTipos = '';
-          if (r.notas_credito && r.papeles_comerciales) {
-            detalleTipos = ` (${r.notas_credito} Notas de Crédito, ${r.papeles_comerciales} Papeles Comerciales)`;
-          } else if (r.papeles_comerciales) {
-            detalleTipos = ` (${r.papeles_comerciales} Papeles Comerciales)`;
-          } else if (r.notas_credito) {
-            detalleTipos = ` (${r.notas_credito} Notas de Crédito)`;
+          const partesTipos: string[] = [];
+          if (r.bonos) {
+            partesTipos.push(`${r.bonos} Bonos`);
           }
+          if (r.papeles_comerciales) {
+            partesTipos.push(`${r.papeles_comerciales} Papeles Comerciales`);
+          }
+          if (r.notas_credito) {
+            partesTipos.push(`${r.notas_credito} Notas de Crédito`);
+          }
+          const detalleTipos = partesTipos.length > 0 ? ` (${partesTipos.join(', ')})` : '';
 
           this.messageService.add({
             severity: 'success',
@@ -200,6 +203,10 @@ export class ImportarPdfComponent implements OnInit {
 
   get totalPapelesComerciales(): number {
     return this.items.filter((i) => i.tipo_titulo === 'PAPEL_COMERCIAL').length;
+  }
+
+  get totalBonos(): number {
+    return this.items.filter((i) => i.tipo_titulo === 'BONO').length;
   }
 
   confirmarImportacion(): void {

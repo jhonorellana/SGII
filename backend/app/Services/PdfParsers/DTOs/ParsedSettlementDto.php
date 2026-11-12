@@ -26,6 +26,13 @@ class ParsedSettlementDto
         public ?string $fechaVencimiento = null, // YYYY-MM-DD
         public ?float $tasaInteres = null,
         public ?int $plazoDias = null,
+        public ?string $codigoVector = null,
+        public ?string $codigoSeb = null,
+        public ?float $rendimientoNominal = null,
+        public ?float $rendimientoEfectivo = null,
+        public ?float $interesDevengado = null,
+        public ?float $valorConInteres = null,
+        public ?string $fechaPrimerPago = null, // YYYY-MM-DD
         public bool $success = true,
         public ?string $errorMessage = null,
         public array $rawMetadata = []
@@ -55,6 +62,13 @@ class ParsedSettlementDto
             'fecha_vencimiento' => $this->fechaVencimiento,
             'tasa_interes' => $this->tasaInteres,
             'plazo_dias' => $this->plazoDias,
+            'codigo_vector' => $this->codigoVector,
+            'codigo_seb' => $this->codigoSeb,
+            'rendimiento_nominal' => $this->rendimientoNominal,
+            'rendimiento_efectivo' => $this->rendimientoEfectivo,
+            'interes_devengado' => $this->interesDevengado,
+            'valor_con_interes' => $this->valorConInteres,
+            'fecha_primer_pago' => $this->fechaPrimerPago,
             'success' => $this->success,
             'error_message' => $this->errorMessage,
             'raw_metadata' => $this->rawMetadata,

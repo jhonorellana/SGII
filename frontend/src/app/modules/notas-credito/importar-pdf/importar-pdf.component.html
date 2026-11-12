@@ -13,7 +13,7 @@
           <h4 class="mb-1 text-dark fw-bold">Carga Automática de Liquidaciones PDF</h4>
           <p class="text-muted mb-0">
             Importa expedientes bursátiles firmados de <strong>Santa Fe Casa de Valores</strong> (Bolsa de Quito o Guayaquil).
-            Reconocimiento automático de <strong>Notas de Crédito</strong> y <strong>Papeles Comerciales (Cero Cupón)</strong>.
+            Reconocimiento automático de <strong>Bonos del Estado</strong>, <strong>Papeles Comerciales (Cero Cupón)</strong> y <strong>Notas de Crédito</strong>.
           </p>
         </div>
       </div>
@@ -51,7 +51,7 @@
         <i class="bi bi-cloud-arrow-up text-primary upload-icon mb-3"></i>
         <h5 class="fw-semibold text-dark mb-1">Arrastra tus liquidaciones PDF aquí</h5>
         <p class="text-muted mb-3">
-          Puedes arrastrar múltiples documentos PDF a la vez. El sistema detectará automáticamente si son Notas de Crédito o Papeles Comerciales.
+          Puedes arrastrar múltiples documentos PDF a la vez. El sistema detectará automáticamente si son Bonos del Estado, Papeles Comerciales o Notas de Crédito.
         </p>
 
         <label class="btn btn-primary px-4 py-2 cursor-pointer shadow-sm">
@@ -81,8 +81,9 @@
             <span class="text-muted small text-uppercase fw-bold">Archivos Procesados</span>
             <h4 class="mb-0 fw-bold text-dark mt-1">{{ items.length }}</h4>
             <div class="small text-muted mt-1">
-              <span *ngIf="totalNotasCredito > 0" class="badge bg-success-subtle text-success me-1">{{ totalNotasCredito }} NC</span>
-              <span *ngIf="totalPapelesComerciales > 0" class="badge bg-primary-subtle text-primary">{{ totalPapelesComerciales }} Papel Com.</span>
+              <span *ngIf="totalBonos > 0" class="badge bg-info-subtle text-info me-1">{{ totalBonos }} Bono(s)</span>
+              <span *ngIf="totalPapelesComerciales > 0" class="badge bg-primary-subtle text-primary me-1">{{ totalPapelesComerciales }} Papel Com.</span>
+              <span *ngIf="totalNotasCredito > 0" class="badge bg-success-subtle text-success">{{ totalNotasCredito }} NC</span>
             </div>
           </div>
           <div class="stat-icon bg-light text-primary">
@@ -211,16 +212,30 @@
                 <div>
                   <span 
                     class="badge mb-1" 
-                    [ngClass]="item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bg-primary text-white' : 'bg-success text-white'">
-                    <i class="bi" [ngClass]="item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bi-building me-1' : 'bi-receipt me-1'"></i>
-                    {{ item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Papel Comercial' : 'Nota de Crédito' }}
+                    [ngClass]="item.tipo_titulo === 'BONO' ? 'bg-info text-dark' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bg-primary text-white' : 'bg-success text-white')">
+                    <i class="bi" [ngClass]="item.tipo_titulo === 'BONO' ? 'bi-bank me-1' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bi-building me-1' : 'bi-receipt me-1')"></i>
+                    {{ item.tipo_titulo === 'BONO' ? 'Bono del Estado' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Papel Comercial' : 'Nota de Crédito') }}
                   </span>
                 </div>
-                <div class="fw-semibold text-dark text-truncate" style="max-width: 180px;" [title]="item.emisor_detectado || 'N/A'">
-                  {{ item.emisor_detectado || (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Empresa Privada' : 'SRI') }}
+                <div class="fw-semibold text-dark text-truncate" style="max-width: 190px;" [title]="item.instrumento_detectado || item.emisor_detectado || 'N/A'">
+                  {{ item.instrumento_detectado || item.emisor_detectado || (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Empresa Privada' : 'SRI') }}
+                </div>
+                <div *ngIf="item.tipo_titulo === 'BONO'" class="small mt-1">
+                  <span *ngIf="item.id_instrumento" class="badge bg-success-subtle text-success border border-success me-1" [title]="'Instrumento ID #' + item.id_instrumento">
+                    Inst. #{{ item.id_instrumento }} ({{ item.instrumento_match_metodo === 'VECTOR' ? 'Vector' : 'Fechas+Tasa' }})
+                  </span>
+                  <span *ngIf="!item.id_instrumento" class="badge bg-warning-subtle text-warning border border-warning me-1">
+                    Se creará Instrumento
+                  </span>
+                </div>
+                <div *ngIf="item.codigo_vector" class="text-muted small font-monospace" [title]="'Vector: ' + item.codigo_vector">
+                  Vec: {{ item.codigo_vector }}
                 </div>
                 <div *ngIf="item.tasa_interes" class="text-muted small">
                   Tasa: <span class="fw-bold text-dark">{{ item.tasa_interes | number:'1.2-2' }}%</span>
+                  <span *ngIf="item.rendimiento_nominal && item.rendimiento_nominal !== item.tasa_interes" class="ms-1">
+                    (Rdto: {{ item.rendimiento_nominal | number:'1.2-2' }}%)
+                  </span>
                 </div>
               </td>
 
@@ -281,8 +296,14 @@
               </td>
 
               <!-- Capital Invertido -->
-              <td class="text-end font-monospace fw-bold text-success">
-                {{ item.capital_invertido | currency:'USD':'symbol':'1.2-2' }}
+              <td class="text-end font-monospace">
+                <div class="fw-bold text-success">
+                  {{ item.capital_invertido | currency:'USD':'symbol':'1.2-2' }}
+                </div>
+                <div *ngIf="item.interes_devengado && item.interes_devengado > 0" class="text-muted small" title="Interés Acumulado Previo (B) + Capital Invertido = Total Liquidación debitado en Movimientos de Capital">
+                  <div>+Int: {{ item.interes_devengado | currency:'USD':'symbol':'1.2-2' }}</div>
+                  <div class="fw-semibold text-dark">Liq: {{ item.valor_con_interes | currency:'USD':'symbol':'1.2-2' }}</div>
+                </div>
               </td>
 
               <!-- Precio Neto -->
@@ -305,7 +326,7 @@
                 </div>
                 <div *ngIf="!item.genera_amortizacion">
                   <span class="badge bg-light text-muted border">
-                    Sin amortización
+                    {{ item.tipo_titulo === 'BONO' ? 'Omitida por ahora' : 'Sin amortización' }}
                   </span>
                 </div>
               </td>
