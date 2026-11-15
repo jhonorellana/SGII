@@ -17,12 +17,14 @@ class PdfParserManager
     public function __construct(
         NotaCreditoPdfParserService $notaCreditoParser,
         PapelComercialPdfParserService $papelComercialParser,
-        BonoPdfParserService $bonoParser
+        BonoPdfParserService $bonoParser,
+        ObligacionPdfParserService $obligacionParser
     ) {
-        // Registrar parsers disponibles (Notas de Crédito, Papel Comercial, Bonos del Estado)
+        // Registrar parsers disponibles (Notas de Crédito, Papel Comercial, Bonos del Estado, Obligaciones Corporativas)
         $this->parsers[] = $notaCreditoParser;
         $this->parsers[] = $papelComercialParser;
         $this->parsers[] = $bonoParser;
+        $this->parsers[] = $obligacionParser;
     }
 
     /**

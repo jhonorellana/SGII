@@ -52,7 +52,7 @@ export interface PreviewItem {
   id_temporal: string;
   filename: string;
   bolsa: 'BVQ' | 'BVG' | 'DESCONOCIDA' | string;
-  tipo_titulo: 'NOTA_CREDITO' | 'PAPEL_COMERCIAL' | 'BONO' | string;
+  tipo_titulo: 'NOTA_CREDITO' | 'PAPEL_COMERCIAL' | 'BONO' | 'OBLIGACION' | string;
   liquidacion: string;
   fecha_compra: string;
   comitente_nombre: string;
@@ -75,6 +75,7 @@ export interface PreviewItem {
   rendimiento_nominal?: number | null;
   rendimiento_efectivo?: number | null;
   plazo_dias?: number | null;
+  frecuencia_pago?: number | null;
   valor_nominal: number;
   precio_compra: number;
   valor_efectivo: number;
@@ -109,6 +110,7 @@ export interface PreviewResponse {
       notas_credito?: number;
       papeles_comerciales?: number;
       bonos?: number;
+      obligaciones?: number;
     };
     items: PreviewItem[];
     personas_disponibles: PersonaOption[];
