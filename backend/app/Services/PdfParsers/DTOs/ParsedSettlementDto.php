@@ -33,6 +33,7 @@ class ParsedSettlementDto
         public ?float $interesDevengado = null,
         public ?float $valorConInteres = null,
         public ?string $fechaPrimerPago = null, // YYYY-MM-DD
+        public ?string $fechasRecuperacion = null, // CSV ej. '2029-11-07, 2030-05-07'
         public bool $success = true,
         public ?string $errorMessage = null,
         public array $rawMetadata = []
@@ -69,6 +70,7 @@ class ParsedSettlementDto
             'interes_devengado' => $this->interesDevengado,
             'valor_con_interes' => $this->valorConInteres,
             'fecha_primer_pago' => $this->fechaPrimerPago,
+            'fechas_recuperacion' => $this->fechasRecuperacion,
             'success' => $this->success,
             'error_message' => $this->errorMessage,
             'raw_metadata' => $this->rawMetadata,

@@ -24,6 +24,30 @@ export interface CuotaAmortizacionEstimada {
   total: number;
 }
 
+export interface CuotaAmortizacionPreview {
+  numero_cuota: number;
+  fecha_pago: string;
+  capital_restante: number;
+  capital_retorno: number;
+  capital_devuelto: number;
+  interes_parcial: number;
+  premio: number;
+  interes_total: number;
+  flujo: number;
+  tiene_interes_acumulado_previo?: boolean;
+  interes_acumulado_previo_aplicado?: number;
+}
+
+export interface TablaAmortizacionPreview {
+  cuotas: CuotaAmortizacionPreview[];
+  fechas_capital: string[];
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  total_intereses: number;
+  total_capital: number;
+  total_descuento: number;
+}
+
 export interface PreviewItem {
   id_temporal: string;
   filename: string;
@@ -46,6 +70,7 @@ export interface PreviewItem {
   fecha_emision?: string | null;
   fecha_vencimiento?: string | null;
   fecha_primer_pago?: string | null;
+  fechas_recuperacion?: string | null;
   tasa_interes?: number | null;
   rendimiento_nominal?: number | null;
   rendimiento_efectivo?: number | null;
@@ -62,7 +87,9 @@ export interface PreviewItem {
   factura_bolsa: string | null;
   operador_valores: string | null;
   genera_amortizacion?: boolean;
+  incluir_amortizacion?: boolean;
   cuota_amortizacion_estimada?: CuotaAmortizacionEstimada | null;
+  tabla_amortizacion_preview?: TablaAmortizacionPreview | null;
   estado: 'VALIDO' | 'DUPLICADO' | 'ERROR';
   inversion_existente_id?: number | null;
   mensaje_estado: string;

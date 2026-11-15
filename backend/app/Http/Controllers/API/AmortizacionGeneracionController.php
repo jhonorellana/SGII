@@ -150,7 +150,7 @@ class AmortizacionGeneracionController extends Controller
     /**
      * Generar y guardar tabla de amortización
      */
-    private function generarTablaAmortizacion($inversion, $params)
+    public function generarTablaAmortizacion($inversion, $params)
     {
         $tabla = $this->calcularTablaAmortizacion($inversion, $params);
         $tipoAmortizacion = $params['tipo_amortizacion'];
@@ -263,7 +263,7 @@ class AmortizacionGeneracionController extends Controller
     /**
      * Calcular tabla de amortización (lógica principal)
      */
-    private function calcularTablaAmortizacion($inversion, $params)
+    public function calcularTablaAmortizacion($inversion, $params)
     {
         $frecuenciaPago = $params['frecuencia_pago'];
         $cuotasDiferir = $params['cuotas_diferir'];

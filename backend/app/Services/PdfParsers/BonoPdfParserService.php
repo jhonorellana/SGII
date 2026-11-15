@@ -39,9 +39,9 @@ class BonoPdfParserService implements PdfSettlementParserInterface
             $settlementPage = $this->encontrarPaginaLiquidacion($pagesText, $bolsa, $fullText);
 
             if ($bolsa === 'BVQ') {
-                return $this->parseBvq($filename, $fullText, $p1, $settlementPage);
+                return $this->parseBvq($filename, $fullText, $p1, $settlementPage, $pagesText);
             } else {
-                return $this->parseBvg($filename, $fullText, $p1, $settlementPage);
+                return $this->parseBvg($filename, $fullText, $p1, $settlementPage, $pagesText);
             }
         } catch (\Throwable $e) {
             return new ParsedSettlementDto(
@@ -110,7 +110,7 @@ class BonoPdfParserService implements PdfSettlementParserInterface
     /**
      * Parsea liquidaciones de Bonos en la Bolsa de Valores de Guayaquil (BVG)
      */
-    private function parseBvg(string $filename, string $fullText, string $p1, string $liqPage): ParsedSettlementDto
+    private function parseBvg(string $filename, string $fullText, string $p1, string $liqPage, array $pagesText = []): ParsedSettlementDto
     {
         // 1. Liquidación (Operación No: 376732)
         $liquidacion = null;
@@ -255,6 +255,15 @@ class BonoPdfParserService implements PdfSettlementParserInterface
             $operadorValores = trim($m[1]);
         }
 
+        // 17. Fechas de Recuperación de Capital
+        $fechasRecuperacion = $this->extraerFechasRecuperacion(
+            $fullText,
+            $pagesText,
+            'BVG',
+            $fechaEmision,
+            $fechaVencimiento
+        );
+
         return new ParsedSettlementDto(
             filename: $filename,
             bolsa: 'BVG',
@@ -284,6 +293,7 @@ class BonoPdfParserService implements PdfSettlementParserInterface
             interesDevengado: $interesDevengado,
             valorConInteres: $valorConInteres,
             fechaPrimerPago: $fechaPrimerPago,
+            fechasRecuperacion: $fechasRecuperacion,
             success: true
         );
     }
@@ -291,7 +301,7 @@ class BonoPdfParserService implements PdfSettlementParserInterface
     /**
      * Parsea liquidaciones de Bonos en la Bolsa de Valores de Quito (BVQ)
      */
-    private function parseBvq(string $filename, string $fullText, string $p1, string $liqPage): ParsedSettlementDto
+    private function parseBvq(string $filename, string $fullText, string $p1, string $liqPage, array $pagesText = []): ParsedSettlementDto
     {
         // 1. Liquidación (ej. Compra N0. 28911 - VRF32)
         $liquidacion = null;
@@ -439,6 +449,15 @@ class BonoPdfParserService implements PdfSettlementParserInterface
             $operadorValores = trim(preg_replace('/\s+/', ' ', $m[1]));
         }
 
+        // 17. Fechas de Recuperación de Capital
+        $fechasRecuperacion = $this->extraerFechasRecuperacion(
+            $fullText,
+            $pagesText,
+            'BVQ',
+            $fechaEmision,
+            $fechaVencimiento
+        );
+
         return new ParsedSettlementDto(
             filename: $filename,
             bolsa: 'BVQ',
@@ -468,8 +487,129 @@ class BonoPdfParserService implements PdfSettlementParserInterface
             interesDevengado: $interesDevengado,
             valorConInteres: $valorConInteres,
             fechaPrimerPago: $fechaPrimerPago,
+            fechasRecuperacion: $fechasRecuperacion,
             success: true
         );
+    }
+
+    /**
+     * Extrae las fechas de recuperación de capital desde el PDF del Bono en 3 niveles:
+     * 1. Desde la tabla de amortización (Páginas 9-10) si existe en el PDF (BVG o BVQ).
+     * 2. Desde las reglas de periodicidad de pago de capital y período de gracia de Página 5 / Página 6 (Santa Fe).
+     * 3. Fallback a la fecha de vencimiento del título.
+     */
+    private function extraerFechasRecuperacion(
+        string $fullText,
+        array $pagesText,
+        string $bolsa,
+        ?string $fechaEmision,
+        ?string $fechaVencimiento
+    ): ?string {
+        $fechasDetectadas = [];
+
+        // NIVEL 1A: Tabla de amortización BVG (ej: "42 07-11-2029 150.89 13,275.00 13,275.00 13,425.89")
+        if ($bolsa === 'BVG') {
+            if (preg_match_all('/\b(\d{1,3})\s+(\d{2})-(\d{2})-(\d{4})\s+([0-9.,]+)\s+([0-9.,]+)\s+([0-9.,]+)\s+([0-9.,]+)/', $fullText, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $m) {
+                    $amortMonto = $this->normalizarNumero($m[6]);
+                    if ($amortMonto > 0.001) {
+                        $fechaIso = "{$m[4]}-{$m[3]}-{$m[2]}";
+                        if (!in_array($fechaIso, $fechasDetectadas, true)) {
+                            $fechasDetectadas[] = $fechaIso;
+                        }
+                    }
+                }
+            }
+        }
+
+        // NIVEL 1B: Tabla de amortización BVQ (ej: "361.200,0028-09-2028 600,006,82 606,8228-10-2028 440,65")
+        if ($bolsa === 'BVQ' || empty($fechasDetectadas)) {
+            if (preg_match_all('/(\d{2})-(\d{2})-(\d{4})\s+([0-9.,]+)\s+([0-9.,]+)\s*(\d{2})-(\d{2})-(\d{4})/', $fullText, $matches, PREG_SET_ORDER)) {
+                foreach ($matches as $m) {
+                    // En BVQ la columna 4 viene pegada "AmortizaciónInteres" (ej. "0,006,82" vs "600,006,82")
+                    $colAmortInteres = trim($m[4]);
+                    // Si NO empieza con "0,00" ni "0.00", entonces tiene amortización de capital > 0
+                    if (!preg_match('/^0[.,]00/', $colAmortInteres)) {
+                        $fechaVctoCuota = "{$m[8]}-{$m[7]}-{$m[6]}";
+                        if (!in_array($fechaVctoCuota, $fechasDetectadas, true)) {
+                            $fechasDetectadas[] = $fechaVctoCuota;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!empty($fechasDetectadas)) {
+            sort($fechasDetectadas);
+            return implode(', ', $fechasDetectadas);
+        }
+
+        // NIVEL 2: Calcular desde Página 5 ("Formulario de Explicaciones - Renta Fija") y/o Página 6 ("Resumen Específico")
+        if (!empty($fechaEmision) && !empty($fechaVencimiento)) {
+            try {
+                $dtEmision = \Carbon\Carbon::parse($fechaEmision);
+                $dtVcto = \Carbon\Carbon::parse($fechaVencimiento);
+
+                // Buscar texto de Página 5 (o el texto completo) donde aparece MENSUAL + SEMESTRAL / ANUAL / TRIMESTRAL
+                $p5Text = $pagesText[4] ?? $fullText;
+                $freqMesesCapital = null;
+                $aniosGracia = null;
+
+                if (preg_match('/MENSUAL\s+(SEMESTRAL|ANUAL|TRIMESTRAL|AL\s+VENCIMIENTO)(?:\s+([0-9]+)\s*A.+?OS)?/iu', $p5Text, $m)) {
+                    $freqStr = mb_strtoupper(trim($m[1]));
+                    if ($freqStr === 'SEMESTRAL') {
+                        $freqMesesCapital = 6;
+                    } elseif ($freqStr === 'ANUAL') {
+                        $freqMesesCapital = 12;
+                    } elseif ($freqStr === 'TRIMESTRAL') {
+                        $freqMesesCapital = 3;
+                    } elseif (str_contains($freqStr, 'VENCIMIENTO')) {
+                        return $fechaVencimiento;
+                    }
+
+                    if (!empty($m[2])) {
+                        $aniosGracia = (int) $m[2];
+                    }
+                }
+
+                // Si no venía explícito "X AÑOS" en esa línea, verificar en Página 6 cuántos pagos de capital tiene el resumen
+                $numPagosCapital = null;
+                $p6Text = $pagesText[5] ?? '';
+                if (preg_match('/RESUMEN\s+PAGOS.*?[\r\n]+.*?[\r\n]+.*?[\r\n]+([0-9.,]+)\s+([0-9]{1,2})\s+([0-9.,]+)/is', $p6Text, $m6)) {
+                    $numPagosCapital = (int) $m6[2];
+                }
+
+                if ($freqMesesCapital !== null) {
+                    if ($aniosGracia !== null && $aniosGracia > 0) {
+                        // Generar desde (fechaEmision + aniosGracia) sumando freqMesesCapital hasta fechaVencimiento
+                        $cursor = $dtEmision->copy()->addYears($aniosGracia)->addMonths($freqMesesCapital);
+                        while ($cursor <= $dtVcto) {
+                            $fechasDetectadas[] = $cursor->format('Y-m-d');
+                            $cursor->addMonths($freqMesesCapital);
+                        }
+                    } elseif ($numPagosCapital !== null && $numPagosCapital > 0) {
+                        for ($i = $numPagosCapital - 1; $i >= 0; $i--) {
+                            $f = $dtVcto->copy()->subMonths($i * $freqMesesCapital);
+                            $fechasDetectadas[] = $f->format('Y-m-d');
+                        }
+                    } else {
+                        // Por defecto en Bonos del Estado con pago semestral de capital y sin años de gracia explícitos, son los 2 últimos semestres (último año)
+                        $fechasDetectadas[] = $dtVcto->copy()->subMonths($freqMesesCapital)->format('Y-m-d');
+                        $fechasDetectadas[] = $dtVcto->format('Y-m-d');
+                    }
+
+                    if (!empty($fechasDetectadas)) {
+                        sort($fechasDetectadas);
+                        return implode(', ', array_unique($fechasDetectadas));
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Continuar al fallback
+            }
+        }
+
+        // NIVEL 3: Fallback a fecha de vencimiento
+        return $fechaVencimiento;
     }
 
     /**

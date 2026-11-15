@@ -11,6 +11,7 @@ import { ToastModule } from 'primeng/toast';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
+import { DialogModule } from 'primeng/dialog';
 import { MessageService } from 'primeng/api';
 import { PdfImportService, PreviewItem, PersonaOption, EmisorOption } from '../../../core/pdf-import.service';
 
@@ -28,7 +29,8 @@ import { PdfImportService, PreviewItem, PersonaOption, EmisorOption } from '../.
     ToastModule,
     ProgressBarModule,
     CheckboxModule,
-    TooltipModule
+    TooltipModule,
+    DialogModule
   ],
   providers: [MessageService],
   templateUrl: './importar-pdf.component.html',
@@ -45,6 +47,8 @@ export class ImportarPdfComponent implements OnInit {
   emisoresDisponibles: EmisorOption[] = [];
 
   selectAll = true;
+  amortizacionModalVisible = false;
+  selectedItemForAmortizacion: PreviewItem | null = null;
 
   constructor(
     private pdfImportService: PdfImportService,
@@ -207,6 +211,40 @@ export class ImportarPdfComponent implements OnInit {
 
   get totalBonos(): number {
     return this.items.filter((i) => i.tipo_titulo === 'BONO').length;
+  }
+
+  abrirModalAmortizacion(item: PreviewItem): void {
+    this.selectedItemForAmortizacion = item;
+    this.amortizacionModalVisible = true;
+  }
+
+  aceptarAmortizacionModal(): void {
+    if (this.selectedItemForAmortizacion) {
+      this.selectedItemForAmortizacion.incluir_amortizacion = true;
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Tabla de Amortización Aceptada',
+        detail: `Se crearán ${this.selectedItemForAmortizacion.tabla_amortizacion_preview?.cuotas?.length || 0} cuotas al confirmar la importación de la liquidación ${this.selectedItemForAmortizacion.liquidacion}.`
+      });
+    }
+    this.amortizacionModalVisible = false;
+  }
+
+  omitirAmortizacionModal(): void {
+    if (this.selectedItemForAmortizacion) {
+      this.selectedItemForAmortizacion.incluir_amortizacion = false;
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Tabla de Amortización Omitida',
+        detail: `No se creará la tabla de amortización para la liquidación ${this.selectedItemForAmortizacion.liquidacion}. Podrás generarla manualmente luego en el módulo de Amortización.`
+      });
+    }
+    this.amortizacionModalVisible = false;
+  }
+
+  get totalFlujoModal(): number {
+    const cuotas = this.selectedItemForAmortizacion?.tabla_amortizacion_preview?.cuotas || [];
+    return cuotas.reduce((acc, c) => acc + (c.flujo || 0), 0);
   }
 
   confirmarImportacion(): void {

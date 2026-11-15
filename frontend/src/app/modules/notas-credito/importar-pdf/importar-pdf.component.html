@@ -259,6 +259,9 @@
                   <span class="text-muted small">Vcto:</span> 
                   <span class="fw-semibold text-primary">{{ item.fecha_vencimiento }}</span>
                 </div>
+                <div *ngIf="item.tipo_titulo === 'BONO' && item.fechas_recuperacion" class="small text-muted text-truncate" style="max-width: 170px;" [title]="'Fechas Recup. Capital: ' + item.fechas_recuperacion">
+                  <i class="bi bi-calendar-check me-1 text-info"></i>Recup.: {{ item.fechas_recuperacion }}
+                </div>
                 <div *ngIf="item.plazo_dias" class="text-muted small">
                   {{ item.plazo_dias }} días plazo
                 </div>
@@ -313,7 +316,8 @@
 
               <!-- Amortización -->
               <td class="text-center text-nowrap">
-                <div *ngIf="item.genera_amortizacion && item.cuota_amortizacion_estimada">
+                <!-- Caso Papel Comercial (1 cuota Cero Cupón) -->
+                <div *ngIf="item.tipo_titulo === 'PAPEL_COMERCIAL' && item.genera_amortizacion && item.cuota_amortizacion_estimada">
                   <span 
                     class="badge bg-info-subtle text-info border border-info cursor-pointer"
                     [pTooltip]="'Al vencimiento (' + item.cuota_amortizacion_estimada.fecha_pago + '): Capital $' + item.cuota_amortizacion_estimada.capital + ' + Interés $' + item.cuota_amortizacion_estimada.interes + ' = Total $' + item.cuota_amortizacion_estimada.total"
@@ -324,9 +328,37 @@
                     Ganancia: +{{ item.cuota_amortizacion_estimada.interes | currency:'USD':'symbol':'1.2-2' }}
                   </div>
                 </div>
-                <div *ngIf="!item.genera_amortizacion">
+
+                <!-- Caso Bono del Estado (Previsualización de Tabla + Aceptar / Omitir) -->
+                <div *ngIf="item.tipo_titulo === 'BONO' && item.tabla_amortizacion_preview" class="d-flex flex-column align-items-center gap-1">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary py-0 px-2"
+                    [pTooltip]="'Previsualizar y validar las ' + item.tabla_amortizacion_preview.cuotas.length + ' cuotas vigentes calculadas'"
+                    tooltipPosition="top"
+                    (click)="abrirModalAmortizacion(item)">
+                    <i class="bi bi-table me-1"></i>Ver Tabla ({{ item.tabla_amortizacion_preview.cuotas.length }})
+                  </button>
+                  <div class="d-flex align-items-center gap-1 mt-1">
+                    <input
+                      type="checkbox"
+                      class="form-check-input mt-0 cursor-pointer"
+                      [(ngModel)]="item.incluir_amortizacion"
+                      [id]="'chk_amort_' + item.id_temporal"
+                      title="Marcar para crear la tabla de amortización al importar; desmarcar para omitirla y generarla manualmente después">
+                    <label
+                      class="small cursor-pointer mb-0"
+                      [for]="'chk_amort_' + item.id_temporal"
+                      [ngClass]="item.incluir_amortizacion ? 'text-success fw-semibold' : 'text-warning fw-semibold'">
+                      {{ item.incluir_amortizacion ? 'Aceptada' : 'Omitida (Manual)' }}
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Caso Sin Amortización (Notas de Crédito o error) -->
+                <div *ngIf="!item.genera_amortizacion || (item.tipo_titulo === 'BONO' && !item.tabla_amortizacion_preview)">
                   <span class="badge bg-light text-muted border">
-                    {{ item.tipo_titulo === 'BONO' ? 'Omitida por ahora' : 'Sin amortización' }}
+                    Sin amortización
                   </span>
                 </div>
               </td>
@@ -394,4 +426,148 @@
       </button>
     </div>
   </div>
+
+  <!-- Modal de Previsualización y Validación de Tabla de Amortización (Bonos del Estado) -->
+  <p-dialog
+    [(visible)]="amortizacionModalVisible"
+    [modal]="true"
+    [style]="{ width: '90vw', maxWidth: '1080px' }"
+    [draggable]="false"
+    [resizable]="false"
+    header="Previsualización de Tabla de Amortización (Bono del Estado)">
+
+    <div *ngIf="selectedItemForAmortizacion && selectedItemForAmortizacion.tabla_amortizacion_preview as preview">
+      <!-- Resumen superior del Bono -->
+      <div class="bg-light rounded p-3 mb-3 border">
+        <div class="row g-2 align-items-center">
+          <div class="col-12 col-md-4">
+            <div class="text-muted small">Instrumento / Liquidación</div>
+            <div class="fw-bold text-dark">{{ selectedItemForAmortizacion.instrumento_detectado }}</div>
+            <div class="small font-monospace text-primary">
+              Liq: {{ selectedItemForAmortizacion.liquidacion }} ({{ selectedItemForAmortizacion.bolsa }})
+              <span *ngIf="selectedItemForAmortizacion.codigo_vector"> | Vec: {{ selectedItemForAmortizacion.codigo_vector }}</span>
+            </div>
+          </div>
+          <div class="col-6 col-md-2">
+            <div class="text-muted small">Valor Nominal</div>
+            <div class="fw-bold font-monospace">{{ selectedItemForAmortizacion.valor_nominal | currency:'USD':'symbol':'1.2-2' }}</div>
+            <div class="small text-muted">Tasa: {{ selectedItemForAmortizacion.tasa_interes | number:'1.2-2' }}%</div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="text-muted small">Capital Invertido / Int. Previo</div>
+            <div class="fw-bold text-success font-monospace">{{ selectedItemForAmortizacion.capital_invertido | currency:'USD':'symbol':'1.2-2' }}</div>
+            <div class="small text-muted">Int. Acum. Previo: {{ selectedItemForAmortizacion.interes_devengado | currency:'USD':'symbol':'1.2-2' }}</div>
+          </div>
+          <div class="col-12 col-md-3">
+            <div class="text-muted small">Fechas Recuperación Capital</div>
+            <div class="fw-semibold text-info font-monospace small">{{ selectedItemForAmortizacion.fechas_recuperacion || selectedItemForAmortizacion.fecha_vencimiento }}</div>
+            <div class="small text-muted">Compra: {{ selectedItemForAmortizacion.fecha_compra }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjetas de Totales de la Tabla -->
+      <div class="row g-2 mb-3">
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 text-center bg-white">
+            <div class="text-muted small">Cuotas Vigentes</div>
+            <div class="fs-5 fw-bold text-dark">{{ preview.cuotas.length }}</div>
+            <div class="small text-muted">{{ preview.fecha_inicio }} al {{ preview.fecha_fin }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 text-center bg-white">
+            <div class="text-muted small">Total Capital + Int. Previo</div>
+            <div class="fs-5 fw-bold text-primary font-monospace">{{ preview.total_capital | currency:'USD':'symbol':'1.2-2' }}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 text-center bg-white">
+            <div class="text-muted small">Total Intereses Parciales</div>
+            <div class="fs-5 fw-bold text-success font-monospace">{{ preview.total_intereses | currency:'USD':'symbol':'1.2-2' }}</div>
+            <div *ngIf="preview.total_descuento > 0" class="small text-info">
+              +Premio/Desc.: {{ preview.total_descuento | currency:'USD':'symbol':'1.2-2' }}
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="border rounded p-2 text-center bg-white">
+            <div class="text-muted small">Flujo Total Esperado</div>
+            <div class="fs-5 fw-bold text-dark font-monospace">{{ totalFlujoModal | currency:'USD':'symbol':'1.2-2' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla detallada de Cuotas -->
+      <div class="table-responsive border rounded" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light sticky-top">
+            <tr>
+              <th class="text-center"># Cupón</th>
+              <th>Fecha Pago</th>
+              <th class="text-end">Capital Restante</th>
+              <th class="text-end">Capital Retorno</th>
+              <th class="text-end">Interés Parcial</th>
+              <th class="text-end">Premio / Desc.</th>
+              <th class="text-end">Total Cuota</th>
+              <th class="text-center">Detalle</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of preview.cuotas"
+                [class.table-info]="c.tiene_interes_acumulado_previo"
+                [class.table-success]="c.capital_retorno > 0 && !c.tiene_interes_acumulado_previo">
+              <td class="text-center fw-bold font-monospace">{{ c.numero_cuota }}</td>
+              <td class="font-monospace">{{ c.fecha_pago }}</td>
+              <td class="text-end font-monospace text-muted">{{ c.capital_restante | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-end font-monospace" [class.fw-bold]="c.capital_retorno > 0">
+                {{ c.capital_retorno | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+              <td class="text-end font-monospace">{{ c.interes_parcial | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-end font-monospace">{{ c.premio | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-end font-monospace fw-bold text-dark">{{ c.interes_total | currency:'USD':'symbol':'1.2-2' }}</td>
+              <td class="text-center">
+                <span *ngIf="c.tiene_interes_acumulado_previo" class="badge bg-info text-dark">
+                  1ra Cuota (Recup. Int. Previo ${{ c.interes_acumulado_previo_aplicado | number:'1.2-2' }})
+                </span>
+                <span *ngIf="c.capital_retorno > 0 && !c.tiene_interes_acumulado_previo" class="badge bg-success text-white">
+                  Pago Capital
+                </span>
+                <span *ngIf="c.capital_retorno === 0 && !c.tiene_interes_acumulado_previo" class="text-muted small">
+                  Cupón Interés
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="d-flex justify-content-between align-items-center w-100 flex-wrap gap-2">
+        <div class="text-muted small">
+          <i class="bi bi-shield-check me-1"></i>
+          Si detectas algún descuadre, puedes omitir la tabla y generarla manualmente en el módulo de Amortización luego de ajustar el instrumento o inversión.
+        </div>
+        <div class="d-flex gap-2">
+          <button
+            pButton
+            type="button"
+            label="Omitir Tabla (Generar manualmente luego)"
+            icon="bi bi-x-circle"
+            class="p-button-outlined p-button-warning p-button-sm"
+            (click)="omitirAmortizacionModal()">
+          </button>
+          <button
+            pButton
+            type="button"
+            label="Aceptar Tabla de Amortización"
+            icon="bi bi-check2-circle"
+            class="p-button-success p-button-sm"
+            (click)="aceptarAmortizacionModal()">
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </p-dialog>
 </div>

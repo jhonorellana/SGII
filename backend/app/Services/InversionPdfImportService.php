@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Http\Controllers\API\AmortizacionGeneracionController;
+use App\Models\Instrumento;
 use App\Models\Inversion;
 use App\Models\Persona;
 use App\Services\PdfParsers\PdfParserManager;
@@ -12,7 +14,8 @@ use Illuminate\Support\Facades\Log;
 class InversionPdfImportService
 {
     public function __construct(
-        protected PdfParserManager $parserManager
+        protected PdfParserManager $parserManager,
+        protected AmortizacionGeneracionController $amortizacionGenerador
     ) {}
 
     /**
@@ -93,8 +96,11 @@ class InversionPdfImportService
                     'precio_neto_compra' => $dto->precioNetoCompra,
                     'factura_bolsa' => $dto->facturaBolsa,
                     'operador_valores' => $dto->operadorValores,
+                    'fechas_recuperacion' => $dto->fechasRecuperacion,
                     'genera_amortizacion' => false,
+                    'incluir_amortizacion' => false,
                     'cuota_amortizacion_estimada' => null,
+                    'tabla_amortizacion_preview' => null,
                     'estado' => 'ERROR',
                     'mensaje_estado' => $dto->errorMessage ?? 'No se pudo extraer la liquidación del documento.',
                     'seleccionado' => false,
@@ -125,12 +131,17 @@ class InversionPdfImportService
             $idInstrumento = null;
             $nombreInstrumento = null;
             $instrumentoMatchMetodo = null;
+            $fechasRecuperacion = $dto->fechasRecuperacion;
             $generaAmortizacion = false;
+            $incluirAmortizacion = false;
             $cuotaEstimada = null;
+            $tablaAmortizacionPreview = null;
 
             if ($dto->tipoTitulo === 'PAPEL_COMERCIAL') {
                 $resumen['papeles_comerciales']++;
                 $generaAmortizacion = true;
+                $incluirAmortizacion = true;
+                $fechasRecuperacion = $dto->fechaVencimiento;
 
                 // Resolver Emisor
                 $emisorMatched = $this->resolverEmisor($dto->emisorNombre, $emisores);
@@ -166,7 +177,8 @@ class InversionPdfImportService
                 ];
             } elseif ($dto->tipoTitulo === 'BONO') {
                 $resumen['bonos']++;
-                $generaAmortizacion = false; // Explícitamente excluida la tabla de amortización para Bonos por ahora
+                $generaAmortizacion = true;
+                $incluirAmortizacion = true;
                 $idEmisor = 45; // MINISTERIO DE ECONOMIA Y FINANZAS
                 $nombreEmisor = 'MINISTERIO DE ECONOMIA Y FINANZAS';
 
@@ -181,9 +193,59 @@ class InversionPdfImportService
                     $idInstrumento = $instBono->id_instrumento;
                     $nombreInstrumento = $instBono->nombre;
                     $instrumentoMatchMetodo = $metodoMatch; // 'VECTOR' o 'FECHAS_TASA'
+                    if (!empty($instBono->fechas_recuperacion)) {
+                        $fechasRecuperacion = $instBono->fechas_recuperacion;
+                    }
                 } else {
                     $nombreInstrumento = ($dto->fechaEmision ? $dto->fechaEmision . ' ' : '') . 'BONOS DEL ESTADO ' . ($dto->fechaVencimiento ?? '');
                     $instrumentoMatchMetodo = 'NUEVO';
+                }
+
+                if (empty($fechasRecuperacion)) {
+                    $fechasRecuperacion = $dto->fechaVencimiento;
+                }
+
+                // Calcular en memoria la previsualización de la tabla de amortización usando el generador nativo de SIPRO
+                try {
+                    $tasaAnual = (float) ($dto->tasaInteres ?? 0);
+                    $interesDevengado = (float) ($dto->interesDevengado ?? 0);
+                    $interesMensual = round(($dto->valorNominal * ($tasaAnual / 100)) / 12, 2);
+                    $interesPrimerMes = round($interesMensual - $interesDevengado, 2);
+
+                    $instTemp = new Instrumento([
+                        'id_emisor' => 45,
+                        'id_tipo_inversion' => 4,
+                        'nombre' => $nombreInstrumento,
+                        'fecha_emision' => $dto->fechaEmision ?? $dto->fechaNegociacion,
+                        'fecha_vencimiento' => $dto->fechaVencimiento,
+                        'tasa_referencial' => $tasaAnual,
+                        'valor_interes' => ($instBono && isset($instBono->valor_interes)) ? $instBono->valor_interes : 0,
+                        'fechas_recuperacion' => $fechasRecuperacion,
+                    ]);
+
+                    $invTemp = new Inversion([
+                        'valor_nominal' => $dto->valorNominal,
+                        'capital_invertido' => $dto->totalInvertido,
+                        'tasa_interes' => $tasaAnual,
+                        'fecha_compra' => $dto->fechaNegociacion,
+                        'fecha_primer_pago' => $dto->fechaPrimerPago ?? $dto->fechaVencimiento,
+                        'interes_acumulado_previo' => $interesDevengado,
+                        'interes_mensual' => $interesMensual,
+                        'interes_primer_mes' => $interesPrimerMes,
+                    ]);
+                    $invTemp->setRelation('instrumento', $instTemp);
+
+                    $resTabla = $this->amortizacionGenerador->calcularTablaAmortizacion($invTemp, [
+                        'frecuencia_pago' => 1,
+                        'cuotas_diferir' => 0,
+                        'tipo_amortizacion' => 'A',
+                    ]);
+
+                    if (is_array($resTabla) && isset($resTabla['cuotas'])) {
+                        $tablaAmortizacionPreview = $resTabla;
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('No se pudo calcular la previsualización de la tabla de amortización para Bono PDF: ' . $e->getMessage());
                 }
             } else {
                 // NOTA DE CRÉDITO
@@ -194,6 +256,7 @@ class InversionPdfImportService
                 $nombreInstrumento = 'SRI 2034-12-31';
                 $instrumentoMatchMetodo = 'EXISTENTE';
                 $generaAmortizacion = false;
+                $incluirAmortizacion = false;
             }
 
             // Verificar duplicados en DB (soporta liquidación exacta, con espacios o sin sufijo de bolsa ej. 28911-VRF32 vs 28911 - VRF32 vs 28911)
@@ -256,8 +319,11 @@ class InversionPdfImportService
                 'precio_neto_compra' => $dto->precioNetoCompra,
                 'factura_bolsa' => $dto->facturaBolsa,
                 'operador_valores' => $dto->operadorValores,
+                'fechas_recuperacion' => $fechasRecuperacion,
                 'genera_amortizacion' => $generaAmortizacion,
+                'incluir_amortizacion' => $incluirAmortizacion,
                 'cuota_amortizacion_estimada' => $cuotaEstimada,
+                'tabla_amortizacion_preview' => $tablaAmortizacionPreview,
                 'estado' => $estado,
                 'inversion_existente_id' => $existente ? $existente->id_inversion : null,
                 'mensaje_estado' => $mensaje,
@@ -342,6 +408,8 @@ class InversionPdfImportService
                 $fechaPrimerPago = $item['fecha_primer_pago'] ?? $fechaVcto;
                 $codigoVector = !empty($item['codigo_vector']) ? ltrim(trim($item['codigo_vector']), 'aA') : null;
                 $codigoSeb = !empty($item['codigo_seb']) ? trim($item['codigo_seb']) : null;
+                $fechasRecuperacion = !empty($item['fechas_recuperacion']) ? trim($item['fechas_recuperacion']) : $fechaVcto;
+                $incluirAmortizacion = isset($item['incluir_amortizacion']) ? (bool) $item['incluir_amortizacion'] : true;
                 $filename = $item['filename'] ?? 'documento.pdf';
 
                 // Resolver o registrar Instrumento
@@ -385,13 +453,16 @@ class InversionPdfImportService
                     if ($instBono) {
                         $idInstrumento = $instBono->id_instrumento;
 
-                        // Si se encontró por Fechas+Tasa y su código vector estaba 'PorActualizar', actualizarlo con el vector del PDF
+                        // Si se encontró por Fechas+Tasa y su código vector estaba 'PorActualizar', o si fechas_recuperacion estaba vacío, actualizarlo
                         $updatesInst = [];
                         if ($codigoVector && (empty($instBono->codigo_titulo_vector) || $instBono->codigo_titulo_vector === 'PorActualizar')) {
                             $updatesInst['codigo_titulo_vector'] = 'a' . $codigoVector;
                         }
                         if ($codigoSeb && (empty($instBono->codigo_seb) || $instBono->codigo_seb === 'PorActualizar')) {
                             $updatesInst['codigo_seb'] = $codigoSeb;
+                        }
+                        if ($fechasRecuperacion && empty($instBono->fechas_recuperacion)) {
+                            $updatesInst['fechas_recuperacion'] = $fechasRecuperacion;
                         }
                         if (!empty($updatesInst)) {
                             $updatesInst['fecha_actualizacion'] = now();
@@ -408,7 +479,7 @@ class InversionPdfImportService
                             'fecha_emision' => $fechaEmi,
                             'fecha_vencimiento' => $fechaVcto,
                             'tasa_referencial' => $tasaInteres,
-                            'fechas_recuperacion' => $fechaVcto,
+                            'fechas_recuperacion' => $fechasRecuperacion ?: $fechaVcto,
                             'codigo_titulo_vector' => $codigoVector ? ('a' . $codigoVector) : 'PorActualizar',
                             'codigo_seb' => $codigoSeb ?: 'PorActualizar',
                             'activo' => 1,
@@ -472,6 +543,7 @@ class InversionPdfImportService
                     ->first();
 
                 // Si es Papel Comercial (cero cupón), generar la cuota única de amortización al vencimiento
+                $amortizacionCreada = false;
                 if ($idTipoInversion === 3 && !empty($fechaVcto)) {
                     $interesDescuento = round($valorNominal - $capitalInvertido, 2);
                     DB::table('amortizacion')->insert([
@@ -491,6 +563,16 @@ class InversionPdfImportService
                         'fecha_creacion' => now(),
                         'fecha_actualizacion' => now(),
                     ]);
+                    $amortizacionCreada = true;
+                } elseif ($idTipoInversion === 4 && $incluirAmortizacion) {
+                    // Si es Bono del Estado y el usuario aceptó la tabla de amortización previsualizada
+                    $inversion->load('instrumento');
+                    $this->amortizacionGenerador->generarTablaAmortizacion($inversion, [
+                        'frecuencia_pago' => 1,
+                        'cuotas_diferir' => 0,
+                        'tipo_amortizacion' => 'A',
+                    ]);
+                    $amortizacionCreada = true;
                 }
 
                 $guardados[] = [
@@ -500,7 +582,7 @@ class InversionPdfImportService
                     'liquidacion' => $inversion->liquidacion,
                     'valor_nominal' => $inversion->valor_nominal,
                     'capital_invertido' => $inversion->capital_invertido,
-                    'amortizacion_creada' => ($idTipoInversion === 3),
+                    'amortizacion_creada' => $amortizacionCreada,
                 ];
             }
 
