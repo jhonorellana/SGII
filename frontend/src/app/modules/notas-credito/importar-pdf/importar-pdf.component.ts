@@ -120,6 +120,9 @@ export class ImportarPdfComponent implements OnInit {
 
           const r = res.data.resumen;
           const partesTipos: string[] = [];
+          if (r.titularizaciones) {
+            partesTipos.push(`${r.titularizaciones} Titularizaciones`);
+          }
           if (r.obligaciones) {
             partesTipos.push(`${r.obligaciones} Obligaciones`);
           }
@@ -218,6 +221,10 @@ export class ImportarPdfComponent implements OnInit {
 
   get totalObligaciones(): number {
     return this.items.filter((i) => i.tipo_titulo === 'OBLIGACION').length;
+  }
+
+  get totalTitularizaciones(): number {
+    return this.items.filter((i) => i.tipo_titulo === 'TITULARIZACION').length;
   }
 
   abrirModalAmortizacion(item: PreviewItem): void {

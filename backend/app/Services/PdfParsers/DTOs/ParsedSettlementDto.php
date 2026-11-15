@@ -35,6 +35,8 @@ class ParsedSettlementDto
         public ?string $fechaPrimerPago = null, // YYYY-MM-DD
         public ?string $fechasRecuperacion = null, // CSV ej. '2029-11-07, 2030-05-07'
         public ?int $frecuenciaPago = null, // Meses: 1 = Mensual, 3 = Trimestral, 6 = Semestral, 12 = Anual, 0 = Al vencimiento
+        public ?float $montoANegociar = null, // Saldo vigente negociado cuando Saldo por amortizar < 100%
+        public ?array $cuotasPdf = null, // Cuotas vigentes extraídas directamente de la Tabla de Amortización del PDF
         public bool $success = true,
         public ?string $errorMessage = null,
         public array $rawMetadata = []
@@ -73,6 +75,8 @@ class ParsedSettlementDto
             'fecha_primer_pago' => $this->fechaPrimerPago,
             'fechas_recuperacion' => $this->fechasRecuperacion,
             'frecuencia_pago' => $this->frecuenciaPago,
+            'monto_a_negociar' => $this->montoANegociar,
+            'cuotas_pdf' => $this->cuotasPdf,
             'success' => $this->success,
             'error_message' => $this->errorMessage,
             'raw_metadata' => $this->rawMetadata,

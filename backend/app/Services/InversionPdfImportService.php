@@ -50,6 +50,7 @@ class InversionPdfImportService
             'papeles_comerciales' => 0,
             'bonos' => 0,
             'obligaciones' => 0,
+            'titularizaciones' => 0,
         ];
 
         foreach ($files as $file) {
@@ -330,6 +331,97 @@ class InversionPdfImportService
                 } catch (\Throwable $e) {
                     Log::warning('No se pudo calcular la previsualización de la tabla de amortización para Obligación PDF: ' . $e->getMessage());
                 }
+            } elseif ($dto->tipoTitulo === 'TITULARIZACION') {
+                $resumen['titularizaciones']++;
+                $generaAmortizacion = true;
+                $incluirAmortizacion = true;
+
+                // Resolver Emisor
+                $emisorMatched = $this->resolverEmisor($dto->emisorNombre, $emisores);
+                $idEmisor = $emisorMatched ? $emisorMatched->id_emisor : null;
+                $nombreEmisor = $emisorMatched ? $emisorMatched->nombre : $dto->emisorNombre;
+
+                // Buscar Instrumento Titularización (id_tipo_inversion = 75) en 2 niveles: 1) Código Vector -> 2) Emisor + Fechas + Tasa
+                [$instTit, $metodoMatch] = $this->buscarInstrumentoTitularizacion(
+                    $dto->codigoVector,
+                    $idEmisor,
+                    $dto->fechaEmision,
+                    $dto->fechaVencimiento,
+                    $dto->tasaInteres
+                );
+
+                if ($instTit) {
+                    $idInstrumento = $instTit->id_instrumento;
+                    $nombreInstrumento = $instTit->nombre;
+                    $instrumentoMatchMetodo = $metodoMatch; // 'VECTOR' o 'FECHAS_TASA'
+                    if (!$idEmisor && !empty($instTit->id_emisor)) {
+                        $idEmisor = $instTit->id_emisor;
+                        $emObj = $emisores->firstWhere('id_emisor', $idEmisor);
+                        if ($emObj) {
+                            $nombreEmisor = $emObj->nombre;
+                        }
+                    }
+                    if (!empty($instTit->fechas_recuperacion)) {
+                        $fechasRecuperacion = $instTit->fechas_recuperacion;
+                    }
+                } else {
+                    $nombreInstrumento = ($dto->fechaEmision ? $dto->fechaEmision . ' ' : '') . ($nombreEmisor ?? 'TITULARIZACION') . ' ' . ($dto->fechaVencimiento ?? '');
+                    $instrumentoMatchMetodo = 'NUEVO';
+                }
+
+                // Construir previsualización de la tabla de amortización:
+                // Si el PDF trae la tabla oficial (Sistema Francés con períodos de gracia), usarla aplicando el ajuste de interés acumulado previo en la cuota 1
+                try {
+                    if (!empty($dto->cuotasPdf)) {
+                        $tablaAmortizacionPreview = $this->construirTablaAmortizacionDesdePdf(
+                            $dto->cuotasPdf,
+                            (float) ($dto->montoANegociar ?? $dto->valorNominal),
+                            (float) ($dto->interesDevengado ?? 0.0)
+                        );
+                    } else {
+                        $tasaAnual = (float) ($dto->tasaInteres ?? 0);
+                        $interesDevengado = (float) ($dto->interesDevengado ?? 0);
+                        $principalVigente = (float) ($dto->montoANegociar ?? $dto->valorNominal);
+                        $interesMensual = round(($principalVigente * ($tasaAnual / 100)) / 12, 2);
+                        $interesPrimerMes = max(0.0, round($interesMensual - $interesDevengado, 2));
+                        $frecuenciaPagoTit = $dto->frecuenciaPago ?? 3;
+
+                        $instTemp = new Instrumento([
+                            'id_emisor' => $idEmisor,
+                            'id_tipo_inversion' => 75,
+                            'nombre' => $nombreInstrumento,
+                            'fecha_emision' => $dto->fechaEmision ?? $dto->fechaNegociacion,
+                            'fecha_vencimiento' => $dto->fechaVencimiento,
+                            'tasa_referencial' => $tasaAnual,
+                            'valor_interes' => ($instTit && isset($instTit->valor_interes)) ? $instTit->valor_interes : 0,
+                            'fechas_recuperacion' => $fechasRecuperacion,
+                        ]);
+
+                        $invTemp = new Inversion([
+                            'valor_nominal' => $principalVigente,
+                            'capital_invertido' => $dto->totalInvertido,
+                            'tasa_interes' => $tasaAnual,
+                            'fecha_compra' => $dto->fechaNegociacion,
+                            'fecha_primer_pago' => $dto->fechaPrimerPago ?? $dto->fechaVencimiento,
+                            'interes_acumulado_previo' => $interesDevengado,
+                            'interes_mensual' => $interesMensual,
+                            'interes_primer_mes' => $interesPrimerMes,
+                        ]);
+                        $invTemp->setRelation('instrumento', $instTemp);
+
+                        $resTabla = $this->amortizacionGenerador->calcularTablaAmortizacion($invTemp, [
+                            'frecuencia_pago' => $frecuenciaPagoTit,
+                            'cuotas_diferir' => 0,
+                            'tipo_amortizacion' => 'F',
+                        ]);
+
+                        if (is_array($resTabla) && isset($resTabla['cuotas'])) {
+                            $tablaAmortizacionPreview = $resTabla;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    Log::warning('No se pudo calcular la previsualización de la tabla de amortización para Titularización PDF: ' . $e->getMessage());
+                }
             } else {
                 // NOTA DE CRÉDITO
                 $resumen['notas_credito']++;
@@ -392,6 +484,7 @@ class InversionPdfImportService
                 'rendimiento_efectivo' => $dto->rendimientoEfectivo,
                 'plazo_dias' => $dto->plazoDias,
                 'valor_nominal' => $dto->valorNominal,
+                'monto_a_negociar' => $dto->montoANegociar ?? $dto->valorNominal,
                 'precio_compra' => $dto->precioCompra,
                 'valor_efectivo' => $dto->valorEfectivo,
                 'interes_devengado' => $dto->interesDevengado ?? 0.0,
@@ -403,7 +496,7 @@ class InversionPdfImportService
                 'factura_bolsa' => $dto->facturaBolsa,
                 'operador_valores' => $dto->operadorValores,
                 'fechas_recuperacion' => $fechasRecuperacion,
-                'frecuencia_pago' => $dto->frecuenciaPago ?? ($dto->tipoTitulo === 'OBLIGACION' ? 3 : ($dto->tipoTitulo === 'BONO' ? 1 : 0)),
+                'frecuencia_pago' => $dto->frecuenciaPago ?? (in_array($dto->tipoTitulo, ['OBLIGACION', 'TITULARIZACION'], true) ? 3 : ($dto->tipoTitulo === 'BONO' ? 1 : 0)),
                 'genera_amortizacion' => $generaAmortizacion,
                 'incluir_amortizacion' => $incluirAmortizacion,
                 'cuota_amortizacion_estimada' => $cuotaEstimada,
@@ -470,12 +563,17 @@ class InversionPdfImportService
                     $idTipoInversion = 4;
                 } elseif ($tipoTitulo === 'OBLIGACION') {
                     $idTipoInversion = 5;
+                } elseif ($tipoTitulo === 'TITULARIZACION') {
+                    $idTipoInversion = 75;
                 } else {
                     $idTipoInversion = 91;
                 }
 
                 $idGrupoFamiliar = $item['id_grupo_familiar'] ?? 1;
                 $valorNominal = (float) ($item['valor_nominal'] ?? 0);
+                $montoANegociar = isset($item['monto_a_negociar']) && (float) $item['monto_a_negociar'] > 0
+                    ? (float) $item['monto_a_negociar']
+                    : $valorNominal;
                 $valorEfectivo = (float) ($item['valor_efectivo'] ?? $item['capital_invertido'] ?? 0);
                 $capitalInvertido = (float) ($item['capital_invertido'] ?? 0);
                 $interesDevengado = (float) ($item['interes_devengado'] ?? 0);
@@ -494,8 +592,8 @@ class InversionPdfImportService
                 $fechaPrimerPago = $item['fecha_primer_pago'] ?? $fechaVcto;
                 $codigoVector = !empty($item['codigo_vector']) ? ltrim(trim($item['codigo_vector']), 'aA') : null;
                 $codigoSeb = !empty($item['codigo_seb']) ? trim($item['codigo_seb']) : null;
-                $fechasRecuperacion = !empty($item['fechas_recuperacion']) ? trim($item['fechas_recuperacion']) : ($idTipoInversion === 5 ? null : $fechaVcto);
-                $frecuenciaPago = isset($item['frecuencia_pago']) ? (int) $item['frecuencia_pago'] : ($idTipoInversion === 5 ? 3 : ($idTipoInversion === 4 ? 1 : 0));
+                $fechasRecuperacion = !empty($item['fechas_recuperacion']) ? trim($item['fechas_recuperacion']) : (in_array($idTipoInversion, [5, 75], true) ? null : $fechaVcto);
+                $frecuenciaPago = isset($item['frecuencia_pago']) ? (int) $item['frecuencia_pago'] : (in_array($idTipoInversion, [5, 75], true) ? 3 : ($idTipoInversion === 4 ? 1 : 0));
                 $incluirAmortizacion = isset($item['incluir_amortizacion']) ? (bool) $item['incluir_amortizacion'] : true;
                 $filename = $item['filename'] ?? 'documento.pdf';
 
@@ -630,15 +728,76 @@ class InversionPdfImportService
                             'fecha_actualizacion' => now(),
                         ]);
                     }
+                } elseif ($idTipoInversion === 75) {
+                    // TITULARIZACIONES (VTC): Validar en 2 niveles (Vector de Precios -> Emisor + Fechas + Tasa) o crear
+                    $idEmisorTit = $item['id_emisor'] ?? null;
+                    if (!$idEmisorTit && !empty($item['emisor_detectado'])) {
+                        $emisores = DB::table('emisor')->where('activo', 1)->get();
+                        $emMatched = $this->resolverEmisor($item['emisor_detectado'], $emisores);
+                        $idEmisorTit = $emMatched ? $emMatched->id_emisor : null;
+                    }
+
+                    [$instTit, $metodoMatch] = $this->buscarInstrumentoTitularizacion($codigoVector, $idEmisorTit, $fechaEmi, $fechaVcto, $tasaInteres);
+                    if ($instTit) {
+                        $idInstrumento = $instTit->id_instrumento;
+
+                        $updatesInst = [];
+                        if ($codigoVector && (empty($instTit->codigo_titulo_vector) || $instTit->codigo_titulo_vector === 'PorActualizar')) {
+                            $updatesInst['codigo_titulo_vector'] = 'a' . $codigoVector;
+                        }
+                        if ($codigoSeb && (empty($instTit->codigo_seb) || $instTit->codigo_seb === 'PorActualizar')) {
+                            $updatesInst['codigo_seb'] = $codigoSeb;
+                        }
+                        if (!empty($updatesInst)) {
+                            $updatesInst['fecha_actualizacion'] = now();
+                            DB::table('instrumento')->where('id_instrumento', $idInstrumento)->update($updatesInst);
+                        }
+                    } elseif (!$idInstrumento) {
+                        if (!$idEmisorTit) {
+                            $nomEmisorNuevo = trim($item['emisor_detectado'] ?? 'EMISOR TITULARIZACION');
+                            $siglaNueva = substr(preg_replace('/[^A-Z0-9]/', '', mb_strtoupper($nomEmisorNuevo)), 0, 10);
+                            $idEmisorTit = DB::table('emisor')->insertGetId([
+                                'nombre' => $nomEmisorNuevo,
+                                'sigla' => $siglaNueva ?: 'EMISOR',
+                                'activo' => 1,
+                                'fecha_creacion' => now(),
+                                'fecha_actualizacion' => now(),
+                            ]);
+                        }
+                        $nomEmisor = DB::table('emisor')->where('id_emisor', $idEmisorTit)->value('nombre') ?? 'TITULARIZACION';
+                        $codTitulo = 'INV_75_' . str_replace('-', '', $fechaVcto ?? date('Ymd'));
+                        $nombreInst = "{$fechaEmi} {$nomEmisor} {$fechaVcto}";
+                        $idInstrumento = DB::table('instrumento')->insertGetId([
+                            'id_emisor' => $idEmisorTit,
+                            'id_tipo_inversion' => 75,
+                            'codigo_titulo' => $codTitulo,
+                            'nombre' => $nombreInst,
+                            'fecha_emision' => $fechaEmi,
+                            'fecha_vencimiento' => $fechaVcto,
+                            'tasa_referencial' => $tasaInteres,
+                            'fechas_recuperacion' => $fechasRecuperacion,
+                            'codigo_titulo_vector' => $codigoVector ? ('a' . $codigoVector) : 'PorActualizar',
+                            'codigo_seb' => $codigoSeb ?: 'VTC',
+                            'activo' => 1,
+                            'fecha_creacion' => now(),
+                            'fecha_actualizacion' => now(),
+                        ]);
+                    }
                 }
 
-                // Cálculos de interés mensual y primer mes para Bonos y Obligaciones vs. Cero Cupón / Notas de Crédito
-                $esTituloConCupon = in_array($idTipoInversion, [4, 5], true);
+                // Cálculos de interés mensual y primer mes para Bonos, Obligaciones y Titularizaciones vs. Cero Cupón / Notas de Crédito
+                $esTituloConCupon = in_array($idTipoInversion, [4, 5, 75], true);
                 $interesMensual = 0.00;
                 $interesPrimerMes = 0.00;
                 if ($esTituloConCupon) {
-                    $interesMensual = round(($valorNominal * ($tasaInteres / 100)) / 12, 2);
-                    $interesPrimerMes = max(0.0, round($interesMensual - $interesDevengado, 2));
+                    if ($idTipoInversion === 75 && $interesDevengado > 0) {
+                        // En Titularizaciones (Inv #226-#240), interes_mensual almacena el interés devengado pagado en la compra
+                        $interesMensual = $interesDevengado;
+                        $interesPrimerMes = 0.00;
+                    } else {
+                        $interesMensual = round(($montoANegociar * ($tasaInteres / 100)) / 12, 2);
+                        $interesPrimerMes = max(0.0, round($interesMensual - $interesDevengado, 2));
+                    }
                 }
 
                 $inversion = new Inversion();
@@ -651,7 +810,7 @@ class InversionPdfImportService
                 $inversion->fecha_compra = $fechaCompra;
                 $inversion->fecha_venta = null;
                 $inversion->valor_nominal = $valorNominal;
-                $inversion->monto_a_negociar = $valorNominal;
+                $inversion->monto_a_negociar = $montoANegociar;
                 $inversion->capital_invertido = $capitalInvertido;
                 $inversion->saldo_capital_actual = $capitalInvertido;
                 $inversion->tasa_interes = $tasaInteres;
@@ -708,6 +867,45 @@ class InversionPdfImportService
                         'fecha_actualizacion' => now(),
                     ]);
                     $amortizacionCreada = true;
+                } elseif ($idTipoInversion === 75 && $incluirAmortizacion) {
+                    // Si es Titularización y trae tabla previsualizada (extraída del PDF o calculada), insertarla respetando la estructura validada
+                    $cuotasPreview = $item['tabla_amortizacion_preview']['cuotas'] ?? [];
+                    if (!empty($cuotasPreview) && is_array($cuotasPreview)) {
+                        foreach ($cuotasPreview as $c) {
+                            $maxId = DB::table('amortizacion')->max('id_amortizacion') ?? 0;
+                            $interesCuota = (float) ($c['interes_parcial'] ?? 0);
+                            $capitalCuota = (float) ($c['capital_retorno'] ?? 0);
+                            $descuentoCuota = (float) ($c['premio'] ?? 0);
+
+                            DB::table('amortizacion')->insert([
+                                'id_amortizacion' => $maxId + 1,
+                                'id_inversion' => $inversion->id_inversion,
+                                'numero_cuota' => (int) ($c['numero_cuota'] ?? 1),
+                                'fecha_pago' => $c['fecha_pago'],
+                                'interes' => round($interesCuota + $descuentoCuota, 2),
+                                'capital' => $capitalCuota,
+                                'descuento' => $descuentoCuota,
+                                'total' => round($interesCuota + $descuentoCuota + $capitalCuota, 2),
+                                'int_parcial' => $interesCuota,
+                                'retencion' => 0.00,
+                                'id_estado_amortizacion' => 134, // Pendiente
+                                'pagada_old' => 0,
+                                'activo_old' => 1,
+                                'eliminado' => 0,
+                                'fecha_creacion' => now(),
+                                'fecha_actualizacion' => now(),
+                            ]);
+                        }
+                        $amortizacionCreada = true;
+                    } else {
+                        $inversion->load('instrumento');
+                        $this->amortizacionGenerador->generarTablaAmortizacion($inversion, [
+                            'frecuencia_pago' => $frecuenciaPago > 0 ? $frecuenciaPago : 3,
+                            'cuotas_diferir' => 0,
+                            'tipo_amortizacion' => 'F',
+                        ]);
+                        $amortizacionCreada = true;
+                    }
                 } elseif (in_array($idTipoInversion, [4, 5], true) && $incluirAmortizacion) {
                     // Si es Bono del Estado u Obligación Corporativa y el usuario aceptó la tabla de amortización previsualizada
                     $inversion->load('instrumento');
@@ -897,5 +1095,127 @@ class InversionPdfImportService
         }
 
         return [null, null];
+    }
+
+    /**
+     * Busca un instrumento de tipo Titularización (id_tipo_inversion = 75) en dos niveles:
+     * Nivel 1: Por Código de Vector de Precios (codigo_titulo_vector)
+     * Nivel 2: Por combinación de Emisor + Fecha de Emisión + Fecha de Vencimiento + Tasa Referencial
+     *
+     * @return array{0: ?object, 1: ?string} [Instrumento encontrado o null, Método de coincidencia ('VECTOR' | 'FECHAS_TASA' | null)]
+     */
+    protected function buscarInstrumentoTitularizacion(
+        ?string $codigoVector,
+        ?int $idEmisor,
+        ?string $fechaEmision,
+        ?string $fechaVencimiento,
+        ?float $tasaReferencial
+    ): array {
+        // Nivel 1: Búsqueda por Código de Vector de Precios
+        if (!empty($codigoVector)) {
+            $rawVector = ltrim(trim($codigoVector), 'aA');
+            if (!empty($rawVector) && $rawVector !== 'PorActualizar') {
+                $instPorVector = DB::table('instrumento')
+                    ->where('id_tipo_inversion', 75)
+                    ->where('activo', 1)
+                    ->whereIn('codigo_titulo_vector', [$rawVector, 'a' . $rawVector, 'A' . $rawVector])
+                    ->first();
+
+                if ($instPorVector) {
+                    return [$instPorVector, 'VECTOR'];
+                }
+            }
+        }
+
+        // Nivel 2: Búsqueda por Emisor + Fecha de Emisión + Fecha de Vencimiento + Tasa Referencial
+        if (!empty($fechaEmision) && !empty($fechaVencimiento) && $tasaReferencial !== null) {
+            $query = DB::table('instrumento')
+                ->where('id_tipo_inversion', 75)
+                ->where('activo', 1)
+                ->whereDate('fecha_emision', $fechaEmision)
+                ->whereDate('fecha_vencimiento', $fechaVencimiento)
+                ->whereRaw('ABS(tasa_referencial - ?) < 0.001', [$tasaReferencial]);
+
+            if ($idEmisor) {
+                $query->where('id_emisor', $idEmisor);
+            }
+
+            $instPorFechasTasa = $query->first();
+            if ($instPorFechasTasa) {
+                return [$instPorFechasTasa, 'FECHAS_TASA'];
+            }
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * Construye el objeto tabla_amortizacion_preview a partir de las filas vigentes extraídas del PDF,
+     * aplicando en la primera cuota vigente la regla contable de SIPRO para el interés acumulado previo:
+     *   interes_cuota_1 = interes_pdf - interes_acumulado_previo
+     *   capital_cuota_1 = amortizacion_pdf + interes_acumulado_previo
+     */
+    protected function construirTablaAmortizacionDesdePdf(
+        array $cuotasPdf,
+        float $capitalInicialVigente,
+        float $interesAcumuladoPrevio
+    ): array {
+        $cuotas = [];
+        $fechasCapital = [];
+        $capitalRestante = $capitalInicialVigente;
+
+        foreach ($cuotasPdf as $idx => $fila) {
+            $nroCuota = $idx + 1;
+            $fechaPago = $fila['fecha_pago'];
+            $interesNormal = round((float) ($fila['interes'] ?? 0), 2);
+            $amortizacionNormal = round((float) ($fila['amortizacion'] ?? 0), 2);
+
+            $interesParcial = $interesNormal;
+            $capitalRetorno = $amortizacionNormal;
+            $tieneInteresPrevio = false;
+            $interesPrevioAplicado = 0.0;
+
+            if ($idx === 0 && $interesAcumuladoPrevio > 0) {
+                $interesParcial = max(0.0, round($interesNormal - $interesAcumuladoPrevio, 2));
+                $capitalRetorno = round($amortizacionNormal + $interesAcumuladoPrevio, 2);
+                $tieneInteresPrevio = true;
+                $interesPrevioAplicado = $interesAcumuladoPrevio;
+            }
+
+            if ($amortizacionNormal > 0) {
+                $fechasCapital[] = $fechaPago;
+            }
+
+            $flujo = round($interesParcial + $capitalRetorno, 2);
+
+            $cuotas[] = [
+                'numero_cuota' => $nroCuota,
+                'fecha_pago' => $fechaPago,
+                'capital_restante' => round($capitalRestante, 2),
+                'capital_retorno' => $capitalRetorno,
+                'capital_devuelto' => $capitalRetorno,
+                'interes_parcial' => $interesParcial,
+                'premio' => 0.00,
+                'interes_total' => $flujo,
+                'flujo' => $flujo,
+                'tiene_interes_acumulado_previo' => $tieneInteresPrevio,
+                'interes_acumulado_previo_aplicado' => $interesPrevioAplicado,
+            ];
+
+            $capitalRestante = max(0.0, round($capitalRestante - $amortizacionNormal, 2));
+        }
+
+        $totalIntereses = round(array_sum(array_column($cuotas, 'interes_parcial')), 2);
+        $totalCapital = round(array_sum(array_column($cuotas, 'capital_retorno')), 2);
+
+        return [
+            'cuotas' => $cuotas,
+            'fechas_capital' => $fechasCapital,
+            'fecha_inicio' => !empty($cuotas) ? $cuotas[0]['fecha_pago'] : null,
+            'fecha_fin' => !empty($cuotas) ? end($cuotas)['fecha_pago'] : null,
+            'total_intereses' => $totalIntereses,
+            'total_capital' => $totalCapital,
+            'total_descuento' => 0.00,
+        ];
     }
 }

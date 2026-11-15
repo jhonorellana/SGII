@@ -13,7 +13,7 @@
           <h4 class="mb-1 text-dark fw-bold">Carga Automática de Liquidaciones PDF</h4>
           <p class="text-muted mb-0">
             Importa expedientes bursátiles firmados de <strong>Santa Fe Casa de Valores</strong> (Bolsa de Quito o Guayaquil).
-            Reconocimiento automático de <strong>Obligaciones Corporativas</strong>, <strong>Bonos del Estado</strong>, <strong>Papeles Comerciales (Cero Cupón)</strong> y <strong>Notas de Crédito</strong>.
+            Reconocimiento automático de <strong>Titularizaciones (VTC)</strong>, <strong>Obligaciones Corporativas</strong>, <strong>Bonos del Estado</strong>, <strong>Papeles Comerciales (Cero Cupón)</strong> y <strong>Notas de Crédito</strong>.
           </p>
         </div>
       </div>
@@ -51,7 +51,7 @@
         <i class="bi bi-cloud-arrow-up text-primary upload-icon mb-3"></i>
         <h5 class="fw-semibold text-dark mb-1">Arrastra tus liquidaciones PDF aquí</h5>
         <p class="text-muted mb-3">
-          Puedes arrastrar múltiples documentos PDF a la vez. El sistema detectará automáticamente si son Obligaciones Corporativas, Bonos del Estado, Papeles Comerciales o Notas de Crédito.
+          Puedes arrastrar múltiples documentos PDF a la vez. El sistema detectará automáticamente si son Titularizaciones, Obligaciones Corporativas, Bonos del Estado, Papeles Comerciales o Notas de Crédito.
         </p>
 
         <label class="btn btn-primary px-4 py-2 cursor-pointer shadow-sm">
@@ -81,6 +81,7 @@
             <span class="text-muted small text-uppercase fw-bold">Archivos Procesados</span>
             <h4 class="mb-0 fw-bold text-dark mt-1">{{ items.length }}</h4>
             <div class="small text-muted mt-1">
+              <span *ngIf="totalTitularizaciones > 0" class="badge bg-secondary-subtle text-dark me-1">{{ totalTitularizaciones }} Titul.</span>
               <span *ngIf="totalObligaciones > 0" class="badge bg-warning-subtle text-dark me-1">{{ totalObligaciones }} Oblig.</span>
               <span *ngIf="totalBonos > 0" class="badge bg-info-subtle text-info me-1">{{ totalBonos }} Bono(s)</span>
               <span *ngIf="totalPapelesComerciales > 0" class="badge bg-primary-subtle text-primary me-1">{{ totalPapelesComerciales }} Papel Com.</span>
@@ -213,15 +214,15 @@
                 <div>
                   <span 
                     class="badge mb-1" 
-                    [ngClass]="item.tipo_titulo === 'OBLIGACION' ? 'bg-warning text-dark' : (item.tipo_titulo === 'BONO' ? 'bg-info text-dark' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bg-primary text-white' : 'bg-success text-white'))">
-                    <i class="bi" [ngClass]="item.tipo_titulo === 'OBLIGACION' ? 'bi-briefcase me-1' : (item.tipo_titulo === 'BONO' ? 'bi-bank me-1' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bi-building me-1' : 'bi-receipt me-1'))"></i>
-                    {{ item.tipo_titulo === 'OBLIGACION' ? 'Obligación' : (item.tipo_titulo === 'BONO' ? 'Bono del Estado' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Papel Comercial' : 'Nota de Crédito')) }}
+                    [ngClass]="item.tipo_titulo === 'TITULARIZACION' ? 'bg-dark text-white' : (item.tipo_titulo === 'OBLIGACION' ? 'bg-warning text-dark' : (item.tipo_titulo === 'BONO' ? 'bg-info text-dark' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bg-primary text-white' : 'bg-success text-white')))">
+                    <i class="bi" [ngClass]="item.tipo_titulo === 'TITULARIZACION' ? 'bi-diagram-3 me-1' : (item.tipo_titulo === 'OBLIGACION' ? 'bi-briefcase me-1' : (item.tipo_titulo === 'BONO' ? 'bi-bank me-1' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'bi-building me-1' : 'bi-receipt me-1')))"></i>
+                    {{ item.tipo_titulo === 'TITULARIZACION' ? 'Titularización' : (item.tipo_titulo === 'OBLIGACION' ? 'Obligación' : (item.tipo_titulo === 'BONO' ? 'Bono del Estado' : (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Papel Comercial' : 'Nota de Crédito'))) }}
                   </span>
                 </div>
                 <div class="fw-semibold text-dark text-truncate" style="max-width: 190px;" [title]="item.instrumento_detectado || item.emisor_detectado || 'N/A'">
                   {{ item.instrumento_detectado || item.emisor_detectado || (item.tipo_titulo === 'PAPEL_COMERCIAL' ? 'Empresa Privada' : 'SRI') }}
                 </div>
-                <div *ngIf="item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION'" class="small mt-1">
+                <div *ngIf="item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION' || item.tipo_titulo === 'TITULARIZACION'" class="small mt-1">
                   <span *ngIf="item.id_instrumento" class="badge bg-success-subtle text-success border border-success me-1" [title]="'Instrumento ID #' + item.id_instrumento">
                     Inst. #{{ item.id_instrumento }} ({{ item.instrumento_match_metodo === 'VECTOR' ? 'Vector' : 'Fechas+Tasa' }})
                   </span>
@@ -285,7 +286,10 @@
 
               <!-- Valor Nominal -->
               <td class="text-end font-monospace fw-semibold">
-                {{ item.valor_nominal | currency:'USD':'symbol':'1.2-2' }}
+                <div>{{ item.valor_nominal | currency:'USD':'symbol':'1.2-2' }}</div>
+                <div *ngIf="item.monto_a_negociar && item.monto_a_negociar !== item.valor_nominal" class="text-primary small" title="Monto a negociar (Saldo vigente por amortizar)">
+                  Neg: {{ item.monto_a_negociar | currency:'USD':'symbol':'1.2-2' }}
+                </div>
               </td>
 
               <!-- Precio Compra -->
@@ -330,8 +334,8 @@
                   </div>
                 </div>
 
-                <!-- Caso Bono del Estado u Obligación Corporativa (Previsualización de Tabla + Aceptar / Omitir) -->
-                <div *ngIf="(item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION') && item.tabla_amortizacion_preview" class="d-flex flex-column align-items-center gap-1">
+                <!-- Caso Bono del Estado, Obligación Corporativa o Titularización (Previsualización de Tabla + Aceptar / Omitir) -->
+                <div *ngIf="(item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION' || item.tipo_titulo === 'TITULARIZACION') && item.tabla_amortizacion_preview" class="d-flex flex-column align-items-center gap-1">
                   <button
                     type="button"
                     class="btn btn-sm btn-outline-primary py-0 px-2"
@@ -357,7 +361,7 @@
                 </div>
 
                 <!-- Caso Sin Amortización (Notas de Crédito o error) -->
-                <div *ngIf="!item.genera_amortizacion || ((item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION') && !item.tabla_amortizacion_preview)">
+                <div *ngIf="!item.genera_amortizacion || ((item.tipo_titulo === 'BONO' || item.tipo_titulo === 'OBLIGACION' || item.tipo_titulo === 'TITULARIZACION') && !item.tabla_amortizacion_preview)">
                   <span class="badge bg-light text-muted border">
                     Sin amortización
                   </span>
@@ -428,14 +432,14 @@
     </div>
   </div>
 
-  <!-- Modal de Previsualización y Validación de Tabla de Amortización (Bonos y Obligaciones) -->
+  <!-- Modal de Previsualización y Validación de Tabla de Amortización (Bonos, Obligaciones y Titularizaciones) -->
   <p-dialog
     [(visible)]="amortizacionModalVisible"
     [modal]="true"
     [style]="{ width: '90vw', maxWidth: '1080px' }"
     [draggable]="false"
     [resizable]="false"
-    [header]="'Previsualización de Tabla de Amortización (' + (selectedItemForAmortizacion?.tipo_titulo === 'OBLIGACION' ? 'Obligación Corporativa' : 'Bono del Estado') + ')'">
+    [header]="'Previsualización de Tabla de Amortización (' + (selectedItemForAmortizacion?.tipo_titulo === 'TITULARIZACION' ? 'Titularización VTC' : (selectedItemForAmortizacion?.tipo_titulo === 'OBLIGACION' ? 'Obligación Corporativa' : 'Bono del Estado')) + ')'">
 
     <div *ngIf="selectedItemForAmortizacion && selectedItemForAmortizacion.tabla_amortizacion_preview as preview">
       <!-- Resumen superior del Bono -->

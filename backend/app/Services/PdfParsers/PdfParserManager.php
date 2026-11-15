@@ -18,13 +18,15 @@ class PdfParserManager
         NotaCreditoPdfParserService $notaCreditoParser,
         PapelComercialPdfParserService $papelComercialParser,
         BonoPdfParserService $bonoParser,
-        ObligacionPdfParserService $obligacionParser
+        ObligacionPdfParserService $obligacionParser,
+        TitularizacionPdfParserService $titularizacionParser
     ) {
-        // Registrar parsers disponibles (Notas de Crédito, Papel Comercial, Bonos del Estado, Obligaciones Corporativas)
+        // Registrar parsers disponibles (Notas de Crédito, Papel Comercial, Bonos del Estado, Obligaciones Corporativas, Titularizaciones)
         $this->parsers[] = $notaCreditoParser;
         $this->parsers[] = $papelComercialParser;
         $this->parsers[] = $bonoParser;
         $this->parsers[] = $obligacionParser;
+        $this->parsers[] = $titularizacionParser;
     }
 
     /**
