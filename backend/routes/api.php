@@ -27,6 +27,7 @@ use App\Http\Controllers\API\SharesHistoryController;
 use App\Http\Controllers\API\ResumenBolsaController;
 use App\Http\Controllers\API\HistoricoPatrimonioController;
 use App\Http\Controllers\API\AccionOperacionController;
+use App\Http\Controllers\API\AccionPdfImportController;
 use App\Http\Controllers\API\AccionDividendoController;
 use App\Http\Controllers\API\AccionPosicionController;
 use App\Http\Controllers\HistoricoIndicadorController;
@@ -165,6 +166,8 @@ Route::get('reportes/resumen-diario', [ResumenBolsaController::class, 'obtenerRe
 Route::get('reportes/acciones-ultimo-cierre', [ResumenBolsaController::class, 'obtenerUltimoCierreAcciones']);
 
 // Rutas de Renta Variable / Acciones
+Route::post('acciones/importar-pdf/preview', [AccionPdfImportController::class, 'preview']);
+Route::post('acciones/importar-pdf/confirm', [AccionPdfImportController::class, 'confirm']);
 Route::apiResource('acciones/operaciones', AccionOperacionController::class);
 Route::apiResource('acciones/dividendos', AccionDividendoController::class);
 Route::get('acciones/posicion', [AccionPosicionController::class, 'index']);

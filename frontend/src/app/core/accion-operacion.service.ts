@@ -97,6 +97,27 @@ export class AccionOperacionService {
     return this.http.get<any>(`${environment.apiUrl}/acciones/analisis-ventas`, { params });
   }
 
+  /**
+   * Envía múltiples archivos PDF de liquidaciones de Acciones (BVQ/BVG) para previsualización
+   */
+  previewPdfImport(files: File[]): Observable<any> {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files[]', file, file.name);
+    });
+    return this.http.post<any>(`${environment.apiUrl}/acciones/importar-pdf/preview`, formData);
+  }
+
+  /**
+   * Confirma e importa las operaciones de Acciones seleccionadas en accion_operacion y movimiento_capital
+   */
+  confirmPdfImport(operaciones: any[], registrarMovimientoCapital: boolean = true): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/acciones/importar-pdf/confirm`, {
+      operaciones,
+      registrar_movimiento_capital: registrarMovimientoCapital
+    });
+  }
+
   private castNumericFields(op: AccionOperacion): AccionOperacion {
     return {
       ...op,

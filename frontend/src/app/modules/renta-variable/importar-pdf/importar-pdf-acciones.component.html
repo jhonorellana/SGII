@@ -1,0 +1,265 @@
+<div class="importar-pdf-container">
+  <p-toast position="top-right"></p-toast>
+
+  <!-- Encabezado -->
+  <div class="header-card mb-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="header-icon bg-primary-subtle text-primary">
+          <i class="bi bi-file-earmark-bar-graph fs-2"></i>
+        </div>
+        <div>
+          <h4 class="mb-1 text-dark fw-bold">Carga de Liquidaciones PDF — Renta Variable</h4>
+          <p class="text-muted mb-0">
+            Importa expedientes firmados de <strong>Compra/Venta de Acciones</strong> de
+            <strong>Santa Fe Casa de Valores</strong> (Bolsa de Quito o Guayaquil). Revisa y valida cada operación antes de registrarla.
+          </p>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <button pButton type="button" label="Operaciones" icon="bi bi-arrow-left-right"
+          class="p-button-outlined p-button-secondary p-button-sm" (click)="irAOperaciones()"></button>
+        <button pButton type="button" label="Portafolio" icon="bi bi-briefcase"
+          class="p-button-outlined p-button-primary p-button-sm" (click)="irAPortafolio()"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zona de carga -->
+  <div class="mb-4">
+    <div class="dropzone-card p-4 text-center" [class.drag-over]="isDragging"
+      (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+      <div class="py-3">
+        <i class="bi bi-cloud-arrow-up text-primary upload-icon mb-3"></i>
+        <h5 class="fw-semibold text-dark mb-1">Arrastra tus liquidaciones de acciones aquí</h5>
+        <p class="text-muted mb-3">
+          Puedes cargar varios PDF a la vez (BVQ y BVG). El sistema detectará emisor, cantidad, precio, comisiones y valor neto.
+        </p>
+        <label class="btn btn-primary px-4 py-2 cursor-pointer shadow-sm">
+          <i class="bi bi-folder2-open me-2"></i>Examinar Archivos
+          <input type="file" accept="application/pdf" multiple class="d-none" (change)="onFileSelected($event)">
+        </label>
+      </div>
+      <div *ngIf="isLoading" class="mt-3">
+        <p-progressBar mode="indeterminate" [style]="{ height: '6px' }"></p-progressBar>
+        <span class="text-muted small mt-2 d-inline-block">Analizando y extrayendo datos de los documentos PDF...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultado de importación -->
+  <div *ngIf="resultadoImportacion" class="alert alert-success d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+      <i class="bi bi-check-circle-fill me-2"></i>
+      Se registraron <strong>{{ resultadoImportacion.total_guardados }}</strong> operación(es) en Renta Variable.
+      <span *ngIf="resultadoImportacion.total_omitidos > 0">
+        Se omitieron <strong>{{ resultadoImportacion.total_omitidos }}</strong> por duplicadas.
+      </span>
+    </div>
+    <button pButton type="button" label="Ver Operaciones" icon="bi bi-box-arrow-up-right"
+      class="p-button-sm p-button-success" (click)="irAOperaciones()"></button>
+  </div>
+
+  <!-- Resumen -->
+  <div *ngIf="items.length > 0" class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Archivos</span>
+        <h4 class="mb-0 fw-bold text-dark mt-1">{{ items.length }}</h4>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Listos</span>
+        <h4 class="mb-0 fw-bold text-success mt-1">{{ itemsListos.length }}</h4>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Duplicados</span>
+        <h4 class="mb-0 fw-bold text-warning mt-1">{{ totalDuplicados }}</h4>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Con Error</span>
+        <h4 class="mb-0 fw-bold text-danger mt-1">{{ totalErrores }}</h4>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Acciones (sel.)</span>
+        <h4 class="mb-0 fw-bold text-dark mt-1">{{ formatNumber(totalAccionesSeleccionadas) }}</h4>
+      </div>
+    </div>
+    <div class="col-6 col-md-2">
+      <div class="card stat-card border-0 shadow-sm p-3">
+        <span class="text-muted small text-uppercase fw-bold">Valor Neto (sel.)</span>
+        <h4 class="mb-0 fw-bold text-primary mt-1">{{ formatCurrency(totalNetoSeleccionado) }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de previsualización -->
+  <div *ngIf="items.length > 0" class="card border-0 shadow-sm mb-4">
+    <p-table [value]="items" styleClass="p-datatable-sm p-datatable-gridlines custom-table" responsiveLayout="scroll" [scrollable]="true">
+      <ng-template pTemplate="header">
+        <tr>
+          <th class="text-center" style="width: 3rem;">
+            <p-checkbox [binary]="true" [ngModel]="todosSeleccionados"
+              (onChange)="toggleSeleccionTodos($event.checked)"></p-checkbox>
+          </th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Bolsa</th>
+          <th class="text-center">Liquidación</th>
+          <th class="text-center">F. Operación</th>
+          <th class="text-center">F. Valor</th>
+          <th>Socio</th>
+          <th>Acción / Instrumento</th>
+          <th class="text-center">Tipo</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">P. Unitario</th>
+          <th class="text-end">V. Bruto</th>
+          <th class="text-end">Comisiones</th>
+          <th class="text-end">V. Neto</th>
+          <th>Observación</th>
+          <th class="text-center" style="width: 6rem;">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item>
+        <tr [ngClass]="getRowClass(item)">
+          <td class="text-center">
+            <p-checkbox [binary]="true" [(ngModel)]="item.seleccionado" [disabled]="item.estado !== 'LISTO'"></p-checkbox>
+          </td>
+          <td class="text-center">
+            <p-tag [value]="item.estado" [severity]="getEstadoSeverity(item.estado)"></p-tag>
+          </td>
+          <td class="text-center">
+            <span class="badge" [ngClass]="item.bolsa === 'BVQ' ? 'bg-primary' : 'bg-info text-dark'">{{ item.bolsa }}</span>
+          </td>
+          <td class="text-center fw-semibold" [pTooltip]="item.filename" tooltipPosition="top">{{ item.liquidacion || '-' }}</td>
+          <td class="text-center">{{ item.fecha_operacion || '-' }}</td>
+          <td class="text-center text-muted">{{ item.fecha_valor || '-' }}</td>
+          <td>{{ item.persona_detectada || item.comitente_nombre || '-' }}</td>
+          <td>
+            <div class="fw-medium text-primary">{{ item.instrumento_detectado || item.emisor_nombre || '-' }}</div>
+            <small class="text-muted">
+              <span *ngIf="item.codigo_vector" class="badge bg-light text-dark border me-1">{{ item.codigo_vector }}</span>
+              <span *ngIf="!item.id_instrumento && item.estado === 'LISTO'" class="text-warning">Nuevo instrumento</span>
+            </small>
+          </td>
+          <td class="text-center">
+            <span class="badge" [ngClass]="item.id_tipo_operacion === 205 ? 'bg-danger-subtle text-danger' : 'bg-success-subtle text-success'">
+              {{ item.id_tipo_operacion === 205 ? 'Venta' : 'Compra' }}
+            </span>
+          </td>
+          <td class="text-end fw-medium">{{ formatNumber(item.cantidad) }}</td>
+          <td class="text-end">{{ formatPrecio(item.precio_unitario) }}</td>
+          <td class="text-end">
+            {{ formatCurrency(item.valor_bruto) }}
+            <i *ngIf="diferenciaCuadre(item) !== 0" class="bi bi-exclamation-triangle-fill text-warning ms-1"
+              [pTooltip]="'Cantidad × Precio difiere en ' + formatCurrency(diferenciaCuadre(item))"></i>
+          </td>
+          <td class="text-end text-muted"
+            [pTooltip]="'Bolsa: ' + formatCurrency(item.comision_bolsa) + ' | Operador: ' + formatCurrency(item.comision_operador)">
+            {{ formatCurrency(item.total_comisiones) }}
+          </td>
+          <td class="text-end fw-bold text-success">{{ formatCurrency(item.valor_neto) }}</td>
+          <td><div class="obs-text text-muted">{{ item.observacion_sistema }}</div></td>
+          <td class="text-center">
+            <button pButton type="button" icon="bi bi-pencil" class="p-button-text p-button-sm p-button-primary"
+              pTooltip="Editar" (click)="abrirEdicion(item)" [disabled]="item.estado === 'DUPLICADO'"></button>
+            <button pButton type="button" icon="bi bi-trash" class="p-button-text p-button-sm p-button-danger"
+              pTooltip="Quitar" (click)="eliminarItem(item)"></button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Barra de acciones -->
+  <div *ngIf="items.length > 0" class="action-bar d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-2">
+      <p-inputSwitch [(ngModel)]="registrarMovimientoCapital" inputId="swMov"></p-inputSwitch>
+      <label for="swMov" class="mb-0 cursor-pointer">Registrar Movimiento de Capital</label>
+      <i class="bi bi-info-circle text-muted"
+        pTooltip="Genera automáticamente el egreso (compra) o ingreso (venta) en Movimientos de Capital. Desactívalo para cargas históricas."></i>
+    </div>
+    <div class="d-flex gap-2">
+      <button pButton type="button" label="Limpiar" icon="bi bi-x-circle"
+        class="p-button-outlined p-button-secondary" (click)="limpiarTodo()" [disabled]="isSaving"></button>
+      <button pButton type="button" [label]="'Confirmar e Importar (' + itemsSeleccionados.length + ')'"
+        icon="bi bi-check2-circle" class="p-button-success" [loading]="isSaving"
+        [disabled]="itemsSeleccionados.length === 0 || isSaving" (click)="confirmarImportacion()"></button>
+    </div>
+  </div>
+
+  <!-- Modal de edición -->
+  <p-dialog header="Editar Operación de Acciones" [(visible)]="editDialogVisible" [modal]="true"
+    [style]="{ width: '720px' }" [closable]="false">
+    <div *ngIf="editItem" class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Liquidación</label>
+        <input type="text" class="form-control form-control-sm" [(ngModel)]="editItem.liquidacion">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Tipo de Operación</label>
+        <p-dropdown [options]="tiposOperacionOptions" [(ngModel)]="editItem.id_tipo_operacion"
+          (onChange)="recalcularMontos()" styleClass="w-100" appendTo="body"></p-dropdown>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Fecha Operación (Negociación)</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="editItem.fecha_operacion">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Fecha Valor</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="editItem.fecha_valor" disabled>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Socio</label>
+        <p-dropdown [options]="personasOptions" [(ngModel)]="editItem.id_persona" [filter]="true"
+          placeholder="Seleccione socio" styleClass="w-100" appendTo="body"></p-dropdown>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Acción / Instrumento</label>
+        <p-dropdown [options]="instrumentosOptions" [(ngModel)]="editItem.id_instrumento" [filter]="true"
+          [showClear]="true" placeholder="(Crear nuevo instrumento)" styleClass="w-100" appendTo="body"></p-dropdown>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Cantidad</label>
+        <input type="number" class="form-control form-control-sm text-end" [(ngModel)]="editItem.cantidad" (ngModelChange)="recalcularMontos()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Precio Unitario (US$)</label>
+        <input type="number" step="0.0001" class="form-control form-control-sm text-end" [(ngModel)]="editItem.precio_unitario" (ngModelChange)="recalcularMontos()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Valor Bruto (US$)</label>
+        <input type="number" step="0.01" class="form-control form-control-sm text-end" [(ngModel)]="editItem.valor_bruto">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Comisión Bolsa</label>
+        <input type="number" step="0.01" class="form-control form-control-sm text-end" [(ngModel)]="editItem.comision_bolsa" (ngModelChange)="recalcularMontos()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Comisión Operador</label>
+        <input type="number" step="0.01" class="form-control form-control-sm text-end" [(ngModel)]="editItem.comision_operador" (ngModelChange)="recalcularMontos()">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold">Valor Neto (US$)</label>
+        <input type="number" step="0.01" class="form-control form-control-sm text-end fw-bold" [(ngModel)]="editItem.valor_neto">
+      </div>
+      <div class="col-12">
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          Al cambiar cantidad, precio o comisiones se recalculan Valor Bruto y Valor Neto. Puedes ajustarlos manualmente para cuadrar con la liquidación.
+        </small>
+      </div>
+    </div>
+    <ng-template pTemplate="footer">
+      <button pButton type="button" label="Cancelar" icon="bi bi-x" class="p-button-text" (click)="cancelarEdicion()"></button>
+      <button pButton type="button" label="Aplicar" icon="bi bi-check" class="p-button-primary" (click)="guardarEdicion()"></button>
+    </ng-template>
+  </p-dialog>
+</div>
+

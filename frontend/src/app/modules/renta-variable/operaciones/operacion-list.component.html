@@ -15,6 +15,9 @@
       <button class="btn btn-outline-danger" (click)="exportToPDF()" [disabled]="loading || operaciones.length === 0">
         <i class="bi bi-file-earmark-pdf"></i> PDF
       </button>
+      <a class="btn btn-outline-primary" routerLink="/renta-variable/importar-pdf">
+        <i class="bi bi-file-earmark-arrow-up"></i> Importar PDF
+      </a>
       <button class="btn btn-primary" (click)="openCreateDialog()">
         <i class="bi bi-plus-circle"></i> Nueva Operación
       </button>

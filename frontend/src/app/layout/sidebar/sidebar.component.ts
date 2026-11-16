@@ -126,6 +126,11 @@ export class SidebarComponent implements OnInit {
           path: '/renta-variable/operaciones'
         },
         {
+          title: 'Carga Liquidaciones PDF',
+          icon: 'bi-file-earmark-arrow-up',
+          path: '/renta-variable/importar-pdf'
+        },
+        {
           title: 'Dividendos',
           icon: 'bi-gift',
           path: '/renta-variable/dividendos'
