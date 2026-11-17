@@ -18,6 +18,7 @@ import { AccordionModule } from 'primeng/accordion';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { VentaInversionService, VentaInversion, RegistrarVentaRequest } from '../../../core/venta-inversion.service';
 import { InversionService, Inversion } from '../../../core/inversion.service';
+import { AmortizacionService } from '../../../core/amortizacion.service';
 import { CatalogoService } from '../../../core/catalogo.service';
 import { PaginationService } from '../../../core/pagination.service';
 import { ModalActionsComponent } from '../../../core/modal-actions';
@@ -99,9 +100,32 @@ export class VentaInversionListComponent implements OnInit {
   selectedVenta: VentaInversion | null = null;
   private isCalculating = false;
 
+  // Detalle de Inversión (Read-Only)
+  displayDetalleInversionDialog: boolean = false;
+  inversionSeleccionada: any = null;
+  loadingInversionDetalle: boolean = false;
+
+  // Amortizaciones de la Inversión
+  displayAmortizacionDialog: boolean = false;
+  loadingAmortizacion: boolean = false;
+  amortizaciones: any[] = [];
+  totalRecibido = 0;
+  capitalRecibido = 0;
+  interesRecibido = 0;
+  premioRecibido = 0;
+  totalPorRecibir = 0;
+  capitalPorRecibir = 0;
+  interesPorRecibir = 0;
+  premioPorRecibir = 0;
+  totalCapitalGeneral = 0;
+  totalInteresGeneral = 0;
+  totalPremioGeneral = 0;
+  totalGeneralTotal = 0;
+
   constructor(
     private ventaService: VentaInversionService,
     private inversionService: InversionService,
+    private amortizacionService: AmortizacionService,
     private catalogoService: CatalogoService,
     private fb: FormBuilder,
     private confirmationService: ConfirmationService,
@@ -634,6 +658,223 @@ export class VentaInversionListComponent implements OnInit {
       const val = parseFloat(d.valor_compra as any) || 0;
       return sum + val;
     }, 0);
+  }
+
+  /** IDs de las inversiones de compra asociadas a la venta seleccionada */
+  getCompraIds(): string {
+    const detalles = this.selectedVenta?.detalles || [];
+    const ids = detalles.map((d: any) => d.id_inversion).filter((x: any) => !!x);
+    if (ids.length === 0) {
+      const idInv = (this.selectedVenta as any)?.id_inversion;
+      return idInv ? String(idInv) : '-';
+    }
+    return Array.from(new Set(ids)).join(', ');
+  }
+
+  /** Lista numérica de IDs de inversión asociados a la venta seleccionada */
+  getCompraIdsList(): number[] {
+    const detalles = this.selectedVenta?.detalles || [];
+    const ids = detalles
+      .map((d: any) => Number(d.id_inversion))
+      .filter((x: any) => !!x && !isNaN(x));
+    if (ids.length === 0) {
+      const idInv = Number((this.selectedVenta as any)?.id_inversion);
+      return idInv && !isNaN(idInv) ? [idInv] : [];
+    }
+    return Array.from(new Set(ids));
+  }
+
+  /** Abre el diálogo con el detalle completo de una inversión */
+  verDetalleInversion(idInversion: number | string): void {
+    const id = Number(idInversion);
+    if (!id) return;
+
+    this.loadingInversionDetalle = true;
+    this.inversionSeleccionada = null;
+    this.displayDetalleInversionDialog = true;
+
+    this.inversionService.getById(id).subscribe({
+      next: (data: any) => {
+        this.loadingInversionDetalle = false;
+        this.inversionSeleccionada = data?.data || data;
+      },
+      error: (err) => {
+        this.loadingInversionDetalle = false;
+        console.error('Error al cargar detalle de inversión:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo obtener el detalle de la inversión'
+        });
+      }
+    });
+  }
+
+  /** Abre el diálogo con la tabla de amortización de la inversión seleccionada */
+  viewAmortizacion(inversion: any): void {
+    if (!inversion?.id_inversion) return;
+    this.loadingAmortizacion = true;
+    this.displayAmortizacionDialog = true;
+    this.amortizaciones = [];
+    this.resetMetricasAmortizacion();
+
+    this.amortizacionService.getByInversion(inversion.id_inversion).subscribe({
+      next: (data: any) => {
+        this.loadingAmortizacion = false;
+        this.amortizaciones = data || [];
+        this.calcularMetricasAmortizacion();
+      },
+      error: (error) => {
+        this.loadingAmortizacion = false;
+        console.error('Error al cargar amortizaciones:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar la tabla de amortización'
+        });
+      }
+    });
+  }
+
+  getEstadoAmortizacionNombre(amortizacion: any): string {
+    if (!amortizacion) return '-';
+    if (amortizacion.estado_amortizacion?.nombre) {
+      return amortizacion.estado_amortizacion.nombre;
+    }
+    if (amortizacion.estadoAmortizacion?.nombre) {
+      return amortizacion.estadoAmortizacion.nombre;
+    }
+
+    const idEstado = Number(amortizacion.id_estado_amortizacion);
+    switch (idEstado) {
+      case 135: return 'Pagada';
+      case 134: return 'Pendiente de pago';
+      case 136: return 'Morosa';
+      case 137: return 'Anulada';
+      case 227: return 'Venta Anticipada';
+      case 200: return 'AnuladaVentParcial';
+      default: return amortizacion.activo ? 'Pagada' : 'Pendiente de pago';
+    }
+  }
+
+  getEstadoAmortizacionBadgeClass(amortizacion: any): string {
+    const idEstado = Number(amortizacion?.id_estado_amortizacion);
+    const nombre = this.getEstadoAmortizacionNombre(amortizacion).toLowerCase();
+
+    if (idEstado === 135 || nombre.includes('pagad') || nombre.includes('cobrad')) {
+      return 'bg-success text-white';
+    }
+    if (idEstado === 134 || nombre.includes('pendiente')) {
+      return 'bg-warning text-dark';
+    }
+    if (idEstado === 136 || nombre.includes('moros')) {
+      return 'bg-danger text-white';
+    }
+    if (idEstado === 227 || nombre.includes('venta')) {
+      return 'bg-info text-white';
+    }
+    return 'bg-secondary text-white';
+  }
+
+  isCuotaCobrada(amortizacion: any): boolean {
+    if (!amortizacion) return false;
+    const idEstado = Number(amortizacion.id_estado_amortizacion);
+    if (idEstado === 135) return true;
+    const nombre = this.getEstadoAmortizacionNombre(amortizacion).toLowerCase();
+    if (nombre.includes('pagad') || nombre.includes('cobrad')) return true;
+    return false;
+  }
+
+  getInteresMasPremio(amortizacion: any): number {
+    if (!amortizacion) return 0;
+    const interes = Number(amortizacion.interes) || 0;
+    const premio = Number(amortizacion.descuento || amortizacion.premio) || 0;
+    return interes + premio;
+  }
+
+  resetMetricasAmortizacion(): void {
+    this.capitalRecibido = 0;
+    this.interesRecibido = 0;
+    this.premioRecibido = 0;
+    this.totalRecibido = 0;
+    this.capitalPorRecibir = 0;
+    this.interesPorRecibir = 0;
+    this.premioPorRecibir = 0;
+    this.totalPorRecibir = 0;
+    this.totalCapitalGeneral = 0;
+    this.totalInteresGeneral = 0;
+    this.totalPremioGeneral = 0;
+    this.totalGeneralTotal = 0;
+  }
+
+  calcularMetricasAmortizacion(): void {
+    this.resetMetricasAmortizacion();
+    if (!this.amortizaciones || this.amortizaciones.length === 0) return;
+
+    this.amortizaciones.forEach(a => {
+      const cap = Number(a.capital) || 0;
+      const int = Number(a.interes) || 0;
+      const pre = Number(a.descuento || a.premio) || 0;
+      const tot = Number(a.total) || (cap + int + pre);
+
+      if (this.isCuotaCobrada(a)) {
+        this.capitalRecibido += cap;
+        this.interesRecibido += int;
+        this.premioRecibido += pre;
+        this.totalRecibido += tot;
+      } else {
+        this.capitalPorRecibir += cap;
+        this.interesPorRecibir += int;
+        this.premioPorRecibir += pre;
+        this.totalPorRecibir += tot;
+      }
+    });
+
+    this.totalCapitalGeneral = this.capitalRecibido + this.capitalPorRecibir;
+    this.totalInteresGeneral = this.interesRecibido + this.interesPorRecibir;
+    this.totalPremioGeneral = this.premioRecibido + this.premioPorRecibir;
+    this.totalGeneralTotal = this.totalRecibido + this.totalPorRecibir;
+  }
+
+  formatNumber(value: number | string | undefined | null): string {
+    if (value === undefined || value === null || value === '') return '0.00';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (isNaN(num)) return '0.00';
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  /** Liquidaciones de compra de las inversiones asociadas */
+  getCompraLiquidaciones(): string {
+    const detalles = this.selectedVenta?.detalles || [];
+    const liqs = detalles
+      .map((d: any) => d.inversion?.liquidacion)
+      .filter((x: any) => !!x);
+    if (liqs.length === 0) {
+      const liq = (this.selectedVenta as any)?.inversion?.liquidacion;
+      return liq || '-';
+    }
+    return Array.from(new Set(liqs)).join(', ');
+  }
+
+  /** Precio de compra (%); si hay varias inversiones se muestra el promedio ponderado por valor nominal */
+  getCompraPrecio(): string {
+    const detalles = this.selectedVenta?.detalles || [];
+    const conPrecio = detalles.filter((d: any) => d.inversion?.precio_compra != null && d.inversion?.precio_compra !== '');
+    if (conPrecio.length === 0) {
+      const p = (this.selectedVenta as any)?.inversion?.precio_compra;
+      return p != null && p !== '' ? this.formatPrecioVenta(parseFloat(p)) : '-';
+    }
+    if (conPrecio.length === 1) {
+      return this.formatPrecioVenta(parseFloat(conPrecio[0].inversion.precio_compra));
+    }
+    let sumPeso = 0;
+    let sumPond = 0;
+    conPrecio.forEach((d: any) => {
+      const peso = parseFloat(d.valor_nominal) || 0;
+      sumPeso += peso;
+      sumPond += peso * (parseFloat(d.inversion.precio_compra) || 0);
+    });
+    return sumPeso > 0 ? this.formatPrecioVenta(sumPond / sumPeso) + ' (prom.)' : '-';
   }
 
   getTotalMontoVendido(): number {
