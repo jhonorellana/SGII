@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { DialogModule } from 'primeng/dialog';
 import { ChartModule } from 'primeng/chart';
+import { TabViewModule } from 'primeng/tabview';
 import { 
   FixedIncomeRadarService, 
   FixedIncomeMarketInstrument, 
@@ -39,13 +40,16 @@ import {
     TagModule,
     ProgressBarModule,
     DialogModule,
-    ChartModule
+    ChartModule,
+    TabViewModule
   ],
   templateUrl: './fixed-income-radar.component.html',
   styleUrl: './fixed-income-radar.component.css'
 })
 export class FixedIncomeRadarComponent implements OnInit {
   activeTab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA' | 'ALERTAS' = 'MERCADO';
+  activeTabIndex: number = 0;
+  tabIndexMap: ('MERCADO' | 'PORTAFOLIO' | 'CURVA' | 'ALERTAS')[] = ['MERCADO', 'PORTAFOLIO', 'CURVA', 'ALERTAS'];
   viewMode: 'CARDS' | 'TABLE' = 'TABLE';
 
   loading: boolean = false;
@@ -135,6 +139,7 @@ export class FixedIncomeRadarComponent implements OnInit {
   alertsData: FixedIncomeMaturityAlertsResponse['data'] | null = null;
   countdownSearchTerm: string = '';
   countdownUrgencyFilter: 'TODOS' | 'CRITICA' | 'ALTA' | 'MEDIA' = 'TODOS';
+  countdownGroupingMode: 'DETALLE' | 'INSTRUMENTO_PROPIETARIO' | 'INSTRUMENTO' = 'INSTRUMENTO_PROPIETARIO';
   paymentsSearchTerm: string = '';
   paymentsFilter: 'TODOS' | 'HOY' | 'SEMANA' | 'MES' | 'TRIMESTRE' = 'TODOS';
 
@@ -442,6 +447,18 @@ export class FixedIncomeRadarComponent implements OnInit {
 
   setTab(tab: 'MERCADO' | 'PORTAFOLIO' | 'CURVA' | 'ALERTAS'): void {
     this.activeTab = tab;
+    this.activeTabIndex = this.tabIndexMap.indexOf(tab);
+    if (tab === 'CURVA' && !this.curveData) {
+      this.loadYieldCurve();
+    } else if (tab === 'ALERTAS' && !this.alertsData) {
+      this.loadMaturityAlerts();
+    }
+  }
+
+  onTabChange(index: number): void {
+    this.activeTabIndex = index;
+    const tab = this.tabIndexMap[index] || 'MERCADO';
+    this.activeTab = tab;
     if (tab === 'CURVA' && !this.curveData) {
       this.loadYieldCurve();
     } else if (tab === 'ALERTAS' && !this.alertsData) {
@@ -476,9 +493,42 @@ export class FixedIncomeRadarComponent implements OnInit {
       list = list.filter(h => 
         (h.nombre_instrumento || '').toLowerCase().includes(q) ||
         (h.nombre_emisor || '').toLowerCase().includes(q) ||
-        (h.calificacion_riesgo || '').toLowerCase().includes(q)
+        (h.calificacion_riesgo || '').toLowerCase().includes(q) ||
+        (h.propietario_nombre || '').toLowerCase().includes(q)
       );
     }
+
+    if (this.countdownGroupingMode === 'INSTRUMENTO_PROPIETARIO') {
+      const map = new Map<string, FixedIncomeCountdownHolding>();
+      for (const h of list) {
+        const key = `${h.id_instrumento || h.nombre_instrumento}_${h.id_propietario || h.propietario_nombre}`;
+        if (!map.has(key)) {
+          map.set(key, { ...h, cantidad_inversiones: 1 });
+        } else {
+          const existing = map.get(key)!;
+          existing.saldo_capital = Math.round((existing.saldo_capital + h.saldo_capital) * 100) / 100;
+          existing.cantidad_inversiones = (existing.cantidad_inversiones || 1) + 1;
+        }
+      }
+      list = Array.from(map.values());
+    } else if (this.countdownGroupingMode === 'INSTRUMENTO') {
+      const map = new Map<string, FixedIncomeCountdownHolding>();
+      for (const h of list) {
+        const key = `${h.id_instrumento || h.nombre_instrumento}`;
+        if (!map.has(key)) {
+          map.set(key, { ...h, cantidad_inversiones: 1 });
+        } else {
+          const existing = map.get(key)!;
+          existing.saldo_capital = Math.round((existing.saldo_capital + h.saldo_capital) * 100) / 100;
+          existing.cantidad_inversiones = (existing.cantidad_inversiones || 1) + 1;
+          if (h.propietario_nombre && !existing.propietario_nombre?.includes(h.propietario_nombre)) {
+            existing.propietario_nombre = `${existing.propietario_nombre}, ${h.propietario_nombre}`;
+          }
+        }
+      }
+      list = Array.from(map.values());
+    }
+
     return list;
   }
 

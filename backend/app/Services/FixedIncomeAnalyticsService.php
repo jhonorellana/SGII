@@ -140,6 +140,7 @@ class FixedIncomeAnalyticsService
         $query = DB::table('inversion as i')
             ->join('instrumento as inst', 'i.id_instrumento', '=', 'inst.id_instrumento')
             ->leftJoin('emisor as e', 'inst.id_emisor', '=', 'e.id_emisor')
+            ->leftJoin('persona as p', 'i.id_propietario', '=', 'p.id_persona')
             ->leftJoin(DB::raw('inversion.vector_precio_diario as v'), function ($join) use ($latestDate) {
                 $join->on(DB::raw("CASE WHEN inst.codigo_titulo_vector LIKE 'a%' THEN inst.codigo_titulo_vector ELSE CONCAT('a', inst.codigo_titulo_vector) END"), '=', 'v.codigo_titulo_vector')
                      ->where('v.fecha_vector', '=', $latestDate);
@@ -208,6 +209,7 @@ class FixedIncomeAnalyticsService
         $holdings = $query->select([
             'i.id_inversion',
             'i.id_propietario',
+            DB::raw("TRIM(CONCAT(COALESCE(p.nombres, ''), ' ', COALESCE(p.apellidos, ''))) as propietario_nombre"),
             'inst.id_instrumento',
             'inst.nombre as nombre_instrumento',
             'inst.codigo_titulo_vector',
@@ -293,6 +295,8 @@ class FixedIncomeAnalyticsService
             return [
                 'id_inversion' => $h->id_inversion,
                 'id_instrumento' => $h->id_instrumento,
+                'id_propietario' => $h->id_propietario,
+                'propietario_nombre' => trim($h->propietario_nombre ?? '') ?: 'Grupo',
                 'nombre_emisor' => $h->nombre_emisor ?? $h->nemo_emisor ?? 'Emisor',
                 'nombre_instrumento' => $h->nombre_instrumento,
                 'codigo_titulo_vector' => $h->codigo_titulo_vector,
@@ -755,6 +759,9 @@ class FixedIncomeAnalyticsService
 
             $titulosConteo[] = [
                 'id_inversion' => $h['id_inversion'],
+                'id_instrumento' => $h['id_instrumento'] ?? null,
+                'id_propietario' => $h['id_propietario'] ?? null,
+                'propietario_nombre' => $h['propietario_nombre'] ?? 'Grupo',
                 'nombre_instrumento' => $h['nombre_instrumento'],
                 'nombre_emisor' => $h['nombre_emisor'],
                 'calificacion_riesgo' => $h['calificacion_riesgo'] ?? 'AAA',

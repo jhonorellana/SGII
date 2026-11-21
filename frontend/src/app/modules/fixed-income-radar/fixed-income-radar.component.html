@@ -48,56 +48,22 @@
     </div>
   </div>
 
-  <!-- NAVEGACIÓN POR PESTAÑAS (TABS) -->
-  <ul class="nav nav-tabs border-bottom mb-3">
-    <li class="nav-item">
-      <button 
-        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
-        [class.active]="activeTab === 'MERCADO'" 
-        (click)="setTab('MERCADO')">
-        <i class="bi bi-radar text-success fs-5"></i>
-        <span>Radar de Mercado ({{ kpis.total_titulos }} Títulos)</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button 
-        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
-        [class.active]="activeTab === 'PORTAFOLIO'" 
-        (click)="setTab('PORTAFOLIO')">
-        <i class="bi bi-briefcase-fill text-primary fs-5"></i>
-        <span>Mi Portafolio M2M</span>
-        <span class="badge bg-primary rounded-pill px-2 py-0.5 extra-small ms-1">{{ portfolioSummary.total_posiciones }}</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button 
-        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
-        [class.active]="activeTab === 'CURVA'" 
-        (click)="setTab('CURVA')">
-        <i class="bi bi-graph-up text-info fs-5"></i>
-        <span>Curva de Rendimiento Cero Cupón</span>
-        <span class="badge bg-info text-dark rounded-pill px-2 py-0.5 extra-small ms-1">BVQ</span>
-      </button>
-    </li>
-    <li class="nav-item">
-      <button 
-        class="nav-link py-2 px-3.5 fw-bold d-flex align-items-center gap-2" 
-        [class.active]="activeTab === 'ALERTAS'" 
-        (click)="setTab('ALERTAS')">
-        <i class="bi bi-bell-fill text-warning fs-5"></i>
-        <span>Alertas & Conteo Regresivo</span>
-        <span class="badge bg-danger rounded-pill px-2 py-0.5 extra-small ms-1" *ngIf="alertsData?.kpis?.mes_30d?.count">
-          {{ alertsData?.kpis?.mes_30d?.count }}
-        </span>
-      </button>
-    </li>
-  </ul>
+  <!-- NAVEGACIÓN POR PESTAÑAS ESTÁNDAR SIPRO (PrimeNG TabView) -->
+  <p-tabView [(activeIndex)]="activeTabIndex" (onChange)="onTabChange($event.index)">
 
-  <!-- ========================================== -->
-  <!-- TAB 1: RADAR DE MERCADO                    -->
-  <!-- ========================================== -->
-  <div *ngIf="activeTab === 'MERCADO'" class="fade-in">
-    <!-- TARJETAS KPI DE RESUMEN EJECUTIVO (COMPACT 4-COLUMN GRID) -->
+    <!-- ========================================== -->
+    <!-- TAB 1: RADAR DE MERCADO                    -->
+    <!-- ========================================== -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-radar fs-6"></i>
+          <span>Radar de Mercado ({{ kpis.total_titulos }} Títulos)</span>
+        </div>
+      </ng-template>
+
+      <div class="fade-in pt-2">
+        <!-- TARJETAS KPI DE RESUMEN EJECUTIVO (COMPACT 4-COLUMN GRID) -->
     <div class="kpi-grid mb-3">
       <div class="card border-0 shadow-2xs bg-white rounded-3">
         <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
@@ -399,13 +365,23 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+    </p-tabPanel>
 
-  <!-- ========================================== -->
-  <!-- TAB 2: MI PORTAFOLIO DE DEUDA              -->
-  <!-- ========================================== -->
-  <div *ngIf="activeTab === 'PORTAFOLIO'" class="fade-in">
-    <!-- TARJETAS KPI RESUMEN DE CARTERA (COMPACT 4-COLUMN GRID) -->
+    <!-- ========================================== -->
+    <!-- TAB 2: MI PORTAFOLIO DE DEUDA              -->
+    <!-- ========================================== -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-briefcase fs-6"></i>
+          <span>Mi Portafolio M2M</span>
+          <span class="badge bg-primary rounded-pill px-2 py-0.5 extra-small ms-1">{{ portfolioSummary.total_posiciones }}</span>
+        </div>
+      </ng-template>
+
+      <div class="fade-in pt-2">
+        <!-- TARJETAS KPI RESUMEN DE CARTERA (COMPACT 4-COLUMN GRID) -->
     <div class="kpi-grid mb-3">
       <div class="card border-0 shadow-2xs bg-white rounded-3">
         <div class="card-body p-2.5 d-flex align-items-center gap-2.5">
@@ -677,13 +653,23 @@
         </ng-template>
       </p-table>
     </div>
-  </div>
+    </div>
+    </p-tabPanel>
 
-  <!-- ========================================== -->
-  <!-- TAB 3: CURVA DE RENDIMIENTO CERO CUPÓN     -->
-  <!-- ========================================== -->
-  <div *ngIf="activeTab === 'CURVA'" class="fade-in">
-    <!-- BARRA DE CONTROLES Y FILTROS DE HORIZONTE -->
+    <!-- ========================================== -->
+    <!-- TAB 3: CURVA DE RENDIMIENTO CERO CUPÓN     -->
+    <!-- ========================================== -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-graph-up fs-6"></i>
+          <span>Curva de Rendimiento Cero Cupón</span>
+          <span class="badge bg-info text-dark rounded-pill px-2 py-0.5 extra-small ms-1">BVQ</span>
+        </div>
+      </ng-template>
+
+      <div class="fade-in pt-2">
+        <!-- BARRA DE CONTROLES Y FILTROS DE HORIZONTE -->
     <div class="card border-0 shadow-2xs rounded-3 p-3 bg-white mb-3">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
         <!-- Selector de Vector y Fecha -->
@@ -999,13 +985,25 @@
         </div>
       </div>
     </div>
-  </div>
+    </div>
+    </p-tabPanel>
 
-  <!-- ========================================== -->
-  <!-- TAB 4: CENTRO DE ALERTAS Y CONTEO REGRESIVO -->
-  <!-- ========================================== -->
-  <div *ngIf="activeTab === 'ALERTAS'" class="fade-in">
-    <!-- Spinner mientras carga -->
+    <!-- ========================================== -->
+    <!-- TAB 4: CENTRO DE ALERTAS Y CONTEO REGRESIVO -->
+    <!-- ========================================== -->
+    <p-tabPanel>
+      <ng-template pTemplate="header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-bell fs-6"></i>
+          <span>Alertas & Conteo Regresivo</span>
+          <span class="badge bg-danger text-white rounded-pill px-2 py-0.5 extra-small ms-1" *ngIf="alertsData?.kpis?.mes_30d?.count">
+            {{ alertsData?.kpis?.mes_30d?.count }}
+          </span>
+        </div>
+      </ng-template>
+
+      <div class="fade-in pt-2">
+        <!-- Spinner mientras carga -->
     <div *ngIf="alertsLoading" class="card border-0 shadow-2xs rounded-3 p-5 bg-white text-center mb-3">
       <div class="spinner-border text-warning mb-3" style="width: 2.5rem; height: 2.5rem;" role="status"></div>
       <h6 class="fw-bold text-dark">Calculando Alertas y Conteos Regresivos...</h6>
@@ -1264,8 +1262,39 @@
             </small>
           </div>
 
-          <!-- Filtros de Urgencia y Buscador -->
+          <!-- Filtros de Agrupación, Urgencia y Buscador -->
           <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Selector de Agrupación -->
+            <div class="d-flex align-items-center gap-1 me-1">
+              <span class="extra-small text-muted fw-bold">Agrupar:</span>
+              <div class="btn-group btn-group-sm" role="group">
+                <button 
+                  type="button" 
+                  class="btn py-1 px-2.5 extra-small fw-semibold" 
+                  [ngClass]="countdownGroupingMode === 'INSTRUMENTO_PROPIETARIO' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light'"
+                  (click)="countdownGroupingMode = 'INSTRUMENTO_PROPIETARIO'"
+                  pTooltip="Agrupar inversiones por instrumento y propietario">
+                  <i class="bi bi-person-lines-fill me-1"></i> Por Instrumento y Propietario
+                </button>
+                <button 
+                  type="button" 
+                  class="btn py-1 px-2.5 extra-small fw-semibold" 
+                  [ngClass]="countdownGroupingMode === 'INSTRUMENTO' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light'"
+                  (click)="countdownGroupingMode = 'INSTRUMENTO'"
+                  pTooltip="Consolidar por instrumento sumando todos los propietarios">
+                  <i class="bi bi-collection-fill me-1"></i> Consolidado Instrumento
+                </button>
+                <button 
+                  type="button" 
+                  class="btn py-1 px-2.5 extra-small fw-semibold" 
+                  [ngClass]="countdownGroupingMode === 'DETALLE' ? 'btn-secondary text-white' : 'btn-outline-secondary bg-light'"
+                  (click)="countdownGroupingMode = 'DETALLE'"
+                  pTooltip="Ver cada inversión individual (inversión por inversión)">
+                  <i class="bi bi-list-ul me-1"></i> Detallado (1 a 1)
+                </button>
+              </div>
+            </div>
+
             <div class="btn-group btn-group-sm" role="group">
               <button 
                 type="button" 
@@ -1346,10 +1375,19 @@
           <ng-template pTemplate="body" let-h>
             <tr>
               <td>
-                <div class="fw-bold text-dark text-truncate" style="max-width: 260px;" [title]="h.nombre_emisor">{{ h.nombre_emisor }}</div>
-                <div class="text-muted extra-small text-truncate" style="max-width: 260px;" [title]="h.nombre_instrumento">{{ h.nombre_instrumento }}</div>
-                <div class="extra-small text-muted mt-0.5">
-                  <i class="bi bi-calendar-event me-1"></i> Vencimiento: <strong class="text-dark">{{ h.fecha_vencimiento }}</strong>
+                <div class="fw-bold text-dark text-truncate" style="max-width: 280px;" [title]="h.nombre_emisor">{{ h.nombre_emisor }}</div>
+                <div class="text-muted extra-small text-truncate" style="max-width: 280px;" [title]="h.nombre_instrumento">{{ h.nombre_instrumento }}</div>
+                
+                <div class="d-flex align-items-center gap-1.5 mt-1 flex-wrap">
+                  <span class="badge bg-light text-dark border extra-small" *ngIf="h.propietario_nombre">
+                    <i class="bi bi-person-fill text-primary me-0.5"></i> {{ h.propietario_nombre }}
+                  </span>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle extra-small fw-semibold" *ngIf="h.cantidad_inversiones && h.cantidad_inversiones > 1">
+                    <i class="bi bi-layers-fill me-0.5"></i> {{ h.cantidad_inversiones }} inversiones agrupadas
+                  </span>
+                  <span class="extra-small text-muted ms-auto">
+                    <i class="bi bi-calendar-event me-0.5"></i> Vencimiento: <strong class="text-dark">{{ h.fecha_vencimiento }}</strong>
+                  </span>
                 </div>
               </td>
               <td class="text-center">
@@ -1414,7 +1452,9 @@
         </p-table>
       </div>
     </div>
-  </div>
+    </div>
+    </p-tabPanel>
+  </p-tabView>
 
   <!-- MODAL DE DETALLE DE INVERSIÓN Y AMORTIZACIONES -->
   <p-dialog 

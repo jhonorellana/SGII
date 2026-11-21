@@ -180,6 +180,10 @@ export interface FixedIncomeCurveResponse {
 
 export interface FixedIncomeCountdownHolding {
   id_inversion: number;
+  id_instrumento?: number;
+  id_propietario?: number;
+  propietario_nombre?: string;
+  cantidad_inversiones?: number;
   nombre_instrumento: string;
   nombre_emisor: string;
   calificacion_riesgo: string;

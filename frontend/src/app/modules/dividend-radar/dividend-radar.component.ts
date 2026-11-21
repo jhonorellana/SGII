@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
+import { TabViewModule } from 'primeng/tabview';
 import { DividendRadarService, DividendOpportunityItem, SimulationResponse, PortfolioPositionItem } from '../../core/dividend-radar.service';
 
 @Component({
@@ -18,13 +19,15 @@ import { DividendRadarService, DividendOpportunityItem, SimulationResponse, Port
     ButtonModule,
     TooltipModule,
     DialogModule,
-    TagModule
+    TagModule,
+    TabViewModule
   ],
   templateUrl: './dividend-radar.component.html',
   styleUrl: './dividend-radar.component.css'
 })
 export class DividendRadarComponent implements OnInit {
   activeTab: 'radar' | 'portafolio' = 'radar';
+  activeTabIndex: number = 0;
   
   loading: boolean = false;
   loadingSimulation: boolean = false;
@@ -43,7 +46,7 @@ export class DividendRadarComponent implements OnInit {
   filteredPortfolioItems: PortfolioPositionItem[] = [];
   portfolioViewMode: 'table' | 'cards' = 'cards';
   selectedPersonaId: number = 0;
-  consolidarPortafolio: boolean = false;
+  consolidarPortafolio: boolean = true;
   titulares: { id_persona: number; persona: string }[] = [];
   
   totalValorPortafolioUsd: number = 0;
@@ -80,7 +83,16 @@ export class DividendRadarComponent implements OnInit {
 
   cambiarTab(tab: 'radar' | 'portafolio'): void {
     this.activeTab = tab;
+    this.activeTabIndex = tab === 'radar' ? 0 : 1;
     if (tab === 'portafolio' && this.portfolioItems.length === 0) {
+      this.cargarPortafolio();
+    }
+  }
+
+  onTabChange(index: number): void {
+    this.activeTabIndex = index;
+    this.activeTab = index === 0 ? 'radar' : 'portafolio';
+    if (this.activeTab === 'portafolio' && this.portfolioItems.length === 0) {
       this.cargarPortafolio();
     }
   }
