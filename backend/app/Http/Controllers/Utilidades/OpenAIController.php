@@ -19,9 +19,15 @@ class OpenAIController extends Controller
         if (!$apiKey) {
             return response()->json([
                 'success' => true,
+                'is_fallback' => true,
+                'error_type' => 'NO_API_KEY',
+                'error_message' => 'No se ha configurado OPENAI_API_KEY en el archivo .env del servidor.',
                 'data' => "El mercado de valores está lleno de individuos que conocen el precio de todo, pero el valor de nada. ¡A comprar y vender se ha dicho! 🚀"
             ]);
         }
+
+        $isFallback = false;
+        $errorMessage = null;
 
         try {
             if (!empty($promptCustom)) {
@@ -36,7 +42,7 @@ class OpenAIController extends Controller
             $response = Http::withToken($apiKey)
                 ->timeout(10)
                 ->post('https://api.openai.com/v1/chat/completions', [
-                    'model' => 'gpt-3.5-turbo',
+                    'model' => 'gpt-4o-mini',
                     'messages' => [
                         [
                             'role' => 'system',
@@ -52,17 +58,26 @@ class OpenAIController extends Controller
 
             if ($response->successful()) {
                 $broma = trim($response->json('choices.0.message.content'), '"\' ');
+                $isFallback = false;
             } else {
+                $errBody = $response->json('error.message') ?? $response->body();
                 Log::error('OpenAI API Error: ' . $response->body());
                 $broma = "Si la inversión fuera fácil, no sería tan divertido. ¡A ver qué nos depara el mercado hoy! 💼";
+                $isFallback = true;
+                $errorMessage = 'Error retornado por OpenAI: ' . $errBody;
             }
         } catch (\Exception $e) {
             Log::error('OpenAI Request Failed: ' . $e->getMessage());
             $broma = "El dinero nunca duerme. ¡Que tengamos una excelente jornada! 🌅";
+            $isFallback = true;
+            $errorMessage = 'Fallo de conexión o timeout con OpenAI: ' . $e->getMessage();
         }
 
         return response()->json([
             'success' => true,
+            'is_fallback' => $isFallback,
+            'error_message' => $errorMessage,
+            'model' => 'gpt-4o-mini',
             'data' => $broma
         ]);
     }
@@ -88,7 +103,7 @@ class OpenAIController extends Controller
                 $response = Http::withToken($apiKey)
                     ->timeout(10)
                     ->post('https://api.openai.com/v1/chat/completions', [
-                        'model' => 'gpt-3.5-turbo',
+                        'model' => 'gpt-4o-mini',
                         'messages' => [
                             [
                                 'role' => 'system',
@@ -118,5 +133,57 @@ class OpenAIController extends Controller
             'success' => true,
             'data' => $broma
         ]);
+    }
+
+    /**
+     * Valida en tiempo real si la conexión y la API Key de OpenAI están activas.
+     */
+    public function checkStatus()
+    {
+        $apiKey = env('OPENAI_API_KEY');
+        if (!$apiKey) {
+            return response()->json([
+                'success' => false,
+                'status' => 'no_key',
+                'model' => 'gpt-4o-mini',
+                'message' => 'Falta configurar la variable OPENAI_API_KEY en el archivo .env del servidor.'
+            ], 200);
+        }
+
+        try {
+            $response = Http::withToken($apiKey)
+                ->timeout(8)
+                ->post('https://api.openai.com/v1/chat/completions', [
+                    'model' => 'gpt-4o-mini',
+                    'messages' => [
+                        ['role' => 'user', 'content' => 'ping']
+                    ],
+                    'max_tokens' => 5
+                ]);
+
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'status' => 'connected',
+                    'model' => 'gpt-4o-mini',
+                    'message' => 'Conexión activa con ChatGPT (OpenAI gpt-4o-mini)'
+                ], 200);
+            } else {
+                $err = $response->json('error.message') ?? $response->body();
+                return response()->json([
+                    'success' => false,
+                    'status' => 'error',
+                    'model' => 'gpt-4o-mini',
+                    'message' => 'Error de OpenAI: ' . $err
+                ], 200);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'status' => 'exception',
+                'model' => 'gpt-4o-mini',
+                'message' => 'Fallo de conexión o timeout con OpenAI: ' . $e->getMessage()
+            ], 200);
+        }
     }
 }

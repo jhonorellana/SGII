@@ -10,6 +10,33 @@
         <p class="subtitle text-white-50 m-0 fs-6">Comunicaciones inteligentes personalizadas para Notas de Crédito, Contabilidad y Renta Variable</p>
       </div>
     </div>
+    <!-- INDICADOR DE ESTADO DE CONEXIÓN CHATGPT / OPENAI -->
+    <div class="d-flex align-items-center gap-2">
+      <span *ngIf="openaiStatus === 'checking'" class="badge bg-secondary d-flex align-items-center gap-1 py-1 px-2 border border-secondary shadow-sm fs-7">
+        <i class="pi pi-spin pi-spinner"></i>
+        <span>Verificando ChatGPT...</span>
+      </span>
+
+      <span *ngIf="openaiStatus === 'connected'" class="badge bg-success d-flex align-items-center gap-1 py-1 px-2 border border-white-50 shadow-sm fs-7" [pTooltip]="openaiMessage" tooltipPosition="bottom">
+        <i class="pi pi-check-circle text-white"></i>
+        <span class="text-white fw-bold">ChatGPT Conectado (gpt-4o-mini)</span>
+      </span>
+
+      <span *ngIf="openaiStatus === 'error'" class="badge bg-danger d-flex align-items-center gap-1 py-1 px-2 border border-white-50 shadow-sm fs-7" [pTooltip]="openaiMessage" tooltipPosition="bottom">
+        <i class="pi pi-exclamation-triangle text-white"></i>
+        <span class="text-white fw-bold">ChatGPT Desconectado</span>
+      </span>
+
+      <button pButton type="button" 
+              icon="pi pi-sync" 
+              label="Probar Conexión" 
+              class="p-button-outlined p-button-sm text-white border-white-50" 
+              [loading]="verificandoOpenAI" 
+              (click)="verificarConexionOpenAI(true)" 
+              pTooltip="Verificar estado de la conexión con OpenAI" 
+              tooltipPosition="bottom">
+      </button>
+    </div>
   </div>
 
   <!-- PESTAÑAS PRINCIPALES -->
@@ -103,11 +130,31 @@
             </div>
 
             <!-- 3. Mensaje Generado -->
-            <div class="card border-0 shadow-sm border-start border-success border-4">
+            <div class="card border-0 shadow-sm border-start border-4" [ngClass]="tab1EstadoIa === 'fallback' ? 'border-warning' : 'border-success'">
               <div class="card-body p-2 px-3">
-                <label class="form-label fw-bold text-success mb-1 fs-7">
-                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
-                </label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label fw-bold text-success m-0 fs-7">
+                    <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                  </label>
+                  <div>
+                    <span *ngIf="tab1EstadoIa === 'chatgpt'" class="badge bg-success-subtle text-success border border-success-subtle fs-8">
+                      <i class="pi pi-bolt me-1"></i>Generado con ChatGPT (gpt-4o-mini)
+                    </span>
+                    <span *ngIf="tab1EstadoIa === 'fallback'" class="badge bg-warning-subtle text-danger border border-warning fs-8">
+                      <i class="pi pi-exclamation-triangle me-1"></i>Contingencia Local (ChatGPT no respondió)
+                    </span>
+                  </div>
+                </div>
+
+                <!-- ALERTA SI CHATGPT FALLÓ O USÓ CONTINGENCIA -->
+                <div *ngIf="tab1EstadoIa === 'fallback'" class="alert alert-warning py-1 px-2 mb-2 fs-7 d-flex align-items-center justify-content-between">
+                  <div>
+                    <i class="pi pi-exclamation-triangle text-danger me-1 fw-bold"></i>
+                    <strong>Alerta IA:</strong> ChatGPT no respondió (<em>{{ tab1ErrorOpenAI }}</em>). Se aplicó plantilla local de contingencia.
+                  </div>
+                  <button pButton type="button" icon="pi pi-refresh" label="Reintentar IA" class="p-button-warning p-button-outlined p-button-xs py-0 px-2" (click)="generarMensajeTab1()"></button>
+                </div>
+
                 <textarea pInputTextarea [(ngModel)]="mensajeFinalTab1" rows="8" placeholder="Haz clic en 'Generar Mensaje Matutino con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
               </div>
             </div>
@@ -155,11 +202,31 @@
             </div>
 
             <!-- 3. Mensaje Final -->
-            <div class="card border-0 shadow-sm border-start border-success border-4">
+            <div class="card border-0 shadow-sm border-start border-4" [ngClass]="tab2EstadoIa === 'fallback' ? 'border-warning' : 'border-success'">
               <div class="card-body p-2 px-3">
-                <label class="form-label fw-bold text-success mb-1 fs-7">
-                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
-                </label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label fw-bold text-success m-0 fs-7">
+                    <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                  </label>
+                  <div>
+                    <span *ngIf="tab2EstadoIa === 'chatgpt'" class="badge bg-success-subtle text-success border border-success-subtle fs-8">
+                      <i class="pi pi-bolt me-1"></i>Generado con ChatGPT (gpt-4o-mini)
+                    </span>
+                    <span *ngIf="tab2EstadoIa === 'fallback'" class="badge bg-warning-subtle text-danger border border-warning fs-8">
+                      <i class="pi pi-exclamation-triangle me-1"></i>Contingencia Local (ChatGPT no respondió)
+                    </span>
+                  </div>
+                </div>
+
+                <!-- ALERTA SI CHATGPT FALLÓ O USÓ CONTINGENCIA -->
+                <div *ngIf="tab2EstadoIa === 'fallback'" class="alert alert-warning py-1 px-2 mb-2 fs-7 d-flex align-items-center justify-content-between">
+                  <div>
+                    <i class="pi pi-exclamation-triangle text-danger me-1 fw-bold"></i>
+                    <strong>Alerta IA:</strong> ChatGPT no respondió (<em>{{ tab2ErrorOpenAI }}</em>). Se aplicó plantilla local de contingencia.
+                  </div>
+                  <button pButton type="button" icon="pi pi-refresh" label="Reintentar IA" class="p-button-warning p-button-outlined p-button-xs py-0 px-2" (click)="generarMensajeTab2()"></button>
+                </div>
+
                 <textarea pInputTextarea [(ngModel)]="mensajeFinalTab2" rows="8" placeholder="Haz clic en 'Generar Reporte de Cierre con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
               </div>
             </div>
@@ -209,11 +276,31 @@
             </div>
 
             <!-- 3. Mensaje Final -->
-            <div class="card border-0 shadow-sm border-start border-success border-4">
+            <div class="card border-0 shadow-sm border-start border-4" [ngClass]="tab3EstadoIa === 'fallback' ? 'border-warning' : 'border-success'">
               <div class="card-body p-2 px-3">
-                <label class="form-label fw-bold text-success mb-1 fs-7">
-                  <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
-                </label>
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <label class="form-label fw-bold text-success m-0 fs-7">
+                    <i class="pi pi-check-circle me-1"></i> 3. Mensaje Final Generado:
+                  </label>
+                  <div>
+                    <span *ngIf="tab3EstadoIa === 'chatgpt'" class="badge bg-success-subtle text-success border border-success-subtle fs-8">
+                      <i class="pi pi-bolt me-1"></i>Generado con ChatGPT (gpt-4o-mini)
+                    </span>
+                    <span *ngIf="tab3EstadoIa === 'fallback'" class="badge bg-warning-subtle text-danger border border-warning fs-8">
+                      <i class="pi pi-exclamation-triangle me-1"></i>Contingencia Local (ChatGPT no respondió)
+                    </span>
+                  </div>
+                </div>
+
+                <!-- ALERTA SI CHATGPT FALLÓ O USÓ CONTINGENCIA -->
+                <div *ngIf="tab3EstadoIa === 'fallback'" class="alert alert-warning py-1 px-2 mb-2 fs-7 d-flex align-items-center justify-content-between">
+                  <div>
+                    <i class="pi pi-exclamation-triangle text-danger me-1 fw-bold"></i>
+                    <strong>Alerta IA:</strong> ChatGPT no respondió (<em>{{ tab3ErrorOpenAI }}</em>). Se aplicó plantilla local de contingencia.
+                  </div>
+                  <button pButton type="button" icon="pi pi-refresh" label="Reintentar IA" class="p-button-warning p-button-outlined p-button-xs py-0 px-2" (click)="generarMensajeTab3()"></button>
+                </div>
+
                 <textarea pInputTextarea [(ngModel)]="mensajeFinalTab3" rows="8" placeholder="Haz clic en 'Generar Consulta de Renta Variable con IA'..." class="form-control p-inputtext-sm font-monospace fs-7"></textarea>
               </div>
             </div>

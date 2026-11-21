@@ -9,6 +9,7 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { CheckboxModule } from 'primeng/checkbox';
+import { TooltipModule } from 'primeng/tooltip';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -31,13 +32,19 @@ import { ResumenBolsaService } from '../../core/resumen-bolsa.service';
     CardModule,
     ToastModule,
     TableModule,
-    CheckboxModule
+    CheckboxModule,
+    TooltipModule
   ],
   providers: [MessageService],
   templateUrl: './mensajeria-ia.component.html',
   styleUrl: './mensajeria-ia.component.css'
 })
 export class MensajeriaIaComponent implements OnInit {
+
+  // ESTADO DE CONEXIÓN GLOBAL CON OPENAI / CHATGPT
+  openaiStatus: 'checking' | 'connected' | 'error' = 'checking';
+  openaiMessage: string = '';
+  verificandoOpenAI = false;
 
   // TAB 1: Inicio de Día (Notas de Crédito)
   inversionesNotas: Inversion[] = [];
@@ -48,6 +55,8 @@ export class MensajeriaIaComponent implements OnInit {
   promptTab1 = '';
   mensajeFinalTab1 = '';
   generandoTab1 = false;
+  tab1EstadoIa: 'none' | 'chatgpt' | 'fallback' = 'none';
+  tab1ErrorOpenAI = '';
 
   // TAB 2: Cierre del Día (Contabilidad)
   saldoEsperadoVal: number | null = null;
@@ -59,6 +68,8 @@ export class MensajeriaIaComponent implements OnInit {
   promptTab2 = '';
   mensajeFinalTab2 = '';
   generandoTab2 = false;
+  tab2EstadoIa: 'none' | 'chatgpt' | 'fallback' = 'none';
+  tab2ErrorOpenAI = '';
 
   // TAB 3: Renta Variable (Casa de Valores Santa Fé - José Luis)
   loadingRentaVariable = false;
@@ -66,6 +77,8 @@ export class MensajeriaIaComponent implements OnInit {
   promptTab3 = '';
   mensajeFinalTab3 = '';
   generandoTab3 = false;
+  tab3EstadoIa: 'none' | 'chatgpt' | 'fallback' = 'none';
+  tab3ErrorOpenAI = '';
 
   constructor(
     private inversionService: InversionService,
@@ -78,9 +91,57 @@ export class MensajeriaIaComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.verificarConexionOpenAI();
     this.cargarDatosTab1();
     this.cargarDatosTab2();
     this.cargarDatosTab3();
+  }
+
+  verificarConexionOpenAI(showToast = false): void {
+    this.verificandoOpenAI = true;
+    this.openaiStatus = 'checking';
+    this.ventaService.checkOpenAIStatus().subscribe({
+      next: (res: any) => {
+        this.verificandoOpenAI = false;
+        if (res && res.success && res.status === 'connected') {
+          this.openaiStatus = 'connected';
+          this.openaiMessage = 'Conexión activa con ChatGPT (gpt-4o-mini)';
+          if (showToast) {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Conexión Exitosa',
+              detail: 'La conexión con OpenAI / ChatGPT está activa y respondiendo.'
+            });
+          }
+        } else {
+          this.openaiStatus = 'error';
+          this.openaiMessage = res?.message || 'Error desconocido al validar conexión con OpenAI';
+          if (showToast) {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error de Conexión ChatGPT',
+              detail: this.openaiMessage,
+              life: 8000
+            });
+          }
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.verificandoOpenAI = false;
+        this.openaiStatus = 'error';
+        this.openaiMessage = 'No se pudo contactar al servidor o a OpenAI.';
+        if (showToast) {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error de Red / Servidor',
+            detail: this.openaiMessage,
+            life: 8000
+          });
+        }
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   // ==========================================
@@ -224,6 +285,25 @@ export class MensajeriaIaComponent implements OnInit {
           }
         }
 
+        if (bromaRes && bromaRes.is_fallback) {
+          this.tab1EstadoIa = 'fallback';
+          this.tab1ErrorOpenAI = bromaRes.error_message || 'No se pudo conectar con OpenAI';
+          this.messageService.add({
+            severity: 'warn',
+            summary: '⚠️ ChatGPT no respondió',
+            detail: `Fallo al consultar OpenAI (${this.tab1ErrorOpenAI}). Se utilizó la plantilla local de contingencia.`,
+            life: 9000
+          });
+        } else if (bromaRes && bromaRes.success) {
+          this.tab1EstadoIa = 'chatgpt';
+          this.tab1ErrorOpenAI = '';
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Generado con ChatGPT',
+            detail: 'Mensaje de Inicio de Día generado en vivo con ChatGPT (gpt-4o-mini).'
+          });
+        }
+
         const headerText = `${saludoText} ${arranqueText}`.replace(/\s+/g, ' ').trim();
 
         let saldoLine = '';
@@ -239,14 +319,17 @@ export class MensajeriaIaComponent implements OnInit {
           `_${cierreText}_`;
 
         this.generandoTab1 = false;
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Mensaje Generado',
-          detail: 'Mensaje de Inicio de Día generado con éxito.'
-        });
       },
-      error: () => {
+      error: (err: any) => {
         this.generandoTab1 = false;
+        this.tab1EstadoIa = 'fallback';
+        this.tab1ErrorOpenAI = 'Fallo de red o servidor al consultar la API de OpenAI.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error de Conexión IA',
+          detail: 'No se pudo contactar a ChatGPT. Se generó el mensaje usando la plantilla estándar.',
+          life: 9000
+        });
       }
     });
   }
@@ -347,16 +430,15 @@ export class MensajeriaIaComponent implements OnInit {
     }
 
     this.contextoTab2 = `Saldos de Movimientos de Capital al cierre:\n` +
-      `${resumenLineas}\n` +
-      `• ✅ He registrado las operaciones de la jornada.`;
+      `${resumenLineas}`;
 
     this.actualizarPromptTab2();
   }
 
   actualizarPromptTab2(): void {
-    const basePrompt = 'Genera un chiste, satisfacción o saludo cordial al contador José el cierre. No incluyas ni repitas ninguna cifra o monto de dinero. Pide amablemente su confirmación de que todo está correcto. Máximo 50 palabras. Usa siempre el trato formal de "Usted" y un emoji al final.';
+    const basePrompt = 'Genera un chiste breve o comentario ameno sobre contabilidad al cierre para José. REGLA ESTRICTA: NO incluyas ningún saludo (ni "Hola", "Buenas tardes", "Saludos") ni uses la palabra "Estimado" (el saludo a José ya está incluido en el encabezado del mensaje). No incluyas cifras de dinero. Pide amablemente su confirmación de que todo esté cuadrado. Máximo 40 palabras. Usa trato de "Usted" y un emoji al final.';
     if (this.contextoTab2 && this.contextoTab2.trim().length > 0) {
-      this.promptTab2 = `${basePrompt}\nIndicación: Pedir confirmación de que todo está cuadrado correctamente.`;
+      this.promptTab2 = `${basePrompt}\nIndicación: Pedir confirmación de que todo está cuadrado correctamente sin saludar ni usar "Estimado".`;
     } else {
       this.promptTab2 = basePrompt;
     }
@@ -366,9 +448,37 @@ export class MensajeriaIaComponent implements OnInit {
     this.generandoTab2 = true;
     this.ventaService.getBromaDiaria(this.contextoTab2, this.promptTab2).subscribe({
       next: (res: any) => {
-        let fraseCierre = "¡Caja cuadrada y día finalizado con éxito! 🌆";
+        let fraseCierre = "¡Caja cuadrada y día finalizado con éxito! ¿Podría confirmarme si todo está en orden? 🌆";
         if (res && res.success && res.data) {
-          fraseCierre = res.data;
+          fraseCierre = res.data.trim();
+          // Quitar comillas o guiones bajos
+          fraseCierre = fraseCierre.replace(/^_*|_+$/g, '').replace(/^"*|"*$/g, '').trim();
+          // Eliminar saludos o vocativos iniciales redundantes si ChatGPT los incluyó
+          fraseCierre = fraseCierre.replace(/^(¡?(Estimad[oa]\s+)?(contador\s+)?José[,\.:!\s]*|¡?(Hola|Buenas\s+(tardes|noches|días)|Saludos)[^,\n\.]*[,\.:!\s]*(José)?[,\.:!\s]*)/i, '').trim();
+          fraseCierre = fraseCierre.replace(/^Estimad[oa](\s+contador)?(\s+José)?[,\.:!\s]*/i, '').trim();
+          fraseCierre = fraseCierre.replace(/^[,\-\s]+/, '').trim();
+          if (fraseCierre.length > 0) {
+            fraseCierre = fraseCierre.charAt(0).toUpperCase() + fraseCierre.slice(1);
+          }
+        }
+
+        if (res && res.is_fallback) {
+          this.tab2EstadoIa = 'fallback';
+          this.tab2ErrorOpenAI = res.error_message || 'Fallo al conectar con OpenAI';
+          this.messageService.add({
+            severity: 'warn',
+            summary: '⚠️ ChatGPT no respondió',
+            detail: `Fallo al consultar OpenAI (${this.tab2ErrorOpenAI}). Se utilizó la plantilla local de contingencia.`,
+            life: 9000
+          });
+        } else if (res && res.success) {
+          this.tab2EstadoIa = 'chatgpt';
+          this.tab2ErrorOpenAI = '';
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Generado con ChatGPT',
+            detail: 'Mensaje de Cierre Contable generado en vivo con ChatGPT (gpt-4o-mini).'
+          });
         }
 
         const totalGeneralStr = this.formatCurrency(this.totalGeneralMovimientos || 0);
@@ -380,20 +490,22 @@ export class MensajeriaIaComponent implements OnInit {
           desgloseSaldos = `👥 *Saldo por Persona:*\n${this.saldosPersonasTexto}`;
         }
 
-        this.mensajeFinalTab2 = `🌆 *¡Buenas tardes estimado José! Reporte de Cierre del Día para Contabilidad:*\n\n` +
+        this.mensajeFinalTab2 = `🌆 *¡Buenas tardes José! Reporte de Cierre del Día para Contabilidad:*\n\n` +
           `${desgloseSaldos}\n\n` +
-          `• ✅ *Estado del Cuadre:* Registradas las operaciones de la jornada.\n\n` +
           `_${fraseCierre}_`;
 
         this.generandoTab2 = false;
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Mensaje Generado',
-          detail: 'Mensaje de Cierre Contable generado con éxito.'
-        });
       },
       error: () => {
         this.generandoTab2 = false;
+        this.tab2EstadoIa = 'fallback';
+        this.tab2ErrorOpenAI = 'Fallo de red o servidor al consultar la API de OpenAI.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error de Conexión IA',
+          detail: 'No se pudo contactar a ChatGPT. Se generó el mensaje usando la plantilla estándar.',
+          life: 9000
+        });
       }
     });
   }
@@ -511,19 +623,41 @@ export class MensajeriaIaComponent implements OnInit {
           fraseIA = res.data;
         }
 
+        if (res && res.is_fallback) {
+          this.tab3EstadoIa = 'fallback';
+          this.tab3ErrorOpenAI = res.error_message || 'Fallo al conectar con OpenAI';
+          this.messageService.add({
+            severity: 'warn',
+            summary: '⚠️ ChatGPT no respondió',
+            detail: `Fallo al consultar OpenAI (${this.tab3ErrorOpenAI}). Se utilizó la plantilla local de contingencia.`,
+            life: 9000
+          });
+        } else if (res && res.success) {
+          this.tab3EstadoIa = 'chatgpt';
+          this.tab3ErrorOpenAI = '';
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Generado con ChatGPT',
+            detail: 'Mensaje de Renta Variable generado en vivo con ChatGPT (gpt-4o-mini).'
+          });
+        }
+
         this.mensajeFinalTab3 = `📊 *Reporte de Situación de Renta Variable:*\n` +
           `${this.contextoTab3}\n\n` +
           `_${fraseIA}_`;
 
         this.generandoTab3 = false;
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Mensaje Generado',
-          detail: 'Mensaje para Renta Variable generado con éxito.'
-        });
       },
       error: () => {
         this.generandoTab3 = false;
+        this.tab3EstadoIa = 'fallback';
+        this.tab3ErrorOpenAI = 'Fallo de red o servidor al consultar la API de OpenAI.';
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error de Conexión IA',
+          detail: 'No se pudo contactar a ChatGPT. Se generó el mensaje usando la plantilla estándar.',
+          life: 9000
+        });
       }
     });
   }

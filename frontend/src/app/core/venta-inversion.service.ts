@@ -324,6 +324,10 @@ export class VentaInversionService {
     return this.apiService.post<string>('/utilidades/broma-diaria', { contexto, prompt });
   }
 
+  checkOpenAIStatus(): Observable<ApiResponse<any>> {
+    return this.apiService.get<any>('/utilidades/openai/status');
+  }
+
   crearVentaAgrupada(request: VentaAgrupadaRequest): Observable<ApiResponse<VentaAgrupadaResponse>> {
     return this.apiService.post<VentaAgrupadaResponse>(`${this.endpoint}/venta-agrupada`, request);
   }

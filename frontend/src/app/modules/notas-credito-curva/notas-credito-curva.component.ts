@@ -40,7 +40,7 @@ export class NotasCreditoCurvaComponent implements OnInit {
   error: string = '';
 
   // Filtros
-  presetSeleccionado: string = 'todos';
+  presetSeleccionado: string = '7dias';
   fechaInicio: string = '';
   fechaFin: string = '';
   bolsaSeleccionada: string = 'TODAS';

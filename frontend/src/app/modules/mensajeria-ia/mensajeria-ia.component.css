@@ -7,6 +7,15 @@
   font-size: 0.83rem !important;
 }
 
+.fs-8 {
+  font-size: 0.75rem !important;
+}
+
+.p-button-xs {
+  font-size: 0.72rem !important;
+  padding: 0.15rem 0.45rem !important;
+}
+
 /* Compact Table Padding */
 .table-compact td, .table-compact th {
   padding: 4px 8px !important;

@@ -409,7 +409,7 @@ class NotasCreditoAnalyticsService
         try {
             $db = DB::connection('mysql_inversion');
 
-            $preset = $filters['preset'] ?? 'todos';
+            $preset = $filters['preset'] ?? '7dias';
             $fechaInicio = $filters['fecha_inicio'] ?? null;
             $fechaFin = $filters['fecha_fin'] ?? null;
             $bolsa = $filters['bolsa'] ?? 'TODAS';
@@ -418,7 +418,16 @@ class NotasCreditoAnalyticsService
             $maxFechaDb = $db->table('notas_credito_his')->max('FECHA') ?? date('Y-m-d');
             $minFechaDb = $db->table('notas_credito_his')->min('FECHA') ?? '2019-01-01';
 
-            if ($preset === '2026') {
+            if ($preset === '7dias') {
+                $fechaInicio = date('Y-m-d', strtotime('-7 days', strtotime($maxFechaDb)));
+                $fechaFin = $maxFechaDb;
+            } elseif ($preset === '15dias') {
+                $fechaInicio = date('Y-m-d', strtotime('-15 days', strtotime($maxFechaDb)));
+                $fechaFin = $maxFechaDb;
+            } elseif ($preset === 'mes' || $preset === '30dias') {
+                $fechaInicio = date('Y-m-d', strtotime('-30 days', strtotime($maxFechaDb)));
+                $fechaFin = $maxFechaDb;
+            } elseif ($preset === '2026') {
                 $fechaInicio = '2026-01-01';
                 $fechaFin = $maxFechaDb;
             } elseif ($preset === '12meses') {
@@ -426,9 +435,6 @@ class NotasCreditoAnalyticsService
                 $fechaFin = $maxFechaDb;
             } elseif ($preset === '90dias') {
                 $fechaInicio = date('Y-m-d', strtotime('-90 days', strtotime($maxFechaDb)));
-                $fechaFin = $maxFechaDb;
-            } elseif ($preset === '30dias') {
-                $fechaInicio = date('Y-m-d', strtotime('-30 days', strtotime($maxFechaDb)));
                 $fechaFin = $maxFechaDb;
             } elseif ($preset === 'todos') {
                 $fechaInicio = $minFechaDb;

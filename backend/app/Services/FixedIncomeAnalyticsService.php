@@ -1021,7 +1021,7 @@ class FixedIncomeAnalyticsService
                     $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
                         ->timeout(15)
                         ->post('https://api.openai.com/v1/chat/completions', [
-                            'model' => 'gpt-3.5-turbo',
+                            'model' => 'gpt-4o-mini',
                             'messages' => [
                                 ['role' => 'system', 'content' => 'Eres un analista financiero experto en Renta Fija y mercado de deuda bursátil en Ecuador (BVQ/BVG).'],
                                 ['role' => 'user', 'content' => $promptText]

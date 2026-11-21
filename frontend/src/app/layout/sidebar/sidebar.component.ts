@@ -122,7 +122,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Evolución Acciones',
-          icon: 'bi-graph-up',
+          icon: 'bi-bar-chart-line',
           path: '/renta-variable/evolucion-acciones'
         },
         {
@@ -142,7 +142,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Análisis de Ventas',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-cash-coin',
           path: '/renta-variable/analisis-ventas'
         },
         {
@@ -157,7 +157,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Valoración Histórica Acciones',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-clock-history',
           path: '/reportes/valoracion-historica-acciones'
         }
       ]
@@ -174,7 +174,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Curva de Descuento (Tramos)',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-bezier2',
           path: '/notas-credito/curva-descuento'
         },
         {
@@ -194,7 +194,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Análisis de Rendimiento',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-percent',
           path: '/notas-credito/analisis-rendimiento'
         }
       ]

@@ -189,7 +189,7 @@ Route::get('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorCont
 Route::post('historico-indicadores', [App\Http\Controllers\HistoricoIndicadorController::class, 'store']);
 
 Route::match(['get', 'post'], '/utilidades/broma-diaria', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaDiaria']);
-
+Route::get('/utilidades/openai/status', [App\Http\Controllers\Utilidades\OpenAIController::class, 'checkStatus']);
 Route::match(['get', 'post'], '/utilidades/broma-cierre', [App\Http\Controllers\Utilidades\OpenAIController::class, 'getBromaCierre']);
 
 // Rutas de Descarga e Importación de Archivos de la Bolsa de Valores de Quito (BVQ)
