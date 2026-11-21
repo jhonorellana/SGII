@@ -32,6 +32,39 @@
   }
 }
 
+/* Barra de Filtros Compacta */
+.radar-filters-bar {
+  background-color: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Grid para KPIs de Radar */
+.kpi-radar-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+  .kpi-radar-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-radar-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-radar-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .kpi-card {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }

@@ -51,7 +51,7 @@ export class NotasCreditoRadarComponent implements OnInit {
   casaCompradora: string = '';
   bolsaSeleccionada: string = 'TODAS';
   tituloSeleccionado: string = 'TODOS';
-  presetSeleccionado: string = '30dias';
+  presetSeleccionado: string = '7dias';
   searchTerm: string = '';
 
   // Datos para listas desplegables
@@ -120,6 +120,13 @@ export class NotasCreditoRadarComponent implements OnInit {
             this.titulosList = ['TODOS', ...res.titulos];
           }
 
+          // Por defecto: últimos 7 días
+          this.presetSeleccionado = '7dias';
+          this.fechaFin = res.fecha_maxima;
+          const refDate = new Date(res.fecha_maxima + 'T12:00:00');
+          refDate.setDate(refDate.getDate() - 7);
+          this.fechaInicio = refDate.toISOString().split('T')[0];
+
           // Ejecutar búsqueda inicial
           this.ejecutarConsulta();
         }
@@ -131,8 +138,9 @@ export class NotasCreditoRadarComponent implements OnInit {
         const now = new Date();
         this.fechaFin = now.toISOString().split('T')[0];
         const past = new Date();
-        past.setDate(past.getDate() - 30);
+        past.setDate(past.getDate() - 7);
         this.fechaInicio = past.toISOString().split('T')[0];
+        this.presetSeleccionado = '7dias';
         this.ejecutarConsulta();
       }
     });
@@ -179,10 +187,14 @@ export class NotasCreditoRadarComponent implements OnInit {
   }
 
   /**
-   * Aplica presets rápidos de fechas
+   * Aplica presets rápidos de fechas (Mismas opciones que Curva de Descuento)
    */
   aplicarPreset(preset: string): void {
     this.presetSeleccionado = preset;
+    if (preset === 'personalizado') {
+      return;
+    }
+
     const refDate = this.fechaMaximaDisponible ? new Date(this.fechaMaximaDisponible + 'T12:00:00') : new Date();
     const endStr = refDate.toISOString().split('T')[0];
     this.fechaFin = endStr;
@@ -190,25 +202,30 @@ export class NotasCreditoRadarComponent implements OnInit {
     const start = new Date(refDate);
 
     switch (preset) {
-      case 'hoy':
-        this.fechaInicio = endStr;
-        break;
       case '7dias':
         start.setDate(refDate.getDate() - 7);
         this.fechaInicio = start.toISOString().split('T')[0];
         break;
-      case '30dias':
+      case '15dias':
+        start.setDate(refDate.getDate() - 15);
+        this.fechaInicio = start.toISOString().split('T')[0];
+        break;
+      case 'mes':
         start.setDate(refDate.getDate() - 30);
         this.fechaInicio = start.toISOString().split('T')[0];
         break;
-      case 'esteMes':
-        start.setDate(1);
+      case '90dias':
+        start.setDate(refDate.getDate() - 90);
         this.fechaInicio = start.toISOString().split('T')[0];
         break;
-      case 'esteAnio':
-        this.fechaInicio = `${refDate.getFullYear()}-01-01`;
+      case '2026':
+        this.fechaInicio = '2026-01-01';
         break;
-      case 'historico':
+      case '12meses':
+        start.setFullYear(refDate.getFullYear() - 1);
+        this.fechaInicio = start.toISOString().split('T')[0];
+        break;
+      case 'todos':
         this.fechaInicio = this.fechaMinimaDisponible || '2019-01-01';
         break;
     }
@@ -217,22 +234,30 @@ export class NotasCreditoRadarComponent implements OnInit {
   }
 
   /**
-   * Filtro de búsqueda rápida en la tabla
+   * Filtro de búsqueda rápida en la tabla (con normalización de tildes y mayúsculas)
    */
   aplicarFiltroTexto(): void {
     if (!this.searchTerm.trim()) {
       this.filteredItems = [...this.items];
       return;
     }
-    const term = this.searchTerm.toLowerCase().trim();
+    const term = this.normalizeText(this.searchTerm);
     this.filteredItems = this.items.filter(it =>
-      (it.casa_vendedora && it.casa_vendedora.toLowerCase().includes(term)) ||
-      (it.casa_compradora && it.casa_compradora.toLowerCase().includes(term)) ||
-      (it.titulo && it.titulo.toLowerCase().includes(term)) ||
+      (it.casa_vendedora && this.normalizeText(it.casa_vendedora).includes(term)) ||
+      (it.casa_compradora && this.normalizeText(it.casa_compradora).includes(term)) ||
+      (it.titulo && this.normalizeText(it.titulo).includes(term)) ||
       (it.fecha && it.fecha.includes(term)) ||
-      (it.bolsa && it.bolsa.toLowerCase().includes(term)) ||
+      (it.bolsa && this.normalizeText(it.bolsa).includes(term)) ||
       (it.precio_porc && it.precio_porc.toString().includes(term))
     );
+  }
+
+  normalizeText(text: string): string {
+    return (text || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
   }
 
   limpiarFiltros(): void {
@@ -244,7 +269,7 @@ export class NotasCreditoRadarComponent implements OnInit {
     this.soloOportunidades = false;
     this.precioMaxOportunidad = 97.50;
     this.searchTerm = '';
-    this.aplicarPreset('30dias');
+    this.aplicarPreset('7dias');
   }
 
   /**

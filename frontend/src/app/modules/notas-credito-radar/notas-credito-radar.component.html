@@ -33,206 +33,233 @@
     </div>
   </div>
 
-  <!-- Presets Rápidos de Fechas -->
-  <div class="d-flex align-items-center gap-1.5 mb-3 flex-wrap">
-    <span class="text-muted extra-small fw-bold me-1 text-uppercase">Período Rápido:</span>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === 'hoy' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('hoy')">Hoy</button>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === '7dias' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('7dias')">Últimos 7 días</button>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === '30dias' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('30dias')">Últimos 30 días</button>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === 'esteMes' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('esteMes')">Mes en Curso</button>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === 'esteAnio' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('esteAnio')">Año Actual</button>
-    <button class="btn btn-xs px-2.5 py-1 rounded-pill" 
-            [ngClass]="presetSeleccionado === 'historico' ? 'btn-primary text-white' : 'btn-light text-dark border'"
-            (click)="aplicarPreset('historico')">Todo el Historial</button>
-  </div>
-
-  <!-- Panel de Filtros Colapsable / Card -->
-  <div class="card border-0 shadow-2xs mb-4 rounded-3">
+  <!-- Barra de Filtros y Control Unificada (Compacta y sin espacio desperdiciado) -->
+  <div class="card border-0 shadow-2xs rounded-3 mb-3 bg-white">
     <div class="card-body p-3">
-      <div class="row g-2.5 align-items-end">
+      
+      <!-- Fila 1: Presets de Período (Idénticos a Curva de Descuento) y Switch Rápido -->
+      <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pb-2 mb-2 border-bottom">
+        
+        <!-- Presets de Período -->
+        <div class="d-flex align-items-center gap-1.5 flex-wrap">
+          <span class="text-muted extra-small fw-bold me-1">Período:</span>
+          
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === '7dias' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('7dias')">
+            Últimos 7 Días
+          </button>
 
-        <!-- Fecha Desde -->
-        <div class="col-12 col-sm-6 col-md-2">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Fecha Desde</label>
-          <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaInicio" 
-                 [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === '15dias' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('15dias')">
+            Últimos 15 Días
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === 'mes' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('mes')">
+            Último Mes
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === '90dias' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('90dias')">
+            Últimos 90 Días
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === '2026' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('2026')">
+            Año 2026
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === '12meses' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('12meses')">
+            Últimos 12 Meses
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === 'todos' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="aplicarPreset('todos')">
+            Todo el Histórico
+          </button>
+
+          <button type="button" class="btn btn-xs rounded-pill px-3 py-1 fw-semibold transition-all"
+                  [ngClass]="presetSeleccionado === 'personalizado' ? 'btn-success text-white shadow-2xs' : 'btn-outline-secondary bg-light text-dark border'"
+                  (click)="presetSeleccionado = 'personalizado'">
+            Personalizado
+          </button>
         </div>
 
-        <!-- Fecha Hasta -->
-        <div class="col-12 col-sm-6 col-md-2">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Fecha Hasta</label>
-          <input type="date" class="form-control form-control-sm" [(ngModel)]="fechaFin" 
-                 [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+        <!-- Switch de Oportunidades y Metadatos -->
+        <div class="d-flex align-items-center gap-3 ms-auto">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="chkSoloOportunidades"
+                   [(ngModel)]="soloOportunidades" (ngModelChange)="ejecutarConsulta()">
+            <label class="form-check-label extra-small fw-bold text-dark cursor-pointer" for="chkSoloOportunidades">
+              Solo oportunidades (&lt;= {{ precioMaxOportunidad }}%)
+            </label>
+          </div>
+          <span class="text-muted extra-small d-none d-xl-inline">
+            <i class="bi bi-database me-1"></i><strong>{{ totalHistoricoRegistros | number }}</strong> transacciones
+          </span>
+        </div>
+
+      </div>
+
+      <!-- Fila 2: Filtros Compactos en una Sola Fila Horizontal -->
+      <div class="radar-filters-bar d-flex align-items-end gap-2 flex-wrap pt-1">
+        
+        <!-- Fechas si es Personalizado -->
+        <div *ngIf="presetSeleccionado === 'personalizado'" class="d-flex align-items-center gap-1.5" style="min-width: 270px;">
+          <div>
+            <label class="extra-small text-muted fw-bold mb-0 d-block">Desde:</label>
+            <input type="date" class="form-control form-control-sm extra-small py-1" style="width: 125px;" [(ngModel)]="fechaInicio" 
+                   [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+          </div>
+          <span class="text-muted extra-small mt-3">a</span>
+          <div>
+            <label class="extra-small text-muted fw-bold mb-0 d-block">Hasta:</label>
+            <input type="date" class="form-control form-control-sm extra-small py-1" style="width: 125px;" [(ngModel)]="fechaFin" 
+                   [min]="fechaMinimaDisponible" [max]="fechaMaximaDisponible">
+          </div>
         </div>
 
         <!-- Tramo de Valor Nominal -->
-        <div class="col-12 col-sm-6 col-md-2">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Tramo de Monto</label>
-          <select class="form-select form-select-sm" [(ngModel)]="tramoNominal">
+        <div style="flex: 1 1 160px; min-width: 140px;">
+          <label class="extra-small text-muted fw-bold mb-0 d-block">Tramo Monto:</label>
+          <select class="form-select form-select-sm extra-small py-1" [(ngModel)]="tramoNominal" (change)="ejecutarConsulta()">
             <option value="todos">Todos los montos</option>
             <option value="micro">Micro (&lt; $2,000)</option>
-            <option value="pequeno">Pequeño ($2,000 - $10,000)</option>
-            <option value="mediano">Mediano ($10,000 - $50,000)</option>
-            <option value="grande">Institucional (&gt;= $50,000)</option>
+            <option value="pequeno">Pequeño ($2k - $10k)</option>
+            <option value="mediano">Mediano ($10k - $50k)</option>
+            <option value="grande">Mayorista (&gt; $50k)</option>
           </select>
         </div>
 
         <!-- Umbral de Oportunidad (%) -->
-        <div class="col-12 col-sm-6 col-md-2">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Precio Oportunidad (&lt;= %)</label>
+        <div style="flex: 0 1 125px; min-width: 110px;">
+          <label class="extra-small text-muted fw-bold mb-0 d-block">Precio Máx (%):</label>
           <div class="input-group input-group-sm">
-            <input type="number" step="0.1" class="form-control form-control-sm" [(ngModel)]="precioMaxOportunidad">
-            <span class="input-group-text">%</span>
+            <input type="number" step="0.1" class="form-control form-control-sm extra-small py-1" [(ngModel)]="precioMaxOportunidad" (keyup.enter)="ejecutarConsulta()">
+            <span class="input-group-text extra-small py-1 px-1.5">%</span>
           </div>
         </div>
 
         <!-- Casa Vendedora -->
-        <div class="col-12 col-sm-6 col-md-2">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Casa Vendedora (Oferente)</label>
-          <input type="text" class="form-control form-control-sm" [(ngModel)]="casaVendedora" 
-                 placeholder="Ej. Mercapital, Casareal..." list="casasVendedorasListId">
-          <datalist id="casasVendedorasListId">
-            <option *ngFor="let cv of casasVendedorasList" [value]="cv"></option>
-          </datalist>
+        <div style="flex: 1 1 180px; min-width: 140px;">
+          <label class="extra-small text-muted fw-bold mb-0 d-block">Casa Vendedora:</label>
+          <select class="form-select form-select-sm extra-small py-1" [(ngModel)]="casaVendedora" (change)="ejecutarConsulta()">
+            <option value="">Todas las casas</option>
+            <option *ngFor="let cv of casasVendedorasList" [value]="cv">{{ cv }}</option>
+          </select>
         </div>
 
         <!-- Bolsa -->
-        <div class="col-12 col-sm-6 col-md-1">
-          <label class="form-label extra-small fw-bold text-muted mb-1">Bolsa</label>
-          <select class="form-select form-select-sm" [(ngModel)]="bolsaSeleccionada">
+        <div style="flex: 0 1 95px; min-width: 85px;">
+          <label class="extra-small text-muted fw-bold mb-0 d-block">Bolsa:</label>
+          <select class="form-select form-select-sm extra-small py-1" [(ngModel)]="bolsaSeleccionada" (change)="ejecutarConsulta()">
             <option *ngFor="let b of bolsasList" [value]="b">{{ b }}</option>
           </select>
         </div>
 
-        <!-- Botones de Acción Filtro -->
-        <div class="col-12 col-sm-6 col-md-1 d-flex gap-1">
-          <button class="btn btn-primary btn-sm w-100 fw-semibold d-flex align-items-center justify-content-center gap-1"
+        <!-- Botones de Acción -->
+        <div class="d-flex align-items-center gap-1.5 ms-auto">
+          <button class="btn btn-primary btn-sm px-3 py-1 extra-small fw-semibold d-flex align-items-center gap-1"
                   (click)="ejecutarConsulta()" [disabled]="loading">
-            <i class="bi" [ngClass]="loading ? 'bi-hourglass-split spin' : 'bi-search'"></i>
-            <span>{{ loading ? '...' : 'Filtrar' }}</span>
+            <i class="bi" [ngClass]="loading ? 'bi-arrow-clockwise spin' : 'bi-search'"></i>
+            <span>{{ loading ? 'Buscando...' : 'Filtrar' }}</span>
           </button>
-          <button class="btn btn-outline-secondary btn-sm px-2" (click)="limpiarFiltros()" pTooltip="Restablecer filtros">
+          
+          <button class="btn btn-outline-secondary btn-sm px-2 py-1 extra-small" (click)="limpiarFiltros()" pTooltip="Restablecer filtros">
             <i class="bi bi-arrow-counterclockwise"></i>
           </button>
         </div>
 
       </div>
 
-      <!-- Fila Inferior de Filtros Rápidos -->
-      <div class="d-flex align-items-center justify-content-between mt-2 pt-2 border-top flex-wrap gap-2">
-        <div class="form-check form-switch mb-0">
-          <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="chkSoloOportunidades"
-                 [(ngModel)]="soloOportunidades" (ngModelChange)="ejecutarConsulta()">
-          <label class="form-check-label extra-small fw-bold text-dark cursor-pointer" for="chkSoloOportunidades">
-            Mostrar únicamente oportunidades de arbitraje (&lt;= {{ precioMaxOportunidad }}%)
-          </label>
-        </div>
-
-        <div class="d-flex align-items-center gap-3 extra-small text-muted">
-          <span><i class="bi bi-database me-1"></i>Base de datos: <strong>{{ totalHistoricoRegistros | number }}</strong> transacciones</span>
-          <span *ngIf="kpis"><i class="bi bi-clock-history me-1"></i>Ref. Mayorista Ponderada: <strong class="text-primary">{{ kpis.precio_referencia_mayorista }}%</strong></span>
-        </div>
-      </div>
     </div>
   </div>
 
-  <!-- Ribbon de KPIs Estadísticos -->
-  <div class="row g-3 mb-4" *ngIf="kpis">
+  <!-- Ribbon de KPIs Estadísticos (Grid Elegante y Responsivo) -->
+  <div class="kpi-radar-grid mb-3" *ngIf="kpis">
     
     <!-- KPI 1: Mayor Descuento / Precio Mínimo -->
-    <div class="col-12 col-sm-6 col-xl-2-4">
-      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-success bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="extra-small text-uppercase fw-bold text-muted">Mayor Descuento</span>
-          <span class="badge bg-success-subtle text-success extra-small">P. Mínimo</span>
-        </div>
-        <h3 class="fw-bold mb-0 text-success fs-4">{{ kpis.precio_minimo | number:'1.2-2' }}%</h3>
-        <small class="text-muted extra-small d-block mt-1">
-          Descuento: <strong>-{{ (100 - kpis.precio_minimo) | number:'1.2-2' }}%</strong>
-        </small>
-        <small *ngIf="kpis.mejor_oportunidad" class="text-truncate d-block text-muted extra-small mt-0.5" 
-               [title]="kpis.mejor_oportunidad.casa_vendedora">
-          Ofrecido por: <strong>{{ kpis.mejor_oportunidad.casa_vendedora }}</strong>
-        </small>
+    <div class="kpi-card p-2 px-3 rounded-3 shadow-2xs h-100 border-start border-4 border-success bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="extra-small text-uppercase fw-bold text-muted">Mayor Descuento</span>
+        <span class="badge bg-success-subtle text-success extra-small">P. Mínimo</span>
       </div>
+      <h4 class="fw-bold mb-0 text-success fs-5">{{ kpis.precio_minimo | number:'1.2-2' }}%</h4>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Descuento: <strong>-{{ (100 - kpis.precio_minimo) | number:'1.2-2' }}%</strong>
+      </small>
+      <small *ngIf="kpis.mejor_oportunidad" class="text-truncate d-block text-muted extra-small mt-0.5" 
+             [title]="kpis.mejor_oportunidad.casa_vendedora">
+        Oferente: <strong>{{ kpis.mejor_oportunidad.casa_vendedora }}</strong>
+      </small>
     </div>
 
     <!-- KPI 2: Precio Promedio Ponderado -->
-    <div class="col-12 col-sm-6 col-xl-2-4">
-      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-primary bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="extra-small text-uppercase fw-bold text-muted">Promedio Ponderado</span>
-          <span class="badge bg-primary-subtle text-primary extra-small">Mercado</span>
-        </div>
-        <h3 class="fw-bold mb-0 text-primary fs-4">{{ kpis.precio_promedio_ponderado | number:'1.2-2' }}%</h3>
-        <small class="text-muted extra-small d-block mt-1">
-          Ref. Mayorista (&gt;=$50k): <strong>{{ kpis.precio_referencia_mayorista | number:'1.2-2' }}%</strong>
-        </small>
-        <small class="text-muted extra-small d-block mt-0.5">
-          Margen de arbitraje: <strong>+{{ (kpis.precio_referencia_mayorista - kpis.precio_promedio_ponderado) | number:'1.2-2' }} pts</strong>
-        </small>
+    <div class="kpi-card p-2 px-3 rounded-3 shadow-2xs h-100 border-start border-4 border-primary bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="extra-small text-uppercase fw-bold text-muted">Prom. Ponderado</span>
+        <span class="badge bg-primary-subtle text-primary extra-small">Mercado</span>
       </div>
+      <h4 class="fw-bold mb-0 text-primary fs-5">{{ kpis.precio_promedio_ponderado | number:'1.2-2' }}%</h4>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Ref. Mayorista: <strong>{{ kpis.precio_referencia_mayorista | number:'1.2-2' }}%</strong>
+      </small>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Margen: <strong>+{{ (kpis.precio_referencia_mayorista - kpis.precio_promedio_ponderado) | number:'1.2-2' }} pts</strong>
+      </small>
     </div>
 
     <!-- KPI 3: Volumen Total Negociado -->
-    <div class="col-12 col-sm-6 col-xl-2-4">
-      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-info bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="extra-small text-uppercase fw-bold text-muted">Volumen Analizado</span>
-          <span class="badge bg-info-subtle text-dark extra-small">{{ kpis.total_operaciones | number }} ops</span>
-        </div>
-        <h3 class="fw-bold mb-0 text-dark fs-4">${{ kpis.volumen_nominal | number:'1.0-0' }}</h3>
-        <small class="text-muted extra-small d-block mt-1">
-          Efectivo: <strong>${{ kpis.volumen_efectivo | number:'1.0-0' }}</strong>
-        </small>
-        <small class="text-success extra-small d-block mt-0.5">
-          Ahorro total mercado: <strong>${{ kpis.ahorro_descuento_total | number:'1.0-0' }}</strong>
-        </small>
+    <div class="kpi-card p-2 px-3 rounded-3 shadow-2xs h-100 border-start border-4 border-info bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="extra-small text-uppercase fw-bold text-muted">Volumen Analizado</span>
+        <span class="badge bg-info-subtle text-dark extra-small">{{ kpis.total_operaciones | number }} ops</span>
       </div>
+      <h4 class="fw-bold mb-0 text-dark fs-5">${{ kpis.volumen_nominal | number:'1.0-0' }}</h4>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Efectivo: <strong>${{ kpis.volumen_efectivo | number:'1.0-0' }}</strong>
+      </small>
+      <small class="text-success extra-small d-block mt-0.5">
+        Ahorro mercado: <strong>${{ kpis.ahorro_descuento_total | number:'1.0-0' }}</strong>
+      </small>
     </div>
 
     <!-- KPI 4: Spread Intradiario / Período -->
-    <div class="col-12 col-sm-6 col-xl-2-4">
-      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-warning bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="extra-small text-uppercase fw-bold text-muted">Spread del Período</span>
-          <span class="badge bg-warning-subtle text-dark extra-small">Dispersión</span>
-        </div>
-        <h3 class="fw-bold mb-0 text-warning-emphasis fs-4">{{ kpis.spread_periodo | number:'1.2-2' }} pts</h3>
-        <small class="text-muted extra-small d-block mt-1">
-          P. Máximo: <strong>{{ kpis.precio_maximo | number:'1.2-2' }}%</strong>
-        </small>
-        <small class="text-muted extra-small d-block mt-0.5">
-          Brecha Min-Max en el período
-        </small>
+    <div class="kpi-card p-2 px-3 rounded-3 shadow-2xs h-100 border-start border-4 border-warning bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="extra-small text-uppercase fw-bold text-muted">Spread del Período</span>
+        <span class="badge bg-warning-subtle text-dark extra-small">Dispersión</span>
       </div>
+      <h4 class="fw-bold mb-0 text-warning-emphasis fs-5">{{ kpis.spread_periodo | number:'1.2-2' }} pts</h4>
+      <small class="text-muted extra-small d-block mt-0.5">
+        P. Máximo: <strong>{{ kpis.precio_maximo | number:'1.2-2' }}%</strong>
+      </small>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Brecha Mín-Máx en el período
+      </small>
     </div>
 
     <!-- KPI 5: Oportunidades Detectadas -->
-    <div class="col-12 col-sm-6 col-xl-2-4">
-      <div class="kpi-card p-3 rounded-3 shadow-2xs h-100 border-start border-4 border-danger bg-white">
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span class="extra-small text-uppercase fw-bold text-muted">Oportunidades &lt;= {{ precioMaxOportunidad }}%</span>
-          <span class="badge bg-danger-subtle text-danger extra-small">Arbitraje</span>
-        </div>
-        <h3 class="fw-bold mb-0 text-danger fs-4">{{ kpis.total_oportunidades | number }}</h3>
-        <small class="text-muted extra-small d-block mt-1">
-          Vol. Nominal: <strong>${{ kpis.volumen_oportunidades_nominal | number:'1.0-0' }}</strong>
-        </small>
-        <small class="text-muted extra-small d-block mt-0.5">
-          {{ ((kpis.total_oportunidades / (kpis.total_operaciones || 1)) * 100) | number:'1.1-1' }}% del total analizado
-        </small>
+    <div class="kpi-card p-2 px-3 rounded-3 shadow-2xs h-100 border-start border-4 border-danger bg-white">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <span class="extra-small text-uppercase fw-bold text-muted">Oportunidades &lt;= {{ precioMaxOportunidad }}%</span>
+        <span class="badge bg-danger-subtle text-danger extra-small">Arbitraje</span>
       </div>
+      <h4 class="fw-bold mb-0 text-danger fs-5">{{ kpis.total_oportunidades | number }}</h4>
+      <small class="text-muted extra-small d-block mt-0.5">
+        Vol. Nominal: <strong>${{ kpis.volumen_oportunidades_nominal | number:'1.0-0' }}</strong>
+      </small>
+      <small class="text-muted extra-small d-block mt-0.5">
+        {{ ((kpis.total_oportunidades / (kpis.total_operaciones || 1)) * 100) | number:'1.1-1' }}% del total analizado
+      </small>
     </div>
 
   </div>

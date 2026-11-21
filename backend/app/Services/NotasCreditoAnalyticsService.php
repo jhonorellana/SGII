@@ -48,8 +48,8 @@ class NotasCreditoAnalyticsService
                 ->pluck('TITULO');
 
             $maxDate = $fechas->fecha_max ?? date('Y-m-d');
-            // Por defecto, fecha inicio = 30 días antes de la fecha máxima registrada
-            $defaultFechaInicio = date('Y-m-d', strtotime($maxDate . ' -30 days'));
+            // Por defecto, fecha inicio = 7 días antes de la fecha máxima registrada
+            $defaultFechaInicio = date('Y-m-d', strtotime($maxDate . ' -7 days'));
 
             return [
                 'success' => true,
@@ -88,7 +88,7 @@ class NotasCreditoAnalyticsService
         try {
             $db = DB::connection('mysql_inversion');
 
-            $fechaInicio = $filters['fecha_inicio'] ?? date('Y-m-d', strtotime('-30 days'));
+            $fechaInicio = $filters['fecha_inicio'] ?? date('Y-m-d', strtotime('-7 days'));
             $fechaFin = $filters['fecha_fin'] ?? date('Y-m-d');
             $precioMaxOportunidad = isset($filters['precio_max_oportunidad']) ? (float) $filters['precio_max_oportunidad'] : 97.50;
             $soloOportunidades = !empty($filters['solo_oportunidades']);
@@ -114,7 +114,7 @@ class NotasCreditoAnalyticsService
                 $query->where('VALOR_NOMINAL', '>=', 50000);
             }
 
-            if ($casaVendedora) {
+            if ($casaVendedora && strtoupper($casaVendedora) !== 'TODAS' && strtoupper($casaVendedora) !== 'TODOS') {
                 $query->where('CASA_VENDEDORA', 'LIKE', "%{$casaVendedora}%");
             }
 
