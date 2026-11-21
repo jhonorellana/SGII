@@ -122,6 +122,15 @@ export class VentaInversionListComponent implements OnInit {
   totalPremioGeneral = 0;
   totalGeneralTotal = 0;
 
+  // Métricas comparativas de venta para la tabla de amortización
+  ventaAsociada: any = null;
+  capitalRecibidoVenta = 0;
+  interesUtilidadRecibidaVenta = 0;
+  totalRecibidoVenta = 0;
+  diferenciaInteresVenta = 0;
+  gananciaAnualVenta = 0;
+  diasTranscurridosVenta = 0;
+
   constructor(
     private ventaService: VentaInversionService,
     private inversionService: InversionService,
@@ -807,6 +816,54 @@ export class VentaInversionListComponent implements OnInit {
     this.totalGeneralTotal = 0;
   }
 
+  isInversionVendida(inv: any): boolean {
+    if (!inv) return false;
+    if (inv.fecha_venta) return true;
+    const codigoEstado = inv.estado_inversion?.codigo || inv.estadoInversion?.codigo;
+    if (inv.id_estado_inversion === 130 || codigoEstado === 'VENDIDA_TOTAL') return true;
+    if (inv.ventas && inv.ventas.length > 0) return true;
+    if (this.amortizaciones && this.amortizaciones.some(a => Number(a.id_estado_amortizacion) === 227)) return true;
+    return false;
+  }
+
+  calcularComparativaVenta(): void {
+    const inv = this.inversionSeleccionada;
+    if (!inv || !this.isInversionVendida(inv)) {
+      this.ventaAsociada = null;
+      return;
+    }
+
+    let venta = null;
+    if (inv.ventas && inv.ventas.length > 0) {
+      venta = inv.ventas[0];
+    } else if (this.selectedVenta && (this.selectedVenta.id_inversion === inv.id_inversion || (this.selectedVenta.detalles && this.selectedVenta.detalles.some((d: any) => d.id_inversion === inv.id_inversion)))) {
+      venta = this.selectedVenta;
+    }
+
+    this.ventaAsociada = venta;
+
+    // Capital invertido / recuperado
+    const capInv = Number(inv.capital_invertido) || 0;
+    this.capitalRecibidoVenta = capInv;
+
+    // Interés/Utilidad real recibida (utilidad neta de la venta + cuotas cobradas previamente si existieron)
+    const utilidadVenta = venta ? Number(venta.utilidad_con_comision ?? venta.ganancia_perdida ?? 0) : 0;
+    const interesCobradoPrevio = this.interesRecibido || 0; // cuotas pagadas (135)
+    this.interesUtilidadRecibidaVenta = utilidadVenta + interesCobradoPrevio;
+
+    // Total recibido en caja (monto venta con comisión + cuotas previas cobradas)
+    const valorVenta = venta ? Number(venta.valor_venta_con_comision ?? venta.valor_recibido ?? 0) : (capInv + utilidadVenta);
+    const cuotasCobradasTotal = this.totalRecibido || 0;
+    this.totalRecibidoVenta = valorVenta + cuotasCobradasTotal;
+
+    // Diferencia entre lo que realmente se recibió de intereses vs lo que se esperaba al vencimiento
+    this.diferenciaInteresVenta = this.interesUtilidadRecibidaVenta - this.totalInteresGeneral;
+
+    // Métricas anualizadas de la venta
+    this.gananciaAnualVenta = venta ? Number(venta.ganancia_anual ?? 0) : 0;
+    this.diasTranscurridosVenta = venta ? Number(venta.dias_transcurridos ?? 0) : 0;
+  }
+
   calcularMetricasAmortizacion(): void {
     this.resetMetricasAmortizacion();
     if (!this.amortizaciones || this.amortizaciones.length === 0) return;
@@ -816,24 +873,29 @@ export class VentaInversionListComponent implements OnInit {
       const int = Number(a.interes) || 0;
       const pre = Number(a.descuento || a.premio) || 0;
       const tot = Number(a.total) || (cap + int + pre);
+      const idEstado = Number(a.id_estado_amortizacion);
 
       if (this.isCuotaCobrada(a)) {
         this.capitalRecibido += cap;
         this.interesRecibido += int;
         this.premioRecibido += pre;
         this.totalRecibido += tot;
-      } else {
+      } else if (idEstado !== 227 && idEstado !== 200 && idEstado !== 137) {
+        // Solo cuotas verdaderamente pendientes (no vendidas anticipadamente ni anuladas)
         this.capitalPorRecibir += cap;
         this.interesPorRecibir += int;
         this.premioPorRecibir += pre;
         this.totalPorRecibir += tot;
       }
+
+      // Totales generales de la tabla (esperado al vencimiento)
+      this.totalCapitalGeneral += cap;
+      this.totalInteresGeneral += int;
+      this.totalPremioGeneral += pre;
+      this.totalGeneralTotal += tot;
     });
 
-    this.totalCapitalGeneral = this.capitalRecibido + this.capitalPorRecibir;
-    this.totalInteresGeneral = this.interesRecibido + this.interesPorRecibir;
-    this.totalPremioGeneral = this.premioRecibido + this.premioPorRecibir;
-    this.totalGeneralTotal = this.totalRecibido + this.totalPorRecibir;
+    this.calcularComparativaVenta();
   }
 
   formatNumber(value: number | string | undefined | null): string {

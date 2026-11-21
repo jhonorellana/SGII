@@ -384,8 +384,8 @@
             [resizable]="true"
             (onHide)="displayAmortizacionDialog = false" styleClass="app-custom-modal">
     <div *ngIf="inversionSeleccionada">
-      <!-- Resumen de Indicadores: Recibido vs Por Recibir -->
-      <div *ngIf="!loadingAmortizacion && amortizaciones.length > 0" class="row g-2 mb-3 mt-2">
+      <!-- Resumen de Indicadores: Modo Normal para Inversiones Activas -->
+      <div *ngIf="!loadingAmortizacion && amortizaciones.length > 0 && !isInversionVendida(inversionSeleccionada)" class="row g-2 mb-3 mt-2">
         <!-- Tarjeta Recibido (Cobrado) -->
         <div class="col-md-6">
           <div class="card border-success shadow-sm h-100" style="background-color: #f0fdf4;">
@@ -430,6 +430,76 @@
                 <span class="text-muted">Premio por Recibir:</span>
                 <strong class="text-warning-emphasis">{{ formatCurrency(premioPorRecibir) }}</strong>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumen Comparativo para Inversión Vendida: Esperado al Vencimiento vs. Realmente Recibido Post-Venta -->
+      <div *ngIf="!loadingAmortizacion && amortizaciones.length > 0 && isInversionVendida(inversionSeleccionada)" class="row g-2 mb-3 mt-2">
+        <!-- Tarjeta 1: Lo Esperado al Vencimiento (Proyectado Original) -->
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100" style="border: 1px solid #3b82f6; background-color: #f0f7ff;">
+            <div class="card-header text-white py-1 px-3 d-flex justify-content-between align-items-center" style="background-color: #1d4ed8 !important; border-bottom: 2px solid #1e40af;">
+              <span class="fw-bold small text-white"><i class="bi bi-calendar-check me-1"></i> ESPERADO AL VENCIMIENTO (ORIGINAL)</span>
+              <span class="fw-bold fs-6 text-white">{{ formatCurrency(totalGeneralTotal) }}</span>
+            </div>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Capital Esperado:</span>
+                <strong class="text-primary">{{ formatCurrency(totalCapitalGeneral) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Interés / Ganancia Esperada:</span>
+                <strong class="text-primary">{{ formatCurrency(totalInteresGeneral) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">Premio / Descuento Esperado:</span>
+                <strong class="text-primary">{{ formatCurrency(totalPremioGeneral) }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Lo Realmente Recibido (Tras la Venta) -->
+        <div class="col-md-6">
+          <div class="card shadow-sm h-100" style="border: 1px solid #22c55e; background-color: #f0fdf4;">
+            <div class="card-header text-white py-1 px-3 d-flex justify-content-between align-items-center" style="background-color: #15803d !important; border-bottom: 2px solid #166534;">
+              <span class="fw-bold small text-white"><i class="bi bi-cash-stack me-1"></i> REALMENTE RECIBIDO (POST-VENTA)</span>
+              <span class="fw-bold fs-6 text-white">{{ formatCurrency(totalRecibidoVenta) }}</span>
+            </div>
+            <div class="card-body p-2">
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Capital Recuperado:</span>
+                <strong class="text-success">{{ formatCurrency(capitalRecibidoVenta) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between border-bottom pb-1 mb-1 small">
+                <span class="text-muted">Interés / Utilidad Real Recibida:</span>
+                <strong class="text-success">{{ formatCurrency(interesUtilidadRecibidaVenta) }}</strong>
+              </div>
+              <div class="d-flex justify-content-between small">
+                <span class="text-muted">Rendimiento Anualizado / Días:</span>
+                <strong class="text-success">{{ formatPercentage(gananciaAnualVenta) }} <span class="text-muted fw-normal" *ngIf="diasTranscurridosVenta">({{ diasTranscurridosVenta }} días)</span></strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra Comparativa de Rendimiento -->
+        <div class="col-12 mt-1">
+          <div class="p-2 rounded d-flex justify-content-between align-items-center small" style="background-color: #f8fafc; border: 1px solid #cbd5e1;">
+            <div>
+              <i class="bi bi-info-circle-fill text-primary me-1"></i>
+              <strong>Diferencia de Rendimiento por Venta Anticipada:</strong>
+              <span class="ms-1">
+                Esperabas <strong>{{ formatCurrency(totalInteresGeneral) }}</strong> de intereses al vencimiento y recibiste <strong>{{ formatCurrency(interesUtilidadRecibidaVenta) }}</strong>
+                ({{ formatPercentage(ventaAsociada?.roi || 0) }} ROI en {{ diasTranscurridosVenta || '-' }} días).
+              </span>
+            </div>
+            <div class="text-end">
+              <span class="badge" [ngClass]="diferenciaInteresVenta >= 0 ? 'bg-success' : 'bg-warning text-dark'" style="font-size: 0.85rem;">
+                Diferencia: {{ formatCurrency(diferenciaInteresVenta) }}
+              </span>
             </div>
           </div>
         </div>

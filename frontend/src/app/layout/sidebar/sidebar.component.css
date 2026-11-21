@@ -3,13 +3,13 @@
   width: 280px;
   min-width: 280px;
   height: 100vh;
-  background: var(--primary-dark);
+  background: #064e3b;
   color: white;
   transition: all 0.3s ease;
   z-index: 1000;
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.2);
   position: relative;
 }
 
@@ -189,7 +189,7 @@
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.3s ease;
-  background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .submenu.expanded {

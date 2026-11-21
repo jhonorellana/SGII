@@ -184,6 +184,72 @@ class AmortizacionController extends Controller
             ->orderBy('fecha_pago', 'asc')
             ->get();
 
+        // Si no existen cuotas registradas para esta inversión (ej. inversión vendida derivada de venta parcial),
+        // reconstruir o generar su tabla prorrateada correspondiente para permitir la consulta histórica
+        if ($amortizaciones->isEmpty()) {
+            $inversion = \App\Models\Inversion::with('instrumento')->find($idInversion);
+            if ($inversion && $inversion->valor_nominal > 0) {
+                // 1. Buscar inversión original o hermana con cuotas para la misma liquidación e instrumento
+                $inversionHermana = \App\Models\Inversion::where('liquidacion', $inversion->liquidacion)
+                    ->where('id_instrumento', $inversion->id_instrumento)
+                    ->where('id_inversion', '!=', $idInversion)
+                    ->whereHas('amortizaciones')
+                    ->orderBy('id_inversion', 'asc')
+                    ->first();
+
+                if ($inversionHermana && $inversionHermana->valor_nominal > 0) {
+                    $cuotasHermana = Amortizacion::where('id_inversion', $inversionHermana->id_inversion)
+                        ->where('eliminado', false)
+                        ->orderBy('fecha_pago', 'asc')
+                        ->get();
+
+                    if ($cuotasHermana->isNotEmpty()) {
+                        $factor = $inversion->valor_nominal / $inversionHermana->valor_nominal;
+                        $fechaVentaCarbon = $inversion->fecha_venta ? \Carbon\Carbon::parse($inversion->fecha_venta)->startOfDay() : null;
+
+                        foreach ($cuotasHermana as $ch) {
+                            $fechaPagoCarbon = \Carbon\Carbon::parse($ch->fecha_pago)->startOfDay();
+                            $esVentaAnticipada = $fechaVentaCarbon && $fechaPagoCarbon->gt($fechaVentaCarbon);
+
+                            $cap = round($ch->capital * $factor, 2);
+                            $int = round($ch->interes * $factor, 2);
+                            $desc = round(($ch->descuento ?? 0) * $factor, 2);
+                            $totOrig = $ch->total > 0 ? $ch->total : ($ch->capital + $ch->interes + ($ch->descuento ?? 0));
+                            $tot = round($totOrig * $factor, 2);
+                            if ($tot <= 0) {
+                                $tot = round($cap + $int + $desc, 2);
+                            }
+
+                            // Si la cuota vence después de la fecha de venta, su estado es 227 (Venta Anticipada)
+                            $idEstado = $esVentaAnticipada ? 227 : $ch->id_estado_amortizacion;
+
+                            Amortizacion::create([
+                                'id_inversion' => $idInversion,
+                                'numero_cuota' => $ch->numero_cuota,
+                                'fecha_pago' => $ch->fecha_pago,
+                                'capital' => $cap,
+                                'interes' => $int,
+                                'descuento' => $desc,
+                                'total' => $tot,
+                                'int_parcial' => round(($ch->int_parcial ?? 0) * $factor, 2),
+                                'retencion' => round(($ch->retencion ?? 0) * $factor, 2),
+                                'id_estado_amortizacion' => $idEstado,
+                                'eliminado' => false,
+                                'fecha_creacion' => now(),
+                                'fecha_actualizacion' => now()
+                            ]);
+                        }
+
+                        $amortizaciones = Amortizacion::with(['estadoAmortizacion'])
+                            ->where('id_inversion', $idInversion)
+                            ->where('eliminado', false)
+                            ->orderBy('fecha_pago', 'asc')
+                            ->get();
+                    }
+                }
+            }
+        }
+
         return response()->json($amortizaciones, Response::HTTP_OK);
     }
 

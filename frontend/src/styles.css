@@ -5,14 +5,14 @@
 
 /* Color Palette - Based on sidebar green (#4a8c62) */
 :root {
-  --primary-color: #4a8c62;
-  --primary-dark: #3d7a52;
-  --primary-light: #61B27D;
+  --primary-color: #047857;
+  --primary-dark: #064e3b;
+  --primary-light: #10b981;
   --primary-lighter: #e8f5ec;
   --primary-lightest: #f0f9f4;
   --primary-medium: #c8e6d3;
-  --secondary-color: #6c7d6d;
-  --success-color: #4a8c62;
+  --secondary-color: #065f46;
+  --success-color: #047857;
   --danger-color: #dc3545;
   --warning-color: #ffc107;
   --info-color: #17a2b8;

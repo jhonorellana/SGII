@@ -1049,8 +1049,18 @@ class VentaInversionController extends Controller
             $descuentoVendido = round(($amortizacionOriginal->descuento * $porcentajeVender) / 100, 2);
             $descuentoRemanente = $amortizacionOriginal->descuento - $descuentoVendido;
 
-            $totalVendido = round(($amortizacionOriginal->total * $porcentajeVender) / 100, 2);
-            $totalRemanente = $amortizacionOriginal->total - $totalVendido;
+            $totalOriginal = $amortizacionOriginal->total > 0
+                ? $amortizacionOriginal->total
+                : ($amortizacionOriginal->capital + $amortizacionOriginal->interes + $amortizacionOriginal->descuento);
+
+            $totalVendido = round(($totalOriginal * $porcentajeVender) / 100, 2);
+            if ($totalVendido <= 0) {
+                $totalVendido = round($capitalVendido + $interesVendido + $descuentoVendido, 2);
+            }
+            $totalRemanente = $totalOriginal - $totalVendido;
+            if ($totalRemanente <= 0) {
+                $totalRemanente = round($capitalRemanente + $interesRemanente + $descuentoRemanente, 2);
+            }
 
             $intParcialVendido = round(($amortizacionOriginal->int_parcial * $porcentajeVender) / 100, 2);
             $intParcialRemanente = $amortizacionOriginal->int_parcial - $intParcialVendido;
@@ -1060,24 +1070,28 @@ class VentaInversionController extends Controller
 
             $fechaPagoCarbon = \Carbon\Carbon::parse($amortizacionOriginal->fecha_pago)->startOfDay();
 
-            // 2. Crear cuota en la tabla de Amortización de la Parte Vendida (solo si fecha_pago <= fecha_venta)
-            if ($fechaPagoCarbon->lte($fechaVentaCarbon)) {
-                \App\Models\Amortizacion::create([
-                    'id_inversion' => $inversionVendida->id_inversion,
-                    'numero_cuota' => $amortizacionOriginal->numero_cuota,
-                    'fecha_pago' => $amortizacionOriginal->fecha_pago,
-                    'interes' => $interesVendido,
-                    'capital' => $capitalVendido,
-                    'descuento' => $descuentoVendido,
-                    'total' => $totalVendido,
-                    'int_parcial' => $intParcialVendido,
-                    'retencion' => $retencionVendido,
-                    'id_estado_amortizacion' => $amortizacionOriginal->id_estado_amortizacion,
-                    'eliminado' => $amortizacionOriginal->eliminado,
-                    'fecha_creacion' => now(),
-                    'fecha_actualizacion' => now()
-                ]);
-            }
+            // 2. Crear cuota en la tabla de Amortización de la Parte Vendida
+            // Si fecha_pago <= fecha_venta: conserva el estado original (ej. Pagada 135)
+            // Si fecha_pago > fecha_venta: se marca como 227 (Venta Anticipada)
+            $estadoCuotaVendida = $fechaPagoCarbon->lte($fechaVentaCarbon)
+                ? $amortizacionOriginal->id_estado_amortizacion
+                : 227; // Venta Anticipada
+
+            \App\Models\Amortizacion::create([
+                'id_inversion' => $inversionVendida->id_inversion,
+                'numero_cuota' => $amortizacionOriginal->numero_cuota,
+                'fecha_pago' => $amortizacionOriginal->fecha_pago,
+                'interes' => $interesVendido,
+                'capital' => $capitalVendido,
+                'descuento' => $descuentoVendido,
+                'total' => $totalVendido,
+                'int_parcial' => $intParcialVendido,
+                'retencion' => $retencionVendido,
+                'id_estado_amortizacion' => $estadoCuotaVendida,
+                'eliminado' => $amortizacionOriginal->eliminado,
+                'fecha_creacion' => now(),
+                'fecha_actualizacion' => now()
+            ]);
 
             // 3. Crear cuota en la tabla de Amortización de la Parte Remanente (siempre, para todas las cuotas)
             \App\Models\Amortizacion::create([
