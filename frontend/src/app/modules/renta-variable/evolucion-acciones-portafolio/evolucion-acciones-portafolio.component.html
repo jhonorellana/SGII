@@ -1,0 +1,388 @@
+<div class="evolucion-portafolio-container p-3">
+  <!-- Header Principal -->
+  <div class="hero-banner card border-0 shadow-sm p-3 mb-3 text-white" 
+       style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-radius: 14px;">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h3 class="welcome-title mb-1 text-white font-bold d-flex align-items-center gap-2" style="font-size: 1.35rem;">
+          <i class="bi bi-graph-up"></i>
+          Evolución de Acciones del Portafolio
+        </h3>
+        <p class="welcome-subtitle mb-0 text-light opacity-90" style="font-size: 0.85rem;">
+          Comportamiento simultáneo de precios y volúmenes negociados en bolsa de todos los emisores de tu cartera
+        </p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Selector Global de Año -->
+        <div class="d-flex align-items-center bg-white rounded-pill px-3 py-1 shadow-sm gap-2">
+          <i class="bi bi-calendar3 text-success font-bold"></i>
+          <span class="small font-semibold text-secondary">Periodo:</span>
+          <p-dropdown 
+            [options]="anos" 
+            [(ngModel)]="selectedAnio" 
+            (onChange)="onAnioChange()" 
+            styleClass="border-0 bg-transparent p-dropdown-sm font-bold text-success" 
+            [style]="{'min-width': '140px'}">
+          </p-dropdown>
+        </div>
+
+        <!-- Botón Exportar Todo -->
+        <button 
+          class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 text-nowrap d-flex align-items-center gap-1" 
+          style="font-size: 0.85rem;"
+          [disabled]="loading || emisores.length === 0"
+          (click)="exportarTodoExcel()">
+          <i class="bi bi-file-earmark-excel"></i> Exportar Todo
+        </button>
+
+        <!-- Selector de Columnas del Grid -->
+        <div class="btn-group shadow-sm rounded-pill overflow-hidden bg-white p-1" role="group">
+          <button 
+            type="button" 
+            class="btn btn-sm py-1 px-2 rounded-pill font-bold" 
+            [ngClass]="gridColumns === 1 ? 'btn-success text-white' : 'btn-light text-secondary border-0'" 
+            (click)="setGridColumns(1)" 
+            title="1 Columna (Máximo Detalle)">
+            <i class="bi bi-view-stacked"></i> 1 Col
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm py-1 px-2 rounded-pill font-bold" 
+            [ngClass]="gridColumns === 2 ? 'btn-success text-white' : 'btn-light text-secondary border-0'" 
+            (click)="setGridColumns(2)" 
+            title="2 Columnas (Balanceado)">
+            <i class="bi bi-grid-fill"></i> 2 Cols
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-sm py-1 px-2 rounded-pill font-bold" 
+            [ngClass]="gridColumns === 3 ? 'btn-success text-white' : 'btn-light text-secondary border-0'" 
+            (click)="setGridColumns(3)" 
+            title="3 Columnas (Compacto)">
+            <i class="bi bi-grid-3x3-gap-fill"></i> 3 Cols
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra Compacta de Filtro Rápido y Métricas Globales (EN UNA SOLA FILA) -->
+  <div class="card border-0 shadow-sm p-2 mb-3 bg-white" style="border-radius: 12px;">
+    <div class="d-flex align-items-center justify-content-between flex-nowrap gap-3 overflow-x-auto py-1 px-2">
+      <!-- Buscador Compacto -->
+      <div style="min-width: 200px; max-width: 260px; flex-shrink: 0;">
+        <div class="p-input-icon-left w-100">
+          <i class="bi bi-search text-muted small"></i>
+          <input 
+            type="text" 
+            pInputText 
+            [(ngModel)]="searchFilter" 
+            (input)="applyFilter()" 
+            placeholder="Buscar emisor o socio..." 
+            class="w-100 p-inputtext-sm py-1 border-light-subtle" 
+            style="font-size: 0.82rem; height: 34px;" />
+        </div>
+      </div>
+
+      <div class="vr opacity-25 d-none d-md-block" style="height: 30px;"></div>
+
+      <!-- KPI 1: Emisores Activos -->
+      <div class="d-flex align-items-center gap-2 text-nowrap px-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary shadow-2xs" 
+             style="width: 32px; height: 32px;">
+          <i class="bi bi-building font-semibold" style="font-size: 0.85rem;"></i>
+        </div>
+        <div>
+          <div class="text-secondary text-uppercase" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em;">Emisores en Cartera</div>
+          <div class="fw-bold text-dark" style="font-size: 0.95rem; line-height: 1.1;">
+            {{ filteredEmisores.length }} <span class="text-muted fw-normal" style="font-size: 0.75rem;">de {{ emisores.length }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vr opacity-25 d-none d-md-block" style="height: 30px;"></div>
+
+      <!-- KPI 2: Valor Mercado Total -->
+      <div class="d-flex align-items-center gap-2 text-nowrap px-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-2xs" 
+             style="width: 32px; height: 32px; background-color: #dcfce7; color: #15803d;">
+          <i class="bi bi-cash-stack font-semibold" style="font-size: 0.85rem;"></i>
+        </div>
+        <div>
+          <div class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em;">Valor Mercado Total</div>
+          <div class="fw-bold text-success" style="font-size: 0.95rem; line-height: 1.1;">
+            {{ formatCurrency(totalValorMercadoGlobal) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="vr opacity-25 d-none d-md-block" style="height: 30px;"></div>
+
+      <!-- KPI 3: Capital Invertido -->
+      <div class="d-flex align-items-center gap-2 text-nowrap px-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-2xs" 
+             style="width: 32px; height: 32px; background-color: #dbeafe; color: #1d4ed8;">
+          <i class="bi bi-wallet2 font-semibold" style="font-size: 0.85rem;"></i>
+        </div>
+        <div>
+          <div class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em;">Capital Invertido</div>
+          <div class="fw-bold text-primary" style="font-size: 0.95rem; line-height: 1.1;">
+            {{ formatCurrency(totalCapitalInvertidoGlobal) }}
+          </div>
+        </div>
+      </div>
+
+      <div class="vr opacity-25 d-none d-md-block" style="height: 30px;"></div>
+
+      <!-- KPI 4: Plusvalía Latente Total -->
+      <div class="d-flex align-items-center gap-2 text-nowrap px-1">
+        <div class="rounded-circle d-flex align-items-center justify-content-center shadow-2xs" 
+             [style.background-color]="totalPlusvaliaGlobal >= 0 ? '#dcfce7' : '#fee2e2'" 
+             [style.color]="totalPlusvaliaGlobal >= 0 ? '#15803d' : '#b91c1c'" 
+             style="width: 32px; height: 32px;">
+          <i class="bi" [ngClass]="totalPlusvaliaGlobal >= 0 ? 'bi-graph-up-arrow' : 'bi-graph-down-arrow'" style="font-size: 0.85rem;"></i>
+        </div>
+        <div>
+          <div class="text-muted text-uppercase" style="font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em;">Plusvalía Latente</div>
+          <div class="fw-bold" [ngClass]="totalPlusvaliaGlobal >= 0 ? 'text-success' : 'text-danger'" style="font-size: 0.95rem; line-height: 1.1;">
+            {{ totalPlusvaliaGlobal >= 0 ? '+' : '' }}{{ formatCurrency(totalPlusvaliaGlobal) }}
+            <span class="badge ms-1" [ngClass]="totalPlusvaliaGlobal >= 0 ? 'bg-success' : 'bg-danger'" style="font-size: 0.7rem; font-weight: 600;">
+              {{ totalPlusvaliaGlobal >= 0 ? '+' : '' }}{{ formatNumber(porcentajePlusvaliaGlobal, 2) }}%
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5 my-5">
+    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3 text-secondary font-medium">Cargando gráficos y cotizaciones de los emisores de tu portafolio...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="alert alert-danger shadow-sm border-0 d-flex align-items-center gap-3 my-4">
+    <i class="bi bi-exclamation-triangle-fill fs-3 text-danger"></i>
+    <div>
+      <h6 class="mb-0 fw-bold">Ocurrió un error</h6>
+      <span>{{ error }}</span>
+    </div>
+  </div>
+
+  <!-- Cuadrícula Dinámica de Gráficos de Acciones -->
+  <div *ngIf="!loading && !error" class="row g-3">
+    <div 
+      *ngFor="let emisor of filteredEmisores" 
+      [ngClass]="gridColumns === 1 ? 'col-12' : (gridColumns === 2 ? 'col-lg-6 col-12' : 'col-xl-4 col-lg-6 col-12')">
+      
+      <div class="card border-0 shadow-sm h-100 overflow-hidden emisor-chart-card d-flex flex-column">
+        <!-- Card Header del Emisor -->
+        <div class="card-header text-white py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+             style="background: linear-gradient(135deg, #064e3b 0%, #047857 100%); border-bottom: 2px solid #064e3b;">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <h5 class="mb-0 fw-bold text-white fs-6">{{ emisor.emisor_nombre }}</h5>
+              <!-- Badge de Precio Actual y Variación Diaria -->
+              <span class="badge bg-white text-dark font-bold px-2 py-1 shadow-sm" style="font-size: 0.8rem;">
+                {{ formatCurrency(emisor.precio_ultimo) }}
+              </span>
+              <span class="badge px-1 py-0 font-semibold"
+                    [ngClass]="emisor.variacion_diaria_pct > 0 ? 'bg-success text-white' : (emisor.variacion_diaria_pct < 0 ? 'bg-danger text-white' : 'bg-secondary text-white')"
+                    style="font-size: 0.72rem;">
+                <i class="bi" [ngClass]="emisor.variacion_diaria_pct > 0 ? 'bi-arrow-up-short' : (emisor.variacion_diaria_pct < 0 ? 'bi-arrow-down-short' : 'bi-dash')"></i>
+                {{ emisor.variacion_diaria_pct > 0 ? '+' : '' }}{{ formatNumber(emisor.variacion_diaria_pct, 2) }}%
+              </span>
+            </div>
+            <small class="text-white-50" style="font-size: 0.73rem;">
+              Último Cierre: {{ emisor.fecha_ultimo_precio || 'Al día' }}
+            </small>
+          </div>
+
+          <!-- Badges de Portafolio -->
+          <div class="text-end d-flex align-items-center gap-2">
+            <div class="badge bg-light text-dark px-2 py-1 shadow-sm text-start" style="font-size: 0.75rem;">
+              <span class="text-muted d-block" style="font-size: 0.65rem;">Posición en Portafolio</span>
+              <strong>{{ formatInteger(emisor.cantidad_acciones) }} acc.</strong> | <strong class="text-success">{{ formatCurrency(emisor.valor_mercado) }}</strong>
+            </div>
+            <div class="badge px-2 py-1 shadow-sm text-start" 
+                 [ngClass]="emisor.utilidad_perdida_no_realizada >= 0 ? 'bg-emerald text-white' : 'bg-danger text-white'"
+                 style="font-size: 0.75rem; background-color: #059669;">
+              <span class="d-block opacity-75" style="font-size: 0.65rem;">Plusvalía</span>
+              <strong>{{ emisor.utilidad_perdida_no_realizada >= 0 ? '+' : '' }}{{ formatCurrency(emisor.utilidad_perdida_no_realizada) }}</strong>
+              <small class="ms-1">({{ emisor.porcentaje_rendimiento >= 0 ? '+' : '' }}{{ formatNumber(emisor.porcentaje_rendimiento, 1) }}%)</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de Mini-KPIs del Periodo y Precio Promedio de Compra -->
+        <div class="bg-light px-3 py-1 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2 small text-secondary"
+             style="font-size: 0.78rem;">
+          <div>
+            <span class="text-primary fw-semibold"><i class="bi bi-tag-fill me-1"></i>P. Prom. Compra:</span>
+            <strong class="text-primary ms-1 fs-7">{{ formatCurrency(emisor.costo_promedio) }}</strong>
+          </div>
+          <div>
+            <span class="text-muted">P. Prom. Mercado:</span>
+            <strong class="text-dark ms-1">{{ formatCurrency(emisor.kpis.precio_promedio) }}</strong>
+          </div>
+          <div>
+            <span class="text-muted">Rango Bolsa:</span>
+            <strong class="text-danger ms-1">{{ formatCurrency(emisor.kpis.precio_minimo) }}</strong>
+            <span class="text-muted mx-1">/</span>
+            <strong class="text-success">{{ formatCurrency(emisor.kpis.precio_maximo) }}</strong>
+          </div>
+          <div>
+            <span class="text-muted">Vol. Transado:</span>
+            <strong class="text-dark ms-1">{{ formatCurrency(emisor.kpis.volumen_total) }}</strong>
+          </div>
+          <div>
+            <span class="text-muted">Rendimiento {{ selectedAnio === 0 ? 'Histórico' : selectedAnio }}:</span>
+            <strong [ngClass]="emisor.kpis.variacion_periodo_pct >= 0 ? 'text-success' : 'text-danger'" class="ms-1">
+              {{ emisor.kpis.variacion_periodo_pct >= 0 ? '+' : '' }}{{ formatNumber(emisor.kpis.variacion_periodo_pct, 2) }}%
+            </strong>
+          </div>
+        </div>
+
+        <!-- Canvas del Gráfico (APROVECHA EL 100% DEL ESPACIO) -->
+        <div class="card-body p-2 flex-grow-1 position-relative d-flex flex-column">
+          <div *ngIf="emisor.historico && emisor.historico.length > 0" 
+               class="chart-container-box flex-grow-1"
+               [style.height]="getChartHeight()">
+            <p-chart 
+              type="line" 
+              [data]="emisor.chartData" 
+              [options]="emisor.chartOptions" 
+              [plugins]="chartPlugins"
+              [height]="getChartHeight()"
+              [style]="{width: '100%', height: '100%'}">
+            </p-chart>
+          </div>
+
+          <div *ngIf="!emisor.historico || emisor.historico.length === 0" 
+               class="text-center py-5 text-muted d-flex flex-column align-items-center justify-content-center flex-grow-1"
+               [style.height]="getChartHeight()">
+            <i class="bi bi-bar-chart text-secondary fs-1 mb-2"></i>
+            <span class="fw-semibold">No se registraron operaciones de {{ emisor.emisor_nombre }} en {{ selectedAnio === 0 ? 'el historial' : selectedAnio }}</span>
+            <small class="text-muted">Prueba seleccionando otro año en el filtro superior</small>
+          </div>
+        </div>
+
+        <!-- Footer con PRECIO PROMEDIO PONDERADO DE COMPRA, Socios y Botón de Exportar -->
+        <div class="card-footer bg-white border-top py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2 mt-auto">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <!-- Badge Destacado de Precio Promedio de Compra -->
+            <div class="badge px-2 py-1 shadow-2xs d-flex align-items-center gap-1 border border-primary-subtle" 
+                 style="background-color: #eff6ff; color: #1d4ed8; font-size: 0.78rem;">
+              <i class="bi bi-tag-fill"></i>
+              <span>Precio Prom. Compra:</span>
+              <strong style="font-size: 0.82rem;">{{ formatCurrency(emisor.costo_promedio) }}</strong>
+            </div>
+
+            <!-- Desglose por Socio con su promedio individual -->
+            <div class="d-flex align-items-center gap-1 flex-wrap small">
+              <span class="text-muted"><i class="bi bi-people me-1"></i>Socios:</span>
+              <span *ngFor="let s of emisor.socios" class="badge bg-light text-dark border px-2 py-1" style="font-size: 0.74rem;">
+                <strong>{{ s.persona }}:</strong> {{ formatInteger(s.cantidad) }} acc. ({{ formatCurrency(s.valor_mercado) }})
+                <span class="text-primary ms-1 font-semibold" title="Costo Promedio Ponderado de este socio">
+                  | Prom: {{ formatCurrency(s.costo_promedio || (s.cantidad > 0 ? s.capital_invertido / s.cantidad : 0)) }}
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Acciones de la Tarjeta -->
+          <div class="d-flex align-items-center gap-1">
+            <button 
+              type="button" 
+              class="btn btn-outline-success btn-sm py-0 px-2 font-semibold d-flex align-items-center gap-1"
+              style="font-size: 0.75rem; height: 26px;"
+              (click)="exportarExcelEmisor(emisor)"
+              title="Descargar histórico a Excel">
+              <i class="bi bi-file-earmark-excel"></i> Excel
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Empty Search Results -->
+  <div *ngIf="!loading && !error && filteredEmisores.length === 0 && emisores.length > 0" class="text-center py-5">
+    <i class="bi bi-search text-secondary fs-1 mb-2 d-block"></i>
+    <h5 class="text-secondary">No se encontraron emisores que coincidan con "{{ searchFilter }}"</h5>
+    <button class="btn btn-outline-success btn-sm mt-2 rounded-pill" (click)="searchFilter = ''; applyFilter()">
+      Limpiar Búsqueda
+    </button>
+  </div>
+</div>
+
+<!-- Modal para Detalle Diario de Operaciones (Popup Drill-down) -->
+<p-dialog 
+  [(visible)]="displayDetalleDialog" 
+  [header]="'Detalle de Operaciones en Bolsa - ' + selectedDetalleEmisor + ' (' + selectedDetalleFecha + ')'" 
+  [modal]="true" 
+  [style]="{width: '750px', maxWidth: '95vw'}" 
+  [responsive]="true">
+  
+  <div *ngIf="detalleLoading" class="text-center py-4">
+    <div class="spinner-border text-success" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <div *ngIf="!detalleLoading">
+    <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded" style="background-color: #f0fdf4;">
+      <div>
+        <span class="text-muted small">Total Acciones:</span>
+        <strong class="ms-1 text-dark">{{ formatInteger(detalleTotalCantidad) }}</strong>
+      </div>
+      <div>
+        <span class="text-muted small">Monto Total Efectivo:</span>
+        <strong class="ms-1 text-success">{{ formatCurrency(detalleTotalValorEfectivo) }}</strong>
+      </div>
+      <div>
+        <span class="text-muted small">Precio Ponderado:</span>
+        <strong class="ms-1 text-primary">{{ formatCurrency(detallePrecioPonderado) }}</strong>
+      </div>
+    </div>
+
+    <p-table 
+      [value]="detalleTransacciones" 
+      [paginator]="true" 
+      [rows]="5" 
+      styleClass="p-datatable-sm p-datatable-striped">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>ID</th>
+          <th class="text-end">Cantidad</th>
+          <th class="text-end">Precio ($)</th>
+          <th class="text-end">Valor Efectivo ($)</th>
+          <th>Tipo</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-tx>
+        <tr>
+          <td>{{ tx.id }}</td>
+          <td class="text-end">{{ formatInteger(tx.cantidad) }}</td>
+          <td class="text-end font-bold">{{ formatCurrency(tx.precio) }}</td>
+          <td class="text-end text-success font-bold">{{ formatCurrency(tx.valor_efectivo) }}</td>
+          <td><span class="badge bg-secondary">{{ tx.tipo }}</span></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center py-3 text-muted">No se registraron transacciones individuales en esta fecha.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton type="button" label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="displayDetalleDialog = false"></button>
+  </ng-template>
+</p-dialog>

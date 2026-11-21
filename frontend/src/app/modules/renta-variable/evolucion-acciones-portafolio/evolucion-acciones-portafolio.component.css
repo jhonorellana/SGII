@@ -1,0 +1,85 @@
+.evolucion-portafolio-container {
+  min-height: 100vh;
+}
+
+.hero-banner {
+  box-shadow: 0 4px 15px rgba(6, 78, 59, 0.15) !important;
+}
+
+.emisor-chart-card {
+  border-radius: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-color: #ffffff;
+}
+
+.emisor-chart-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+}
+
+.chart-container-box {
+  width: 100%;
+  position: relative;
+}
+
+:host ::ng-deep .emisor-chart-card p-chart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:host ::ng-deep .emisor-chart-card p-chart > div {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+:host ::ng-deep .emisor-chart-card canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.bg-emerald {
+  background-color: #059669 !important;
+}
+
+.text-emerald {
+  color: #059669 !important;
+}
+
+.bg-purple-light {
+  background-color: #f3e8ff;
+}
+
+.text-purple {
+  color: #9333ea;
+}
+
+.shadow-2xs {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.fs-7 {
+  font-size: 0.82rem;
+}
+
+:host ::ng-deep .emisor-chart-card .card-body {
+  padding: 0.25rem 0.5rem !important;
+}
+
+:host ::ng-deep .p-dropdown {
+  background: transparent;
+  border: none;
+}
+
+:host ::ng-deep .p-dropdown .p-dropdown-label {
+  padding: 0.25rem 0.5rem;
+  font-weight: 700;
+  color: #047857;
+}
+
+:host ::ng-deep .p-dropdown .p-dropdown-trigger {
+  width: 1.75rem;
+  color: #047857;
+}

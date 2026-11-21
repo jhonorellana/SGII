@@ -36,6 +36,7 @@ import { HistoricoPatrimonioListComponent } from './modules/historico-patrimonio
 import { HistoricoPatrimonioReportComponent } from './modules/reportes/historico-patrimonio-report/historico-patrimonio-report.component';
 import { AuthGuard } from './core/auth.guard';
 import { PortafolioListComponent } from './modules/renta-variable/portafolio/portafolio-list.component';
+import { EvolucionAccionesPortafolioComponent } from './modules/renta-variable/evolucion-acciones-portafolio/evolucion-acciones-portafolio.component';
 import { OperacionListComponent } from './modules/renta-variable/operaciones/operacion-list.component';
 import { DividendoListComponent } from './modules/renta-variable/dividendos/dividendo-list.component';
 import { AnalisisVentaAccionComponent } from './modules/renta-variable/analisis-ventas/analisis-ventas.component';
@@ -102,6 +103,7 @@ export const routes: Routes = [
       { path: 'notas-credito/analisis-rendimiento', component: AnalisisNotasCreditoComponent },
       { path: 'notas-credito/importar-pdf', component: ImportarPdfComponent },
       { path: 'renta-variable/portafolio', component: PortafolioListComponent },
+      { path: 'renta-variable/evolucion-acciones', component: EvolucionAccionesPortafolioComponent },
       { path: 'renta-variable/operaciones', component: OperacionListComponent },
       { path: 'renta-variable/dividendos', component: DividendoListComponent },
       { path: 'renta-variable/analisis-ventas', component: AnalisisVentaAccionComponent },

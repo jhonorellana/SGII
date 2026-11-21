@@ -121,6 +121,11 @@ export class SidebarComponent implements OnInit {
           path: '/renta-variable/portafolio'
         },
         {
+          title: 'Evolución Acciones',
+          icon: 'bi-graph-up',
+          path: '/renta-variable/evolucion-acciones'
+        },
+        {
           title: 'Operaciones',
           icon: 'bi-arrow-left-right',
           path: '/renta-variable/operaciones'
