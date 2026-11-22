@@ -206,7 +206,7 @@
 
                 <!-- Selector de Base de Datos para Backup -->
                 <div *ngIf="pasoBackup" class="ms-md-2" (click)="$event.stopPropagation()">
-                  <select class="form-select form-select-sm border-info-subtle bg-light text-dark extra-small py-0 px-2 fw-semibold" style="width: auto; height: 26px;" [(ngModel)]="tipoBackup" (ngModelChange)="guardarAjustes()" [disabled]="ejecutandoFlujo" pTooltip="Seleccione las bases de datos para el respaldo .zip">
+                  <select class="form-select form-select-sm border-info-subtle bg-white text-dark extra-small py-1 ps-2.5 pe-4 fw-semibold" style="width: auto; min-width: 260px; height: 30px; background-position: right 0.5rem center;" [(ngModel)]="tipoBackup" (ngModelChange)="guardarAjustes()" [disabled]="ejecutandoFlujo" pTooltip="Seleccione las bases de datos para el respaldo .zip">
                     <option value="both">Ambas Bases (inversion y sipro_desa)</option>
                     <option value="inversion">Solo BD Inversión</option>
                     <option value="sipro_desa">Solo BD Sipro Desa</option>

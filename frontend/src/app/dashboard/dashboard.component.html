@@ -16,8 +16,7 @@
       <div class="d-flex gap-2 align-items-center flex-wrap flex-sm-nowrap">
         <!-- Modo Máquina del Tiempo -->
         <div class="btn btn-light text-success font-bold shadow-sm rounded-pill px-3 py-1 d-flex align-items-center text-nowrap" style="font-size: 0.85rem;" [class.disabled]="loading">
-          <i class="bi bi-clock-history me-1 text-success"></i>
-          <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-3" style="width: auto; min-width: 140px; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right center;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId" [disabled]="loading">
+          <select class="form-select form-select-sm border-0 bg-transparent text-success font-bold p-0 ps-1 pe-4" style="width: auto; min-width: 180px; cursor: pointer; box-shadow: none; outline: none; font-size: 0.85rem; background-position: right 0.25rem center; background-size: 14px 10px;" (change)="onTimeMachineChange($event)" [value]="selectedHistoricoId" [disabled]="loading">
             <option value="REAL_TIME" *ngIf="historicosOptions.length === 0">⏳ Tiempo Real (Hoy)</option>
             <option *ngFor="let opt of historicosOptions" [value]="opt.value" class="text-dark">{{ opt.label }}</option>
           </select>

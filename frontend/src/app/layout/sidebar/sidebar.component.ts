@@ -248,7 +248,7 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Rendimiento Anual',
-          icon: 'bi-bar-chart-line',
+          icon: 'bi-percent',
           path: '/reportes/proyeccion-interes-anual'
         },
         {
@@ -258,12 +258,12 @@ export class SidebarComponent implements OnInit {
         },
         {
           title: 'Histórico de Capital',
-          icon: 'bi-graph-up',
+          icon: 'bi-clock-history',
           path: '/reportes/historico-patrimonio'
         },
         {
           title: 'Tendencias Analíticas',
-          icon: 'bi-graph-up-arrow',
+          icon: 'bi-activity',
           path: '/reportes/tendencias-historicas'
         },
         {
