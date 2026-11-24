@@ -16,6 +16,7 @@ use App\Services\VectorPreciosEtlService;
 use App\Services\NotasCreditoImportService;
 use App\Services\DatabaseBackupService;
 use App\Services\StoredProcedureService;
+use App\Services\MaximosMinimosEtlService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -34,6 +35,7 @@ class BvqDownloaderController extends Controller
     protected NotasCreditoImportService $notasCreditoImportService;
     protected DatabaseBackupService $databaseBackupService;
     protected StoredProcedureService $storedProcedureService;
+    protected MaximosMinimosEtlService $maximosMinimosEtlService;
 
     public function __construct(
         BvqDownloaderService $downloaderService,
@@ -48,7 +50,8 @@ class BvqDownloaderController extends Controller
         VectorPreciosEtlService $vectorPreciosEtlService,
         NotasCreditoImportService $notasCreditoImportService,
         DatabaseBackupService $databaseBackupService,
-        StoredProcedureService $storedProcedureService
+        StoredProcedureService $storedProcedureService,
+        MaximosMinimosEtlService $maximosMinimosEtlService
     ) {
         $this->downloaderService = $downloaderService;
         $this->sharesImportService = $sharesImportService;
@@ -63,6 +66,7 @@ class BvqDownloaderController extends Controller
         $this->notasCreditoImportService = $notasCreditoImportService;
         $this->databaseBackupService = $databaseBackupService;
         $this->storedProcedureService = $storedProcedureService;
+        $this->maximosMinimosEtlService = $maximosMinimosEtlService;
     }
 
     /**
@@ -406,6 +410,29 @@ class BvqDownloaderController extends Controller
     }
 
     /**
+     * Importa los reportes de precios máximos y mínimos de acciones a la tabla 'maximos_minimos_acciones'
+     */
+    public function importarMaximosMinimos(Request $request)
+    {
+        try {
+            $fecha = $request->input('fecha', date('Y-m-d'));
+            $resultado = $this->maximosMinimosEtlService->importDate($fecha);
+
+            return response()->json([
+                'success' => $resultado['success'],
+                'message' => $resultado['message'],
+                'data' => $resultado
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al importar datos a la tabla maximos_minimos_acciones',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Obtiene el historial de carpetas descargadas previamente y el estado de tablas en BD
      */
     public function historial()
@@ -424,6 +451,8 @@ class BvqDownloaderController extends Controller
             $lastDateNotasCredito = $this->notasCreditoImportService->getLastDateInNotasCredito();
             $totalNotasCredito = $this->notasCreditoImportService->getTotalRecordsInNotasCredito();
             $resumenNotasCredito = $this->notasCreditoImportService->getResumenEstadisticas();
+            $lastDateMaximosMinimos = $this->maximosMinimosEtlService->getLastDateInDb();
+            $totalMaximosMinimos = $this->maximosMinimosEtlService->getTotalRecordsInDb();
 
             return response()->json([
                 'success' => true,
@@ -439,6 +468,8 @@ class BvqDownloaderController extends Controller
                 'last_date_notas_credito' => $lastDateNotasCredito,
                 'total_notas_credito' => $totalNotasCredito,
                 'resumen_notas_credito' => $resumenNotasCredito,
+                'last_date_maximos_minimos' => $lastDateMaximosMinimos,
+                'total_maximos_minimos' => $totalMaximosMinimos,
                 'data' => $history
             ], Response::HTTP_OK);
         } catch (\Exception $e) {

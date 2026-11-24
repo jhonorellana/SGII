@@ -8,9 +8,41 @@ use Illuminate\Support\Facades\Log;
 class MaximosMinimosEtlService
 {
     protected string $baseDir = 'D:\\004. DatosBVQ';
+    protected ?BvqDownloaderService $downloaderService = null;
 
-    public function __construct()
+    public function __construct(?BvqDownloaderService $downloaderService = null)
     {
+        $this->downloaderService = $downloaderService;
+    }
+
+    /**
+     * Obtiene la última fecha registrada en la tabla 'maximos_minimos_acciones'
+     */
+    public function getLastDateInDb(): ?string
+    {
+        try {
+            return DB::connection('mysql_inversion')
+                ->table('maximos_minimos_acciones')
+                ->max('fecha_informacion');
+        } catch (\Throwable $e) {
+            Log::warning("Error al obtener última fecha de maximos_minimos_acciones: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Obtiene el total de registros en la tabla 'maximos_minimos_acciones'
+     */
+    public function getTotalRecordsInDb(): int
+    {
+        try {
+            return DB::connection('mysql_inversion')
+                ->table('maximos_minimos_acciones')
+                ->count();
+        } catch (\Throwable $e) {
+            Log::warning("Error al contar registros de maximos_minimos_acciones: " . $e->getMessage());
+            return 0;
+        }
     }
 
     /**
@@ -20,18 +52,42 @@ class MaximosMinimosEtlService
     {
         $dt = strtotime($fecha);
         if (!$dt) {
-            return ['success' => false, 'message' => "Fecha inválida: {$fecha}", 'count' => 0];
+            return [
+                'success' => false,
+                'message' => "Fecha inválida: {$fecha}",
+                'count' => 0,
+                'imported_count' => 0,
+                'last_date_in_db' => $this->getLastDateInDb()
+            ];
         }
         $aaaa = date('Y', $dt);
         $mm = date('m', $dt);
         $dd = date('d', $dt);
 
-        $candidates = [
-            "{$this->baseDir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls",
-            "{$this->baseDir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos.xls",
-            "{$this->baseDir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\maximos-y-minimos.xls",
-            "{$this->baseDir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos.xls",
-        ];
+        $baseDirs = [];
+        if ($this->downloaderService) {
+            $baseDirs[] = rtrim($this->downloaderService->getBaseDirectory(), '\\/');
+        }
+        $envDir = env('BVQ_DOWNLOAD_DIR');
+        if ($envDir) {
+            $baseDirs[] = rtrim($envDir, '\\/');
+        }
+        $baseDirs[] = 'C:\\Users\\super\\DATOS\\004. DatosBVQ';
+        $baseDirs[] = 'D:\\004. DatosBVQ';
+        $baseDirs = array_values(array_unique($baseDirs));
+
+        $candidates = [];
+        foreach ($baseDirs as $dir) {
+            // Estructura oficial del downloader: {dir}/{aaaa}_{mm}/{aaaa}_{mm}_{dd}/001_InformacionContinua/maximos-y-minimos_{aaaa}_{mm}_{dd}.xls
+            $candidates[] = "{$dir}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls";
+            $candidates[] = "{$dir}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos.xls";
+            $candidates[] = "{$dir}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls";
+            // Estructura histórica por año: {dir}/{aaaa}/{aaaa}_{mm}/{aaaa}_{mm}_{dd}/001_InformacionContinua/maximos-y-minimos_{aaaa}_{mm}_{dd}.xls
+            $candidates[] = "{$dir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls";
+            $candidates[] = "{$dir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos.xls";
+            $candidates[] = "{$dir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$aaaa}_{$mm}_{$dd}\\maximos-y-minimos.xls";
+            $candidates[] = "{$dir}\\{$aaaa}\\{$aaaa}_{$mm}\\{$mm}_{$dd}\\001_InformacionContinua\\maximos-y-minimos.xls";
+        }
 
         foreach ($candidates as $cand) {
             if (file_exists($cand)) {
@@ -39,10 +95,20 @@ class MaximosMinimosEtlService
             }
         }
 
+        // Si no existe localmente, intentar descarga automática vía BvqDownloaderService
+        if ($this->downloaderService) {
+            $dlRes = $this->downloaderService->downloadSingleModule('maximos-y-minimos', $fecha);
+            if ($dlRes['success'] && !empty($dlRes['path']) && file_exists($dlRes['path'])) {
+                return $this->importFile($dlRes['path']);
+            }
+        }
+
         return [
             'success' => false,
             'message' => "No se encontró el archivo de máximos y mínimos para la fecha {$fecha}.",
-            'count' => 0
+            'count' => 0,
+            'imported_count' => 0,
+            'last_date_in_db' => $this->getLastDateInDb()
         ];
     }
 
@@ -69,7 +135,10 @@ class MaximosMinimosEtlService
             return [
                 'success' => false,
                 'message' => $msg,
-                'count' => 0
+                'count' => 0,
+                'imported_count' => 0,
+                'last_date_in_db' => $this->getLastDateInDb(),
+                'total_in_db' => $this->getTotalRecordsInDb()
             ];
         }
 
@@ -79,6 +148,9 @@ class MaximosMinimosEtlService
                 'success' => true,
                 'message' => 'No se encontraron registros de datos en el archivo.',
                 'count' => 0,
+                'imported_count' => 0,
+                'last_date_in_db' => $this->getLastDateInDb(),
+                'total_in_db' => $this->getTotalRecordsInDb(),
                 'fecha_informacion' => $result['fecha_informacion'] ?? null
             ];
         }
@@ -87,8 +159,11 @@ class MaximosMinimosEtlService
 
         return [
             'success' => true,
-            'message' => "Se procesaron {$inserted} registros correctamente.",
+            'message' => "Se procesaron {$inserted} registros correctamente en maximos_minimos_acciones.",
             'count' => $inserted,
+            'imported_count' => $inserted,
+            'last_date_in_db' => $this->getLastDateInDb(),
+            'total_in_db' => $this->getTotalRecordsInDb(),
             'fecha_informacion' => $result['fecha_informacion'] ?? null,
             'fecha_vigencia' => $result['fecha_vigencia'] ?? null,
         ];

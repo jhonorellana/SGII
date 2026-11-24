@@ -89,11 +89,117 @@ class DividendAnalyticsService
     }
 
     /**
+     * Mapea nemotécnicos y últimas bandas regulatorias BVQ (+-10%) para los emisores
+     */
+    protected function getBandasBvqMap(): array
+    {
+        try {
+            $dbInversion = DB::connection('mysql_inversion');
+            $latest = $dbInversion->table('maximos_minimos_acciones as m1')
+                ->join(DB::raw('(SELECT codigo_seb, MAX(fecha_informacion) as max_fecha FROM maximos_minimos_acciones GROUP BY codigo_seb) as sub'), function ($j) {
+                    $j->on('m1.codigo_seb', '=', 'sub.codigo_seb')
+                      ->on('m1.fecha_informacion', '=', 'sub.max_fecha');
+                })
+                ->select([
+                    'm1.codigo_seb',
+                    'm1.emisor',
+                    'm1.precio_cierre',
+                    'm1.precio_maximo',
+                    'm1.precio_minimo',
+                    'm1.es_liquido',
+                    'm1.fecha_informacion',
+                    'm1.fecha_ult_negoc'
+                ])
+                ->get();
+
+            // Mapeo conocido por ID de emisor en SIPRO
+            $idEmisorToSeb = [
+                6 => 'PRE',   // PRODUBANCO
+                7 => 'GYL',   // BANCO GUAYAQUIL
+                8 => 'PCD',   // BANCO PICHINCHA
+                10 => 'AST',  // BANCO DEL AUSTRO
+                5 => 'BLD',   // BANCO BOLIVARIANO
+                16 => 'BVQ',  // BOLSA DE VALORES DE QUITO
+                29 => 'CRS',  // CRIDESA
+                32 => 'SLU',  // CORPORACION FAVORITA
+            ];
+
+            $sebData = [];
+            foreach ($latest as $row) {
+                $sebData[strtoupper(trim($row->codigo_seb))] = $row;
+            }
+
+            return [
+                'id_map' => $idEmisorToSeb,
+                'seb_data' => $sebData,
+                'raw_list' => $latest
+            ];
+        } catch (\Exception $e) {
+            Log::warning('Error en getBandasBvqMap: ' . $e->getMessage());
+            return ['id_map' => [], 'seb_data' => [], 'raw_list' => collect()];
+        }
+    }
+
+    /**
+     * Resuelve el código SEB, banda reglamentaria BVQ y estado de tensión para un emisor
+     */
+    protected function resolveBandaInfo(?int $idEmisor, string $emisorNombre, array $bandasMap, float $precioActual): array
+    {
+        $match = null;
+        $seb = null;
+
+        // 1. Por ID directo
+        if ($idEmisor && isset($bandasMap['id_map'][$idEmisor])) {
+            $seb = $bandasMap['id_map'][$idEmisor];
+            if (isset($bandasMap['seb_data'][$seb])) {
+                $match = $bandasMap['seb_data'][$seb];
+            }
+        }
+
+        // 2. Por coincidencia en el nombre
+        if (!$match && !empty($bandasMap['raw_list'])) {
+            $keywords = $this->cleanEmisorKeywords($emisorNombre);
+            foreach ($bandasMap['raw_list'] as $row) {
+                $rowName = mb_strtoupper($row->emisor);
+                foreach ($keywords as $kw) {
+                    if (str_contains($rowName, $kw)) {
+                        $match = $row;
+                        $seb = $row->codigo_seb;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        $min = $match && (float)$match->precio_minimo > 0 ? (float)$match->precio_minimo : round($precioActual * 0.90, 4);
+        $max = $match && (float)$match->precio_maximo > 0 ? (float)$match->precio_maximo : round($precioActual * 1.10, 4);
+        
+        $tension = 'NEUTRO';
+        if ($max > 0 && ($precioActual / $max) >= 0.98) {
+            $tension = 'TECHO';
+        } elseif ($min > 0 && ($precioActual / $min) <= 1.02) {
+            $tension = 'SUELO';
+        }
+
+        return [
+            'codigo_seb' => $seb ?? 'GEN',
+            'es_liquido' => $match ? (bool)$match->es_liquido : false,
+            'banda_hoy' => [
+                'minimo_autorizado' => round($min, 4),
+                'maximo_autorizado' => round($max, 4),
+                'tension_banda' => $tension
+            ]
+        ];
+    }
+
+    /**
      * Obtiene el listado consolidado del Radar de Oportunidades de Inversión y Proyección de Dividendos
      */
     public function getRadarOportunidades(): array
     {
         try {
+            $bandasMap = $this->getBandasBvqMap();
+
             $prices = DB::table('accion_ultimo_precio')
                 ->whereNotNull('precio_ultimo')
                 ->where('precio_ultimo', '>', 0)
@@ -166,9 +272,21 @@ class DividendAnalyticsService
                 // Datos de Calificación de Riesgo del Emisor
                 $emisorDb = DB::table('emisor')->where('id_emisor', $p->id_emisor)->first();
 
+                // Banda regulatoria BVQ (+-10%) y estado de tensión
+                $bandaInfo = $this->resolveBandaInfo((int)$p->id_emisor, $emisorNombre, $bandasMap, $precio);
+                $senalesList = [$margenOportunidadPct >= 0 ? 'Oportunidad Gordon > 0%' : 'Dividend Yield ' . round($yieldPct, 1) . '%'];
+                if ($bandaInfo['banda_hoy']['tension_banda'] === 'SUELO') {
+                    $senalesList[] = 'Suelo BVQ: Posible Descuento';
+                } elseif ($bandaInfo['banda_hoy']['tension_banda'] === 'TECHO') {
+                    $senalesList[] = 'Techo BVQ: Sobrecompra';
+                }
+
                 $radarItems[] = [
                     'id_emisor' => $p->id_emisor,
                     'emisor' => $emisorNombre,
+                    'codigo_seb' => $bandaInfo['codigo_seb'],
+                    'es_liquido' => $bandaInfo['es_liquido'],
+                    'banda_hoy' => $bandaInfo['banda_hoy'],
                     'precio_mercado' => round($precio, 4),
                     'ultimo_dividendo_acc' => round($divEfectivoAcc, 4),
                     'dividendo_proyectado_d1' => round($d1, 4),
@@ -189,7 +307,7 @@ class DividendAnalyticsService
                     'calificadora_riesgo' => $emisorDb->calificadora_riesgo ?? null,
                     'fecha_ultima_calificacion' => $emisorDb->fecha_ultima_calificacion ?? null,
                     'valor_nominal' => (float)($emisorDb->valor_nominal ?? 1.00),
-                    'senales' => [$margenOportunidadPct >= 0 ? 'Oportunidad Gordon > 0%' : 'Dividend Yield ' . round($yieldPct, 1) . '%']
+                    'senales' => $senalesList
                 ];
             }
 
@@ -215,9 +333,10 @@ class DividendAnalyticsService
     }
 
     /**
-     * Simula el retorno de inversión y dividendos proyectados para un monto en dólares dado
+     * Simula el retorno de inversión y dividendos proyectados para un monto en dólares dado,
+     * evaluando límites regulatorios BVQ y proyección Monte Carlo.
      */
-    public function simularInversion(float $montoUsd, int $idEmisor): array
+    public function simularInversion(float $montoUsd, int $idEmisor, ?float $precioSimulado = null): array
     {
         try {
             $emisor = DB::table('accion_ultimo_precio')
@@ -231,9 +350,22 @@ class DividendAnalyticsService
                 ];
             }
 
-            $precio = (float) $emisor->precio_ultimo;
-            $accionesCompradas = floor($montoUsd / $precio);
-            $inversionReal = $accionesCompradas * $precio;
+            $bandasMap = $this->getBandasBvqMap();
+            $precioOficial = (float) $emisor->precio_ultimo;
+            $precioUsado = ($precioSimulado !== null && $precioSimulado > 0) ? $precioSimulado : $precioOficial;
+
+            $bandaInfo = $this->resolveBandaInfo((int)$emisor->id_emisor, trim($emisor->emisor), $bandasMap, $precioOficial);
+            $minBanda = $bandaInfo['banda_hoy']['minimo_autorizado'];
+            $maxBanda = $bandaInfo['banda_hoy']['maximo_autorizado'];
+            $dentroDeBanda = ($precioUsado >= $minBanda && $precioUsado <= $maxBanda);
+
+            $alertaRegulacion = null;
+            if (!$dentroDeBanda) {
+                $alertaRegulacion = "⚠️ El precio ingresado ($" . number_format($precioUsado, 2) . ") se encuentra fuera del rango reglamentario de la BVQ ($" . number_format($minBanda, 2) . " – $" . number_format($maxBanda, 2) . "). La rueda bursátil rechazaría una postura fuera de esta banda (±10%).";
+            }
+
+            $accionesCompradas = floor($montoUsd / $precioUsado);
+            $inversionReal = $accionesCompradas * $precioUsado;
             $saldoSinInvertir = $montoUsd - $inversionReal;
 
             $divInfo = $this->getLatestValidDividend(trim($emisor->emisor), (int) $emisor->id_emisor);
@@ -248,7 +380,7 @@ class DividendAnalyticsService
             }
 
             $dividendoAnualEstimado = $accionesCompradas * $divPorAccion;
-            $yieldPct = ($precio > 0 && $divPorAccion > 0) ? ($divPorAccion / $precio) * 100.0 : 0.0;
+            $yieldPct = ($precioUsado > 0 && $divPorAccion > 0) ? ($divPorAccion / $precioUsado) * 100.0 : 0.0;
 
             // Proyección a 5 años con reinversión de dividendos
             $proyeccion = [];
@@ -257,7 +389,7 @@ class DividendAnalyticsService
             for ($ano = 1; $ano <= 5; $ano++) {
                 $divPorAccionAno = $divPorAccion * pow(1.03, $ano - 1);
                 $divAno = $accionesAcum * $divPorAccionAno;
-                $accionesNuevas = floor($divAno / $precio);
+                $accionesNuevas = $precioUsado > 0 ? floor($divAno / $precioUsado) : 0;
                 $accionesAcum += $accionesNuevas;
 
                 $proyeccion[] = [
@@ -265,15 +397,41 @@ class DividendAnalyticsService
                     'acciones_totales' => $accionesAcum,
                     'dividendo_recibido_usd' => round($divAno, 2),
                     'acciones_reinvertidas' => $accionesNuevas,
-                    'valor_estimado_portafolio_usd' => round($accionesAcum * $precio, 2)
+                    'valor_estimado_portafolio_usd' => round($accionesAcum * $precioUsado, 2)
                 ];
+            }
+
+            // Proyección estocástica Monte Carlo a 90 días si el ticker es reconocido
+            $proyeccionMonteCarlo = null;
+            if (!empty($bandaInfo['codigo_seb']) && $bandaInfo['codigo_seb'] !== 'GEN') {
+                try {
+                    $analytics = app(\App\Services\MaximosMinimosAnalyticsService::class);
+                    $canal = $analytics->getCanalHistorico($bandaInfo['codigo_seb'], '1y', null, null, true, 90);
+                    $hitos = $canal['proyeccion_monte_carlo']['hitos_resumen'] ?? $canal['proyeccion_monte_carlo']['hitos'] ?? null;
+                    if (!empty($canal['success']) && !empty($hitos['90d'])) {
+                        $h90 = $hitos['90d'];
+                        $proyeccionMonteCarlo = [
+                            'dias' => 90,
+                            'fecha_estimada' => $h90['fecha_estimada'],
+                            'escenario_pesimista_p10' => $h90['escenario_pesimista_p10'],
+                            'escenario_base_p50' => $h90['escenario_base_p50'],
+                            'escenario_optimista_p90' => $h90['escenario_optimista_p90'],
+                            'variacion_base_pct' => $h90['variacion_base_pct'],
+                            'valor_estimado_p50_usd' => round($accionesCompradas * $h90['escenario_base_p50'], 2)
+                        ];
+                    }
+                } catch (\Exception $ex) {
+                    Log::warning('Error en Monte Carlo para simularInversion: ' . $ex->getMessage());
+                }
             }
 
             return [
                 'success' => true,
                 'data' => [
                     'emisor' => $emisor->emisor,
-                    'precio_accion_usd' => round($precio, 4),
+                    'codigo_seb' => $bandaInfo['codigo_seb'],
+                    'precio_accion_usd' => round($precioUsado, 4),
+                    'precio_oficial_mercado' => round($precioOficial, 4),
                     'monto_ingresado_usd' => round($montoUsd, 2),
                     'inversion_efectiva_usd' => round($inversionReal, 2),
                     'saldo_remanente_usd' => round($saldoSinInvertir, 2),
@@ -281,6 +439,13 @@ class DividendAnalyticsService
                     'dividendo_por_accion_usd' => round($divPorAccion, 4),
                     'dividendo_anual_estimado_usd' => round($dividendoAnualEstimado, 2),
                     'yield_estimado_pct' => round($yieldPct, 2),
+                    'banda_bvq' => [
+                        'minimo_autorizado' => round($minBanda, 4),
+                        'maximo_autorizado' => round($maxBanda, 4),
+                        'dentro_de_banda' => $dentroDeBanda,
+                        'alerta_regulacion' => $alertaRegulacion
+                    ],
+                    'proyeccion_monte_carlo_90d' => $proyeccionMonteCarlo,
                     'proyeccion_multianual' => $proyeccion
                 ]
             ];
@@ -304,6 +469,7 @@ class DividendAnalyticsService
                 $query->where('id_persona', $idPersona);
             }
             $positions = $query->orderBy('valor_mercado', 'desc')->get();
+            $bandasMap = $this->getBandasBvqMap();
 
             $portafolioItems = [];
             $totalValorPortafolio = 0.0;
@@ -421,11 +587,22 @@ class DividendAnalyticsService
                     // Datos de Calificación del Emisor para Portafolio
                     $emisorDb = DB::table('emisor')->where('id_emisor', $idEmisor)->first();
 
+                    // Banda regulatoria BVQ y nemotécnico
+                    $bandaInfo = $this->resolveBandaInfo($idEmisor, $emisorNombre, $bandasMap, $precioMercado);
+                    if ($bandaInfo['banda_hoy']['tension_banda'] === 'SUELO') {
+                        $alertas[] = 'Suelo BVQ: Posible Descuento';
+                    } elseif ($bandaInfo['banda_hoy']['tension_banda'] === 'TECHO') {
+                        $alertas[] = 'Techo BVQ: Sobrecompra';
+                    }
+
                     $portafolioItems[] = [
                         'id_persona' => $pos->id_persona,
                         'persona' => trim($pos->persona),
                         'id_emisor' => $idEmisor,
                         'emisor' => $emisorNombre,
+                        'codigo_seb' => $bandaInfo['codigo_seb'],
+                        'es_liquido' => $bandaInfo['es_liquido'],
+                        'banda_hoy' => $bandaInfo['banda_hoy'],
                         'cantidad_actual' => $cantAcciones,
                         'capital_invertido' => round($capitalInvertido, 2),
                         'costo_promedio' => round($costoPromedio, 2),
@@ -525,6 +702,17 @@ class DividendAnalyticsService
             $calificadora = $stockData['calificadora_riesgo'] ?? null;
             $ratingTxt = !empty($califRiesgo) ? "• Calificación de Riesgo Crediticio Oficial: {$califRiesgo}" . (!empty($calificadora) ? " (Calificadora: {$calificadora})" : "") . "\n" : "";
 
+            $bandaHoy = $stockData['banda_hoy'] ?? null;
+            $codigoSeb = $stockData['codigo_seb'] ?? '';
+            $bandaTxt = "";
+            if (!empty($bandaHoy) && is_array($bandaHoy)) {
+                $minB = number_format((float)($bandaHoy['minimo_autorizado'] ?? 0), 2);
+                $maxB = number_format((float)($bandaHoy['maximo_autorizado'] ?? 0), 2);
+                $tensionB = $bandaHoy['tension_banda'] ?? 'NEUTRO';
+                $bandaTxt = "• Banda Regulatoria BVQ (±10%): \${$minB} – \${$maxB} USD (Tensión de Banda: {$tensionB})\n" .
+                            (!empty($codigoSeb) ? "• Nemotécnico Oficial BVQ: {$codigoSeb}\n" : "");
+            }
+
             if (!empty($customPrompt)) {
                 $promptText = $customPrompt;
             } elseif ($esPortafolio) {
@@ -554,6 +742,7 @@ class DividendAnalyticsService
                     "• Ingreso Anual Estimado por Dividendos: \${$ingAnualEst}/año\n\n" .
                     "📊 MÉTRICAS TÉCNICAS Y DE VALORACIÓN DEL MERCADO:\n" .
                     $ratingTxt .
+                    $bandaTxt .
                     "• Dividend Yield Actual: {$yieldPct}% Anual\n" .
                     "• Dividendo Proyectado (D1): \${$divD1}/acción (Último pagado: \${$ultimoDiv})\n" .
                     "• Valor Justo Intrínseco Teórico (Gordon DDM P0): \${$precioGordon}/acción\n" .
@@ -574,6 +763,7 @@ class DividendAnalyticsService
                     "📊 INFORMACIÓN TÉCNICA Y FINANCIERA DE LA ACCIÓN ({$emisor}):\n" .
                     "• Precio de Cierre Actual: \${$precio}/acción\n" .
                     $ratingTxt .
+                    $bandaTxt .
                     "• Variación Reciente: +{$variacionPct}%\n" .
                     "• Precio Anterior: \${$precioAnt}\n" .
                     "• Último Dividendo Pagado: \${$ultimoDiv}/acción\n" .

@@ -206,6 +206,7 @@ Route::post('bvq/importar-papeles', [App\Http\Controllers\API\BvqDownloaderContr
 Route::post('bvq/importar-titularizaciones', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarTitularizaciones']);
 Route::post('bvq/importar-vector', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarVector']);
 Route::post('bvq/importar-notas-credito', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarNotasCredito']);
+Route::post('bvq/importar-maximos-minimos', [App\Http\Controllers\API\BvqDownloaderController::class, 'importarMaximosMinimos']);
 Route::post('bvq/generar-backup', [App\Http\Controllers\API\BvqDownloaderController::class, 'generarBackup']);
 Route::get('bvq/descargar-backup-file/{filename}', [App\Http\Controllers\API\BvqDownloaderController::class, 'descargarBackupFile']);
 Route::post('bvq/ejecutar-sps', [App\Http\Controllers\API\BvqDownloaderController::class, 'ejecutarProcedimientos']);
@@ -220,6 +221,11 @@ Route::get('dividendos/radar', [App\Http\Controllers\API\DividendAnalyticsContro
 Route::post('dividendos/simular', [App\Http\Controllers\API\DividendAnalyticsController::class, 'simular']);
 Route::get('dividendos/mi-portafolio', [App\Http\Controllers\API\DividendAnalyticsController::class, 'portafolio']);
 Route::post('dividendos/analizar-ia', [App\Http\Controllers\API\DividendAnalyticsController::class, 'analizarIa']);
+
+// Rutas de Análisis de Máximos y Mínimos (Canal Bursátil y Proyecciones Monte Carlo)
+Route::get('renta-variable/maximos-minimos/emisores', [App\Http\Controllers\API\MaximosMinimosAnalyticsController::class, 'emisores']);
+Route::get('renta-variable/maximos-minimos/canal/{codigoSeb}', [App\Http\Controllers\API\MaximosMinimosAnalyticsController::class, 'canalHistorico']);
+Route::get('renta-variable/maximos-minimos/proyeccion/{codigoSeb}', [App\Http\Controllers\API\MaximosMinimosAnalyticsController::class, 'proyeccion']);
 
 // Rutas de Radar de Renta Fija & Portafolio de Deuda (Mark-to-Market)
 Route::get('renta-fija/radar', [App\Http\Controllers\Api\FixedIncomeRadarController::class, 'getMarketRadar']);

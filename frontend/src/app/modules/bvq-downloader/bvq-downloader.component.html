@@ -206,7 +206,7 @@
 
                 <!-- Selector de Base de Datos para Backup -->
                 <div *ngIf="pasoBackup" class="ms-md-2" (click)="$event.stopPropagation()">
-                  <select class="form-select form-select-sm border-info-subtle bg-white text-dark extra-small py-1 ps-2.5 pe-4 fw-semibold" style="width: auto; min-width: 260px; height: 30px; background-position: right 0.5rem center;" [(ngModel)]="tipoBackup" (ngModelChange)="guardarAjustes()" [disabled]="ejecutandoFlujo" pTooltip="Seleccione las bases de datos para el respaldo .zip">
+                  <select class="form-select form-select-sm border-info-subtle bg-white text-dark extra-small py-1 ps-2.5 fw-semibold" style="width: auto; min-width: 335px; height: 30px; padding-right: 2.25rem !important; background-position: right 0.75rem center;" [(ngModel)]="tipoBackup" (ngModelChange)="guardarAjustes()" [disabled]="ejecutandoFlujo" pTooltip="Seleccione las bases de datos para el respaldo .zip">
                     <option value="both">Ambas Bases (inversion y sipro_desa)</option>
                     <option value="inversion">Solo BD Inversión</option>
                     <option value="sipro_desa">Solo BD Sipro Desa</option>
@@ -1149,9 +1149,58 @@
                   <i class="bi" [ngClass]="isDownloadingModulo('notas_credito') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
                   <span>{{ isDownloadingModulo('notas_credito') ? 'Bajando...' : 'Descargar XL' }}</span>
                 </button>
-                <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionNotasCredito()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector || loadingImportNotasCredito" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionNotasCredito()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector || loadingImportNotasCredito || loadingImportMaximosMinimos" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
                   <i class="bi" [ngClass]="loadingImportNotasCredito ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
                   <span>{{ loadingImportNotasCredito ? 'Procesando...' : 'Procesar XL' }}</span>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Módulo 11: Máximos y Mínimos de Acciones (BVQ) -->
+          <tr>
+            <td class="ps-4">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-graph-up-arrow fs-5 text-success"></i>
+                <div>
+                  <div class="fw-bold text-dark">Máximos y Mínimos Acciones</div>
+                  <div class="text-muted extra-small">Bandas regulatorias BVQ (±10%), cierres oficiales y precios promedio ponderados</div>
+                </div>
+              </div>
+            </td>
+            <td><code class="px-2 py-1 bg-light rounded text-dark border">maximos_minimos_acciones</code></td>
+            <td>
+              <div class="d-flex flex-column gap-1">
+                <span class="badge bg-light text-dark border fw-normal">
+                  <i class="bi bi-calendar3 me-1 text-muted"></i>{{ lastDateMaximosMinimosInDb || 'Sin registros' }}
+                </span>
+                <span *ngIf="totalMaximosMinimosInDb > 0" class="badge bg-success-subtle text-success border border-success-subtle fw-semibold extra-small">
+                  {{ totalMaximosMinimosInDb | number }} registros
+                </span>
+              </div>
+            </td>
+            <td class="text-center">
+              <div class="form-check form-switch d-inline-block fs-5 mb-0">
+                <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="swMaximosMinimos" [(ngModel)]="autoImportMaximosMinimos" (ngModelChange)="guardarAjustes()" [disabled]="loading" />
+              </div>
+            </td>
+            <td>
+              <div *ngIf="getSemanticStatus(lastImportMaximosMinimosResult) as st" class="d-inline-flex align-items-center gap-2 px-2.5 py-1 rounded extra-small" [ngClass]="st.cssClass">
+                <i class="bi" [ngClass]="st.icon"></i>
+                <span class="fw-bold">{{ st.text }}</span>
+                <span class="text-muted extra-small">({{ lastImportMaximosMinimosResult.message }})</span>
+              </div>
+              <span *ngIf="!lastImportMaximosMinimosResult" class="text-muted extra-small">Esperando procesamiento...</span>
+            </td>
+            <td class="text-end pe-4">
+              <div class="d-flex align-items-center justify-content-end gap-1.5">
+                <button class="btn btn-outline-primary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarDescargarModulo('maximos-y-minimos')" [disabled]="loading || loadingOnlyDownload || isDownloadingModulo('maximos-y-minimos')" pTooltip="Descargar únicamente el archivo Excel de Máximos y Mínimos desde la BVQ">
+                  <i class="bi" [ngClass]="isDownloadingModulo('maximos-y-minimos') ? 'bi-hourglass-split spin' : 'bi-cloud-arrow-down-fill'"></i>
+                  <span>{{ isDownloadingModulo('maximos-y-minimos') ? 'Bajando...' : 'Descargar XL' }}</span>
+                </button>
+                <button class="btn btn-outline-secondary btn-sm px-2 py-1 d-flex align-items-center gap-1 extra-small" (click)="ejecutarSoloImportacionMaximosMinimos()" [disabled]="loading || loadingImport || loadingImportBonds || loadingImportDividends || loadingImportFacturas || loadingImportGenericos || loadingImportObligaciones || loadingImportPapeles || loadingImportTitularizaciones || loadingImportVector || loadingImportNotasCredito || loadingImportMaximosMinimos" pTooltip="Procesar e importar el archivo Excel a la BD (auto-descarga si no existe)">
+                  <i class="bi" [ngClass]="loadingImportMaximosMinimos ? 'bi-hourglass-split spin' : 'bi-file-earmark-excel'"></i>
+                  <span>{{ loadingImportMaximosMinimos ? 'Procesando...' : 'Procesar XL' }}</span>
                 </button>
               </div>
             </td>

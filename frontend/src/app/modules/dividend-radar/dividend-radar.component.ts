@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -62,6 +63,7 @@ export class DividendRadarComponent implements OnInit {
   displaySimulationModal: boolean = false;
   selectedEmisorForSim: DividendOpportunityItem | null = null;
   montoASimular: number = 10000;
+  precioASimular: number | null = null;
   simulationResult: SimulationResponse['data'] | null = null;
   errorSimulation: string = '';
 
@@ -74,7 +76,10 @@ export class DividendRadarComponent implements OnInit {
   loadingAI: boolean = false;
   copiedPromptToast: boolean = false;
 
-  constructor(private radarService: DividendRadarService) {}
+  constructor(
+    private radarService: DividendRadarService,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     this.cargarRadar();
@@ -209,6 +214,7 @@ export class DividendRadarComponent implements OnInit {
 
   abrirSimulador(item: DividendOpportunityItem): void {
     this.selectedEmisorForSim = item;
+    this.precioASimular = item.precio_mercado;
     this.displaySimulationModal = true;
     this.errorSimulation = '';
     this.simulationResult = null;
@@ -219,6 +225,8 @@ export class DividendRadarComponent implements OnInit {
     const opportunityItem: DividendOpportunityItem = {
       id_emisor: item.id_emisor,
       emisor: item.emisor,
+      codigo_seb: item.codigo_seb,
+      banda_hoy: item.banda_hoy,
       precio_mercado: item.precio_ultimo,
       ultimo_dividendo_acc: item.dividendo_por_accion,
       dividendo_proyectado_d1: Number((item.dividendo_por_accion * 1.03).toFixed(4)),
@@ -239,20 +247,31 @@ export class DividendRadarComponent implements OnInit {
     this.loadingSimulation = true;
     this.errorSimulation = '';
 
-    this.radarService.simularInversion(this.montoASimular, this.selectedEmisorForSim.id_emisor).subscribe({
-      next: (res) => {
-        this.loadingSimulation = false;
-        if (res.success && res.data) {
-          this.simulationResult = res.data;
-        } else {
-          this.errorSimulation = res.message || 'Error al calcular la simulación';
+    this.radarService
+      .simularInversion(
+        this.montoASimular,
+        this.selectedEmisorForSim.id_emisor,
+        this.precioASimular || undefined
+      )
+      .subscribe({
+        next: (res) => {
+          this.loadingSimulation = false;
+          if (res.success && res.data) {
+            this.simulationResult = res.data;
+          } else {
+            this.errorSimulation = res.message || 'Error al calcular la simulación';
+          }
+        },
+        error: (err) => {
+          this.loadingSimulation = false;
+          this.errorSimulation = err.error?.message || 'Error de conexión con el servidor';
         }
-      },
-      error: (err) => {
-        this.loadingSimulation = false;
-        this.errorSimulation = err.error?.message || 'Error de conexión con el servidor';
-      }
-    });
+      });
+  }
+
+  verCanalBursatil(codigoSeb?: string): void {
+    const ticker = codigoSeb || this.selectedEmisorForSim?.codigo_seb || 'PCD';
+    this.router.navigate(['/renta-variable/canal-bursatil'], { queryParams: { emisor: ticker } });
   }
 
   cerrarSimulador(): void {

@@ -242,6 +242,22 @@
               </div>
             </div>
 
+            <!-- Banda BVQ Oficial (+-10%) -->
+            <div *ngIf="item.banda_hoy" class="d-flex align-items-center justify-content-between px-2 py-1 mb-2 bg-light rounded border-start border-3"
+                 [ngClass]="item.banda_hoy.tension_banda === 'SUELO' ? 'border-success' : (item.banda_hoy.tension_banda === 'TECHO' ? 'border-danger' : 'border-primary')"
+                 style="font-size: 0.72rem;">
+              <span class="text-secondary text-truncate">
+                <i class="bi bi-shield-check text-primary me-1"></i>Banda BVQ:
+                <strong class="text-dark">${{ item.banda_hoy.minimo_autorizado | number:'1.2-2' }} &ndash; ${{ item.banda_hoy.maximo_autorizado | number:'1.2-2' }}</strong>
+              </span>
+              <span *ngIf="item.banda_hoy.tension_banda === 'SUELO'" class="badge bg-success-subtle text-success py-0 px-1 font-bold ms-1">
+                Suelo BVQ
+              </span>
+              <span *ngIf="item.banda_hoy.tension_banda === 'TECHO'" class="badge bg-danger-subtle text-danger py-0 px-1 font-bold ms-1">
+                Techo BVQ
+              </span>
+            </div>
+
             <!-- Badges de Señales -->
             <div class="mb-2">
               <div class="extra-small text-muted mb-1 fw-semibold" style="font-size: 0.68rem;">Señales:</div>
@@ -253,13 +269,20 @@
             </div>
           </div>
 
-          <!-- Botones de Acción Integrados en Pie (Simular & ChatGPT) -->
-          <div class="pt-2 border-top mt-2 d-flex gap-1.5">
+          <!-- Botones de Acción Integrados en Pie (Simular, Canal, ChatGPT) -->
+          <div class="pt-2 border-top mt-2 d-flex gap-1">
             <button class="btn btn-sm btn-outline-success flex-fill fw-semibold extra-small d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
                     (click)="abrirSimulador(item)"
                     pTooltip="Simular rentabilidad e interés compuesto">
               <i class="bi bi-calculator-fill"></i>
               <span>Simular</span>
+            </button>
+
+            <button class="btn btn-sm btn-outline-primary flex-fill fw-semibold extra-small d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
+                    (click)="verCanalBursatil(item.codigo_seb)"
+                    pTooltip="Ver Canal Bursátil & Proyecciones Monte Carlo">
+              <i class="bi bi-bezier2"></i>
+              <span>Canal</span>
             </button>
 
             <button class="btn btn-sm btn-success flex-fill fw-semibold extra-small text-white d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
@@ -747,6 +770,22 @@
                 </div>
               </div>
 
+              <!-- Banda BVQ Oficial (+-10%) -->
+              <div *ngIf="item.banda_hoy" class="d-flex align-items-center justify-content-between px-2 py-1 mb-2 bg-light rounded border-start border-3"
+                   [ngClass]="item.banda_hoy.tension_banda === 'SUELO' ? 'border-success' : (item.banda_hoy.tension_banda === 'TECHO' ? 'border-danger' : 'border-primary')"
+                   style="font-size: 0.72rem;">
+                <span class="text-secondary text-truncate">
+                  <i class="bi bi-shield-check text-primary me-1"></i>Banda BVQ:
+                  <strong class="text-dark">${{ item.banda_hoy.minimo_autorizado | number:'1.2-2' }} &ndash; ${{ item.banda_hoy.maximo_autorizado | number:'1.2-2' }}</strong>
+                </span>
+                <span *ngIf="item.banda_hoy.tension_banda === 'SUELO'" class="badge bg-success-subtle text-success py-0 px-1 font-bold ms-1">
+                  Suelo BVQ
+                </span>
+                <span *ngIf="item.banda_hoy.tension_banda === 'TECHO'" class="badge bg-danger-subtle text-danger py-0 px-1 font-bold ms-1">
+                  Techo BVQ
+                </span>
+              </div>
+
               <!-- Badges de Señales -->
               <div class="mb-2">
                 <div class="extra-small text-muted mb-1 fw-semibold" style="font-size: 0.68rem;">Señales:</div>
@@ -758,12 +797,18 @@
               </div>
             </div>
 
-            <!-- Botón de Simulación y ChatGPT Integrados en Pie -->
-            <div class="pt-2 border-top mt-2 d-flex gap-1.5">
+            <!-- Botón de Simulación, Canal y ChatGPT Integrados en Pie -->
+            <div class="pt-2 border-top mt-2 d-flex gap-1">
               <button class="btn btn-sm btn-outline-success flex-fill fw-semibold extra-small d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
                       (click)="abrirSimuladorDesdePortafolio(item)">
                 <i class="bi bi-calculator-fill"></i>
                 <span>Simular</span>
+              </button>
+              <button class="btn btn-sm btn-outline-primary flex-fill fw-semibold extra-small d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
+                      (click)="verCanalBursatil(item.codigo_seb)"
+                      pTooltip="Ver Canal Bursátil & Proyecciones Monte Carlo">
+                <i class="bi bi-bezier2"></i>
+                <span>Canal</span>
               </button>
               <button class="btn btn-sm btn-success flex-fill fw-semibold extra-small text-white d-flex align-items-center justify-content-center gap-1 py-1 shadow-2xs" 
                       (click)="abrirChatGPTModal(item)"
@@ -867,15 +912,42 @@
   <!-- Dialog Modal: Simulador de Inversión y Reinversión -->
   <p-dialog header="Simulador de Inversión y Reinversión" [(visible)]="displaySimulationModal" [modal]="true" [style]="{ width: '65vw' }" [draggable]="false" [resizable]="false">
     <div *ngIf="selectedEmisorForSim" class="px-2">
-      <!-- Input de Monto -->
-      <div class="card bg-light border-0 mb-4">
+      <!-- Input de Parámetros de Simulación -->
+      <div class="card bg-light border-0 mb-3" style="border-radius: 10px;">
         <div class="card-body p-3">
           <div class="row align-items-center g-3">
-            <div class="col-md-6">
+            <!-- Emisor y Precio Oficial -->
+            <div class="col-md-4">
               <strong class="d-block text-dark fs-6 mb-1">{{ selectedEmisorForSim.emisor }}</strong>
-              <small class="text-muted extra-small">Precio Actual: {{ formatMoney(selectedEmisorForSim.precio_mercado) }} / acción</small>
+              <div class="small text-muted mb-1">
+                Precio Mercado: <strong>{{ formatMoney(selectedEmisorForSim.precio_mercado) }}</strong>
+              </div>
+              <div *ngIf="selectedEmisorForSim.banda_hoy" class="extra-small text-secondary">
+                <i class="bi bi-shield-check text-primary me-1"></i>Banda BVQ:
+                <strong>${{ selectedEmisorForSim.banda_hoy.minimo_autorizado | number:'1.2-2' }} &ndash; ${{ selectedEmisorForSim.banda_hoy.maximo_autorizado | number:'1.2-2' }}</strong>
+              </div>
             </div>
-            <div class="col-md-6">
+
+            <!-- Precio Simulado / Postura -->
+            <div class="col-md-4">
+              <label class="form-label extra-small fw-semibold text-dark mb-1">
+                Precio Postura / Compra ($ USD):
+              </label>
+              <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white text-muted">$</span>
+                <input 
+                  type="number" 
+                  class="form-control fw-bold fs-6" 
+                  [(ngModel)]="precioASimular" 
+                  (change)="ejecutarSimulacion()" 
+                  step="0.05" 
+                  min="0.01" />
+              </div>
+              <small class="text-muted extra-small d-block mt-0.5">Rango legal: &plusmn;10% sobre cierre</small>
+            </div>
+
+            <!-- Monto a Invertir -->
+            <div class="col-md-4">
               <label class="form-label extra-small fw-semibold text-dark mb-1">Monto a Invertir (USD):</label>
               <div class="input-group input-group-sm">
                 <span class="input-group-text bg-white text-muted">$</span>
@@ -889,8 +961,18 @@
         </div>
       </div>
 
+      <!-- Alerta de Restricción Regulatoria BVQ si el precio está fuera de banda -->
+      <div *ngIf="simulationResult?.banda_bvq?.alerta_regulacion" 
+           class="alert alert-warning py-2.5 px-3 small d-flex align-items-center gap-2 mb-3 shadow-sm border border-warning"
+           style="border-radius: 8px;">
+        <i class="bi bi-exclamation-triangle-fill fs-5 text-warning-emphasis"></i>
+        <div class="text-dark">
+          <strong>Restricción Regulatoria BVQ:</strong> {{ simulationResult?.banda_bvq?.alerta_regulacion }}
+        </div>
+      </div>
+
       <!-- Resultados de la Simulación -->
-      <div *ngIf="simulationResult" class="row g-3 mb-4">
+      <div *ngIf="simulationResult" class="row g-3 mb-3">
         <div class="col-md-4">
           <div class="p-3 bg-success-subtle rounded border border-success-subtle text-center">
             <small class="text-success fw-semibold extra-small d-block mb-1">ACCIONES A COMPRAR</small>
@@ -909,6 +991,45 @@
           <div class="p-3 bg-warning-subtle rounded border border-warning-subtle text-center">
             <small class="text-warning-emphasis fw-semibold extra-small d-block mb-1">YIELD ESTIMADO SOBRE COMPRA</small>
             <h4 class="fw-bold text-warning-emphasis mb-0">{{ simulationResult.yield_estimado_pct }}% Anual</h4>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card Proyección Monte Carlo a 90 Días -->
+      <div *ngIf="simulationResult?.proyeccion_monte_carlo_90d" 
+           class="card border-0 shadow-sm p-3 mb-3" 
+           style="background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%); border-radius: 10px; border-left: 4px solid #6366f1 !important;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-lightning-charge-fill text-primary fs-5"></i>
+            <strong class="text-dark small text-uppercase">Proyección Monte Carlo a 90 Días (Simulación Estocástica Acotada BVQ)</strong>
+          </div>
+          <button class="btn btn-sm btn-outline-primary py-0 px-2.5 rounded-pill font-bold small" 
+                  (click)="verCanalBursatil(selectedEmisorForSim.codigo_seb)">
+            <i class="bi bi-bezier2 me-1"></i> Abrir Canal & Curvas
+          </button>
+        </div>
+        <div class="row g-2 text-center small">
+          <div class="col-4">
+            <div class="p-2 bg-white rounded border">
+              <span class="text-muted extra-small d-block font-semibold">Pesimista (P10)</span>
+              <strong class="text-danger">${{ simulationResult?.proyeccion_monte_carlo_90d?.escenario_pesimista_p10 | number:'1.2-2' }}</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 bg-white rounded border border-primary shadow-xs">
+              <span class="text-primary extra-small d-block font-bold">Escenario Base (P50 Mediana)</span>
+              <strong class="text-primary fs-6">${{ simulationResult?.proyeccion_monte_carlo_90d?.escenario_base_p50 | number:'1.2-2' }}</strong>
+              <span class="d-block extra-small text-muted">
+                +{{ simulationResult?.proyeccion_monte_carlo_90d?.variacion_base_pct }}% (Valor Portafolio: {{ formatMoney(simulationResult?.proyeccion_monte_carlo_90d?.valor_estimado_p50_usd || 0) }})
+              </span>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 bg-white rounded border">
+              <span class="text-muted extra-small d-block font-semibold">Optimista (P90)</span>
+              <strong class="text-success">${{ simulationResult?.proyeccion_monte_carlo_90d?.escenario_optimista_p90 | number:'1.2-2' }}</strong>
+            </div>
           </div>
         </div>
       </div>

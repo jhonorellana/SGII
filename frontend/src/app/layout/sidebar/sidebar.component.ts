@@ -126,6 +126,11 @@ export class SidebarComponent implements OnInit {
           path: '/renta-variable/evolucion-acciones'
         },
         {
+          title: 'Canal Bursátil & Proyecciones',
+          icon: 'bi-bezier2',
+          path: '/renta-variable/canal-bursatil'
+        },
+        {
           title: 'Operaciones',
           icon: 'bi-arrow-left-right',
           path: '/renta-variable/operaciones'

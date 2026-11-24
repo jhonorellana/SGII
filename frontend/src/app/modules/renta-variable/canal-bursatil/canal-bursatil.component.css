@@ -1,0 +1,143 @@
+.canal-bursatil-container {
+  background-color: #f8fafc;
+  min-height: calc(100vh - 70px);
+}
+
+/* Fila de 5 KPIs en una sola línea horizontal */
+.kpi-row-5 {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.col-kpi {
+  flex: 0 0 100%;
+  max-width: 100%;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+@media (min-width: 576px) {
+  .col-kpi {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+@media (min-width: 768px) {
+  .col-kpi {
+    flex: 0 0 33.333333%;
+    max-width: 33.333333%;
+  }
+}
+
+@media (min-width: 992px) {
+  .kpi-row-5 {
+    flex-wrap: nowrap !important;
+  }
+  .col-kpi {
+    flex: 1 1 0 !important;
+    max-width: 20% !important;
+  }
+}
+
+.kpi-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background-color: #ffffff;
+}
+
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+.kpi-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.hito-card {
+  transition: all 0.25s ease;
+}
+
+.hito-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Grid de 3 Hitos Monte Carlo lado a lado */
+.hitos-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 860px) {
+  .hitos-grid-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+.hito-card-compact {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hito-card-compact:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.07) !important;
+}
+
+.range-bar-wrapper {
+  background: #f8fafc;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom PrimeNG TabView styling for SIPRO standard */
+::ng-deep .sipro-tabview.p-tabview .p-tabview-nav {
+  background: #ffffff;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0 1rem;
+}
+
+::ng-deep .sipro-tabview.p-tabview .p-tabview-nav li .p-tabview-nav-link {
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+::ng-deep .sipro-tabview.p-tabview .p-tabview-nav li.p-highlight .p-tabview-nav-link {
+  color: #047857;
+  border-bottom-color: #047857;
+  background: transparent;
+}
+
+::ng-deep .sipro-tabview.p-tabview .p-tabview-nav li:not(.p-highlight):hover .p-tabview-nav-link {
+  color: #065f46;
+  border-bottom-color: #a7f3d0;
+  background: transparent;
+}
+
+::ng-deep .sipro-tabview.p-tabview .p-tabview-panels {
+  padding: 1rem;
+  background: #ffffff;
+  border-radius: 0 0 12px 12px;
+}

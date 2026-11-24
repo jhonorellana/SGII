@@ -27,6 +27,13 @@ export interface DividendOpportunityItem {
   fecha_ultima_calificacion?: string;
   valor_nominal?: number;
   senales?: string[];
+  codigo_seb?: string;
+  es_liquido?: boolean;
+  banda_hoy?: {
+    minimo_autorizado: number;
+    maximo_autorizado: number;
+    tension_banda: 'TECHO' | 'SUELO' | 'NEUTRO';
+  };
 }
 
 export interface RadarResponse {
@@ -57,6 +64,23 @@ export interface SimulationResponse {
     dividendo_por_accion_usd: number;
     dividendo_anual_estimado_usd: number;
     yield_estimado_pct: number;
+    codigo_seb?: string;
+    precio_oficial_mercado?: number;
+    banda_bvq?: {
+      minimo_autorizado: number;
+      maximo_autorizado: number;
+      dentro_de_banda: boolean;
+      alerta_regulacion?: string | null;
+    };
+    proyeccion_monte_carlo_90d?: {
+      dias: number;
+      fecha_estimada: string;
+      escenario_pesimista_p10: number;
+      escenario_base_p50: number;
+      escenario_optimista_p90: number;
+      variacion_base_pct: number;
+      valor_estimado_p50_usd: number;
+    };
     proyeccion_multianual: SimulationYearItem[];
   };
 }
@@ -97,6 +121,13 @@ export interface PortfolioPositionItem {
   fecha_ultima_calificacion?: string;
   valor_nominal?: number;
   senales?: string[];
+  codigo_seb?: string;
+  es_liquido?: boolean;
+  banda_hoy?: {
+    minimo_autorizado: number;
+    maximo_autorizado: number;
+    tension_banda: 'TECHO' | 'SUELO' | 'NEUTRO';
+  };
   fecha_ultima_operacion: string;
 }
 
@@ -121,11 +152,15 @@ export class DividendRadarService {
     return this.http.get<RadarResponse>(`${this.apiUrl}/radar`);
   }
 
-  simularInversion(montoUsd: number, idEmisor: number): Observable<SimulationResponse> {
-    return this.http.post<SimulationResponse>(`${this.apiUrl}/simular`, {
+  simularInversion(montoUsd: number, idEmisor: number, precioSimulado?: number): Observable<SimulationResponse> {
+    const payload: any = {
       monto_usd: montoUsd,
       id_emisor: idEmisor
-    });
+    };
+    if (precioSimulado !== undefined && precioSimulado !== null && precioSimulado > 0) {
+      payload.precio_simulado = precioSimulado;
+    }
+    return this.http.post<SimulationResponse>(`${this.apiUrl}/simular`, payload);
   }
 
   getMiPortafolio(idPersona?: number): Observable<PortfolioResponse> {

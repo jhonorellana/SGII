@@ -52,6 +52,7 @@ import { DividendRadarComponent } from './modules/dividend-radar/dividend-radar.
 import { FixedIncomeRadarComponent } from './modules/fixed-income-radar/fixed-income-radar.component';
 import { NotasCreditoRadarComponent } from './modules/notas-credito-radar/notas-credito-radar.component';
 import { NotasCreditoCurvaComponent } from './modules/notas-credito-curva/notas-credito-curva.component';
+import { CanalBursatilComponent } from './modules/renta-variable/canal-bursatil/canal-bursatil.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -104,6 +105,7 @@ export const routes: Routes = [
       { path: 'notas-credito/importar-pdf', component: ImportarPdfComponent },
       { path: 'renta-variable/portafolio', component: PortafolioListComponent },
       { path: 'renta-variable/evolucion-acciones', component: EvolucionAccionesPortafolioComponent },
+      { path: 'renta-variable/canal-bursatil', component: CanalBursatilComponent },
       { path: 'renta-variable/operaciones', component: OperacionListComponent },
       { path: 'renta-variable/dividendos', component: DividendoListComponent },
       { path: 'renta-variable/analisis-ventas', component: AnalisisVentaAccionComponent },

@@ -299,6 +299,16 @@ class BvqDownloaderService
                 'url' => 'https://www.bolsadevaloresguayaquil.com/boletines/historicos/BVG_NotasDeCredito.xlsx',
                 'folder' => '007_CotizacionesHistoricas',
                 'filename' => "BVG_NotasDeCredito_{$aaaa}_{$mm}_{$dd}.xlsx"
+            ],
+            'maximos-y-minimos' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/informacion-continua/maximos-y-minimos.xls',
+                'folder' => '001_InformacionContinua',
+                'filename' => "maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls"
+            ],
+            'maximos_minimos' => [
+                'url' => 'https://www.bolsadequito.com/uploads/estadisticas/boletines/informacion-continua/maximos-y-minimos.xls',
+                'folder' => '001_InformacionContinua',
+                'filename' => "maximos-y-minimos_{$aaaa}_{$mm}_{$dd}.xls"
             ]
         ];
 

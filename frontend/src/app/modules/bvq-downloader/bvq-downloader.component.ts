@@ -36,6 +36,7 @@ export class BvqDownloaderComponent implements OnInit {
   loadingImportTitularizaciones: boolean = false;
   loadingImportVector: boolean = false;
   loadingImportNotasCredito: boolean = false;
+  loadingImportMaximosMinimos: boolean = false;
   loadingDownloadMap: { [key: string]: boolean } = {};
   fechaSeleccionada: string = this.getFechaHoyLocal();
   autoImportAcciones: boolean = true;
@@ -48,6 +49,7 @@ export class BvqDownloaderComponent implements OnInit {
   autoImportTitularizaciones: boolean = true;
   autoImportVector: boolean = true;
   autoImportNotasCredito: boolean = true;
+  autoImportMaximosMinimos: boolean = true;
   masterAutoImport: boolean = true;
 
   // Flujo Secuencial de Procesos (Checkboxes de selección)
@@ -240,6 +242,7 @@ export class BvqDownloaderComponent implements OnInit {
   lastImportTitularizacionesResult: any = null;
   lastImportVectorResult: any = null;
   lastImportNotasCreditoResult: any = null;
+  lastImportMaximosMinimosResult: any = null;
   lastDateSharesInDb: string | null = null;
   lastDateBondsInDb: string | null = null;
   totalDividendsInDb: number = 0;
@@ -251,6 +254,8 @@ export class BvqDownloaderComponent implements OnInit {
   lastDateVectorInDb: string | null = null;
   lastDateNotasCreditoInDb: string | null = null;
   totalNotasCreditoInDb: number = 0;
+  lastDateMaximosMinimosInDb: string | null = null;
+  totalMaximosMinimosInDb: number = 0;
   resumenNotasCreditoInDb: any = null;
   historial: BvqHistoryItem[] = [];
   error: string = '';
@@ -269,6 +274,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.autoImportTitularizaciones = value;
     this.autoImportVector = value;
     this.autoImportNotasCredito = value;
+    this.autoImportMaximosMinimos = value;
     this.guardarAjustes();
   }
 
@@ -311,6 +317,7 @@ export class BvqDownloaderComponent implements OnInit {
         autoImportTitularizaciones: this.autoImportTitularizaciones,
         autoImportVector: this.autoImportVector,
         autoImportNotasCredito: this.autoImportNotasCredito,
+        autoImportMaximosMinimos: this.autoImportMaximosMinimos,
         activeTab: this.activeTab,
         selectedLogFilter: this.selectedLogFilter,
         lastDownloadResult: this.lastDownloadResult,
@@ -323,7 +330,8 @@ export class BvqDownloaderComponent implements OnInit {
         lastImportPapelesResult: this.lastImportPapelesResult,
         lastImportTitularizacionesResult: this.lastImportTitularizacionesResult,
         lastImportVectorResult: this.lastImportVectorResult,
-        lastImportNotasCreditoResult: this.lastImportNotasCreditoResult
+        lastImportNotasCreditoResult: this.lastImportNotasCreditoResult,
+        lastImportMaximosMinimosResult: this.lastImportMaximosMinimosResult
       };
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
@@ -357,6 +365,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.autoImportTitularizaciones !== undefined) this.autoImportTitularizaciones = data.autoImportTitularizaciones;
         if (data.autoImportVector !== undefined) this.autoImportVector = data.autoImportVector;
         if (data.autoImportNotasCredito !== undefined) this.autoImportNotasCredito = data.autoImportNotasCredito;
+        if (data.autoImportMaximosMinimos !== undefined) this.autoImportMaximosMinimos = data.autoImportMaximosMinimos;
         if (data.activeTab) this.activeTab = data.activeTab;
         if (data.selectedLogFilter) this.selectedLogFilter = data.selectedLogFilter;
         if (data.lastDownloadResult) this.lastDownloadResult = data.lastDownloadResult;
@@ -370,6 +379,7 @@ export class BvqDownloaderComponent implements OnInit {
         if (data.lastImportTitularizacionesResult) this.lastImportTitularizacionesResult = data.lastImportTitularizacionesResult;
         if (data.lastImportVectorResult) this.lastImportVectorResult = data.lastImportVectorResult;
         if (data.lastImportNotasCreditoResult) this.lastImportNotasCreditoResult = data.lastImportNotasCreditoResult;
+        if (data.lastImportMaximosMinimosResult) this.lastImportMaximosMinimosResult = data.lastImportMaximosMinimosResult;
       }
     } catch (e) {
       console.warn('Error al cargar la configuración de localStorage:', e);
@@ -439,7 +449,8 @@ export class BvqDownloaderComponent implements OnInit {
       { modulo: 'Papel Comercial', tabla: 'papeles_his', result: this.lastImportPapelesResult },
       { modulo: 'Titularizaciones', tabla: 'titularizaciones_his', result: this.lastImportTitularizacionesResult },
       { modulo: 'Vector de Precios', tabla: 'vector_precio_diario, vector_curva_rendimiento', result: this.lastImportVectorResult },
-      { modulo: 'Notas de Crédito (BVG)', tabla: 'notas_credito_his', result: this.lastImportNotasCreditoResult }
+      { modulo: 'Notas de Crédito (BVG)', tabla: 'notas_credito_his', result: this.lastImportNotasCreditoResult },
+      { modulo: 'Máximos y Mínimos (Acciones)', tabla: 'maximos_minimos_acciones', result: this.lastImportMaximosMinimosResult }
     ];
   }
 
@@ -503,6 +514,7 @@ export class BvqDownloaderComponent implements OnInit {
     this.lastImportTitularizacionesResult = null;
     this.lastImportVectorResult = null;
     this.lastImportNotasCreditoResult = null;
+    this.lastImportMaximosMinimosResult = null;
     this.guardarAjustes();
   }
 
@@ -584,7 +596,8 @@ export class BvqDownloaderComponent implements OnInit {
           { nombre: 'Papel Comercial (papeles_his)', activo: this.autoImportPapeles, fn: () => this.bvqService.importarPapeles(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportPapelesResult = d; if (d?.last_date_in_db) this.lastDatePapelesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportPapeles = v },
           { nombre: 'Titularizaciones (titularizaciones_his)', activo: this.autoImportTitularizaciones, fn: () => this.bvqService.importarTitularizaciones(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportTitularizacionesResult = d; if (d?.last_date_in_db) this.lastDateTitularizacionesInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportTitularizaciones = v },
           { nombre: 'Vector de Precios (vector_precio_diario)', activo: this.autoImportVector, fn: () => this.bvqService.importarVector(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportVectorResult = d; if (d?.last_date_in_db) this.lastDateVectorInDb = d.last_date_in_db; }, setLoading: (v: boolean) => this.loadingImportVector = v },
-          { nombre: 'Notas de Crédito (notas_credito_his)', activo: this.autoImportNotasCredito, fn: () => this.bvqService.importarNotasCredito(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportNotasCreditoResult = d; if (d?.last_date_in_db) this.lastDateNotasCreditoInDb = d.last_date_in_db; if (d?.total_in_db) this.totalNotasCreditoInDb = d.total_in_db; }, setLoading: (v: boolean) => this.loadingImportNotasCredito = v }
+          { nombre: 'Notas de Crédito (notas_credito_his)', activo: this.autoImportNotasCredito, fn: () => this.bvqService.importarNotasCredito(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportNotasCreditoResult = d; if (d?.last_date_in_db) this.lastDateNotasCreditoInDb = d.last_date_in_db; if (d?.total_in_db) this.totalNotasCreditoInDb = d.total_in_db; }, setLoading: (v: boolean) => this.loadingImportNotasCredito = v },
+          { nombre: 'Máximos y Mínimos Acciones (maximos_minimos_acciones)', activo: this.autoImportMaximosMinimos, fn: () => this.bvqService.importarMaximosMinimos(this.fechaSeleccionada), setRes: (d: any) => { this.lastImportMaximosMinimosResult = d; if (d?.last_date_in_db) this.lastDateMaximosMinimosInDb = d.last_date_in_db; if (d?.total_in_db) this.totalMaximosMinimosInDb = d.total_in_db; }, setLoading: (v: boolean) => this.loadingImportMaximosMinimos = v }
         ];
 
         const modulosActivos = modulos.filter(m => m.activo);
@@ -1015,6 +1028,27 @@ export class BvqDownloaderComponent implements OnInit {
     });
   }
 
+  ejecutarSoloImportacionMaximosMinimos(): void {
+    this.loadingImportMaximosMinimos = true;
+    this.error = '';
+
+    this.bvqService.importarMaximosMinimos(this.fechaSeleccionada).subscribe({
+      next: (res) => {
+        this.loadingImportMaximosMinimos = false;
+        if (res.data) {
+          this.lastImportMaximosMinimosResult = res.data;
+          this.lastDateMaximosMinimosInDb = res.data.last_date_in_db || this.lastDateMaximosMinimosInDb;
+          this.totalMaximosMinimosInDb = res.data.total_in_db || this.totalMaximosMinimosInDb;
+        }
+      },
+      error: (err) => {
+        this.loadingImportMaximosMinimos = false;
+        console.error('Error al importar máximos y mínimos:', err);
+        this.error = 'Ocurrió un error al procesar e importar los máximos y mínimos a la base de datos.';
+      }
+    });
+  }
+
   isDownloadingModulo(modulo: string): boolean {
     return !!this.loadingDownloadMap[modulo];
   }
@@ -1076,6 +1110,8 @@ export class BvqDownloaderComponent implements OnInit {
           this.lastDateNotasCreditoInDb = res.last_date_notas_credito || null;
           this.totalNotasCreditoInDb = res.total_notas_credito || 0;
           this.resumenNotasCreditoInDb = res.resumen_notas_credito || null;
+          this.lastDateMaximosMinimosInDb = res.last_date_maximos_minimos || null;
+          this.totalMaximosMinimosInDb = res.total_maximos_minimos || 0;
         }
       },
       error: (err) => {

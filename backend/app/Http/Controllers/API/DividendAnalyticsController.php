@@ -41,6 +41,7 @@ class DividendAnalyticsController extends Controller
         try {
             $montoUsd = (float) $request->input('monto_usd', 10000);
             $idEmisor = (int) $request->input('id_emisor');
+            $precioSimulado = $request->has('precio_simulado') ? (float) $request->input('precio_simulado') : null;
 
             if ($montoUsd <= 0 || !$idEmisor) {
                 return response()->json([
@@ -49,7 +50,7 @@ class DividendAnalyticsController extends Controller
                 ], Response::HTTP_BAD_REQUEST);
             }
 
-            $result = $this->analyticsService->simularInversion($montoUsd, $idEmisor);
+            $result = $this->analyticsService->simularInversion($montoUsd, $idEmisor, $precioSimulado);
             return response()->json($result, Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json([

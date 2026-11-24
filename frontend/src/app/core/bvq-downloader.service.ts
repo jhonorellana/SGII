@@ -85,6 +85,13 @@ export interface BvqDownloadResponse {
       last_date_in_db?: string;
       total_in_db?: number;
     };
+    importacion_maximos_minimos?: {
+      success: boolean;
+      message: string;
+      imported_count: number;
+      last_date_in_db?: string;
+      total_in_db?: number;
+    };
   };
 }
 
@@ -176,6 +183,10 @@ export class BvqDownloaderService {
     return this.http.post<any>(`${this.apiUrl}/importar-notas-credito`, { fecha, force });
   }
 
+  importarMaximosMinimos(fecha?: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/importar-maximos-minimos`, { fecha });
+  }
+
   getHistorial(): Observable<{
     success: boolean;
     last_date_shares?: string;
@@ -189,6 +200,8 @@ export class BvqDownloaderService {
     last_date_vector?: string;
     last_date_notas_credito?: string;
     total_notas_credito?: number;
+    last_date_maximos_minimos?: string;
+    total_maximos_minimos?: number;
     resumen_notas_credito?: {
       total_registros: number;
       fecha_minima: string | null;

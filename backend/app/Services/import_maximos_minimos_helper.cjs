@@ -67,7 +67,12 @@ function parseMaximosMinimosFile(filePath) {
     let fechaInfo = extractDateFromPath(filePath);
 
     const wb = xlsx.readFile(filePath, { cellDates: true });
-    const sheetName = wb.SheetNames[0];
+    
+    // Buscar la hoja de datos principal (evitando hojas técnicas auxiliares como 'LOG' o 'NOTA')
+    let sheetName = wb.SheetNames.find(n => /MAX.*MIN/i.test(n) || /ACCION/i.test(n) || /BVQ/i.test(n));
+    if (!sheetName) {
+      sheetName = wb.SheetNames.find(n => !/^LOG/i.test(n) && !/^NOTA/i.test(n)) || wb.SheetNames[0];
+    }
     const sheet = wb.Sheets[sheetName];
     if (!sheet) return null;
 
