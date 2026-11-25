@@ -125,8 +125,8 @@ class BonoPdfParserService implements PdfSettlementParserInterface
         // 2. Comitente y Cédula
         [$comitenteNombre, $comitenteIdentificacion] = $this->extraerComitente($p1, $fullText);
 
-        // 3. Emisor (En Bonos del Estado institucionalmente es MINISTERIO DE ECONOMIA Y FINANZAS)
-        $emisorNombre = 'MINISTERIO DE ECONOMIA Y FINANZAS';
+        // 3. Emisor (En Bonos del Estado institucionalmente es ESTADO ECUATORIANO)
+        $emisorNombre = 'ESTADO ECUATORIANO';
 
         // 4. Código Vector de Precios (18 dígitos, ej. 045040100501300507)
         $codigoVector = null;
@@ -316,7 +316,7 @@ class BonoPdfParserService implements PdfSettlementParserInterface
         [$comitenteNombre, $comitenteIdentificacion] = $this->extraerComitente($p1, $fullText);
 
         // 3. Emisor
-        $emisorNombre = 'MINISTERIO DE ECONOMIA Y FINANZAS';
+        $emisorNombre = 'ESTADO ECUATORIANO';
 
         // 4. Código Vector de Precios (18 dígitos, ej. 045040100101290428)
         $codigoVector = null;

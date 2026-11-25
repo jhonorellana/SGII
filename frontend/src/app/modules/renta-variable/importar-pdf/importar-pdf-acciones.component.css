@@ -37,8 +37,37 @@
   display: inline-block;
 }
 
+/* Fila de 6 KPIs en una sola fila horizontal */
+.kpi-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (max-width: 1199px) {
+  .kpi-grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 576px) {
+  .kpi-grid-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.kpi-label {
+  font-size: 0.70rem;
+  letter-spacing: 0.4px;
+}
+
+.kpi-value {
+  font-size: 1.35rem;
+}
+
 .stat-card {
-  border-radius: 12px;
+  border-radius: 10px;
+  background: #ffffff;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 

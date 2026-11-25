@@ -257,6 +257,7 @@
           <th class="text-center">Fecha Venta</th>
           <th class="text-end">Valor Nominal</th>
           <th class="text-end">Capital Invertido</th>
+          <th class="text-end" style="width: 110px;">Rendimiento</th>
           <th class="text-center" style="width: 110px;">Estado</th>
         </tr>
         <tr>
@@ -267,6 +268,7 @@
               <option *ngFor="let p of uniquePropietarios" [value]="p">{{ p }}</option>
             </select>
           </th>
+          <th></th>
           <th></th>
           <th></th>
           <th></th>
@@ -295,6 +297,14 @@
           <td class="text-center">{{ formatDate(inv.fecha_venta) || '-' }}</td>
           <td class="text-end">{{ inv.valor_nominal | currency:'USD' }}</td>
           <td class="text-end">{{ inv.capital_invertido | currency:'USD' }}</td>
+          <td class="text-end font-monospace">
+            <span class="fw-semibold text-dark">
+              {{ inv.rendimiento_nominal != null ? (inv.rendimiento_nominal | number:'1.2-2') + '%' : (inv.tasa_interes ? (inv.tasa_interes | number:'1.2-2') + '%' : '-') }}
+            </span>
+            <small *ngIf="inv.rendimiento_efectivo != null && inv.rendimiento_efectivo != inv.rendimiento_nominal" class="text-muted d-block" style="font-size: 0.72rem;" title="Rendimiento Efectivo Anual">
+              Ef: {{ inv.rendimiento_efectivo | number:'1.2-2' }}%
+            </small>
+          </td>
           <td class="text-center">
             <p-tag [value]="inv.estadoInversion?.nombre" [severity]="'info'"></p-tag>
           </td>
@@ -302,15 +312,16 @@
       </ng-template>
       <ng-template pTemplate="footer">
         <tr class="totals-row">
-          <td colspan="6" class="text-end">Totales:</td>
+          <td colspan="6" class="text-end">Totales / Rend. Ponderado:</td>
           <td class="text-end">{{ getTotalValorNominal(dtInv) | currency:'USD' }}</td>
           <td class="text-end">{{ getTotalCapitalInvertido(dtInv) | currency:'USD' }}</td>
+          <td class="text-end font-monospace fw-bold text-success" title="Rendimiento Ponderado por Capital Invertido">{{ getTotalRendimientoPonderado(dtInv) }}</td>
           <td></td>
         </tr>
       </ng-template>
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="text-center py-3">No hay inversiones registradas para este instrumento.</td>
+          <td colspan="10" class="text-center py-3">No hay inversiones registradas para este instrumento.</td>
         </tr>
       </ng-template>
     </p-table>
@@ -375,9 +386,16 @@
       </div>
     </div>
     <ng-template pTemplate="footer">
-      <div class="d-flex justify-content-between w-100">
-        <button pButton type="button" label="Ver Tabla Amortización" icon="pi pi-table" class="p-button-outlined p-button-success" (click)="viewAmortizacion(inversionSeleccionada)"></button>
-        <button pButton type="button" label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="displayDetalleInversionDialog = false"></button>
+      <div class="d-flex justify-content-between align-items-center w-100">
+        <button type="button" class="btn btn-outline-success" (click)="viewAmortizacion(inversionSeleccionada)">
+          <i class="bi bi-table me-1"></i> Ver Tabla Amortización
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="displayDetalleInversionDialog = false">
+          <i class="bi bi-x-circle me-1"></i> Cerrar
+        </button>
+      </div>
+    </ng-template>
+  </p-dialog>
         <!-- Modal para Ver Tabla de Amortización -->
   <p-dialog [(visible)]="displayAmortizacionDialog" header="Tabla de Amortización"
             [style]="{width: '90vw', maxWidth: '1200px'}" [modal]="true" [closable]="true"

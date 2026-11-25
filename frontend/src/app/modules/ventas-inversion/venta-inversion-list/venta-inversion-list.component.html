@@ -574,9 +574,13 @@
     </div>
 
     <ng-template pTemplate="footer">
-      <div class="d-flex justify-content-between w-100">
-        <button pButton type="button" label="Ver Tabla Amortización" icon="pi pi-table" class="p-button-outlined p-button-success" (click)="viewAmortizacion(inversionSeleccionada)"></button>
-        <button pButton type="button" label="Cerrar" icon="pi pi-times" class="p-button-text" (click)="displayDetalleInversionDialog = false"></button>
+      <div class="d-flex justify-content-between align-items-center w-100">
+        <button type="button" class="btn btn-outline-success" (click)="viewAmortizacion(inversionSeleccionada)">
+          <i class="bi bi-table me-1"></i> Ver Tabla Amortización
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="displayDetalleInversionDialog = false">
+          <i class="bi bi-x-circle me-1"></i> Cerrar
+        </button>
       </div>
     </ng-template>
   </p-dialog>

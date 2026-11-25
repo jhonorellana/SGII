@@ -60,43 +60,31 @@
       class="p-button-sm p-button-success" (click)="irAOperaciones()"></button>
   </div>
 
-  <!-- Resumen -->
-  <div *ngIf="items.length > 0" class="row g-3 mb-4">
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Archivos</span>
-        <h4 class="mb-0 fw-bold text-dark mt-1">{{ items.length }}</h4>
-      </div>
+  <!-- Resumen (1 sola fila horizontal) -->
+  <div *ngIf="items.length > 0" class="kpi-grid-6 mb-4">
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #64748b !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Archivos</span>
+      <h4 class="mb-0 fw-bold text-dark mt-1 kpi-value">{{ items.length }}</h4>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Listos</span>
-        <h4 class="mb-0 fw-bold text-success mt-1">{{ itemsListos.length }}</h4>
-      </div>
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #10b981 !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Listos</span>
+      <h4 class="mb-0 fw-bold text-success mt-1 kpi-value">{{ itemsListos.length }}</h4>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Duplicados</span>
-        <h4 class="mb-0 fw-bold text-warning mt-1">{{ totalDuplicados }}</h4>
-      </div>
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #f59e0b !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Duplicados</span>
+      <h4 class="mb-0 fw-bold text-warning mt-1 kpi-value">{{ totalDuplicados }}</h4>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Con Error</span>
-        <h4 class="mb-0 fw-bold text-danger mt-1">{{ totalErrores }}</h4>
-      </div>
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #ef4444 !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Con Error</span>
+      <h4 class="mb-0 fw-bold text-danger mt-1 kpi-value">{{ totalErrores }}</h4>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Acciones (sel.)</span>
-        <h4 class="mb-0 fw-bold text-dark mt-1">{{ formatNumber(totalAccionesSeleccionadas) }}</h4>
-      </div>
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #0284c7 !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Acciones (sel.)</span>
+      <h4 class="mb-0 fw-bold text-dark mt-1 kpi-value">{{ formatNumber(totalAccionesSeleccionadas) }}</h4>
     </div>
-    <div class="col-6 col-md-2">
-      <div class="card stat-card border-0 shadow-sm p-3">
-        <span class="text-muted small text-uppercase fw-bold">Valor Neto (sel.)</span>
-        <h4 class="mb-0 fw-bold text-primary mt-1">{{ formatCurrency(totalNetoSeleccionado) }}</h4>
-      </div>
+    <div class="card stat-card border-0 shadow-sm p-2.5 px-3 h-100" style="border-left: 4px solid #8b5cf6 !important;">
+      <span class="text-muted text-uppercase fw-bold kpi-label">Valor Neto (sel.)</span>
+      <h4 class="mb-0 fw-bold text-primary mt-1 kpi-value">{{ formatCurrency(totalNetoSeleccionado) }}</h4>
     </div>
   </div>
 

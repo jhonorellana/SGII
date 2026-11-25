@@ -182,8 +182,10 @@ class InversionPdfImportService
                 $resumen['bonos']++;
                 $generaAmortizacion = true;
                 $incluirAmortizacion = true;
-                $idEmisor = 45; // MINISTERIO DE ECONOMIA Y FINANZAS
-                $nombreEmisor = 'MINISTERIO DE ECONOMIA Y FINANZAS';
+                $emisorEstado = $emisores->firstWhere('nombre', 'ESTADO ECUATORIANO') 
+                    ?? DB::table('emisor')->where('nombre', 'ESTADO ECUATORIANO')->first();
+                $idEmisor = $emisorEstado ? $emisorEstado->id_emisor : 139; // ESTADO ECUATORIANO
+                $nombreEmisor = $emisorEstado ? $emisorEstado->nombre : 'ESTADO ECUATORIANO';
 
                 [$instBono, $metodoMatch] = $this->buscarInstrumentoBono(
                     $dto->codigoVector,
@@ -216,7 +218,7 @@ class InversionPdfImportService
                     $interesPrimerMes = round($interesMensual - $interesDevengado, 2);
 
                     $instTemp = new Instrumento([
-                        'id_emisor' => 45,
+                        'id_emisor' => $idEmisor,
                         'id_tipo_inversion' => 4,
                         'nombre' => $nombreInstrumento,
                         'fecha_emision' => $dto->fechaEmision ?? $dto->fechaNegociacion,
@@ -654,10 +656,13 @@ class InversionPdfImportService
                             DB::table('instrumento')->where('id_instrumento', $idInstrumento)->update($updatesInst);
                         }
                     } elseif (!$idInstrumento) {
+                        $emisorEstado = DB::table('emisor')->where('nombre', 'ESTADO ECUATORIANO')->first();
+                        $idEmisorBono = $emisorEstado ? $emisorEstado->id_emisor : 139;
+
                         $codTitulo = 'INV_4_' . str_replace('-', '', $fechaVcto ?? date('Ymd'));
                         $nombreInst = "{$fechaEmi} BONOS DEL ESTADO {$fechaVcto}";
                         $idInstrumento = DB::table('instrumento')->insertGetId([
-                            'id_emisor' => 45, // MINISTERIO DE ECONOMIA Y FINANZAS
+                            'id_emisor' => $idEmisorBono, // ESTADO ECUATORIANO
                             'id_tipo_inversion' => 4,
                             'codigo_titulo' => $codTitulo,
                             'nombre' => $nombreInst,
@@ -985,6 +990,16 @@ class InversionPdfImportService
         }
 
         $upper = mb_strtoupper($nombreEmisor);
+
+        if (str_contains($upper, 'ESTADO ECUATORIANO') 
+            || str_contains($upper, 'MINISTERIO DE ECONOMIA') 
+            || str_contains($upper, 'MINISTERIO DE FINANZAS')
+            || str_contains($upper, 'BONOS DEL ESTADO')) {
+            $estado = $emisores->firstWhere('nombre', 'ESTADO ECUATORIANO');
+            if ($estado) {
+                return $estado;
+            }
+        }
 
         foreach ($emisores as $e) {
             $eNombre = mb_strtoupper(trim($e->nombre));

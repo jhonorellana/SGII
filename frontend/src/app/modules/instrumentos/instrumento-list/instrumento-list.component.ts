@@ -427,6 +427,22 @@ export class InstrumentoListComponent implements OnInit, AfterViewInit {
     return data.reduce((acc: number, inv: any) => acc + (parseFloat(inv.capital_invertido) || 0), 0);
   }
 
+  getTotalRendimientoPonderado(dt: any): string {
+    const data = dt?.filteredValue || this.inversionesAsociadas || [];
+    let totalCapital = 0;
+    let sumProd = 0;
+    for (const inv of data) {
+      const cap = parseFloat(inv.capital_invertido) || 0;
+      const rend = parseFloat(inv.rendimiento_nominal ?? inv.tasa_interes) || 0;
+      if (cap > 0 && rend > 0) {
+        totalCapital += cap;
+        sumProd += cap * rend;
+      }
+    }
+    if (totalCapital <= 0) return '-';
+    return (sumProd / totalCapital).toFixed(2) + '%';
+  }
+
   hideDialog(): void {
     this.displayDialog = false;
     this.instrumento = {
